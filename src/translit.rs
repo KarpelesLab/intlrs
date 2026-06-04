@@ -9,6 +9,24 @@
 use crate::unicode::{general_category, nfd, Group};
 use alloc::string::String;
 
+/// Remove diacritics from `c`'s text: decompose (NFD), drop the combining
+/// marks, and recompose (NFC), so accented letters lose their accents but every
+/// base letter (including non-Latin scripts) is preserved. Unlike
+/// [`latin_ascii`] it does not transliterate (`ß`, `ø`, `æ` stay as they are).
+/// Useful for accent-insensitive search/matching.
+///
+/// ```
+/// use intl::translit::remove_diacritics;
+/// assert_eq!(remove_diacritics("café Müller"), "cafe Muller");
+/// assert_eq!(remove_diacritics("naïve"), "naive");
+/// assert_eq!(remove_diacritics("ψυχή"), "ψυχη"); // Greek tonos removed
+/// ```
+#[must_use]
+pub fn remove_diacritics(s: &str) -> String {
+    let stripped = nfd(s.chars()).filter(|&c| !matches!(general_category(c).group(), Group::Mark));
+    crate::unicode::nfc(stripped).collect()
+}
+
 /// Fold Latin text to ASCII: decompose (NFD), drop combining marks, and map the
 /// non-decomposing Latin letters (`ø→o`, `æ→ae`, `ß→ss`, `þ→th`, …) and common
 /// typographic punctuation (curly quotes, dashes, ellipsis, NBSP). Non-Latin

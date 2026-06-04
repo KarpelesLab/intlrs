@@ -139,6 +139,7 @@ fn fuzz_invariants() {
         let _ = intl::unicode::lowercase_str_lang(&s, "lt");
         let _ = intl::unicode::uppercase_str_lang(&s, "az");
         let _ = intl::translit::latin_ascii(&s);
+        let _ = intl::translit::remove_diacritics(&s);
         let _ = intl::unicode::idna::to_ascii(&s);
         let _ = intl::unicode::idna::to_unicode(&s);
         let _ = intl::unicode::spoof::skeleton(&s);

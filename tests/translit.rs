@@ -20,3 +20,17 @@ fn latin_ascii() {
     // Composed and decomposed inputs fold identically.
     assert_eq!(t("e\u{0301}"), t("é"));
 }
+
+#[test]
+fn diacritics() {
+    use intl::translit::remove_diacritics as d;
+    assert_eq!(d("café Müller"), "cafe Muller");
+    assert_eq!(d("naïve"), "naive");
+    assert_eq!(d("Crème brûlée"), "Creme brulee");
+    // Non-Latin base letters are preserved (only the accents go).
+    assert_eq!(d("ψυχή"), "ψυχη");
+    // ß/ø are not accented letters -> unchanged (vs latin_ascii which maps them).
+    assert_eq!(d("Straße"), "Straße");
+    // Composed input.
+    assert_eq!(d("é"), "e");
+}
