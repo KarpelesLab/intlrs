@@ -46,7 +46,7 @@ conformance corpus. Highest value, lowest risk — do these next.
   reorder. Data: `Bidi_Class` (UnicodeData field 4), `BidiBrackets.txt`,
   `BidiMirroring.txt`. Conformance: `BidiTest.txt`, `BidiCharacterTest.txt`.
   Self-contained; `alloc` for level arrays.
-- ⬜ **Identifiers (UAX #31)** — `is_xid_start`/`is_xid_continue`, identifier
+- ✅ **Identifiers (UAX #31)** — `is_xid_start`/`is_xid_continue`, identifier
   validation, default identifier syntax. Data: XID_Start/Continue (already in
   `DerivedCoreProperties.txt`). Small.
 - ⬜🔬 **Confusables / spoof detection (UTS #39)** — `confusable_skeleton`,

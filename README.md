@@ -126,6 +126,8 @@ codepoint would.
   `.long_name()`; `ScriptExtensions` with `.contains()` / `.iter()`).
 - `East_Asian_Width` (UAX #11) via `east_asian_width` / `east_asian_width_u32`
   (`EastAsianWidth` enum, with `.is_wide()`).
+- **Identifiers** (UAX #31) — `is_xid_start`, `is_xid_continue`, and
+  `is_identifier(&str)` for default identifier validation.
 - `Numeric_Type` and exact `Numeric_Value` via `numeric_type` and
   `numeric_value` / `numeric_value_u32` (`NumericValue` is a rational
   `numerator / denominator`, with `.to_i64()` / `.as_f64()`).

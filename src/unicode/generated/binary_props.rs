@@ -4923,3 +4923,5832 @@ const fn lo_p1e9(b: u8) -> bool {
         _ => false,
     }
 }
+
+#[inline]
+pub(crate) const fn xid_start(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => xs_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => true,
+        #[cfg(feature = "bmp")]
+        0x002 => xs_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => xs_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => xs_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => xs_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => xs_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x007 => xs_p7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x008 => xs_p8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => xs_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => xs_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => xs_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => xs_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => xs_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => xs_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => xs_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => xs_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x011 => true,
+        #[cfg(feature = "bmp")]
+        0x012 => xs_p12(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => xs_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x014 => xs_p14(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x015 => true,
+        #[cfg(feature = "bmp")]
+        0x016 => xs_p16(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x017 => xs_p17(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x018 => xs_p18(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x019 => xs_p19(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01a => xs_p1a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => xs_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => xs_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => xs_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => true,
+        #[cfg(feature = "bmp")]
+        0x01f => xs_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => xs_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => xs_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => xs_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => xs_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => xs_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x031 => xs_p31(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x034 => true,
+        #[cfg(feature = "bmp")]
+        0x035 => true,
+        #[cfg(feature = "bmp")]
+        0x036 => true,
+        #[cfg(feature = "bmp")]
+        0x037 => true,
+        #[cfg(feature = "bmp")]
+        0x038 => true,
+        #[cfg(feature = "bmp")]
+        0x039 => true,
+        #[cfg(feature = "bmp")]
+        0x03a => true,
+        #[cfg(feature = "bmp")]
+        0x03b => true,
+        #[cfg(feature = "bmp")]
+        0x03c => true,
+        #[cfg(feature = "bmp")]
+        0x03d => true,
+        #[cfg(feature = "bmp")]
+        0x03e => true,
+        #[cfg(feature = "bmp")]
+        0x03f => true,
+        #[cfg(feature = "bmp")]
+        0x040 => true,
+        #[cfg(feature = "bmp")]
+        0x041 => true,
+        #[cfg(feature = "bmp")]
+        0x042 => true,
+        #[cfg(feature = "bmp")]
+        0x043 => true,
+        #[cfg(feature = "bmp")]
+        0x044 => true,
+        #[cfg(feature = "bmp")]
+        0x045 => true,
+        #[cfg(feature = "bmp")]
+        0x046 => true,
+        #[cfg(feature = "bmp")]
+        0x047 => true,
+        #[cfg(feature = "bmp")]
+        0x048 => true,
+        #[cfg(feature = "bmp")]
+        0x049 => true,
+        #[cfg(feature = "bmp")]
+        0x04a => true,
+        #[cfg(feature = "bmp")]
+        0x04b => true,
+        #[cfg(feature = "bmp")]
+        0x04c => true,
+        #[cfg(feature = "bmp")]
+        0x04d => xs_p4d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x04e => true,
+        #[cfg(feature = "bmp")]
+        0x04f => true,
+        #[cfg(feature = "bmp")]
+        0x050 => true,
+        #[cfg(feature = "bmp")]
+        0x051 => true,
+        #[cfg(feature = "bmp")]
+        0x052 => true,
+        #[cfg(feature = "bmp")]
+        0x053 => true,
+        #[cfg(feature = "bmp")]
+        0x054 => true,
+        #[cfg(feature = "bmp")]
+        0x055 => true,
+        #[cfg(feature = "bmp")]
+        0x056 => true,
+        #[cfg(feature = "bmp")]
+        0x057 => true,
+        #[cfg(feature = "bmp")]
+        0x058 => true,
+        #[cfg(feature = "bmp")]
+        0x059 => true,
+        #[cfg(feature = "bmp")]
+        0x05a => true,
+        #[cfg(feature = "bmp")]
+        0x05b => true,
+        #[cfg(feature = "bmp")]
+        0x05c => true,
+        #[cfg(feature = "bmp")]
+        0x05d => true,
+        #[cfg(feature = "bmp")]
+        0x05e => true,
+        #[cfg(feature = "bmp")]
+        0x05f => true,
+        #[cfg(feature = "bmp")]
+        0x060 => true,
+        #[cfg(feature = "bmp")]
+        0x061 => true,
+        #[cfg(feature = "bmp")]
+        0x062 => true,
+        #[cfg(feature = "bmp")]
+        0x063 => true,
+        #[cfg(feature = "bmp")]
+        0x064 => true,
+        #[cfg(feature = "bmp")]
+        0x065 => true,
+        #[cfg(feature = "bmp")]
+        0x066 => true,
+        #[cfg(feature = "bmp")]
+        0x067 => true,
+        #[cfg(feature = "bmp")]
+        0x068 => true,
+        #[cfg(feature = "bmp")]
+        0x069 => true,
+        #[cfg(feature = "bmp")]
+        0x06a => true,
+        #[cfg(feature = "bmp")]
+        0x06b => true,
+        #[cfg(feature = "bmp")]
+        0x06c => true,
+        #[cfg(feature = "bmp")]
+        0x06d => true,
+        #[cfg(feature = "bmp")]
+        0x06e => true,
+        #[cfg(feature = "bmp")]
+        0x06f => true,
+        #[cfg(feature = "bmp")]
+        0x070 => true,
+        #[cfg(feature = "bmp")]
+        0x071 => true,
+        #[cfg(feature = "bmp")]
+        0x072 => true,
+        #[cfg(feature = "bmp")]
+        0x073 => true,
+        #[cfg(feature = "bmp")]
+        0x074 => true,
+        #[cfg(feature = "bmp")]
+        0x075 => true,
+        #[cfg(feature = "bmp")]
+        0x076 => true,
+        #[cfg(feature = "bmp")]
+        0x077 => true,
+        #[cfg(feature = "bmp")]
+        0x078 => true,
+        #[cfg(feature = "bmp")]
+        0x079 => true,
+        #[cfg(feature = "bmp")]
+        0x07a => true,
+        #[cfg(feature = "bmp")]
+        0x07b => true,
+        #[cfg(feature = "bmp")]
+        0x07c => true,
+        #[cfg(feature = "bmp")]
+        0x07d => true,
+        #[cfg(feature = "bmp")]
+        0x07e => true,
+        #[cfg(feature = "bmp")]
+        0x07f => true,
+        #[cfg(feature = "bmp")]
+        0x080 => true,
+        #[cfg(feature = "bmp")]
+        0x081 => true,
+        #[cfg(feature = "bmp")]
+        0x082 => true,
+        #[cfg(feature = "bmp")]
+        0x083 => true,
+        #[cfg(feature = "bmp")]
+        0x084 => true,
+        #[cfg(feature = "bmp")]
+        0x085 => true,
+        #[cfg(feature = "bmp")]
+        0x086 => true,
+        #[cfg(feature = "bmp")]
+        0x087 => true,
+        #[cfg(feature = "bmp")]
+        0x088 => true,
+        #[cfg(feature = "bmp")]
+        0x089 => true,
+        #[cfg(feature = "bmp")]
+        0x08a => true,
+        #[cfg(feature = "bmp")]
+        0x08b => true,
+        #[cfg(feature = "bmp")]
+        0x08c => true,
+        #[cfg(feature = "bmp")]
+        0x08d => true,
+        #[cfg(feature = "bmp")]
+        0x08e => true,
+        #[cfg(feature = "bmp")]
+        0x08f => true,
+        #[cfg(feature = "bmp")]
+        0x090 => true,
+        #[cfg(feature = "bmp")]
+        0x091 => true,
+        #[cfg(feature = "bmp")]
+        0x092 => true,
+        #[cfg(feature = "bmp")]
+        0x093 => true,
+        #[cfg(feature = "bmp")]
+        0x094 => true,
+        #[cfg(feature = "bmp")]
+        0x095 => true,
+        #[cfg(feature = "bmp")]
+        0x096 => true,
+        #[cfg(feature = "bmp")]
+        0x097 => true,
+        #[cfg(feature = "bmp")]
+        0x098 => true,
+        #[cfg(feature = "bmp")]
+        0x099 => true,
+        #[cfg(feature = "bmp")]
+        0x09a => true,
+        #[cfg(feature = "bmp")]
+        0x09b => true,
+        #[cfg(feature = "bmp")]
+        0x09c => true,
+        #[cfg(feature = "bmp")]
+        0x09d => true,
+        #[cfg(feature = "bmp")]
+        0x09e => true,
+        #[cfg(feature = "bmp")]
+        0x09f => true,
+        #[cfg(feature = "bmp")]
+        0x0a0 => true,
+        #[cfg(feature = "bmp")]
+        0x0a1 => true,
+        #[cfg(feature = "bmp")]
+        0x0a2 => true,
+        #[cfg(feature = "bmp")]
+        0x0a3 => true,
+        #[cfg(feature = "bmp")]
+        0x0a4 => xs_pa4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a5 => true,
+        #[cfg(feature = "bmp")]
+        0x0a6 => xs_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => xs_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a8 => xs_pa8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a9 => xs_pa9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0aa => xs_paa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => xs_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ac => true,
+        #[cfg(feature = "bmp")]
+        0x0ad => true,
+        #[cfg(feature = "bmp")]
+        0x0ae => true,
+        #[cfg(feature = "bmp")]
+        0x0af => true,
+        #[cfg(feature = "bmp")]
+        0x0b0 => true,
+        #[cfg(feature = "bmp")]
+        0x0b1 => true,
+        #[cfg(feature = "bmp")]
+        0x0b2 => true,
+        #[cfg(feature = "bmp")]
+        0x0b3 => true,
+        #[cfg(feature = "bmp")]
+        0x0b4 => true,
+        #[cfg(feature = "bmp")]
+        0x0b5 => true,
+        #[cfg(feature = "bmp")]
+        0x0b6 => true,
+        #[cfg(feature = "bmp")]
+        0x0b7 => true,
+        #[cfg(feature = "bmp")]
+        0x0b8 => true,
+        #[cfg(feature = "bmp")]
+        0x0b9 => true,
+        #[cfg(feature = "bmp")]
+        0x0ba => true,
+        #[cfg(feature = "bmp")]
+        0x0bb => true,
+        #[cfg(feature = "bmp")]
+        0x0bc => true,
+        #[cfg(feature = "bmp")]
+        0x0bd => true,
+        #[cfg(feature = "bmp")]
+        0x0be => true,
+        #[cfg(feature = "bmp")]
+        0x0bf => true,
+        #[cfg(feature = "bmp")]
+        0x0c0 => true,
+        #[cfg(feature = "bmp")]
+        0x0c1 => true,
+        #[cfg(feature = "bmp")]
+        0x0c2 => true,
+        #[cfg(feature = "bmp")]
+        0x0c3 => true,
+        #[cfg(feature = "bmp")]
+        0x0c4 => true,
+        #[cfg(feature = "bmp")]
+        0x0c5 => true,
+        #[cfg(feature = "bmp")]
+        0x0c6 => true,
+        #[cfg(feature = "bmp")]
+        0x0c7 => true,
+        #[cfg(feature = "bmp")]
+        0x0c8 => true,
+        #[cfg(feature = "bmp")]
+        0x0c9 => true,
+        #[cfg(feature = "bmp")]
+        0x0ca => true,
+        #[cfg(feature = "bmp")]
+        0x0cb => true,
+        #[cfg(feature = "bmp")]
+        0x0cc => true,
+        #[cfg(feature = "bmp")]
+        0x0cd => true,
+        #[cfg(feature = "bmp")]
+        0x0ce => true,
+        #[cfg(feature = "bmp")]
+        0x0cf => true,
+        #[cfg(feature = "bmp")]
+        0x0d0 => true,
+        #[cfg(feature = "bmp")]
+        0x0d1 => true,
+        #[cfg(feature = "bmp")]
+        0x0d2 => true,
+        #[cfg(feature = "bmp")]
+        0x0d3 => true,
+        #[cfg(feature = "bmp")]
+        0x0d4 => true,
+        #[cfg(feature = "bmp")]
+        0x0d5 => true,
+        #[cfg(feature = "bmp")]
+        0x0d6 => true,
+        #[cfg(feature = "bmp")]
+        0x0d7 => xs_pd7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0f9 => true,
+        #[cfg(feature = "bmp")]
+        0x0fa => xs_pfa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => xs_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fc => xs_pfc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fd => xs_pfd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => xs_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => xs_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x100 => xs_p100(cp as u8),
+        #[cfg(feature = "full")]
+        0x101 => xs_p101(cp as u8),
+        #[cfg(feature = "full")]
+        0x102 => xs_p102(cp as u8),
+        #[cfg(feature = "full")]
+        0x103 => xs_p103(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => xs_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => xs_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x106 => true,
+        #[cfg(feature = "full")]
+        0x107 => xs_p107(cp as u8),
+        #[cfg(feature = "full")]
+        0x108 => xs_p108(cp as u8),
+        #[cfg(feature = "full")]
+        0x109 => xs_p109(cp as u8),
+        #[cfg(feature = "full")]
+        0x10a => xs_p10a(cp as u8),
+        #[cfg(feature = "full")]
+        0x10b => xs_p10b(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => xs_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => xs_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x10e => xs_p10e(cp as u8),
+        #[cfg(feature = "full")]
+        0x10f => xs_p10f(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => xs_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => xs_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x112 => xs_p112(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => xs_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => xs_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => xs_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x116 => xs_p116(cp as u8),
+        #[cfg(feature = "full")]
+        0x117 => xs_p117(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => xs_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => xs_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x11a => xs_p11a(cp as u8),
+        #[cfg(feature = "full")]
+        0x11b => xs_p11b(cp as u8),
+        #[cfg(feature = "full")]
+        0x11c => xs_p11c(cp as u8),
+        #[cfg(feature = "full")]
+        0x11d => xs_p11d(cp as u8),
+        #[cfg(feature = "full")]
+        0x11e => xs_p11e(cp as u8),
+        #[cfg(feature = "full")]
+        0x11f => xs_p11f(cp as u8),
+        #[cfg(feature = "full")]
+        0x120 => true,
+        #[cfg(feature = "full")]
+        0x121 => true,
+        #[cfg(feature = "full")]
+        0x122 => true,
+        #[cfg(feature = "full")]
+        0x123 => xs_p123(cp as u8),
+        #[cfg(feature = "full")]
+        0x124 => xs_p124(cp as u8),
+        #[cfg(feature = "full")]
+        0x125 => xs_p125(cp as u8),
+        #[cfg(feature = "full")]
+        0x12f => xs_p12f(cp as u8),
+        #[cfg(feature = "full")]
+        0x130 => true,
+        #[cfg(feature = "full")]
+        0x131 => true,
+        #[cfg(feature = "full")]
+        0x132 => true,
+        #[cfg(feature = "full")]
+        0x133 => true,
+        #[cfg(feature = "full")]
+        0x134 => xs_p134(cp as u8),
+        #[cfg(feature = "full")]
+        0x135 => true,
+        #[cfg(feature = "full")]
+        0x136 => true,
+        #[cfg(feature = "full")]
+        0x137 => true,
+        #[cfg(feature = "full")]
+        0x138 => true,
+        #[cfg(feature = "full")]
+        0x139 => true,
+        #[cfg(feature = "full")]
+        0x13a => true,
+        #[cfg(feature = "full")]
+        0x13b => true,
+        #[cfg(feature = "full")]
+        0x13c => true,
+        #[cfg(feature = "full")]
+        0x13d => true,
+        #[cfg(feature = "full")]
+        0x13e => true,
+        #[cfg(feature = "full")]
+        0x13f => true,
+        #[cfg(feature = "full")]
+        0x140 => true,
+        #[cfg(feature = "full")]
+        0x141 => true,
+        #[cfg(feature = "full")]
+        0x142 => true,
+        #[cfg(feature = "full")]
+        0x143 => xs_p143(cp as u8),
+        #[cfg(feature = "full")]
+        0x144 => true,
+        #[cfg(feature = "full")]
+        0x145 => true,
+        #[cfg(feature = "full")]
+        0x146 => xs_p146(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => xs_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x168 => true,
+        #[cfg(feature = "full")]
+        0x169 => true,
+        #[cfg(feature = "full")]
+        0x16a => xs_p16a(cp as u8),
+        #[cfg(feature = "full")]
+        0x16b => xs_p16b(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => xs_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => xs_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x16f => xs_p16f(cp as u8),
+        #[cfg(feature = "full")]
+        0x170 => true,
+        #[cfg(feature = "full")]
+        0x171 => true,
+        #[cfg(feature = "full")]
+        0x172 => true,
+        #[cfg(feature = "full")]
+        0x173 => true,
+        #[cfg(feature = "full")]
+        0x174 => true,
+        #[cfg(feature = "full")]
+        0x175 => true,
+        #[cfg(feature = "full")]
+        0x176 => true,
+        #[cfg(feature = "full")]
+        0x177 => true,
+        #[cfg(feature = "full")]
+        0x178 => true,
+        #[cfg(feature = "full")]
+        0x179 => true,
+        #[cfg(feature = "full")]
+        0x17a => true,
+        #[cfg(feature = "full")]
+        0x17b => true,
+        #[cfg(feature = "full")]
+        0x17c => true,
+        #[cfg(feature = "full")]
+        0x17d => true,
+        #[cfg(feature = "full")]
+        0x17e => true,
+        #[cfg(feature = "full")]
+        0x17f => true,
+        #[cfg(feature = "full")]
+        0x180 => true,
+        #[cfg(feature = "full")]
+        0x181 => true,
+        #[cfg(feature = "full")]
+        0x182 => true,
+        #[cfg(feature = "full")]
+        0x183 => true,
+        #[cfg(feature = "full")]
+        0x184 => true,
+        #[cfg(feature = "full")]
+        0x185 => true,
+        #[cfg(feature = "full")]
+        0x186 => true,
+        #[cfg(feature = "full")]
+        0x187 => true,
+        #[cfg(feature = "full")]
+        0x188 => true,
+        #[cfg(feature = "full")]
+        0x189 => true,
+        #[cfg(feature = "full")]
+        0x18a => true,
+        #[cfg(feature = "full")]
+        0x18b => true,
+        #[cfg(feature = "full")]
+        0x18c => xs_p18c(cp as u8),
+        #[cfg(feature = "full")]
+        0x18d => xs_p18d(cp as u8),
+        #[cfg(feature = "full")]
+        0x1af => xs_p1af(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b0 => true,
+        #[cfg(feature = "full")]
+        0x1b1 => xs_p1b1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b2 => xs_p1b2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1bc => xs_p1bc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d4 => xs_p1d4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d5 => xs_p1d5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d6 => xs_p1d6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d7 => xs_p1d7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1df => xs_p1df(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => xs_p1e0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e1 => xs_p1e1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e2 => xs_p1e2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e4 => xs_p1e4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e5 => xs_p1e5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e6 => xs_p1e6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e7 => xs_p1e7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e8 => xs_p1e8(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => xs_p1e9(cp as u8),
+        #[cfg(feature = "full")]
+        0x1ee => xs_p1ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x200 => true,
+        #[cfg(feature = "full")]
+        0x201 => true,
+        #[cfg(feature = "full")]
+        0x202 => true,
+        #[cfg(feature = "full")]
+        0x203 => true,
+        #[cfg(feature = "full")]
+        0x204 => true,
+        #[cfg(feature = "full")]
+        0x205 => true,
+        #[cfg(feature = "full")]
+        0x206 => true,
+        #[cfg(feature = "full")]
+        0x207 => true,
+        #[cfg(feature = "full")]
+        0x208 => true,
+        #[cfg(feature = "full")]
+        0x209 => true,
+        #[cfg(feature = "full")]
+        0x20a => true,
+        #[cfg(feature = "full")]
+        0x20b => true,
+        #[cfg(feature = "full")]
+        0x20c => true,
+        #[cfg(feature = "full")]
+        0x20d => true,
+        #[cfg(feature = "full")]
+        0x20e => true,
+        #[cfg(feature = "full")]
+        0x20f => true,
+        #[cfg(feature = "full")]
+        0x210 => true,
+        #[cfg(feature = "full")]
+        0x211 => true,
+        #[cfg(feature = "full")]
+        0x212 => true,
+        #[cfg(feature = "full")]
+        0x213 => true,
+        #[cfg(feature = "full")]
+        0x214 => true,
+        #[cfg(feature = "full")]
+        0x215 => true,
+        #[cfg(feature = "full")]
+        0x216 => true,
+        #[cfg(feature = "full")]
+        0x217 => true,
+        #[cfg(feature = "full")]
+        0x218 => true,
+        #[cfg(feature = "full")]
+        0x219 => true,
+        #[cfg(feature = "full")]
+        0x21a => true,
+        #[cfg(feature = "full")]
+        0x21b => true,
+        #[cfg(feature = "full")]
+        0x21c => true,
+        #[cfg(feature = "full")]
+        0x21d => true,
+        #[cfg(feature = "full")]
+        0x21e => true,
+        #[cfg(feature = "full")]
+        0x21f => true,
+        #[cfg(feature = "full")]
+        0x220 => true,
+        #[cfg(feature = "full")]
+        0x221 => true,
+        #[cfg(feature = "full")]
+        0x222 => true,
+        #[cfg(feature = "full")]
+        0x223 => true,
+        #[cfg(feature = "full")]
+        0x224 => true,
+        #[cfg(feature = "full")]
+        0x225 => true,
+        #[cfg(feature = "full")]
+        0x226 => true,
+        #[cfg(feature = "full")]
+        0x227 => true,
+        #[cfg(feature = "full")]
+        0x228 => true,
+        #[cfg(feature = "full")]
+        0x229 => true,
+        #[cfg(feature = "full")]
+        0x22a => true,
+        #[cfg(feature = "full")]
+        0x22b => true,
+        #[cfg(feature = "full")]
+        0x22c => true,
+        #[cfg(feature = "full")]
+        0x22d => true,
+        #[cfg(feature = "full")]
+        0x22e => true,
+        #[cfg(feature = "full")]
+        0x22f => true,
+        #[cfg(feature = "full")]
+        0x230 => true,
+        #[cfg(feature = "full")]
+        0x231 => true,
+        #[cfg(feature = "full")]
+        0x232 => true,
+        #[cfg(feature = "full")]
+        0x233 => true,
+        #[cfg(feature = "full")]
+        0x234 => true,
+        #[cfg(feature = "full")]
+        0x235 => true,
+        #[cfg(feature = "full")]
+        0x236 => true,
+        #[cfg(feature = "full")]
+        0x237 => true,
+        #[cfg(feature = "full")]
+        0x238 => true,
+        #[cfg(feature = "full")]
+        0x239 => true,
+        #[cfg(feature = "full")]
+        0x23a => true,
+        #[cfg(feature = "full")]
+        0x23b => true,
+        #[cfg(feature = "full")]
+        0x23c => true,
+        #[cfg(feature = "full")]
+        0x23d => true,
+        #[cfg(feature = "full")]
+        0x23e => true,
+        #[cfg(feature = "full")]
+        0x23f => true,
+        #[cfg(feature = "full")]
+        0x240 => true,
+        #[cfg(feature = "full")]
+        0x241 => true,
+        #[cfg(feature = "full")]
+        0x242 => true,
+        #[cfg(feature = "full")]
+        0x243 => true,
+        #[cfg(feature = "full")]
+        0x244 => true,
+        #[cfg(feature = "full")]
+        0x245 => true,
+        #[cfg(feature = "full")]
+        0x246 => true,
+        #[cfg(feature = "full")]
+        0x247 => true,
+        #[cfg(feature = "full")]
+        0x248 => true,
+        #[cfg(feature = "full")]
+        0x249 => true,
+        #[cfg(feature = "full")]
+        0x24a => true,
+        #[cfg(feature = "full")]
+        0x24b => true,
+        #[cfg(feature = "full")]
+        0x24c => true,
+        #[cfg(feature = "full")]
+        0x24d => true,
+        #[cfg(feature = "full")]
+        0x24e => true,
+        #[cfg(feature = "full")]
+        0x24f => true,
+        #[cfg(feature = "full")]
+        0x250 => true,
+        #[cfg(feature = "full")]
+        0x251 => true,
+        #[cfg(feature = "full")]
+        0x252 => true,
+        #[cfg(feature = "full")]
+        0x253 => true,
+        #[cfg(feature = "full")]
+        0x254 => true,
+        #[cfg(feature = "full")]
+        0x255 => true,
+        #[cfg(feature = "full")]
+        0x256 => true,
+        #[cfg(feature = "full")]
+        0x257 => true,
+        #[cfg(feature = "full")]
+        0x258 => true,
+        #[cfg(feature = "full")]
+        0x259 => true,
+        #[cfg(feature = "full")]
+        0x25a => true,
+        #[cfg(feature = "full")]
+        0x25b => true,
+        #[cfg(feature = "full")]
+        0x25c => true,
+        #[cfg(feature = "full")]
+        0x25d => true,
+        #[cfg(feature = "full")]
+        0x25e => true,
+        #[cfg(feature = "full")]
+        0x25f => true,
+        #[cfg(feature = "full")]
+        0x260 => true,
+        #[cfg(feature = "full")]
+        0x261 => true,
+        #[cfg(feature = "full")]
+        0x262 => true,
+        #[cfg(feature = "full")]
+        0x263 => true,
+        #[cfg(feature = "full")]
+        0x264 => true,
+        #[cfg(feature = "full")]
+        0x265 => true,
+        #[cfg(feature = "full")]
+        0x266 => true,
+        #[cfg(feature = "full")]
+        0x267 => true,
+        #[cfg(feature = "full")]
+        0x268 => true,
+        #[cfg(feature = "full")]
+        0x269 => true,
+        #[cfg(feature = "full")]
+        0x26a => true,
+        #[cfg(feature = "full")]
+        0x26b => true,
+        #[cfg(feature = "full")]
+        0x26c => true,
+        #[cfg(feature = "full")]
+        0x26d => true,
+        #[cfg(feature = "full")]
+        0x26e => true,
+        #[cfg(feature = "full")]
+        0x26f => true,
+        #[cfg(feature = "full")]
+        0x270 => true,
+        #[cfg(feature = "full")]
+        0x271 => true,
+        #[cfg(feature = "full")]
+        0x272 => true,
+        #[cfg(feature = "full")]
+        0x273 => true,
+        #[cfg(feature = "full")]
+        0x274 => true,
+        #[cfg(feature = "full")]
+        0x275 => true,
+        #[cfg(feature = "full")]
+        0x276 => true,
+        #[cfg(feature = "full")]
+        0x277 => true,
+        #[cfg(feature = "full")]
+        0x278 => true,
+        #[cfg(feature = "full")]
+        0x279 => true,
+        #[cfg(feature = "full")]
+        0x27a => true,
+        #[cfg(feature = "full")]
+        0x27b => true,
+        #[cfg(feature = "full")]
+        0x27c => true,
+        #[cfg(feature = "full")]
+        0x27d => true,
+        #[cfg(feature = "full")]
+        0x27e => true,
+        #[cfg(feature = "full")]
+        0x27f => true,
+        #[cfg(feature = "full")]
+        0x280 => true,
+        #[cfg(feature = "full")]
+        0x281 => true,
+        #[cfg(feature = "full")]
+        0x282 => true,
+        #[cfg(feature = "full")]
+        0x283 => true,
+        #[cfg(feature = "full")]
+        0x284 => true,
+        #[cfg(feature = "full")]
+        0x285 => true,
+        #[cfg(feature = "full")]
+        0x286 => true,
+        #[cfg(feature = "full")]
+        0x287 => true,
+        #[cfg(feature = "full")]
+        0x288 => true,
+        #[cfg(feature = "full")]
+        0x289 => true,
+        #[cfg(feature = "full")]
+        0x28a => true,
+        #[cfg(feature = "full")]
+        0x28b => true,
+        #[cfg(feature = "full")]
+        0x28c => true,
+        #[cfg(feature = "full")]
+        0x28d => true,
+        #[cfg(feature = "full")]
+        0x28e => true,
+        #[cfg(feature = "full")]
+        0x28f => true,
+        #[cfg(feature = "full")]
+        0x290 => true,
+        #[cfg(feature = "full")]
+        0x291 => true,
+        #[cfg(feature = "full")]
+        0x292 => true,
+        #[cfg(feature = "full")]
+        0x293 => true,
+        #[cfg(feature = "full")]
+        0x294 => true,
+        #[cfg(feature = "full")]
+        0x295 => true,
+        #[cfg(feature = "full")]
+        0x296 => true,
+        #[cfg(feature = "full")]
+        0x297 => true,
+        #[cfg(feature = "full")]
+        0x298 => true,
+        #[cfg(feature = "full")]
+        0x299 => true,
+        #[cfg(feature = "full")]
+        0x29a => true,
+        #[cfg(feature = "full")]
+        0x29b => true,
+        #[cfg(feature = "full")]
+        0x29c => true,
+        #[cfg(feature = "full")]
+        0x29d => true,
+        #[cfg(feature = "full")]
+        0x29e => true,
+        #[cfg(feature = "full")]
+        0x29f => true,
+        #[cfg(feature = "full")]
+        0x2a0 => true,
+        #[cfg(feature = "full")]
+        0x2a1 => true,
+        #[cfg(feature = "full")]
+        0x2a2 => true,
+        #[cfg(feature = "full")]
+        0x2a3 => true,
+        #[cfg(feature = "full")]
+        0x2a4 => true,
+        #[cfg(feature = "full")]
+        0x2a5 => true,
+        #[cfg(feature = "full")]
+        0x2a6 => xs_p2a6(cp as u8),
+        #[cfg(feature = "full")]
+        0x2a7 => true,
+        #[cfg(feature = "full")]
+        0x2a8 => true,
+        #[cfg(feature = "full")]
+        0x2a9 => true,
+        #[cfg(feature = "full")]
+        0x2aa => true,
+        #[cfg(feature = "full")]
+        0x2ab => true,
+        #[cfg(feature = "full")]
+        0x2ac => true,
+        #[cfg(feature = "full")]
+        0x2ad => true,
+        #[cfg(feature = "full")]
+        0x2ae => true,
+        #[cfg(feature = "full")]
+        0x2af => true,
+        #[cfg(feature = "full")]
+        0x2b0 => true,
+        #[cfg(feature = "full")]
+        0x2b1 => true,
+        #[cfg(feature = "full")]
+        0x2b2 => true,
+        #[cfg(feature = "full")]
+        0x2b3 => true,
+        #[cfg(feature = "full")]
+        0x2b4 => true,
+        #[cfg(feature = "full")]
+        0x2b5 => true,
+        #[cfg(feature = "full")]
+        0x2b6 => true,
+        #[cfg(feature = "full")]
+        0x2b7 => true,
+        #[cfg(feature = "full")]
+        0x2b8 => xs_p2b8(cp as u8),
+        #[cfg(feature = "full")]
+        0x2b9 => true,
+        #[cfg(feature = "full")]
+        0x2ba => true,
+        #[cfg(feature = "full")]
+        0x2bb => true,
+        #[cfg(feature = "full")]
+        0x2bc => true,
+        #[cfg(feature = "full")]
+        0x2bd => true,
+        #[cfg(feature = "full")]
+        0x2be => true,
+        #[cfg(feature = "full")]
+        0x2bf => true,
+        #[cfg(feature = "full")]
+        0x2c0 => true,
+        #[cfg(feature = "full")]
+        0x2c1 => true,
+        #[cfg(feature = "full")]
+        0x2c2 => true,
+        #[cfg(feature = "full")]
+        0x2c3 => true,
+        #[cfg(feature = "full")]
+        0x2c4 => true,
+        #[cfg(feature = "full")]
+        0x2c5 => true,
+        #[cfg(feature = "full")]
+        0x2c6 => true,
+        #[cfg(feature = "full")]
+        0x2c7 => true,
+        #[cfg(feature = "full")]
+        0x2c8 => true,
+        #[cfg(feature = "full")]
+        0x2c9 => true,
+        #[cfg(feature = "full")]
+        0x2ca => true,
+        #[cfg(feature = "full")]
+        0x2cb => true,
+        #[cfg(feature = "full")]
+        0x2cc => true,
+        #[cfg(feature = "full")]
+        0x2cd => true,
+        #[cfg(feature = "full")]
+        0x2ce => xs_p2ce(cp as u8),
+        #[cfg(feature = "full")]
+        0x2cf => true,
+        #[cfg(feature = "full")]
+        0x2d0 => true,
+        #[cfg(feature = "full")]
+        0x2d1 => true,
+        #[cfg(feature = "full")]
+        0x2d2 => true,
+        #[cfg(feature = "full")]
+        0x2d3 => true,
+        #[cfg(feature = "full")]
+        0x2d4 => true,
+        #[cfg(feature = "full")]
+        0x2d5 => true,
+        #[cfg(feature = "full")]
+        0x2d6 => true,
+        #[cfg(feature = "full")]
+        0x2d7 => true,
+        #[cfg(feature = "full")]
+        0x2d8 => true,
+        #[cfg(feature = "full")]
+        0x2d9 => true,
+        #[cfg(feature = "full")]
+        0x2da => true,
+        #[cfg(feature = "full")]
+        0x2db => true,
+        #[cfg(feature = "full")]
+        0x2dc => true,
+        #[cfg(feature = "full")]
+        0x2dd => true,
+        #[cfg(feature = "full")]
+        0x2de => true,
+        #[cfg(feature = "full")]
+        0x2df => true,
+        #[cfg(feature = "full")]
+        0x2e0 => true,
+        #[cfg(feature = "full")]
+        0x2e1 => true,
+        #[cfg(feature = "full")]
+        0x2e2 => true,
+        #[cfg(feature = "full")]
+        0x2e3 => true,
+        #[cfg(feature = "full")]
+        0x2e4 => true,
+        #[cfg(feature = "full")]
+        0x2e5 => true,
+        #[cfg(feature = "full")]
+        0x2e6 => true,
+        #[cfg(feature = "full")]
+        0x2e7 => true,
+        #[cfg(feature = "full")]
+        0x2e8 => true,
+        #[cfg(feature = "full")]
+        0x2e9 => true,
+        #[cfg(feature = "full")]
+        0x2ea => true,
+        #[cfg(feature = "full")]
+        0x2eb => xs_p2eb(cp as u8),
+        #[cfg(feature = "full")]
+        0x2ec => true,
+        #[cfg(feature = "full")]
+        0x2ed => true,
+        #[cfg(feature = "full")]
+        0x2ee => xs_p2ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x2f8 => true,
+        #[cfg(feature = "full")]
+        0x2f9 => true,
+        #[cfg(feature = "full")]
+        0x2fa => xs_p2fa(cp as u8),
+        #[cfg(feature = "full")]
+        0x300 => true,
+        #[cfg(feature = "full")]
+        0x301 => true,
+        #[cfg(feature = "full")]
+        0x302 => true,
+        #[cfg(feature = "full")]
+        0x303 => true,
+        #[cfg(feature = "full")]
+        0x304 => true,
+        #[cfg(feature = "full")]
+        0x305 => true,
+        #[cfg(feature = "full")]
+        0x306 => true,
+        #[cfg(feature = "full")]
+        0x307 => true,
+        #[cfg(feature = "full")]
+        0x308 => true,
+        #[cfg(feature = "full")]
+        0x309 => true,
+        #[cfg(feature = "full")]
+        0x30a => true,
+        #[cfg(feature = "full")]
+        0x30b => true,
+        #[cfg(feature = "full")]
+        0x30c => true,
+        #[cfg(feature = "full")]
+        0x30d => true,
+        #[cfg(feature = "full")]
+        0x30e => true,
+        #[cfg(feature = "full")]
+        0x30f => true,
+        #[cfg(feature = "full")]
+        0x310 => true,
+        #[cfg(feature = "full")]
+        0x311 => true,
+        #[cfg(feature = "full")]
+        0x312 => true,
+        #[cfg(feature = "full")]
+        0x313 => xs_p313(cp as u8),
+        #[cfg(feature = "full")]
+        0x314 => true,
+        #[cfg(feature = "full")]
+        0x315 => true,
+        #[cfg(feature = "full")]
+        0x316 => true,
+        #[cfg(feature = "full")]
+        0x317 => true,
+        #[cfg(feature = "full")]
+        0x318 => true,
+        #[cfg(feature = "full")]
+        0x319 => true,
+        #[cfg(feature = "full")]
+        0x31a => true,
+        #[cfg(feature = "full")]
+        0x31b => true,
+        #[cfg(feature = "full")]
+        0x31c => true,
+        #[cfg(feature = "full")]
+        0x31d => true,
+        #[cfg(feature = "full")]
+        0x31e => true,
+        #[cfg(feature = "full")]
+        0x31f => true,
+        #[cfg(feature = "full")]
+        0x320 => true,
+        #[cfg(feature = "full")]
+        0x321 => true,
+        #[cfg(feature = "full")]
+        0x322 => true,
+        #[cfg(feature = "full")]
+        0x323 => true,
+        #[cfg(feature = "full")]
+        0x324 => true,
+        #[cfg(feature = "full")]
+        0x325 => true,
+        #[cfg(feature = "full")]
+        0x326 => true,
+        #[cfg(feature = "full")]
+        0x327 => true,
+        #[cfg(feature = "full")]
+        0x328 => true,
+        #[cfg(feature = "full")]
+        0x329 => true,
+        #[cfg(feature = "full")]
+        0x32a => true,
+        #[cfg(feature = "full")]
+        0x32b => true,
+        #[cfg(feature = "full")]
+        0x32c => true,
+        #[cfg(feature = "full")]
+        0x32d => true,
+        #[cfg(feature = "full")]
+        0x32e => true,
+        #[cfg(feature = "full")]
+        0x32f => true,
+        #[cfg(feature = "full")]
+        0x330 => true,
+        #[cfg(feature = "full")]
+        0x331 => true,
+        #[cfg(feature = "full")]
+        0x332 => true,
+        #[cfg(feature = "full")]
+        0x333 => true,
+        #[cfg(feature = "full")]
+        0x334 => xs_p334(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn xs_p0(b: u8) -> bool {
+    match b {
+        0x41..=0x5a => true,
+        0x61..=0x7a => true,
+        #[cfg(feature = "latin1")]
+        0xaa => true,
+        #[cfg(feature = "latin1")]
+        0xb5 => true,
+        #[cfg(feature = "latin1")]
+        0xba => true,
+        #[cfg(feature = "latin1")]
+        0xc0..=0xd6 => true,
+        #[cfg(feature = "latin1")]
+        0xd8..=0xf6 => true,
+        #[cfg(feature = "latin1")]
+        0xf8..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p2(b: u8) -> bool {
+    match b {
+        0x00..=0xc1 => true,
+        0xc6..=0xd1 => true,
+        0xe0..=0xe4 => true,
+        0xec => true,
+        0xee => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p3(b: u8) -> bool {
+    match b {
+        0x70..=0x74 => true,
+        0x76..=0x77 => true,
+        0x7b..=0x7d => true,
+        0x7f => true,
+        0x86 => true,
+        0x88..=0x8a => true,
+        0x8c => true,
+        0x8e..=0xa1 => true,
+        0xa3..=0xf5 => true,
+        0xf7..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p4(b: u8) -> bool {
+    match b {
+        0x00..=0x81 => true,
+        0x8a..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p5(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x31..=0x56 => true,
+        0x59 => true,
+        0x60..=0x88 => true,
+        0xd0..=0xea => true,
+        0xef..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p6(b: u8) -> bool {
+    match b {
+        0x20..=0x4a => true,
+        0x6e..=0x6f => true,
+        0x71..=0xd3 => true,
+        0xd5 => true,
+        0xe5..=0xe6 => true,
+        0xee..=0xef => true,
+        0xfa..=0xfc => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p7(b: u8) -> bool {
+    match b {
+        0x10 => true,
+        0x12..=0x2f => true,
+        0x4d..=0xa5 => true,
+        0xb1 => true,
+        0xca..=0xea => true,
+        0xf4..=0xf5 => true,
+        0xfa => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p8(b: u8) -> bool {
+    match b {
+        0x00..=0x15 => true,
+        0x1a => true,
+        0x24 => true,
+        0x28 => true,
+        0x40..=0x58 => true,
+        0x60..=0x6a => true,
+        0x70..=0x87 => true,
+        0x89..=0x8f => true,
+        0xa0..=0xc9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p9(b: u8) -> bool {
+    match b {
+        0x04..=0x39 => true,
+        0x3d => true,
+        0x50 => true,
+        0x58..=0x61 => true,
+        0x71..=0x80 => true,
+        0x85..=0x8c => true,
+        0x8f..=0x90 => true,
+        0x93..=0xa8 => true,
+        0xaa..=0xb0 => true,
+        0xb2 => true,
+        0xb6..=0xb9 => true,
+        0xbd => true,
+        0xce => true,
+        0xdc..=0xdd => true,
+        0xdf..=0xe1 => true,
+        0xf0..=0xf1 => true,
+        0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pa(b: u8) -> bool {
+    match b {
+        0x05..=0x0a => true,
+        0x0f..=0x10 => true,
+        0x13..=0x28 => true,
+        0x2a..=0x30 => true,
+        0x32..=0x33 => true,
+        0x35..=0x36 => true,
+        0x38..=0x39 => true,
+        0x59..=0x5c => true,
+        0x5e => true,
+        0x72..=0x74 => true,
+        0x85..=0x8d => true,
+        0x8f..=0x91 => true,
+        0x93..=0xa8 => true,
+        0xaa..=0xb0 => true,
+        0xb2..=0xb3 => true,
+        0xb5..=0xb9 => true,
+        0xbd => true,
+        0xd0 => true,
+        0xe0..=0xe1 => true,
+        0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pb(b: u8) -> bool {
+    match b {
+        0x05..=0x0c => true,
+        0x0f..=0x10 => true,
+        0x13..=0x28 => true,
+        0x2a..=0x30 => true,
+        0x32..=0x33 => true,
+        0x35..=0x39 => true,
+        0x3d => true,
+        0x5c..=0x5d => true,
+        0x5f..=0x61 => true,
+        0x71 => true,
+        0x83 => true,
+        0x85..=0x8a => true,
+        0x8e..=0x90 => true,
+        0x92..=0x95 => true,
+        0x99..=0x9a => true,
+        0x9c => true,
+        0x9e..=0x9f => true,
+        0xa3..=0xa4 => true,
+        0xa8..=0xaa => true,
+        0xae..=0xb9 => true,
+        0xd0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pc(b: u8) -> bool {
+    match b {
+        0x05..=0x0c => true,
+        0x0e..=0x10 => true,
+        0x12..=0x28 => true,
+        0x2a..=0x39 => true,
+        0x3d => true,
+        0x58..=0x5a => true,
+        0x5c..=0x5d => true,
+        0x60..=0x61 => true,
+        0x80 => true,
+        0x85..=0x8c => true,
+        0x8e..=0x90 => true,
+        0x92..=0xa8 => true,
+        0xaa..=0xb3 => true,
+        0xb5..=0xb9 => true,
+        0xbd => true,
+        0xdc..=0xde => true,
+        0xe0..=0xe1 => true,
+        0xf1..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pd(b: u8) -> bool {
+    match b {
+        0x04..=0x0c => true,
+        0x0e..=0x10 => true,
+        0x12..=0x3a => true,
+        0x3d => true,
+        0x4e => true,
+        0x54..=0x56 => true,
+        0x5f..=0x61 => true,
+        0x7a..=0x7f => true,
+        0x85..=0x96 => true,
+        0x9a..=0xb1 => true,
+        0xb3..=0xbb => true,
+        0xbd => true,
+        0xc0..=0xc6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pe(b: u8) -> bool {
+    match b {
+        0x01..=0x30 => true,
+        0x32 => true,
+        0x40..=0x46 => true,
+        0x81..=0x82 => true,
+        0x84 => true,
+        0x86..=0x8a => true,
+        0x8c..=0xa3 => true,
+        0xa5 => true,
+        0xa7..=0xb0 => true,
+        0xb2 => true,
+        0xbd => true,
+        0xc0..=0xc4 => true,
+        0xc6 => true,
+        0xdc..=0xdf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pf(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x40..=0x47 => true,
+        0x49..=0x6c => true,
+        0x88..=0x8c => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p10(b: u8) -> bool {
+    match b {
+        0x00..=0x2a => true,
+        0x3f => true,
+        0x50..=0x55 => true,
+        0x5a..=0x5d => true,
+        0x61 => true,
+        0x65..=0x66 => true,
+        0x6e..=0x70 => true,
+        0x75..=0x81 => true,
+        0x8e => true,
+        0xa0..=0xc5 => true,
+        0xc7 => true,
+        0xcd => true,
+        0xd0..=0xfa => true,
+        0xfc..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p12(b: u8) -> bool {
+    match b {
+        0x00..=0x48 => true,
+        0x4a..=0x4d => true,
+        0x50..=0x56 => true,
+        0x58 => true,
+        0x5a..=0x5d => true,
+        0x60..=0x88 => true,
+        0x8a..=0x8d => true,
+        0x90..=0xb0 => true,
+        0xb2..=0xb5 => true,
+        0xb8..=0xbe => true,
+        0xc0 => true,
+        0xc2..=0xc5 => true,
+        0xc8..=0xd6 => true,
+        0xd8..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p13(b: u8) -> bool {
+    match b {
+        0x00..=0x10 => true,
+        0x12..=0x15 => true,
+        0x18..=0x5a => true,
+        0x80..=0x8f => true,
+        0xa0..=0xf5 => true,
+        0xf8..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p14(b: u8) -> bool {
+    match b {
+        0x01..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p16(b: u8) -> bool {
+    match b {
+        0x00..=0x6c => true,
+        0x6f..=0x7f => true,
+        0x81..=0x9a => true,
+        0xa0..=0xea => true,
+        0xee..=0xf8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p17(b: u8) -> bool {
+    match b {
+        0x00..=0x11 => true,
+        0x1f..=0x31 => true,
+        0x40..=0x51 => true,
+        0x60..=0x6c => true,
+        0x6e..=0x70 => true,
+        0x80..=0xb3 => true,
+        0xd7 => true,
+        0xdc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p18(b: u8) -> bool {
+    match b {
+        0x20..=0x78 => true,
+        0x80..=0xa8 => true,
+        0xaa => true,
+        0xb0..=0xf5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p19(b: u8) -> bool {
+    match b {
+        0x00..=0x1e => true,
+        0x50..=0x6d => true,
+        0x70..=0x74 => true,
+        0x80..=0xab => true,
+        0xb0..=0xc9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p1a(b: u8) -> bool {
+    match b {
+        0x00..=0x16 => true,
+        0x20..=0x54 => true,
+        0xa7 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p1b(b: u8) -> bool {
+    match b {
+        0x05..=0x33 => true,
+        0x45..=0x4c => true,
+        0x83..=0xa0 => true,
+        0xae..=0xaf => true,
+        0xba..=0xe5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p1c(b: u8) -> bool {
+    match b {
+        0x00..=0x23 => true,
+        0x4d..=0x4f => true,
+        0x5a..=0x7d => true,
+        0x80..=0x8a => true,
+        0x90..=0xba => true,
+        0xbd..=0xbf => true,
+        0xe9..=0xec => true,
+        0xee..=0xf3 => true,
+        0xf5..=0xf6 => true,
+        0xfa => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p1d(b: u8) -> bool {
+    match b {
+        0x00..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p1f(b: u8) -> bool {
+    match b {
+        0x00..=0x15 => true,
+        0x18..=0x1d => true,
+        0x20..=0x45 => true,
+        0x48..=0x4d => true,
+        0x50..=0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f..=0x7d => true,
+        0x80..=0xb4 => true,
+        0xb6..=0xbc => true,
+        0xbe => true,
+        0xc2..=0xc4 => true,
+        0xc6..=0xcc => true,
+        0xd0..=0xd3 => true,
+        0xd6..=0xdb => true,
+        0xe0..=0xec => true,
+        0xf2..=0xf4 => true,
+        0xf6..=0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p20(b: u8) -> bool {
+    match b {
+        0x71 => true,
+        0x7f => true,
+        0x90..=0x9c => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p21(b: u8) -> bool {
+    match b {
+        0x02 => true,
+        0x07 => true,
+        0x0a..=0x13 => true,
+        0x15 => true,
+        0x18..=0x1d => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a..=0x39 => true,
+        0x3c..=0x3f => true,
+        0x45..=0x49 => true,
+        0x4e => true,
+        0x60..=0x88 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p2c(b: u8) -> bool {
+    match b {
+        0x00..=0xe4 => true,
+        0xeb..=0xee => true,
+        0xf2..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p2d(b: u8) -> bool {
+    match b {
+        0x00..=0x25 => true,
+        0x27 => true,
+        0x2d => true,
+        0x30..=0x67 => true,
+        0x6f => true,
+        0x80..=0x96 => true,
+        0xa0..=0xa6 => true,
+        0xa8..=0xae => true,
+        0xb0..=0xb6 => true,
+        0xb8..=0xbe => true,
+        0xc0..=0xc6 => true,
+        0xc8..=0xce => true,
+        0xd0..=0xd6 => true,
+        0xd8..=0xde => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p30(b: u8) -> bool {
+    match b {
+        0x05..=0x07 => true,
+        0x21..=0x29 => true,
+        0x31..=0x35 => true,
+        0x38..=0x3c => true,
+        0x41..=0x96 => true,
+        0x9d..=0x9f => true,
+        0xa1..=0xfa => true,
+        0xfc..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p31(b: u8) -> bool {
+    match b {
+        0x05..=0x2f => true,
+        0x31..=0x8e => true,
+        0xa0..=0xbf => true,
+        0xf0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_p4d(b: u8) -> bool {
+    match b {
+        0x00..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pa4(b: u8) -> bool {
+    match b {
+        0x00..=0x8c => true,
+        0xd0..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pa6(b: u8) -> bool {
+    match b {
+        0x00..=0x0c => true,
+        0x10..=0x1f => true,
+        0x2a..=0x2b => true,
+        0x40..=0x6e => true,
+        0x7f..=0x9d => true,
+        0xa0..=0xef => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pa7(b: u8) -> bool {
+    match b {
+        0x17..=0x1f => true,
+        0x22..=0x88 => true,
+        0x8b..=0xdc => true,
+        0xf1..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pa8(b: u8) -> bool {
+    match b {
+        0x00..=0x01 => true,
+        0x03..=0x05 => true,
+        0x07..=0x0a => true,
+        0x0c..=0x22 => true,
+        0x40..=0x73 => true,
+        0x82..=0xb3 => true,
+        0xf2..=0xf7 => true,
+        0xfb => true,
+        0xfd..=0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pa9(b: u8) -> bool {
+    match b {
+        0x0a..=0x25 => true,
+        0x30..=0x46 => true,
+        0x60..=0x7c => true,
+        0x84..=0xb2 => true,
+        0xcf => true,
+        0xe0..=0xe4 => true,
+        0xe6..=0xef => true,
+        0xfa..=0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_paa(b: u8) -> bool {
+    match b {
+        0x00..=0x28 => true,
+        0x40..=0x42 => true,
+        0x44..=0x4b => true,
+        0x60..=0x76 => true,
+        0x7a => true,
+        0x7e..=0xaf => true,
+        0xb1 => true,
+        0xb5..=0xb6 => true,
+        0xb9..=0xbd => true,
+        0xc0 => true,
+        0xc2 => true,
+        0xdb..=0xdd => true,
+        0xe0..=0xea => true,
+        0xf2..=0xf4 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pab(b: u8) -> bool {
+    match b {
+        0x01..=0x06 => true,
+        0x09..=0x0e => true,
+        0x11..=0x16 => true,
+        0x20..=0x26 => true,
+        0x28..=0x2e => true,
+        0x30..=0x5a => true,
+        0x5c..=0x69 => true,
+        0x70..=0xe2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pd7(b: u8) -> bool {
+    match b {
+        0x00..=0xa3 => true,
+        0xb0..=0xc6 => true,
+        0xcb..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pfa(b: u8) -> bool {
+    match b {
+        0x00..=0x6d => true,
+        0x70..=0xd9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pfb(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x13..=0x17 => true,
+        0x1d => true,
+        0x1f..=0x28 => true,
+        0x2a..=0x36 => true,
+        0x38..=0x3c => true,
+        0x3e => true,
+        0x40..=0x41 => true,
+        0x43..=0x44 => true,
+        0x46..=0xb1 => true,
+        0xd3..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pfc(b: u8) -> bool {
+    match b {
+        0x00..=0x5d => true,
+        0x64..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pfd(b: u8) -> bool {
+    match b {
+        0x00..=0x3d => true,
+        0x50..=0x8f => true,
+        0x92..=0xc7 => true,
+        0xf0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pfe(b: u8) -> bool {
+    match b {
+        0x71 => true,
+        0x73 => true,
+        0x77 => true,
+        0x79 => true,
+        0x7b => true,
+        0x7d => true,
+        0x7f..=0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xs_pff(b: u8) -> bool {
+    match b {
+        0x21..=0x3a => true,
+        0x41..=0x5a => true,
+        0x66..=0x9d => true,
+        0xa0..=0xbe => true,
+        0xc2..=0xc7 => true,
+        0xca..=0xcf => true,
+        0xd2..=0xd7 => true,
+        0xda..=0xdc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p100(b: u8) -> bool {
+    match b {
+        0x00..=0x0b => true,
+        0x0d..=0x26 => true,
+        0x28..=0x3a => true,
+        0x3c..=0x3d => true,
+        0x3f..=0x4d => true,
+        0x50..=0x5d => true,
+        0x80..=0xfa => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p101(b: u8) -> bool {
+    match b {
+        0x40..=0x74 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p102(b: u8) -> bool {
+    match b {
+        0x80..=0x9c => true,
+        0xa0..=0xd0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p103(b: u8) -> bool {
+    match b {
+        0x00..=0x1f => true,
+        0x2d..=0x4a => true,
+        0x50..=0x75 => true,
+        0x80..=0x9d => true,
+        0xa0..=0xc3 => true,
+        0xc8..=0xcf => true,
+        0xd1..=0xd5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p104(b: u8) -> bool {
+    match b {
+        0x00..=0x9d => true,
+        0xb0..=0xd3 => true,
+        0xd8..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p105(b: u8) -> bool {
+    match b {
+        0x00..=0x27 => true,
+        0x30..=0x63 => true,
+        0x70..=0x7a => true,
+        0x7c..=0x8a => true,
+        0x8c..=0x92 => true,
+        0x94..=0x95 => true,
+        0x97..=0xa1 => true,
+        0xa3..=0xb1 => true,
+        0xb3..=0xb9 => true,
+        0xbb..=0xbc => true,
+        0xc0..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p107(b: u8) -> bool {
+    match b {
+        0x00..=0x36 => true,
+        0x40..=0x55 => true,
+        0x60..=0x67 => true,
+        0x80..=0x85 => true,
+        0x87..=0xb0 => true,
+        0xb2..=0xba => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p108(b: u8) -> bool {
+    match b {
+        0x00..=0x05 => true,
+        0x08 => true,
+        0x0a..=0x35 => true,
+        0x37..=0x38 => true,
+        0x3c => true,
+        0x3f..=0x55 => true,
+        0x60..=0x76 => true,
+        0x80..=0x9e => true,
+        0xe0..=0xf2 => true,
+        0xf4..=0xf5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p109(b: u8) -> bool {
+    match b {
+        0x00..=0x15 => true,
+        0x20..=0x39 => true,
+        0x40..=0x59 => true,
+        0x80..=0xb7 => true,
+        0xbe..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p10a(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x10..=0x13 => true,
+        0x15..=0x17 => true,
+        0x19..=0x35 => true,
+        0x60..=0x7c => true,
+        0x80..=0x9c => true,
+        0xc0..=0xc7 => true,
+        0xc9..=0xe4 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p10b(b: u8) -> bool {
+    match b {
+        0x00..=0x35 => true,
+        0x40..=0x55 => true,
+        0x60..=0x72 => true,
+        0x80..=0x91 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p10c(b: u8) -> bool {
+    match b {
+        0x00..=0x48 => true,
+        0x80..=0xb2 => true,
+        0xc0..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p10d(b: u8) -> bool {
+    match b {
+        0x00..=0x23 => true,
+        0x4a..=0x65 => true,
+        0x6f..=0x85 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p10e(b: u8) -> bool {
+    match b {
+        0x80..=0xa9 => true,
+        0xb0..=0xb1 => true,
+        0xc2..=0xc7 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p10f(b: u8) -> bool {
+    match b {
+        0x00..=0x1c => true,
+        0x27 => true,
+        0x30..=0x45 => true,
+        0x70..=0x81 => true,
+        0xb0..=0xc4 => true,
+        0xe0..=0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p110(b: u8) -> bool {
+    match b {
+        0x03..=0x37 => true,
+        0x71..=0x72 => true,
+        0x75 => true,
+        0x83..=0xaf => true,
+        0xd0..=0xe8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p111(b: u8) -> bool {
+    match b {
+        0x03..=0x26 => true,
+        0x44 => true,
+        0x47 => true,
+        0x50..=0x72 => true,
+        0x76 => true,
+        0x83..=0xb2 => true,
+        0xc1..=0xc4 => true,
+        0xda => true,
+        0xdc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p112(b: u8) -> bool {
+    match b {
+        0x00..=0x11 => true,
+        0x13..=0x2b => true,
+        0x3f..=0x40 => true,
+        0x80..=0x86 => true,
+        0x88 => true,
+        0x8a..=0x8d => true,
+        0x8f..=0x9d => true,
+        0x9f..=0xa8 => true,
+        0xb0..=0xde => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p113(b: u8) -> bool {
+    match b {
+        0x05..=0x0c => true,
+        0x0f..=0x10 => true,
+        0x13..=0x28 => true,
+        0x2a..=0x30 => true,
+        0x32..=0x33 => true,
+        0x35..=0x39 => true,
+        0x3d => true,
+        0x50 => true,
+        0x5d..=0x61 => true,
+        0x80..=0x89 => true,
+        0x8b => true,
+        0x8e => true,
+        0x90..=0xb5 => true,
+        0xb7 => true,
+        0xd1 => true,
+        0xd3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p114(b: u8) -> bool {
+    match b {
+        0x00..=0x34 => true,
+        0x47..=0x4a => true,
+        0x5f..=0x61 => true,
+        0x80..=0xaf => true,
+        0xc4..=0xc5 => true,
+        0xc7 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p115(b: u8) -> bool {
+    match b {
+        0x80..=0xae => true,
+        0xd8..=0xdb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p116(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x44 => true,
+        0x80..=0xaa => true,
+        0xb8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p117(b: u8) -> bool {
+    match b {
+        0x00..=0x1a => true,
+        0x40..=0x46 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p118(b: u8) -> bool {
+    match b {
+        0x00..=0x2b => true,
+        0xa0..=0xdf => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p119(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x09 => true,
+        0x0c..=0x13 => true,
+        0x15..=0x16 => true,
+        0x18..=0x2f => true,
+        0x3f => true,
+        0x41 => true,
+        0xa0..=0xa7 => true,
+        0xaa..=0xd0 => true,
+        0xe1 => true,
+        0xe3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p11a(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x0b..=0x32 => true,
+        0x3a => true,
+        0x50 => true,
+        0x5c..=0x89 => true,
+        0x9d => true,
+        0xb0..=0xf8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p11b(b: u8) -> bool {
+    match b {
+        0xc0..=0xe0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p11c(b: u8) -> bool {
+    match b {
+        0x00..=0x08 => true,
+        0x0a..=0x2e => true,
+        0x40 => true,
+        0x72..=0x8f => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p11d(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x08..=0x09 => true,
+        0x0b..=0x30 => true,
+        0x46 => true,
+        0x60..=0x65 => true,
+        0x67..=0x68 => true,
+        0x6a..=0x89 => true,
+        0x98 => true,
+        0xb0..=0xdb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p11e(b: u8) -> bool {
+    match b {
+        0xe0..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p11f(b: u8) -> bool {
+    match b {
+        0x02 => true,
+        0x04..=0x10 => true,
+        0x12..=0x33 => true,
+        0xb0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p123(b: u8) -> bool {
+    match b {
+        0x00..=0x99 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p124(b: u8) -> bool {
+    match b {
+        0x00..=0x6e => true,
+        0x80..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p125(b: u8) -> bool {
+    match b {
+        0x00..=0x43 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p12f(b: u8) -> bool {
+    match b {
+        0x90..=0xf0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p134(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x41..=0x46 => true,
+        0x60..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p143(b: u8) -> bool {
+    match b {
+        0x00..=0xfa => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p146(b: u8) -> bool {
+    match b {
+        0x00..=0x46 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p161(b: u8) -> bool {
+    match b {
+        0x00..=0x1d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p16a(b: u8) -> bool {
+    match b {
+        0x00..=0x38 => true,
+        0x40..=0x5e => true,
+        0x70..=0xbe => true,
+        0xd0..=0xed => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p16b(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x40..=0x43 => true,
+        0x63..=0x77 => true,
+        0x7d..=0x8f => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p16d(b: u8) -> bool {
+    match b {
+        0x40..=0x6c => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p16e(b: u8) -> bool {
+    match b {
+        0x40..=0x7f => true,
+        0xa0..=0xb8 => true,
+        0xbb..=0xd3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p16f(b: u8) -> bool {
+    match b {
+        0x00..=0x4a => true,
+        0x50 => true,
+        0x93..=0x9f => true,
+        0xe0..=0xe1 => true,
+        0xe3 => true,
+        0xf2..=0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p18c(b: u8) -> bool {
+    match b {
+        0x00..=0xd5 => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p18d(b: u8) -> bool {
+    match b {
+        0x00..=0x1e => true,
+        0x80..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1af(b: u8) -> bool {
+    match b {
+        0xf0..=0xf3 => true,
+        0xf5..=0xfb => true,
+        0xfd..=0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1b1(b: u8) -> bool {
+    match b {
+        0x00..=0x22 => true,
+        0x32 => true,
+        0x50..=0x52 => true,
+        0x55 => true,
+        0x64..=0x67 => true,
+        0x70..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1b2(b: u8) -> bool {
+    match b {
+        0x00..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1bc(b: u8) -> bool {
+    match b {
+        0x00..=0x6a => true,
+        0x70..=0x7c => true,
+        0x80..=0x88 => true,
+        0x90..=0x99 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1d4(b: u8) -> bool {
+    match b {
+        0x00..=0x54 => true,
+        0x56..=0x9c => true,
+        0x9e..=0x9f => true,
+        0xa2 => true,
+        0xa5..=0xa6 => true,
+        0xa9..=0xac => true,
+        0xae..=0xb9 => true,
+        0xbb => true,
+        0xbd..=0xc3 => true,
+        0xc5..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1d5(b: u8) -> bool {
+    match b {
+        0x00..=0x05 => true,
+        0x07..=0x0a => true,
+        0x0d..=0x14 => true,
+        0x16..=0x1c => true,
+        0x1e..=0x39 => true,
+        0x3b..=0x3e => true,
+        0x40..=0x44 => true,
+        0x46 => true,
+        0x4a..=0x50 => true,
+        0x52..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1d6(b: u8) -> bool {
+    match b {
+        0x00..=0xa5 => true,
+        0xa8..=0xc0 => true,
+        0xc2..=0xda => true,
+        0xdc..=0xfa => true,
+        0xfc..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1d7(b: u8) -> bool {
+    match b {
+        0x00..=0x14 => true,
+        0x16..=0x34 => true,
+        0x36..=0x4e => true,
+        0x50..=0x6e => true,
+        0x70..=0x88 => true,
+        0x8a..=0xa8 => true,
+        0xaa..=0xc2 => true,
+        0xc4..=0xcb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1df(b: u8) -> bool {
+    match b {
+        0x00..=0x1e => true,
+        0x25..=0x2a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e0(b: u8) -> bool {
+    match b {
+        0x30..=0x6d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e1(b: u8) -> bool {
+    match b {
+        0x00..=0x2c => true,
+        0x37..=0x3d => true,
+        0x4e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e2(b: u8) -> bool {
+    match b {
+        0x90..=0xad => true,
+        0xc0..=0xeb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e4(b: u8) -> bool {
+    match b {
+        0xd0..=0xeb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e5(b: u8) -> bool {
+    match b {
+        0xd0..=0xed => true,
+        0xf0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e6(b: u8) -> bool {
+    match b {
+        0xc0..=0xde => true,
+        0xe0..=0xe2 => true,
+        0xe4..=0xe5 => true,
+        0xe7..=0xed => true,
+        0xf0..=0xf4 => true,
+        0xfe..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e7(b: u8) -> bool {
+    match b {
+        0xe0..=0xe6 => true,
+        0xe8..=0xeb => true,
+        0xed..=0xee => true,
+        0xf0..=0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e8(b: u8) -> bool {
+    match b {
+        0x00..=0xc4 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1e9(b: u8) -> bool {
+    match b {
+        0x00..=0x43 => true,
+        0x4b => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p1ee(b: u8) -> bool {
+    match b {
+        0x00..=0x03 => true,
+        0x05..=0x1f => true,
+        0x21..=0x22 => true,
+        0x24 => true,
+        0x27 => true,
+        0x29..=0x32 => true,
+        0x34..=0x37 => true,
+        0x39 => true,
+        0x3b => true,
+        0x42 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d..=0x4f => true,
+        0x51..=0x52 => true,
+        0x54 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61..=0x62 => true,
+        0x64 => true,
+        0x67..=0x6a => true,
+        0x6c..=0x72 => true,
+        0x74..=0x77 => true,
+        0x79..=0x7c => true,
+        0x7e => true,
+        0x80..=0x89 => true,
+        0x8b..=0x9b => true,
+        0xa1..=0xa3 => true,
+        0xa5..=0xa9 => true,
+        0xab..=0xbb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p2a6(b: u8) -> bool {
+    match b {
+        0x00..=0xdf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p2b8(b: u8) -> bool {
+    match b {
+        0x00..=0x1d => true,
+        0x20..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p2ce(b: u8) -> bool {
+    match b {
+        0x00..=0xad => true,
+        0xb0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p2eb(b: u8) -> bool {
+    match b {
+        0x00..=0xe0 => true,
+        0xf0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p2ee(b: u8) -> bool {
+    match b {
+        0x00..=0x5d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p2fa(b: u8) -> bool {
+    match b {
+        0x00..=0x1d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p313(b: u8) -> bool {
+    match b {
+        0x00..=0x4a => true,
+        0x50..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xs_p334(b: u8) -> bool {
+    match b {
+        0x00..=0x79 => true,
+        _ => false,
+    }
+}
+
+#[inline]
+pub(crate) const fn xid_continue(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => xc_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => true,
+        #[cfg(feature = "bmp")]
+        0x002 => xc_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => xc_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => xc_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => xc_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => xc_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x007 => xc_p7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x008 => xc_p8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => xc_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => xc_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => xc_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => xc_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => xc_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => xc_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => xc_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => xc_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x011 => true,
+        #[cfg(feature = "bmp")]
+        0x012 => xc_p12(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => xc_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x014 => xc_p14(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x015 => true,
+        #[cfg(feature = "bmp")]
+        0x016 => xc_p16(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x017 => xc_p17(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x018 => xc_p18(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x019 => xc_p19(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01a => xc_p1a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => xc_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => xc_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => true,
+        #[cfg(feature = "bmp")]
+        0x01e => true,
+        #[cfg(feature = "bmp")]
+        0x01f => xc_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => xc_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => xc_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => xc_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => xc_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => xc_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x031 => xc_p31(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x034 => true,
+        #[cfg(feature = "bmp")]
+        0x035 => true,
+        #[cfg(feature = "bmp")]
+        0x036 => true,
+        #[cfg(feature = "bmp")]
+        0x037 => true,
+        #[cfg(feature = "bmp")]
+        0x038 => true,
+        #[cfg(feature = "bmp")]
+        0x039 => true,
+        #[cfg(feature = "bmp")]
+        0x03a => true,
+        #[cfg(feature = "bmp")]
+        0x03b => true,
+        #[cfg(feature = "bmp")]
+        0x03c => true,
+        #[cfg(feature = "bmp")]
+        0x03d => true,
+        #[cfg(feature = "bmp")]
+        0x03e => true,
+        #[cfg(feature = "bmp")]
+        0x03f => true,
+        #[cfg(feature = "bmp")]
+        0x040 => true,
+        #[cfg(feature = "bmp")]
+        0x041 => true,
+        #[cfg(feature = "bmp")]
+        0x042 => true,
+        #[cfg(feature = "bmp")]
+        0x043 => true,
+        #[cfg(feature = "bmp")]
+        0x044 => true,
+        #[cfg(feature = "bmp")]
+        0x045 => true,
+        #[cfg(feature = "bmp")]
+        0x046 => true,
+        #[cfg(feature = "bmp")]
+        0x047 => true,
+        #[cfg(feature = "bmp")]
+        0x048 => true,
+        #[cfg(feature = "bmp")]
+        0x049 => true,
+        #[cfg(feature = "bmp")]
+        0x04a => true,
+        #[cfg(feature = "bmp")]
+        0x04b => true,
+        #[cfg(feature = "bmp")]
+        0x04c => true,
+        #[cfg(feature = "bmp")]
+        0x04d => xc_p4d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x04e => true,
+        #[cfg(feature = "bmp")]
+        0x04f => true,
+        #[cfg(feature = "bmp")]
+        0x050 => true,
+        #[cfg(feature = "bmp")]
+        0x051 => true,
+        #[cfg(feature = "bmp")]
+        0x052 => true,
+        #[cfg(feature = "bmp")]
+        0x053 => true,
+        #[cfg(feature = "bmp")]
+        0x054 => true,
+        #[cfg(feature = "bmp")]
+        0x055 => true,
+        #[cfg(feature = "bmp")]
+        0x056 => true,
+        #[cfg(feature = "bmp")]
+        0x057 => true,
+        #[cfg(feature = "bmp")]
+        0x058 => true,
+        #[cfg(feature = "bmp")]
+        0x059 => true,
+        #[cfg(feature = "bmp")]
+        0x05a => true,
+        #[cfg(feature = "bmp")]
+        0x05b => true,
+        #[cfg(feature = "bmp")]
+        0x05c => true,
+        #[cfg(feature = "bmp")]
+        0x05d => true,
+        #[cfg(feature = "bmp")]
+        0x05e => true,
+        #[cfg(feature = "bmp")]
+        0x05f => true,
+        #[cfg(feature = "bmp")]
+        0x060 => true,
+        #[cfg(feature = "bmp")]
+        0x061 => true,
+        #[cfg(feature = "bmp")]
+        0x062 => true,
+        #[cfg(feature = "bmp")]
+        0x063 => true,
+        #[cfg(feature = "bmp")]
+        0x064 => true,
+        #[cfg(feature = "bmp")]
+        0x065 => true,
+        #[cfg(feature = "bmp")]
+        0x066 => true,
+        #[cfg(feature = "bmp")]
+        0x067 => true,
+        #[cfg(feature = "bmp")]
+        0x068 => true,
+        #[cfg(feature = "bmp")]
+        0x069 => true,
+        #[cfg(feature = "bmp")]
+        0x06a => true,
+        #[cfg(feature = "bmp")]
+        0x06b => true,
+        #[cfg(feature = "bmp")]
+        0x06c => true,
+        #[cfg(feature = "bmp")]
+        0x06d => true,
+        #[cfg(feature = "bmp")]
+        0x06e => true,
+        #[cfg(feature = "bmp")]
+        0x06f => true,
+        #[cfg(feature = "bmp")]
+        0x070 => true,
+        #[cfg(feature = "bmp")]
+        0x071 => true,
+        #[cfg(feature = "bmp")]
+        0x072 => true,
+        #[cfg(feature = "bmp")]
+        0x073 => true,
+        #[cfg(feature = "bmp")]
+        0x074 => true,
+        #[cfg(feature = "bmp")]
+        0x075 => true,
+        #[cfg(feature = "bmp")]
+        0x076 => true,
+        #[cfg(feature = "bmp")]
+        0x077 => true,
+        #[cfg(feature = "bmp")]
+        0x078 => true,
+        #[cfg(feature = "bmp")]
+        0x079 => true,
+        #[cfg(feature = "bmp")]
+        0x07a => true,
+        #[cfg(feature = "bmp")]
+        0x07b => true,
+        #[cfg(feature = "bmp")]
+        0x07c => true,
+        #[cfg(feature = "bmp")]
+        0x07d => true,
+        #[cfg(feature = "bmp")]
+        0x07e => true,
+        #[cfg(feature = "bmp")]
+        0x07f => true,
+        #[cfg(feature = "bmp")]
+        0x080 => true,
+        #[cfg(feature = "bmp")]
+        0x081 => true,
+        #[cfg(feature = "bmp")]
+        0x082 => true,
+        #[cfg(feature = "bmp")]
+        0x083 => true,
+        #[cfg(feature = "bmp")]
+        0x084 => true,
+        #[cfg(feature = "bmp")]
+        0x085 => true,
+        #[cfg(feature = "bmp")]
+        0x086 => true,
+        #[cfg(feature = "bmp")]
+        0x087 => true,
+        #[cfg(feature = "bmp")]
+        0x088 => true,
+        #[cfg(feature = "bmp")]
+        0x089 => true,
+        #[cfg(feature = "bmp")]
+        0x08a => true,
+        #[cfg(feature = "bmp")]
+        0x08b => true,
+        #[cfg(feature = "bmp")]
+        0x08c => true,
+        #[cfg(feature = "bmp")]
+        0x08d => true,
+        #[cfg(feature = "bmp")]
+        0x08e => true,
+        #[cfg(feature = "bmp")]
+        0x08f => true,
+        #[cfg(feature = "bmp")]
+        0x090 => true,
+        #[cfg(feature = "bmp")]
+        0x091 => true,
+        #[cfg(feature = "bmp")]
+        0x092 => true,
+        #[cfg(feature = "bmp")]
+        0x093 => true,
+        #[cfg(feature = "bmp")]
+        0x094 => true,
+        #[cfg(feature = "bmp")]
+        0x095 => true,
+        #[cfg(feature = "bmp")]
+        0x096 => true,
+        #[cfg(feature = "bmp")]
+        0x097 => true,
+        #[cfg(feature = "bmp")]
+        0x098 => true,
+        #[cfg(feature = "bmp")]
+        0x099 => true,
+        #[cfg(feature = "bmp")]
+        0x09a => true,
+        #[cfg(feature = "bmp")]
+        0x09b => true,
+        #[cfg(feature = "bmp")]
+        0x09c => true,
+        #[cfg(feature = "bmp")]
+        0x09d => true,
+        #[cfg(feature = "bmp")]
+        0x09e => true,
+        #[cfg(feature = "bmp")]
+        0x09f => true,
+        #[cfg(feature = "bmp")]
+        0x0a0 => true,
+        #[cfg(feature = "bmp")]
+        0x0a1 => true,
+        #[cfg(feature = "bmp")]
+        0x0a2 => true,
+        #[cfg(feature = "bmp")]
+        0x0a3 => true,
+        #[cfg(feature = "bmp")]
+        0x0a4 => xc_pa4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a5 => true,
+        #[cfg(feature = "bmp")]
+        0x0a6 => xc_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => xc_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a8 => xc_pa8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a9 => xc_pa9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0aa => xc_paa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => xc_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ac => true,
+        #[cfg(feature = "bmp")]
+        0x0ad => true,
+        #[cfg(feature = "bmp")]
+        0x0ae => true,
+        #[cfg(feature = "bmp")]
+        0x0af => true,
+        #[cfg(feature = "bmp")]
+        0x0b0 => true,
+        #[cfg(feature = "bmp")]
+        0x0b1 => true,
+        #[cfg(feature = "bmp")]
+        0x0b2 => true,
+        #[cfg(feature = "bmp")]
+        0x0b3 => true,
+        #[cfg(feature = "bmp")]
+        0x0b4 => true,
+        #[cfg(feature = "bmp")]
+        0x0b5 => true,
+        #[cfg(feature = "bmp")]
+        0x0b6 => true,
+        #[cfg(feature = "bmp")]
+        0x0b7 => true,
+        #[cfg(feature = "bmp")]
+        0x0b8 => true,
+        #[cfg(feature = "bmp")]
+        0x0b9 => true,
+        #[cfg(feature = "bmp")]
+        0x0ba => true,
+        #[cfg(feature = "bmp")]
+        0x0bb => true,
+        #[cfg(feature = "bmp")]
+        0x0bc => true,
+        #[cfg(feature = "bmp")]
+        0x0bd => true,
+        #[cfg(feature = "bmp")]
+        0x0be => true,
+        #[cfg(feature = "bmp")]
+        0x0bf => true,
+        #[cfg(feature = "bmp")]
+        0x0c0 => true,
+        #[cfg(feature = "bmp")]
+        0x0c1 => true,
+        #[cfg(feature = "bmp")]
+        0x0c2 => true,
+        #[cfg(feature = "bmp")]
+        0x0c3 => true,
+        #[cfg(feature = "bmp")]
+        0x0c4 => true,
+        #[cfg(feature = "bmp")]
+        0x0c5 => true,
+        #[cfg(feature = "bmp")]
+        0x0c6 => true,
+        #[cfg(feature = "bmp")]
+        0x0c7 => true,
+        #[cfg(feature = "bmp")]
+        0x0c8 => true,
+        #[cfg(feature = "bmp")]
+        0x0c9 => true,
+        #[cfg(feature = "bmp")]
+        0x0ca => true,
+        #[cfg(feature = "bmp")]
+        0x0cb => true,
+        #[cfg(feature = "bmp")]
+        0x0cc => true,
+        #[cfg(feature = "bmp")]
+        0x0cd => true,
+        #[cfg(feature = "bmp")]
+        0x0ce => true,
+        #[cfg(feature = "bmp")]
+        0x0cf => true,
+        #[cfg(feature = "bmp")]
+        0x0d0 => true,
+        #[cfg(feature = "bmp")]
+        0x0d1 => true,
+        #[cfg(feature = "bmp")]
+        0x0d2 => true,
+        #[cfg(feature = "bmp")]
+        0x0d3 => true,
+        #[cfg(feature = "bmp")]
+        0x0d4 => true,
+        #[cfg(feature = "bmp")]
+        0x0d5 => true,
+        #[cfg(feature = "bmp")]
+        0x0d6 => true,
+        #[cfg(feature = "bmp")]
+        0x0d7 => xc_pd7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0f9 => true,
+        #[cfg(feature = "bmp")]
+        0x0fa => xc_pfa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => xc_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fc => xc_pfc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fd => xc_pfd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => xc_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => xc_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x100 => xc_p100(cp as u8),
+        #[cfg(feature = "full")]
+        0x101 => xc_p101(cp as u8),
+        #[cfg(feature = "full")]
+        0x102 => xc_p102(cp as u8),
+        #[cfg(feature = "full")]
+        0x103 => xc_p103(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => xc_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => xc_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x106 => true,
+        #[cfg(feature = "full")]
+        0x107 => xc_p107(cp as u8),
+        #[cfg(feature = "full")]
+        0x108 => xc_p108(cp as u8),
+        #[cfg(feature = "full")]
+        0x109 => xc_p109(cp as u8),
+        #[cfg(feature = "full")]
+        0x10a => xc_p10a(cp as u8),
+        #[cfg(feature = "full")]
+        0x10b => xc_p10b(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => xc_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => xc_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x10e => xc_p10e(cp as u8),
+        #[cfg(feature = "full")]
+        0x10f => xc_p10f(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => xc_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => xc_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x112 => xc_p112(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => xc_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => xc_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => xc_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x116 => xc_p116(cp as u8),
+        #[cfg(feature = "full")]
+        0x117 => xc_p117(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => xc_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => xc_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x11a => xc_p11a(cp as u8),
+        #[cfg(feature = "full")]
+        0x11b => xc_p11b(cp as u8),
+        #[cfg(feature = "full")]
+        0x11c => xc_p11c(cp as u8),
+        #[cfg(feature = "full")]
+        0x11d => xc_p11d(cp as u8),
+        #[cfg(feature = "full")]
+        0x11e => xc_p11e(cp as u8),
+        #[cfg(feature = "full")]
+        0x11f => xc_p11f(cp as u8),
+        #[cfg(feature = "full")]
+        0x120 => true,
+        #[cfg(feature = "full")]
+        0x121 => true,
+        #[cfg(feature = "full")]
+        0x122 => true,
+        #[cfg(feature = "full")]
+        0x123 => xc_p123(cp as u8),
+        #[cfg(feature = "full")]
+        0x124 => xc_p124(cp as u8),
+        #[cfg(feature = "full")]
+        0x125 => xc_p125(cp as u8),
+        #[cfg(feature = "full")]
+        0x12f => xc_p12f(cp as u8),
+        #[cfg(feature = "full")]
+        0x130 => true,
+        #[cfg(feature = "full")]
+        0x131 => true,
+        #[cfg(feature = "full")]
+        0x132 => true,
+        #[cfg(feature = "full")]
+        0x133 => true,
+        #[cfg(feature = "full")]
+        0x134 => xc_p134(cp as u8),
+        #[cfg(feature = "full")]
+        0x135 => true,
+        #[cfg(feature = "full")]
+        0x136 => true,
+        #[cfg(feature = "full")]
+        0x137 => true,
+        #[cfg(feature = "full")]
+        0x138 => true,
+        #[cfg(feature = "full")]
+        0x139 => true,
+        #[cfg(feature = "full")]
+        0x13a => true,
+        #[cfg(feature = "full")]
+        0x13b => true,
+        #[cfg(feature = "full")]
+        0x13c => true,
+        #[cfg(feature = "full")]
+        0x13d => true,
+        #[cfg(feature = "full")]
+        0x13e => true,
+        #[cfg(feature = "full")]
+        0x13f => true,
+        #[cfg(feature = "full")]
+        0x140 => true,
+        #[cfg(feature = "full")]
+        0x141 => true,
+        #[cfg(feature = "full")]
+        0x142 => true,
+        #[cfg(feature = "full")]
+        0x143 => xc_p143(cp as u8),
+        #[cfg(feature = "full")]
+        0x144 => true,
+        #[cfg(feature = "full")]
+        0x145 => true,
+        #[cfg(feature = "full")]
+        0x146 => xc_p146(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => xc_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x168 => true,
+        #[cfg(feature = "full")]
+        0x169 => true,
+        #[cfg(feature = "full")]
+        0x16a => xc_p16a(cp as u8),
+        #[cfg(feature = "full")]
+        0x16b => xc_p16b(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => xc_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => xc_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x16f => xc_p16f(cp as u8),
+        #[cfg(feature = "full")]
+        0x170 => true,
+        #[cfg(feature = "full")]
+        0x171 => true,
+        #[cfg(feature = "full")]
+        0x172 => true,
+        #[cfg(feature = "full")]
+        0x173 => true,
+        #[cfg(feature = "full")]
+        0x174 => true,
+        #[cfg(feature = "full")]
+        0x175 => true,
+        #[cfg(feature = "full")]
+        0x176 => true,
+        #[cfg(feature = "full")]
+        0x177 => true,
+        #[cfg(feature = "full")]
+        0x178 => true,
+        #[cfg(feature = "full")]
+        0x179 => true,
+        #[cfg(feature = "full")]
+        0x17a => true,
+        #[cfg(feature = "full")]
+        0x17b => true,
+        #[cfg(feature = "full")]
+        0x17c => true,
+        #[cfg(feature = "full")]
+        0x17d => true,
+        #[cfg(feature = "full")]
+        0x17e => true,
+        #[cfg(feature = "full")]
+        0x17f => true,
+        #[cfg(feature = "full")]
+        0x180 => true,
+        #[cfg(feature = "full")]
+        0x181 => true,
+        #[cfg(feature = "full")]
+        0x182 => true,
+        #[cfg(feature = "full")]
+        0x183 => true,
+        #[cfg(feature = "full")]
+        0x184 => true,
+        #[cfg(feature = "full")]
+        0x185 => true,
+        #[cfg(feature = "full")]
+        0x186 => true,
+        #[cfg(feature = "full")]
+        0x187 => true,
+        #[cfg(feature = "full")]
+        0x188 => true,
+        #[cfg(feature = "full")]
+        0x189 => true,
+        #[cfg(feature = "full")]
+        0x18a => true,
+        #[cfg(feature = "full")]
+        0x18b => true,
+        #[cfg(feature = "full")]
+        0x18c => xc_p18c(cp as u8),
+        #[cfg(feature = "full")]
+        0x18d => xc_p18d(cp as u8),
+        #[cfg(feature = "full")]
+        0x1af => xc_p1af(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b0 => true,
+        #[cfg(feature = "full")]
+        0x1b1 => xc_p1b1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b2 => xc_p1b2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1bc => xc_p1bc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cc => xc_p1cc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cf => xc_p1cf(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => xc_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d2 => xc_p1d2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d4 => xc_p1d4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d5 => xc_p1d5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d6 => xc_p1d6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d7 => xc_p1d7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1da => xc_p1da(cp as u8),
+        #[cfg(feature = "full")]
+        0x1df => xc_p1df(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => xc_p1e0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e1 => xc_p1e1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e2 => xc_p1e2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e4 => xc_p1e4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e5 => xc_p1e5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e6 => xc_p1e6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e7 => xc_p1e7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e8 => xc_p1e8(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => xc_p1e9(cp as u8),
+        #[cfg(feature = "full")]
+        0x1ee => xc_p1ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x1fb => xc_p1fb(cp as u8),
+        #[cfg(feature = "full")]
+        0x200 => true,
+        #[cfg(feature = "full")]
+        0x201 => true,
+        #[cfg(feature = "full")]
+        0x202 => true,
+        #[cfg(feature = "full")]
+        0x203 => true,
+        #[cfg(feature = "full")]
+        0x204 => true,
+        #[cfg(feature = "full")]
+        0x205 => true,
+        #[cfg(feature = "full")]
+        0x206 => true,
+        #[cfg(feature = "full")]
+        0x207 => true,
+        #[cfg(feature = "full")]
+        0x208 => true,
+        #[cfg(feature = "full")]
+        0x209 => true,
+        #[cfg(feature = "full")]
+        0x20a => true,
+        #[cfg(feature = "full")]
+        0x20b => true,
+        #[cfg(feature = "full")]
+        0x20c => true,
+        #[cfg(feature = "full")]
+        0x20d => true,
+        #[cfg(feature = "full")]
+        0x20e => true,
+        #[cfg(feature = "full")]
+        0x20f => true,
+        #[cfg(feature = "full")]
+        0x210 => true,
+        #[cfg(feature = "full")]
+        0x211 => true,
+        #[cfg(feature = "full")]
+        0x212 => true,
+        #[cfg(feature = "full")]
+        0x213 => true,
+        #[cfg(feature = "full")]
+        0x214 => true,
+        #[cfg(feature = "full")]
+        0x215 => true,
+        #[cfg(feature = "full")]
+        0x216 => true,
+        #[cfg(feature = "full")]
+        0x217 => true,
+        #[cfg(feature = "full")]
+        0x218 => true,
+        #[cfg(feature = "full")]
+        0x219 => true,
+        #[cfg(feature = "full")]
+        0x21a => true,
+        #[cfg(feature = "full")]
+        0x21b => true,
+        #[cfg(feature = "full")]
+        0x21c => true,
+        #[cfg(feature = "full")]
+        0x21d => true,
+        #[cfg(feature = "full")]
+        0x21e => true,
+        #[cfg(feature = "full")]
+        0x21f => true,
+        #[cfg(feature = "full")]
+        0x220 => true,
+        #[cfg(feature = "full")]
+        0x221 => true,
+        #[cfg(feature = "full")]
+        0x222 => true,
+        #[cfg(feature = "full")]
+        0x223 => true,
+        #[cfg(feature = "full")]
+        0x224 => true,
+        #[cfg(feature = "full")]
+        0x225 => true,
+        #[cfg(feature = "full")]
+        0x226 => true,
+        #[cfg(feature = "full")]
+        0x227 => true,
+        #[cfg(feature = "full")]
+        0x228 => true,
+        #[cfg(feature = "full")]
+        0x229 => true,
+        #[cfg(feature = "full")]
+        0x22a => true,
+        #[cfg(feature = "full")]
+        0x22b => true,
+        #[cfg(feature = "full")]
+        0x22c => true,
+        #[cfg(feature = "full")]
+        0x22d => true,
+        #[cfg(feature = "full")]
+        0x22e => true,
+        #[cfg(feature = "full")]
+        0x22f => true,
+        #[cfg(feature = "full")]
+        0x230 => true,
+        #[cfg(feature = "full")]
+        0x231 => true,
+        #[cfg(feature = "full")]
+        0x232 => true,
+        #[cfg(feature = "full")]
+        0x233 => true,
+        #[cfg(feature = "full")]
+        0x234 => true,
+        #[cfg(feature = "full")]
+        0x235 => true,
+        #[cfg(feature = "full")]
+        0x236 => true,
+        #[cfg(feature = "full")]
+        0x237 => true,
+        #[cfg(feature = "full")]
+        0x238 => true,
+        #[cfg(feature = "full")]
+        0x239 => true,
+        #[cfg(feature = "full")]
+        0x23a => true,
+        #[cfg(feature = "full")]
+        0x23b => true,
+        #[cfg(feature = "full")]
+        0x23c => true,
+        #[cfg(feature = "full")]
+        0x23d => true,
+        #[cfg(feature = "full")]
+        0x23e => true,
+        #[cfg(feature = "full")]
+        0x23f => true,
+        #[cfg(feature = "full")]
+        0x240 => true,
+        #[cfg(feature = "full")]
+        0x241 => true,
+        #[cfg(feature = "full")]
+        0x242 => true,
+        #[cfg(feature = "full")]
+        0x243 => true,
+        #[cfg(feature = "full")]
+        0x244 => true,
+        #[cfg(feature = "full")]
+        0x245 => true,
+        #[cfg(feature = "full")]
+        0x246 => true,
+        #[cfg(feature = "full")]
+        0x247 => true,
+        #[cfg(feature = "full")]
+        0x248 => true,
+        #[cfg(feature = "full")]
+        0x249 => true,
+        #[cfg(feature = "full")]
+        0x24a => true,
+        #[cfg(feature = "full")]
+        0x24b => true,
+        #[cfg(feature = "full")]
+        0x24c => true,
+        #[cfg(feature = "full")]
+        0x24d => true,
+        #[cfg(feature = "full")]
+        0x24e => true,
+        #[cfg(feature = "full")]
+        0x24f => true,
+        #[cfg(feature = "full")]
+        0x250 => true,
+        #[cfg(feature = "full")]
+        0x251 => true,
+        #[cfg(feature = "full")]
+        0x252 => true,
+        #[cfg(feature = "full")]
+        0x253 => true,
+        #[cfg(feature = "full")]
+        0x254 => true,
+        #[cfg(feature = "full")]
+        0x255 => true,
+        #[cfg(feature = "full")]
+        0x256 => true,
+        #[cfg(feature = "full")]
+        0x257 => true,
+        #[cfg(feature = "full")]
+        0x258 => true,
+        #[cfg(feature = "full")]
+        0x259 => true,
+        #[cfg(feature = "full")]
+        0x25a => true,
+        #[cfg(feature = "full")]
+        0x25b => true,
+        #[cfg(feature = "full")]
+        0x25c => true,
+        #[cfg(feature = "full")]
+        0x25d => true,
+        #[cfg(feature = "full")]
+        0x25e => true,
+        #[cfg(feature = "full")]
+        0x25f => true,
+        #[cfg(feature = "full")]
+        0x260 => true,
+        #[cfg(feature = "full")]
+        0x261 => true,
+        #[cfg(feature = "full")]
+        0x262 => true,
+        #[cfg(feature = "full")]
+        0x263 => true,
+        #[cfg(feature = "full")]
+        0x264 => true,
+        #[cfg(feature = "full")]
+        0x265 => true,
+        #[cfg(feature = "full")]
+        0x266 => true,
+        #[cfg(feature = "full")]
+        0x267 => true,
+        #[cfg(feature = "full")]
+        0x268 => true,
+        #[cfg(feature = "full")]
+        0x269 => true,
+        #[cfg(feature = "full")]
+        0x26a => true,
+        #[cfg(feature = "full")]
+        0x26b => true,
+        #[cfg(feature = "full")]
+        0x26c => true,
+        #[cfg(feature = "full")]
+        0x26d => true,
+        #[cfg(feature = "full")]
+        0x26e => true,
+        #[cfg(feature = "full")]
+        0x26f => true,
+        #[cfg(feature = "full")]
+        0x270 => true,
+        #[cfg(feature = "full")]
+        0x271 => true,
+        #[cfg(feature = "full")]
+        0x272 => true,
+        #[cfg(feature = "full")]
+        0x273 => true,
+        #[cfg(feature = "full")]
+        0x274 => true,
+        #[cfg(feature = "full")]
+        0x275 => true,
+        #[cfg(feature = "full")]
+        0x276 => true,
+        #[cfg(feature = "full")]
+        0x277 => true,
+        #[cfg(feature = "full")]
+        0x278 => true,
+        #[cfg(feature = "full")]
+        0x279 => true,
+        #[cfg(feature = "full")]
+        0x27a => true,
+        #[cfg(feature = "full")]
+        0x27b => true,
+        #[cfg(feature = "full")]
+        0x27c => true,
+        #[cfg(feature = "full")]
+        0x27d => true,
+        #[cfg(feature = "full")]
+        0x27e => true,
+        #[cfg(feature = "full")]
+        0x27f => true,
+        #[cfg(feature = "full")]
+        0x280 => true,
+        #[cfg(feature = "full")]
+        0x281 => true,
+        #[cfg(feature = "full")]
+        0x282 => true,
+        #[cfg(feature = "full")]
+        0x283 => true,
+        #[cfg(feature = "full")]
+        0x284 => true,
+        #[cfg(feature = "full")]
+        0x285 => true,
+        #[cfg(feature = "full")]
+        0x286 => true,
+        #[cfg(feature = "full")]
+        0x287 => true,
+        #[cfg(feature = "full")]
+        0x288 => true,
+        #[cfg(feature = "full")]
+        0x289 => true,
+        #[cfg(feature = "full")]
+        0x28a => true,
+        #[cfg(feature = "full")]
+        0x28b => true,
+        #[cfg(feature = "full")]
+        0x28c => true,
+        #[cfg(feature = "full")]
+        0x28d => true,
+        #[cfg(feature = "full")]
+        0x28e => true,
+        #[cfg(feature = "full")]
+        0x28f => true,
+        #[cfg(feature = "full")]
+        0x290 => true,
+        #[cfg(feature = "full")]
+        0x291 => true,
+        #[cfg(feature = "full")]
+        0x292 => true,
+        #[cfg(feature = "full")]
+        0x293 => true,
+        #[cfg(feature = "full")]
+        0x294 => true,
+        #[cfg(feature = "full")]
+        0x295 => true,
+        #[cfg(feature = "full")]
+        0x296 => true,
+        #[cfg(feature = "full")]
+        0x297 => true,
+        #[cfg(feature = "full")]
+        0x298 => true,
+        #[cfg(feature = "full")]
+        0x299 => true,
+        #[cfg(feature = "full")]
+        0x29a => true,
+        #[cfg(feature = "full")]
+        0x29b => true,
+        #[cfg(feature = "full")]
+        0x29c => true,
+        #[cfg(feature = "full")]
+        0x29d => true,
+        #[cfg(feature = "full")]
+        0x29e => true,
+        #[cfg(feature = "full")]
+        0x29f => true,
+        #[cfg(feature = "full")]
+        0x2a0 => true,
+        #[cfg(feature = "full")]
+        0x2a1 => true,
+        #[cfg(feature = "full")]
+        0x2a2 => true,
+        #[cfg(feature = "full")]
+        0x2a3 => true,
+        #[cfg(feature = "full")]
+        0x2a4 => true,
+        #[cfg(feature = "full")]
+        0x2a5 => true,
+        #[cfg(feature = "full")]
+        0x2a6 => xc_p2a6(cp as u8),
+        #[cfg(feature = "full")]
+        0x2a7 => true,
+        #[cfg(feature = "full")]
+        0x2a8 => true,
+        #[cfg(feature = "full")]
+        0x2a9 => true,
+        #[cfg(feature = "full")]
+        0x2aa => true,
+        #[cfg(feature = "full")]
+        0x2ab => true,
+        #[cfg(feature = "full")]
+        0x2ac => true,
+        #[cfg(feature = "full")]
+        0x2ad => true,
+        #[cfg(feature = "full")]
+        0x2ae => true,
+        #[cfg(feature = "full")]
+        0x2af => true,
+        #[cfg(feature = "full")]
+        0x2b0 => true,
+        #[cfg(feature = "full")]
+        0x2b1 => true,
+        #[cfg(feature = "full")]
+        0x2b2 => true,
+        #[cfg(feature = "full")]
+        0x2b3 => true,
+        #[cfg(feature = "full")]
+        0x2b4 => true,
+        #[cfg(feature = "full")]
+        0x2b5 => true,
+        #[cfg(feature = "full")]
+        0x2b6 => true,
+        #[cfg(feature = "full")]
+        0x2b7 => true,
+        #[cfg(feature = "full")]
+        0x2b8 => xc_p2b8(cp as u8),
+        #[cfg(feature = "full")]
+        0x2b9 => true,
+        #[cfg(feature = "full")]
+        0x2ba => true,
+        #[cfg(feature = "full")]
+        0x2bb => true,
+        #[cfg(feature = "full")]
+        0x2bc => true,
+        #[cfg(feature = "full")]
+        0x2bd => true,
+        #[cfg(feature = "full")]
+        0x2be => true,
+        #[cfg(feature = "full")]
+        0x2bf => true,
+        #[cfg(feature = "full")]
+        0x2c0 => true,
+        #[cfg(feature = "full")]
+        0x2c1 => true,
+        #[cfg(feature = "full")]
+        0x2c2 => true,
+        #[cfg(feature = "full")]
+        0x2c3 => true,
+        #[cfg(feature = "full")]
+        0x2c4 => true,
+        #[cfg(feature = "full")]
+        0x2c5 => true,
+        #[cfg(feature = "full")]
+        0x2c6 => true,
+        #[cfg(feature = "full")]
+        0x2c7 => true,
+        #[cfg(feature = "full")]
+        0x2c8 => true,
+        #[cfg(feature = "full")]
+        0x2c9 => true,
+        #[cfg(feature = "full")]
+        0x2ca => true,
+        #[cfg(feature = "full")]
+        0x2cb => true,
+        #[cfg(feature = "full")]
+        0x2cc => true,
+        #[cfg(feature = "full")]
+        0x2cd => true,
+        #[cfg(feature = "full")]
+        0x2ce => xc_p2ce(cp as u8),
+        #[cfg(feature = "full")]
+        0x2cf => true,
+        #[cfg(feature = "full")]
+        0x2d0 => true,
+        #[cfg(feature = "full")]
+        0x2d1 => true,
+        #[cfg(feature = "full")]
+        0x2d2 => true,
+        #[cfg(feature = "full")]
+        0x2d3 => true,
+        #[cfg(feature = "full")]
+        0x2d4 => true,
+        #[cfg(feature = "full")]
+        0x2d5 => true,
+        #[cfg(feature = "full")]
+        0x2d6 => true,
+        #[cfg(feature = "full")]
+        0x2d7 => true,
+        #[cfg(feature = "full")]
+        0x2d8 => true,
+        #[cfg(feature = "full")]
+        0x2d9 => true,
+        #[cfg(feature = "full")]
+        0x2da => true,
+        #[cfg(feature = "full")]
+        0x2db => true,
+        #[cfg(feature = "full")]
+        0x2dc => true,
+        #[cfg(feature = "full")]
+        0x2dd => true,
+        #[cfg(feature = "full")]
+        0x2de => true,
+        #[cfg(feature = "full")]
+        0x2df => true,
+        #[cfg(feature = "full")]
+        0x2e0 => true,
+        #[cfg(feature = "full")]
+        0x2e1 => true,
+        #[cfg(feature = "full")]
+        0x2e2 => true,
+        #[cfg(feature = "full")]
+        0x2e3 => true,
+        #[cfg(feature = "full")]
+        0x2e4 => true,
+        #[cfg(feature = "full")]
+        0x2e5 => true,
+        #[cfg(feature = "full")]
+        0x2e6 => true,
+        #[cfg(feature = "full")]
+        0x2e7 => true,
+        #[cfg(feature = "full")]
+        0x2e8 => true,
+        #[cfg(feature = "full")]
+        0x2e9 => true,
+        #[cfg(feature = "full")]
+        0x2ea => true,
+        #[cfg(feature = "full")]
+        0x2eb => xc_p2eb(cp as u8),
+        #[cfg(feature = "full")]
+        0x2ec => true,
+        #[cfg(feature = "full")]
+        0x2ed => true,
+        #[cfg(feature = "full")]
+        0x2ee => xc_p2ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x2f8 => true,
+        #[cfg(feature = "full")]
+        0x2f9 => true,
+        #[cfg(feature = "full")]
+        0x2fa => xc_p2fa(cp as u8),
+        #[cfg(feature = "full")]
+        0x300 => true,
+        #[cfg(feature = "full")]
+        0x301 => true,
+        #[cfg(feature = "full")]
+        0x302 => true,
+        #[cfg(feature = "full")]
+        0x303 => true,
+        #[cfg(feature = "full")]
+        0x304 => true,
+        #[cfg(feature = "full")]
+        0x305 => true,
+        #[cfg(feature = "full")]
+        0x306 => true,
+        #[cfg(feature = "full")]
+        0x307 => true,
+        #[cfg(feature = "full")]
+        0x308 => true,
+        #[cfg(feature = "full")]
+        0x309 => true,
+        #[cfg(feature = "full")]
+        0x30a => true,
+        #[cfg(feature = "full")]
+        0x30b => true,
+        #[cfg(feature = "full")]
+        0x30c => true,
+        #[cfg(feature = "full")]
+        0x30d => true,
+        #[cfg(feature = "full")]
+        0x30e => true,
+        #[cfg(feature = "full")]
+        0x30f => true,
+        #[cfg(feature = "full")]
+        0x310 => true,
+        #[cfg(feature = "full")]
+        0x311 => true,
+        #[cfg(feature = "full")]
+        0x312 => true,
+        #[cfg(feature = "full")]
+        0x313 => xc_p313(cp as u8),
+        #[cfg(feature = "full")]
+        0x314 => true,
+        #[cfg(feature = "full")]
+        0x315 => true,
+        #[cfg(feature = "full")]
+        0x316 => true,
+        #[cfg(feature = "full")]
+        0x317 => true,
+        #[cfg(feature = "full")]
+        0x318 => true,
+        #[cfg(feature = "full")]
+        0x319 => true,
+        #[cfg(feature = "full")]
+        0x31a => true,
+        #[cfg(feature = "full")]
+        0x31b => true,
+        #[cfg(feature = "full")]
+        0x31c => true,
+        #[cfg(feature = "full")]
+        0x31d => true,
+        #[cfg(feature = "full")]
+        0x31e => true,
+        #[cfg(feature = "full")]
+        0x31f => true,
+        #[cfg(feature = "full")]
+        0x320 => true,
+        #[cfg(feature = "full")]
+        0x321 => true,
+        #[cfg(feature = "full")]
+        0x322 => true,
+        #[cfg(feature = "full")]
+        0x323 => true,
+        #[cfg(feature = "full")]
+        0x324 => true,
+        #[cfg(feature = "full")]
+        0x325 => true,
+        #[cfg(feature = "full")]
+        0x326 => true,
+        #[cfg(feature = "full")]
+        0x327 => true,
+        #[cfg(feature = "full")]
+        0x328 => true,
+        #[cfg(feature = "full")]
+        0x329 => true,
+        #[cfg(feature = "full")]
+        0x32a => true,
+        #[cfg(feature = "full")]
+        0x32b => true,
+        #[cfg(feature = "full")]
+        0x32c => true,
+        #[cfg(feature = "full")]
+        0x32d => true,
+        #[cfg(feature = "full")]
+        0x32e => true,
+        #[cfg(feature = "full")]
+        0x32f => true,
+        #[cfg(feature = "full")]
+        0x330 => true,
+        #[cfg(feature = "full")]
+        0x331 => true,
+        #[cfg(feature = "full")]
+        0x332 => true,
+        #[cfg(feature = "full")]
+        0x333 => true,
+        #[cfg(feature = "full")]
+        0x334 => xc_p334(cp as u8),
+        #[cfg(feature = "full")]
+        0xe01 => xc_pe01(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn xc_p0(b: u8) -> bool {
+    match b {
+        0x30..=0x39 => true,
+        0x41..=0x5a => true,
+        0x5f => true,
+        0x61..=0x7a => true,
+        #[cfg(feature = "latin1")]
+        0xaa => true,
+        #[cfg(feature = "latin1")]
+        0xb5 => true,
+        #[cfg(feature = "latin1")]
+        0xb7 => true,
+        #[cfg(feature = "latin1")]
+        0xba => true,
+        #[cfg(feature = "latin1")]
+        0xc0..=0xd6 => true,
+        #[cfg(feature = "latin1")]
+        0xd8..=0xf6 => true,
+        #[cfg(feature = "latin1")]
+        0xf8..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p2(b: u8) -> bool {
+    match b {
+        0x00..=0xc1 => true,
+        0xc6..=0xd1 => true,
+        0xe0..=0xe4 => true,
+        0xec => true,
+        0xee => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p3(b: u8) -> bool {
+    match b {
+        0x00..=0x74 => true,
+        0x76..=0x77 => true,
+        0x7b..=0x7d => true,
+        0x7f => true,
+        0x86..=0x8a => true,
+        0x8c => true,
+        0x8e..=0xa1 => true,
+        0xa3..=0xf5 => true,
+        0xf7..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p4(b: u8) -> bool {
+    match b {
+        0x00..=0x81 => true,
+        0x83..=0x87 => true,
+        0x8a..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p5(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x31..=0x56 => true,
+        0x59 => true,
+        0x60..=0x88 => true,
+        0x91..=0xbd => true,
+        0xbf => true,
+        0xc1..=0xc2 => true,
+        0xc4..=0xc5 => true,
+        0xc7 => true,
+        0xd0..=0xea => true,
+        0xef..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p6(b: u8) -> bool {
+    match b {
+        0x10..=0x1a => true,
+        0x20..=0x69 => true,
+        0x6e..=0xd3 => true,
+        0xd5..=0xdc => true,
+        0xdf..=0xe8 => true,
+        0xea..=0xfc => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p7(b: u8) -> bool {
+    match b {
+        0x10..=0x4a => true,
+        0x4d..=0xb1 => true,
+        0xc0..=0xf5 => true,
+        0xfa => true,
+        0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p8(b: u8) -> bool {
+    match b {
+        0x00..=0x2d => true,
+        0x40..=0x5b => true,
+        0x60..=0x6a => true,
+        0x70..=0x87 => true,
+        0x89..=0x8f => true,
+        0x97..=0xe1 => true,
+        0xe3..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p9(b: u8) -> bool {
+    match b {
+        0x00..=0x63 => true,
+        0x66..=0x6f => true,
+        0x71..=0x83 => true,
+        0x85..=0x8c => true,
+        0x8f..=0x90 => true,
+        0x93..=0xa8 => true,
+        0xaa..=0xb0 => true,
+        0xb2 => true,
+        0xb6..=0xb9 => true,
+        0xbc..=0xc4 => true,
+        0xc7..=0xc8 => true,
+        0xcb..=0xce => true,
+        0xd7 => true,
+        0xdc..=0xdd => true,
+        0xdf..=0xe3 => true,
+        0xe6..=0xf1 => true,
+        0xfc => true,
+        0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pa(b: u8) -> bool {
+    match b {
+        0x01..=0x03 => true,
+        0x05..=0x0a => true,
+        0x0f..=0x10 => true,
+        0x13..=0x28 => true,
+        0x2a..=0x30 => true,
+        0x32..=0x33 => true,
+        0x35..=0x36 => true,
+        0x38..=0x39 => true,
+        0x3c => true,
+        0x3e..=0x42 => true,
+        0x47..=0x48 => true,
+        0x4b..=0x4d => true,
+        0x51 => true,
+        0x59..=0x5c => true,
+        0x5e => true,
+        0x66..=0x75 => true,
+        0x81..=0x83 => true,
+        0x85..=0x8d => true,
+        0x8f..=0x91 => true,
+        0x93..=0xa8 => true,
+        0xaa..=0xb0 => true,
+        0xb2..=0xb3 => true,
+        0xb5..=0xb9 => true,
+        0xbc..=0xc5 => true,
+        0xc7..=0xc9 => true,
+        0xcb..=0xcd => true,
+        0xd0 => true,
+        0xe0..=0xe3 => true,
+        0xe6..=0xef => true,
+        0xf9..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pb(b: u8) -> bool {
+    match b {
+        0x01..=0x03 => true,
+        0x05..=0x0c => true,
+        0x0f..=0x10 => true,
+        0x13..=0x28 => true,
+        0x2a..=0x30 => true,
+        0x32..=0x33 => true,
+        0x35..=0x39 => true,
+        0x3c..=0x44 => true,
+        0x47..=0x48 => true,
+        0x4b..=0x4d => true,
+        0x55..=0x57 => true,
+        0x5c..=0x5d => true,
+        0x5f..=0x63 => true,
+        0x66..=0x6f => true,
+        0x71 => true,
+        0x82..=0x83 => true,
+        0x85..=0x8a => true,
+        0x8e..=0x90 => true,
+        0x92..=0x95 => true,
+        0x99..=0x9a => true,
+        0x9c => true,
+        0x9e..=0x9f => true,
+        0xa3..=0xa4 => true,
+        0xa8..=0xaa => true,
+        0xae..=0xb9 => true,
+        0xbe..=0xc2 => true,
+        0xc6..=0xc8 => true,
+        0xca..=0xcd => true,
+        0xd0 => true,
+        0xd7 => true,
+        0xe6..=0xef => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pc(b: u8) -> bool {
+    match b {
+        0x00..=0x0c => true,
+        0x0e..=0x10 => true,
+        0x12..=0x28 => true,
+        0x2a..=0x39 => true,
+        0x3c..=0x44 => true,
+        0x46..=0x48 => true,
+        0x4a..=0x4d => true,
+        0x55..=0x56 => true,
+        0x58..=0x5a => true,
+        0x5c..=0x5d => true,
+        0x60..=0x63 => true,
+        0x66..=0x6f => true,
+        0x80..=0x83 => true,
+        0x85..=0x8c => true,
+        0x8e..=0x90 => true,
+        0x92..=0xa8 => true,
+        0xaa..=0xb3 => true,
+        0xb5..=0xb9 => true,
+        0xbc..=0xc4 => true,
+        0xc6..=0xc8 => true,
+        0xca..=0xcd => true,
+        0xd5..=0xd6 => true,
+        0xdc..=0xde => true,
+        0xe0..=0xe3 => true,
+        0xe6..=0xef => true,
+        0xf1..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pd(b: u8) -> bool {
+    match b {
+        0x00..=0x0c => true,
+        0x0e..=0x10 => true,
+        0x12..=0x44 => true,
+        0x46..=0x48 => true,
+        0x4a..=0x4e => true,
+        0x54..=0x57 => true,
+        0x5f..=0x63 => true,
+        0x66..=0x6f => true,
+        0x7a..=0x7f => true,
+        0x81..=0x83 => true,
+        0x85..=0x96 => true,
+        0x9a..=0xb1 => true,
+        0xb3..=0xbb => true,
+        0xbd => true,
+        0xc0..=0xc6 => true,
+        0xca => true,
+        0xcf..=0xd4 => true,
+        0xd6 => true,
+        0xd8..=0xdf => true,
+        0xe6..=0xef => true,
+        0xf2..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pe(b: u8) -> bool {
+    match b {
+        0x01..=0x3a => true,
+        0x40..=0x4e => true,
+        0x50..=0x59 => true,
+        0x81..=0x82 => true,
+        0x84 => true,
+        0x86..=0x8a => true,
+        0x8c..=0xa3 => true,
+        0xa5 => true,
+        0xa7..=0xbd => true,
+        0xc0..=0xc4 => true,
+        0xc6 => true,
+        0xc8..=0xce => true,
+        0xd0..=0xd9 => true,
+        0xdc..=0xdf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pf(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x18..=0x19 => true,
+        0x20..=0x29 => true,
+        0x35 => true,
+        0x37 => true,
+        0x39 => true,
+        0x3e..=0x47 => true,
+        0x49..=0x6c => true,
+        0x71..=0x84 => true,
+        0x86..=0x97 => true,
+        0x99..=0xbc => true,
+        0xc6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p10(b: u8) -> bool {
+    match b {
+        0x00..=0x49 => true,
+        0x50..=0x9d => true,
+        0xa0..=0xc5 => true,
+        0xc7 => true,
+        0xcd => true,
+        0xd0..=0xfa => true,
+        0xfc..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p12(b: u8) -> bool {
+    match b {
+        0x00..=0x48 => true,
+        0x4a..=0x4d => true,
+        0x50..=0x56 => true,
+        0x58 => true,
+        0x5a..=0x5d => true,
+        0x60..=0x88 => true,
+        0x8a..=0x8d => true,
+        0x90..=0xb0 => true,
+        0xb2..=0xb5 => true,
+        0xb8..=0xbe => true,
+        0xc0 => true,
+        0xc2..=0xc5 => true,
+        0xc8..=0xd6 => true,
+        0xd8..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p13(b: u8) -> bool {
+    match b {
+        0x00..=0x10 => true,
+        0x12..=0x15 => true,
+        0x18..=0x5a => true,
+        0x5d..=0x5f => true,
+        0x69..=0x71 => true,
+        0x80..=0x8f => true,
+        0xa0..=0xf5 => true,
+        0xf8..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p14(b: u8) -> bool {
+    match b {
+        0x01..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p16(b: u8) -> bool {
+    match b {
+        0x00..=0x6c => true,
+        0x6f..=0x7f => true,
+        0x81..=0x9a => true,
+        0xa0..=0xea => true,
+        0xee..=0xf8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p17(b: u8) -> bool {
+    match b {
+        0x00..=0x15 => true,
+        0x1f..=0x34 => true,
+        0x40..=0x53 => true,
+        0x60..=0x6c => true,
+        0x6e..=0x70 => true,
+        0x72..=0x73 => true,
+        0x80..=0xd3 => true,
+        0xd7 => true,
+        0xdc..=0xdd => true,
+        0xe0..=0xe9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p18(b: u8) -> bool {
+    match b {
+        0x0b..=0x0d => true,
+        0x0f..=0x19 => true,
+        0x20..=0x78 => true,
+        0x80..=0xaa => true,
+        0xb0..=0xf5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p19(b: u8) -> bool {
+    match b {
+        0x00..=0x1e => true,
+        0x20..=0x2b => true,
+        0x30..=0x3b => true,
+        0x46..=0x6d => true,
+        0x70..=0x74 => true,
+        0x80..=0xab => true,
+        0xb0..=0xc9 => true,
+        0xd0..=0xda => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p1a(b: u8) -> bool {
+    match b {
+        0x00..=0x1b => true,
+        0x20..=0x5e => true,
+        0x60..=0x7c => true,
+        0x7f..=0x89 => true,
+        0x90..=0x99 => true,
+        0xa7 => true,
+        0xb0..=0xbd => true,
+        0xbf..=0xdd => true,
+        0xe0..=0xeb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p1b(b: u8) -> bool {
+    match b {
+        0x00..=0x4c => true,
+        0x50..=0x59 => true,
+        0x6b..=0x73 => true,
+        0x80..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p1c(b: u8) -> bool {
+    match b {
+        0x00..=0x37 => true,
+        0x40..=0x49 => true,
+        0x4d..=0x7d => true,
+        0x80..=0x8a => true,
+        0x90..=0xba => true,
+        0xbd..=0xbf => true,
+        0xd0..=0xd2 => true,
+        0xd4..=0xfa => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p1f(b: u8) -> bool {
+    match b {
+        0x00..=0x15 => true,
+        0x18..=0x1d => true,
+        0x20..=0x45 => true,
+        0x48..=0x4d => true,
+        0x50..=0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f..=0x7d => true,
+        0x80..=0xb4 => true,
+        0xb6..=0xbc => true,
+        0xbe => true,
+        0xc2..=0xc4 => true,
+        0xc6..=0xcc => true,
+        0xd0..=0xd3 => true,
+        0xd6..=0xdb => true,
+        0xe0..=0xec => true,
+        0xf2..=0xf4 => true,
+        0xf6..=0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p20(b: u8) -> bool {
+    match b {
+        0x0c..=0x0d => true,
+        0x3f..=0x40 => true,
+        0x54 => true,
+        0x71 => true,
+        0x7f => true,
+        0x90..=0x9c => true,
+        0xd0..=0xdc => true,
+        0xe1 => true,
+        0xe5..=0xf0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p21(b: u8) -> bool {
+    match b {
+        0x02 => true,
+        0x07 => true,
+        0x0a..=0x13 => true,
+        0x15 => true,
+        0x18..=0x1d => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a..=0x39 => true,
+        0x3c..=0x3f => true,
+        0x45..=0x49 => true,
+        0x4e => true,
+        0x60..=0x88 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p2c(b: u8) -> bool {
+    match b {
+        0x00..=0xe4 => true,
+        0xeb..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p2d(b: u8) -> bool {
+    match b {
+        0x00..=0x25 => true,
+        0x27 => true,
+        0x2d => true,
+        0x30..=0x67 => true,
+        0x6f => true,
+        0x7f..=0x96 => true,
+        0xa0..=0xa6 => true,
+        0xa8..=0xae => true,
+        0xb0..=0xb6 => true,
+        0xb8..=0xbe => true,
+        0xc0..=0xc6 => true,
+        0xc8..=0xce => true,
+        0xd0..=0xd6 => true,
+        0xd8..=0xde => true,
+        0xe0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p30(b: u8) -> bool {
+    match b {
+        0x05..=0x07 => true,
+        0x21..=0x2f => true,
+        0x31..=0x35 => true,
+        0x38..=0x3c => true,
+        0x41..=0x96 => true,
+        0x99..=0x9a => true,
+        0x9d..=0x9f => true,
+        0xa1..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p31(b: u8) -> bool {
+    match b {
+        0x05..=0x2f => true,
+        0x31..=0x8e => true,
+        0xa0..=0xbf => true,
+        0xf0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_p4d(b: u8) -> bool {
+    match b {
+        0x00..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pa4(b: u8) -> bool {
+    match b {
+        0x00..=0x8c => true,
+        0xd0..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pa6(b: u8) -> bool {
+    match b {
+        0x00..=0x0c => true,
+        0x10..=0x2b => true,
+        0x40..=0x6f => true,
+        0x74..=0x7d => true,
+        0x7f..=0xf1 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pa7(b: u8) -> bool {
+    match b {
+        0x17..=0x1f => true,
+        0x22..=0x88 => true,
+        0x8b..=0xdc => true,
+        0xf1..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pa8(b: u8) -> bool {
+    match b {
+        0x00..=0x27 => true,
+        0x2c => true,
+        0x40..=0x73 => true,
+        0x80..=0xc5 => true,
+        0xd0..=0xd9 => true,
+        0xe0..=0xf7 => true,
+        0xfb => true,
+        0xfd..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pa9(b: u8) -> bool {
+    match b {
+        0x00..=0x2d => true,
+        0x30..=0x53 => true,
+        0x60..=0x7c => true,
+        0x80..=0xc0 => true,
+        0xcf..=0xd9 => true,
+        0xe0..=0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_paa(b: u8) -> bool {
+    match b {
+        0x00..=0x36 => true,
+        0x40..=0x4d => true,
+        0x50..=0x59 => true,
+        0x60..=0x76 => true,
+        0x7a..=0xc2 => true,
+        0xdb..=0xdd => true,
+        0xe0..=0xef => true,
+        0xf2..=0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pab(b: u8) -> bool {
+    match b {
+        0x01..=0x06 => true,
+        0x09..=0x0e => true,
+        0x11..=0x16 => true,
+        0x20..=0x26 => true,
+        0x28..=0x2e => true,
+        0x30..=0x5a => true,
+        0x5c..=0x69 => true,
+        0x70..=0xea => true,
+        0xec..=0xed => true,
+        0xf0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pd7(b: u8) -> bool {
+    match b {
+        0x00..=0xa3 => true,
+        0xb0..=0xc6 => true,
+        0xcb..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pfa(b: u8) -> bool {
+    match b {
+        0x00..=0x6d => true,
+        0x70..=0xd9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pfb(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x13..=0x17 => true,
+        0x1d..=0x28 => true,
+        0x2a..=0x36 => true,
+        0x38..=0x3c => true,
+        0x3e => true,
+        0x40..=0x41 => true,
+        0x43..=0x44 => true,
+        0x46..=0xb1 => true,
+        0xd3..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pfc(b: u8) -> bool {
+    match b {
+        0x00..=0x5d => true,
+        0x64..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pfd(b: u8) -> bool {
+    match b {
+        0x00..=0x3d => true,
+        0x50..=0x8f => true,
+        0x92..=0xc7 => true,
+        0xf0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pfe(b: u8) -> bool {
+    match b {
+        0x00..=0x0f => true,
+        0x20..=0x2f => true,
+        0x33..=0x34 => true,
+        0x4d..=0x4f => true,
+        0x71 => true,
+        0x73 => true,
+        0x77 => true,
+        0x79 => true,
+        0x7b => true,
+        0x7d => true,
+        0x7f..=0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn xc_pff(b: u8) -> bool {
+    match b {
+        0x10..=0x19 => true,
+        0x21..=0x3a => true,
+        0x3f => true,
+        0x41..=0x5a => true,
+        0x65..=0xbe => true,
+        0xc2..=0xc7 => true,
+        0xca..=0xcf => true,
+        0xd2..=0xd7 => true,
+        0xda..=0xdc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p100(b: u8) -> bool {
+    match b {
+        0x00..=0x0b => true,
+        0x0d..=0x26 => true,
+        0x28..=0x3a => true,
+        0x3c..=0x3d => true,
+        0x3f..=0x4d => true,
+        0x50..=0x5d => true,
+        0x80..=0xfa => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p101(b: u8) -> bool {
+    match b {
+        0x40..=0x74 => true,
+        0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p102(b: u8) -> bool {
+    match b {
+        0x80..=0x9c => true,
+        0xa0..=0xd0 => true,
+        0xe0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p103(b: u8) -> bool {
+    match b {
+        0x00..=0x1f => true,
+        0x2d..=0x4a => true,
+        0x50..=0x7a => true,
+        0x80..=0x9d => true,
+        0xa0..=0xc3 => true,
+        0xc8..=0xcf => true,
+        0xd1..=0xd5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p104(b: u8) -> bool {
+    match b {
+        0x00..=0x9d => true,
+        0xa0..=0xa9 => true,
+        0xb0..=0xd3 => true,
+        0xd8..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p105(b: u8) -> bool {
+    match b {
+        0x00..=0x27 => true,
+        0x30..=0x63 => true,
+        0x70..=0x7a => true,
+        0x7c..=0x8a => true,
+        0x8c..=0x92 => true,
+        0x94..=0x95 => true,
+        0x97..=0xa1 => true,
+        0xa3..=0xb1 => true,
+        0xb3..=0xb9 => true,
+        0xbb..=0xbc => true,
+        0xc0..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p107(b: u8) -> bool {
+    match b {
+        0x00..=0x36 => true,
+        0x40..=0x55 => true,
+        0x60..=0x67 => true,
+        0x80..=0x85 => true,
+        0x87..=0xb0 => true,
+        0xb2..=0xba => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p108(b: u8) -> bool {
+    match b {
+        0x00..=0x05 => true,
+        0x08 => true,
+        0x0a..=0x35 => true,
+        0x37..=0x38 => true,
+        0x3c => true,
+        0x3f..=0x55 => true,
+        0x60..=0x76 => true,
+        0x80..=0x9e => true,
+        0xe0..=0xf2 => true,
+        0xf4..=0xf5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p109(b: u8) -> bool {
+    match b {
+        0x00..=0x15 => true,
+        0x20..=0x39 => true,
+        0x40..=0x59 => true,
+        0x80..=0xb7 => true,
+        0xbe..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p10a(b: u8) -> bool {
+    match b {
+        0x00..=0x03 => true,
+        0x05..=0x06 => true,
+        0x0c..=0x13 => true,
+        0x15..=0x17 => true,
+        0x19..=0x35 => true,
+        0x38..=0x3a => true,
+        0x3f => true,
+        0x60..=0x7c => true,
+        0x80..=0x9c => true,
+        0xc0..=0xc7 => true,
+        0xc9..=0xe6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p10b(b: u8) -> bool {
+    match b {
+        0x00..=0x35 => true,
+        0x40..=0x55 => true,
+        0x60..=0x72 => true,
+        0x80..=0x91 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p10c(b: u8) -> bool {
+    match b {
+        0x00..=0x48 => true,
+        0x80..=0xb2 => true,
+        0xc0..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p10d(b: u8) -> bool {
+    match b {
+        0x00..=0x27 => true,
+        0x30..=0x39 => true,
+        0x40..=0x65 => true,
+        0x69..=0x6d => true,
+        0x6f..=0x85 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p10e(b: u8) -> bool {
+    match b {
+        0x80..=0xa9 => true,
+        0xab..=0xac => true,
+        0xb0..=0xb1 => true,
+        0xc2..=0xc7 => true,
+        0xfa..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p10f(b: u8) -> bool {
+    match b {
+        0x00..=0x1c => true,
+        0x27 => true,
+        0x30..=0x50 => true,
+        0x70..=0x85 => true,
+        0xb0..=0xc4 => true,
+        0xe0..=0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p110(b: u8) -> bool {
+    match b {
+        0x00..=0x46 => true,
+        0x66..=0x75 => true,
+        0x7f..=0xba => true,
+        0xc2 => true,
+        0xd0..=0xe8 => true,
+        0xf0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p111(b: u8) -> bool {
+    match b {
+        0x00..=0x34 => true,
+        0x36..=0x3f => true,
+        0x44..=0x47 => true,
+        0x50..=0x73 => true,
+        0x76 => true,
+        0x80..=0xc4 => true,
+        0xc9..=0xcc => true,
+        0xce..=0xda => true,
+        0xdc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p112(b: u8) -> bool {
+    match b {
+        0x00..=0x11 => true,
+        0x13..=0x37 => true,
+        0x3e..=0x41 => true,
+        0x80..=0x86 => true,
+        0x88 => true,
+        0x8a..=0x8d => true,
+        0x8f..=0x9d => true,
+        0x9f..=0xa8 => true,
+        0xb0..=0xea => true,
+        0xf0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p113(b: u8) -> bool {
+    match b {
+        0x00..=0x03 => true,
+        0x05..=0x0c => true,
+        0x0f..=0x10 => true,
+        0x13..=0x28 => true,
+        0x2a..=0x30 => true,
+        0x32..=0x33 => true,
+        0x35..=0x39 => true,
+        0x3b..=0x44 => true,
+        0x47..=0x48 => true,
+        0x4b..=0x4d => true,
+        0x50 => true,
+        0x57 => true,
+        0x5d..=0x63 => true,
+        0x66..=0x6c => true,
+        0x70..=0x74 => true,
+        0x80..=0x89 => true,
+        0x8b => true,
+        0x8e => true,
+        0x90..=0xb5 => true,
+        0xb7..=0xc0 => true,
+        0xc2 => true,
+        0xc5 => true,
+        0xc7..=0xca => true,
+        0xcc..=0xd3 => true,
+        0xe1..=0xe2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p114(b: u8) -> bool {
+    match b {
+        0x00..=0x4a => true,
+        0x50..=0x59 => true,
+        0x5e..=0x61 => true,
+        0x80..=0xc5 => true,
+        0xc7 => true,
+        0xd0..=0xd9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p115(b: u8) -> bool {
+    match b {
+        0x80..=0xb5 => true,
+        0xb8..=0xc0 => true,
+        0xd8..=0xdd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p116(b: u8) -> bool {
+    match b {
+        0x00..=0x40 => true,
+        0x44 => true,
+        0x50..=0x59 => true,
+        0x80..=0xb8 => true,
+        0xc0..=0xc9 => true,
+        0xd0..=0xe3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p117(b: u8) -> bool {
+    match b {
+        0x00..=0x1a => true,
+        0x1d..=0x2b => true,
+        0x30..=0x39 => true,
+        0x40..=0x46 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p118(b: u8) -> bool {
+    match b {
+        0x00..=0x3a => true,
+        0xa0..=0xe9 => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p119(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x09 => true,
+        0x0c..=0x13 => true,
+        0x15..=0x16 => true,
+        0x18..=0x35 => true,
+        0x37..=0x38 => true,
+        0x3b..=0x43 => true,
+        0x50..=0x59 => true,
+        0xa0..=0xa7 => true,
+        0xaa..=0xd7 => true,
+        0xda..=0xe1 => true,
+        0xe3..=0xe4 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p11a(b: u8) -> bool {
+    match b {
+        0x00..=0x3e => true,
+        0x47 => true,
+        0x50..=0x99 => true,
+        0x9d => true,
+        0xb0..=0xf8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p11b(b: u8) -> bool {
+    match b {
+        0x60..=0x67 => true,
+        0xc0..=0xe0 => true,
+        0xf0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p11c(b: u8) -> bool {
+    match b {
+        0x00..=0x08 => true,
+        0x0a..=0x36 => true,
+        0x38..=0x40 => true,
+        0x50..=0x59 => true,
+        0x72..=0x8f => true,
+        0x92..=0xa7 => true,
+        0xa9..=0xb6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p11d(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x08..=0x09 => true,
+        0x0b..=0x36 => true,
+        0x3a => true,
+        0x3c..=0x3d => true,
+        0x3f..=0x47 => true,
+        0x50..=0x59 => true,
+        0x60..=0x65 => true,
+        0x67..=0x68 => true,
+        0x6a..=0x8e => true,
+        0x90..=0x91 => true,
+        0x93..=0x98 => true,
+        0xa0..=0xa9 => true,
+        0xb0..=0xdb => true,
+        0xe0..=0xe9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p11e(b: u8) -> bool {
+    match b {
+        0xe0..=0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p11f(b: u8) -> bool {
+    match b {
+        0x00..=0x10 => true,
+        0x12..=0x3a => true,
+        0x3e..=0x42 => true,
+        0x50..=0x5a => true,
+        0xb0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p123(b: u8) -> bool {
+    match b {
+        0x00..=0x99 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p124(b: u8) -> bool {
+    match b {
+        0x00..=0x6e => true,
+        0x80..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p125(b: u8) -> bool {
+    match b {
+        0x00..=0x43 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p12f(b: u8) -> bool {
+    match b {
+        0x90..=0xf0 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p134(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x40..=0x55 => true,
+        0x60..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p143(b: u8) -> bool {
+    match b {
+        0x00..=0xfa => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p146(b: u8) -> bool {
+    match b {
+        0x00..=0x46 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p161(b: u8) -> bool {
+    match b {
+        0x00..=0x39 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p16a(b: u8) -> bool {
+    match b {
+        0x00..=0x38 => true,
+        0x40..=0x5e => true,
+        0x60..=0x69 => true,
+        0x70..=0xbe => true,
+        0xc0..=0xc9 => true,
+        0xd0..=0xed => true,
+        0xf0..=0xf4 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p16b(b: u8) -> bool {
+    match b {
+        0x00..=0x36 => true,
+        0x40..=0x43 => true,
+        0x50..=0x59 => true,
+        0x63..=0x77 => true,
+        0x7d..=0x8f => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p16d(b: u8) -> bool {
+    match b {
+        0x40..=0x6c => true,
+        0x70..=0x79 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p16e(b: u8) -> bool {
+    match b {
+        0x40..=0x7f => true,
+        0xa0..=0xb8 => true,
+        0xbb..=0xd3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p16f(b: u8) -> bool {
+    match b {
+        0x00..=0x4a => true,
+        0x4f..=0x87 => true,
+        0x8f..=0x9f => true,
+        0xe0..=0xe1 => true,
+        0xe3..=0xe4 => true,
+        0xf0..=0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p18c(b: u8) -> bool {
+    match b {
+        0x00..=0xd5 => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p18d(b: u8) -> bool {
+    match b {
+        0x00..=0x1e => true,
+        0x80..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1af(b: u8) -> bool {
+    match b {
+        0xf0..=0xf3 => true,
+        0xf5..=0xfb => true,
+        0xfd..=0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1b1(b: u8) -> bool {
+    match b {
+        0x00..=0x22 => true,
+        0x32 => true,
+        0x50..=0x52 => true,
+        0x55 => true,
+        0x64..=0x67 => true,
+        0x70..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1b2(b: u8) -> bool {
+    match b {
+        0x00..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1bc(b: u8) -> bool {
+    match b {
+        0x00..=0x6a => true,
+        0x70..=0x7c => true,
+        0x80..=0x88 => true,
+        0x90..=0x99 => true,
+        0x9d..=0x9e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1cc(b: u8) -> bool {
+    match b {
+        0xf0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1cf(b: u8) -> bool {
+    match b {
+        0x00..=0x2d => true,
+        0x30..=0x46 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1d1(b: u8) -> bool {
+    match b {
+        0x65..=0x69 => true,
+        0x6d..=0x72 => true,
+        0x7b..=0x82 => true,
+        0x85..=0x8b => true,
+        0xaa..=0xad => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1d2(b: u8) -> bool {
+    match b {
+        0x42..=0x44 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1d4(b: u8) -> bool {
+    match b {
+        0x00..=0x54 => true,
+        0x56..=0x9c => true,
+        0x9e..=0x9f => true,
+        0xa2 => true,
+        0xa5..=0xa6 => true,
+        0xa9..=0xac => true,
+        0xae..=0xb9 => true,
+        0xbb => true,
+        0xbd..=0xc3 => true,
+        0xc5..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1d5(b: u8) -> bool {
+    match b {
+        0x00..=0x05 => true,
+        0x07..=0x0a => true,
+        0x0d..=0x14 => true,
+        0x16..=0x1c => true,
+        0x1e..=0x39 => true,
+        0x3b..=0x3e => true,
+        0x40..=0x44 => true,
+        0x46 => true,
+        0x4a..=0x50 => true,
+        0x52..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1d6(b: u8) -> bool {
+    match b {
+        0x00..=0xa5 => true,
+        0xa8..=0xc0 => true,
+        0xc2..=0xda => true,
+        0xdc..=0xfa => true,
+        0xfc..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1d7(b: u8) -> bool {
+    match b {
+        0x00..=0x14 => true,
+        0x16..=0x34 => true,
+        0x36..=0x4e => true,
+        0x50..=0x6e => true,
+        0x70..=0x88 => true,
+        0x8a..=0xa8 => true,
+        0xaa..=0xc2 => true,
+        0xc4..=0xcb => true,
+        0xce..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1da(b: u8) -> bool {
+    match b {
+        0x00..=0x36 => true,
+        0x3b..=0x6c => true,
+        0x75 => true,
+        0x84 => true,
+        0x9b..=0x9f => true,
+        0xa1..=0xaf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1df(b: u8) -> bool {
+    match b {
+        0x00..=0x1e => true,
+        0x25..=0x2a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e0(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x08..=0x18 => true,
+        0x1b..=0x21 => true,
+        0x23..=0x24 => true,
+        0x26..=0x2a => true,
+        0x30..=0x6d => true,
+        0x8f => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e1(b: u8) -> bool {
+    match b {
+        0x00..=0x2c => true,
+        0x30..=0x3d => true,
+        0x40..=0x49 => true,
+        0x4e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e2(b: u8) -> bool {
+    match b {
+        0x90..=0xae => true,
+        0xc0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e4(b: u8) -> bool {
+    match b {
+        0xd0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e5(b: u8) -> bool {
+    match b {
+        0xd0..=0xfa => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e6(b: u8) -> bool {
+    match b {
+        0xc0..=0xde => true,
+        0xe0..=0xf5 => true,
+        0xfe..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e7(b: u8) -> bool {
+    match b {
+        0xe0..=0xe6 => true,
+        0xe8..=0xeb => true,
+        0xed..=0xee => true,
+        0xf0..=0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e8(b: u8) -> bool {
+    match b {
+        0x00..=0xc4 => true,
+        0xd0..=0xd6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1e9(b: u8) -> bool {
+    match b {
+        0x00..=0x4b => true,
+        0x50..=0x59 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1ee(b: u8) -> bool {
+    match b {
+        0x00..=0x03 => true,
+        0x05..=0x1f => true,
+        0x21..=0x22 => true,
+        0x24 => true,
+        0x27 => true,
+        0x29..=0x32 => true,
+        0x34..=0x37 => true,
+        0x39 => true,
+        0x3b => true,
+        0x42 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d..=0x4f => true,
+        0x51..=0x52 => true,
+        0x54 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61..=0x62 => true,
+        0x64 => true,
+        0x67..=0x6a => true,
+        0x6c..=0x72 => true,
+        0x74..=0x77 => true,
+        0x79..=0x7c => true,
+        0x7e => true,
+        0x80..=0x89 => true,
+        0x8b..=0x9b => true,
+        0xa1..=0xa3 => true,
+        0xa5..=0xa9 => true,
+        0xab..=0xbb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p1fb(b: u8) -> bool {
+    match b {
+        0xf0..=0xf9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p2a6(b: u8) -> bool {
+    match b {
+        0x00..=0xdf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p2b8(b: u8) -> bool {
+    match b {
+        0x00..=0x1d => true,
+        0x20..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p2ce(b: u8) -> bool {
+    match b {
+        0x00..=0xad => true,
+        0xb0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p2eb(b: u8) -> bool {
+    match b {
+        0x00..=0xe0 => true,
+        0xf0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p2ee(b: u8) -> bool {
+    match b {
+        0x00..=0x5d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p2fa(b: u8) -> bool {
+    match b {
+        0x00..=0x1d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p313(b: u8) -> bool {
+    match b {
+        0x00..=0x4a => true,
+        0x50..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_p334(b: u8) -> bool {
+    match b {
+        0x00..=0x79 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn xc_pe01(b: u8) -> bool {
+    match b {
+        0x00..=0xef => true,
+        _ => false,
+    }
+}

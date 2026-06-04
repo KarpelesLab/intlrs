@@ -118,6 +118,8 @@ fn main() {
         ),
         ("uppercase", "up", "DerivedCoreProperties.txt", "Uppercase"),
         ("lowercase", "lo", "DerivedCoreProperties.txt", "Lowercase"),
+        ("xid_start", "xs", "DerivedCoreProperties.txt", "XID_Start"),
+        ("xid_continue", "xc", "DerivedCoreProperties.txt", "XID_Continue"),
     ] {
         let codes = parse_binary_prop(&ucd.join(file), prop);
         emit_bool_lookup(&mut bp_out, fn_name, prefix, &codes);
