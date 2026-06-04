@@ -100,6 +100,9 @@ Beyond the `unicode` module:
   formatting), and renders **Islamic (Hijri)** and **Persian** dates with
   localized month names (`format_islamic_date("en", 1445, 9, 1, DateStyle::Long)`
   → `"Ramadan 1, 1445 AH"`; `format_persian_date` likewise).
+- `intl::timezone` parses a POSIX `TZ` string (`"PST8PDT,M3.2.0,M11.1.0/2"`)
+  and computes the UTC offset / DST state for any date — the current-rules part
+  of time-zone support, without the full IANA historical database.
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
   civil (tabular) Islamic, Persian (Solar Hijri), and Hebrew calendars via the
   Julian Day Number, gives the Japanese era/year, plus ISO-8601 week dates and
