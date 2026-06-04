@@ -402,9 +402,11 @@ fn format_with(p: &Pattern, value: f64, decimal: &str, group: &str, minus: &str)
         None => (formatted.as_str(), ""),
     };
 
-    // Left-pad the integer to the minimum digit count.
+    // Left-pad the integer to the minimum digit count. Compare in `usize` (not
+    // `as u8`, which would truncate for >255-digit values and could underflow
+    // the subtraction below).
     let mut int_owned;
-    let int_str: &str = if (int_str.len() as u8) < p.min_int {
+    let int_str: &str = if int_str.len() < p.min_int as usize {
         int_owned = String::new();
         for _ in 0..(p.min_int as usize - int_str.len()) {
             int_owned.push('0');

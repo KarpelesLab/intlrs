@@ -121,5 +121,103 @@ fn fuzz_invariants() {
             collate::compare(&t, &s).reverse(),
             "collate antisymmetric: {s:?} vs {t:?}"
         );
+
+        // Bidi (the algorithm with the explicit-level stack), IDNA, and spoof
+        // analysis must never panic on arbitrary text.
+        let info = intl::unicode::bidi::process(&s, None);
+        assert_eq!(
+            info.levels.len(),
+            s.chars().count(),
+            "bidi level count: {s:?}"
+        );
+        let _ = intl::unicode::idna::to_ascii(&s);
+        let _ = intl::unicode::idna::to_unicode(&s);
+        let _ = intl::unicode::spoof::skeleton(&s);
+        let _ = intl::unicode::spoof::confusable(&s, &t);
+    }
+}
+
+/// The locale-aware APIs must never panic, whatever locale tag or value they get
+/// — including malformed BCP-47 tags and adversarial numbers. (This is the class
+/// of bug — `.unwrap()` on uncontrolled data — behind real production outages.)
+#[test]
+fn fuzz_locale_apis() {
+    use intl::datetime::{format_date, DateStyle, DateTime};
+    use intl::number::{
+        format_compact, format_currency, format_decimal, format_scientific, parse_decimal,
+    };
+    use intl::timezone::PosixTz;
+
+    let mut rng = Rng(0xD1B54A32D192ED03);
+    for _ in 0..20_000 {
+        let llen = (rng.next() % 10) as usize;
+        let lang = rng.string(llen);
+        // A random finite-ish f64 plus some pathological values.
+        let bits = rng.next();
+        let value = match bits % 8 {
+            0 => 0.0,
+            1 => f64::from_bits(rng.next()), // NaN/Inf/subnormal included
+            2 => -(rng.next() as f64),
+            _ => (rng.next() as i64 as f64) / 1000.0,
+        };
+
+        let (clen, plen, nlen, oplen) = (
+            (rng.next() % 5) as usize,
+            (rng.next() % 12) as usize,
+            (rng.next() % 6) as usize,
+            (rng.next() % 8) as usize,
+        );
+        let sig = (rng.next() % 8) as usize;
+        let (code, pstr, nstr, opstr) = (
+            rng.string(clen),
+            rng.string(plen),
+            rng.string(nlen),
+            rng.string(oplen),
+        );
+
+        let _ = format_decimal(&lang, value);
+        let _ = format_scientific(&lang, value, sig);
+        let _ = format_compact(&lang, value);
+        let _ = format_currency(&lang, value, &code);
+        let _ = parse_decimal(&lang, &pstr);
+        let _ = intl::number::to_numbering_system(&lang, &nstr);
+        let _ = intl::spellout::spell_cardinal(&lang, rng.next() as i64);
+
+        // Locale parsing/negotiation on random (often malformed) tags.
+        let _ = intl::locale::Locale::parse(&lang);
+        if let Some(ops) = intl::plural::PluralOperands::parse(&opstr) {
+            let _ = intl::plural::plural_category(&lang, &ops);
+        }
+
+        // Date/time formatting and ISO/POSIX-TZ parsing on random input. Time
+        // fields span the *full* u8 range (not just valid 0–23/0–59) to catch
+        // arithmetic overflow on unvalidated DateTime values.
+        let dt = DateTime {
+            year: rng.next() as i32,
+            month: rng.next() as u8,
+            day: rng.next() as u8,
+            hour: rng.next() as u8,
+            minute: rng.next() as u8,
+            second: rng.next() as u8,
+        };
+        let _ = format_date(&lang, &dt, DateStyle::Long);
+        let _ = intl::datetime::format_time(&lang, &dt, DateStyle::Medium);
+        let _ = intl::datetime::format_datetime(&lang, &dt, DateStyle::Full, DateStyle::Short);
+        let _ = intl::datetime::format_skeleton(&lang, &dt, &pstr);
+        let _ = dt.to_iso8601();
+        let _ = dt.weekday();
+        // Non-Gregorian renderers take a user-supplied (possibly out-of-range) month.
+        let (y, mo, d) = (
+            rng.next() as i64 % 5000,
+            rng.next() as i64 % 16,
+            rng.next() as i64 % 40,
+        );
+        let _ = intl::datetime::format_islamic_date(&lang, y, mo, d, DateStyle::Medium);
+        let _ = intl::datetime::format_persian_date(&lang, y, mo, d, DateStyle::Medium);
+        let _ = dt.add_seconds(rng.next() as i64);
+        let _ = DateTime::parse_iso8601(&lang);
+        if let Some(tz) = PosixTz::parse(&lang) {
+            let _ = tz.offset_seconds(&dt);
+        }
     }
 }

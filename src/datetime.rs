@@ -70,11 +70,14 @@ impl DateTime {
     pub fn add_seconds(&self, delta: i64) -> DateTime {
         let jdn =
             crate::calendar::gregorian_to_jdn(self.year as i64, self.month as i64, self.day as i64);
-        let total = jdn * 86_400
-            + self.hour as i64 * 3600
-            + self.minute as i64 * 60
-            + self.second as i64
-            + delta;
+        // Saturating arithmetic: an extreme year combined with an extreme delta
+        // would otherwise overflow i64 and panic in debug builds.
+        let total = jdn
+            .saturating_mul(86_400)
+            .saturating_add(self.hour as i64 * 3600)
+            .saturating_add(self.minute as i64 * 60)
+            .saturating_add(self.second as i64)
+            .saturating_add(delta);
         let (new_jdn, sod) = (total.div_euclid(86_400), total.rem_euclid(86_400));
         let (y, m, d) = crate::calendar::jdn_to_gregorian(new_jdn);
         DateTime {
@@ -164,10 +167,16 @@ impl DateStyle {
 /// (Sakamoto's algorithm).
 fn weekday(dt: &DateTime) -> usize {
     let t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
-    let m = dt.month as i32;
-    let d = dt.day as i32;
-    let y = if m < 3 { dt.year - 1 } else { dt.year };
-    (((y + y / 4 - y / 100 + y / 400 + t[(m - 1) as usize] + d) % 7 + 7) % 7) as usize
+    // Compute in i64: i32 year arithmetic here overflows for extreme years (and
+    // `year - 1` underflows at i32::MIN) on unvalidated DateTime input.
+    let m = (dt.month as i64).clamp(1, 12);
+    let d = dt.day as i64;
+    let y = if m < 3 {
+        dt.year as i64 - 1
+    } else {
+        dt.year as i64
+    };
+    (y + y / 4 - y / 100 + y / 400 + t[(m - 1) as usize] + d).rem_euclid(7) as usize
 }
 
 fn two(n: i64) -> String {
@@ -177,6 +186,9 @@ fn two(n: i64) -> String {
 /// Render one date-field run (`field` repeated `n` times) of a CLDR pattern.
 fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
     let m = dt.month as usize;
+    // Index for the 12-element month-name arrays, clamped so an out-of-range
+    // (unvalidated) month never indexes out of bounds.
+    let mi = m.clamp(1, 12) - 1;
     match field {
         'y' | 'Y' => {
             if n == 2 {
@@ -188,8 +200,8 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
         'M' | 'L' => match n {
             1 => m.to_string(),
             2 => two(m as i64),
-            3 => s.months_abbr[m - 1].to_string(),
-            _ => s.months_wide[m - 1].to_string(),
+            3 => s.months_abbr[mi].to_string(),
+            _ => s.months_wide[mi].to_string(),
         },
         'd' => {
             if n >= 2 {
@@ -207,7 +219,8 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
             }
         }
         'h' => {
-            let h = ((dt.hour + 11) % 12) + 1; // 12-hour clock
+            // Widen first: `dt.hour + 11` would overflow u8 for hour > 244.
+            let h = ((dt.hour as u16 + 11) % 12) + 1; // 12-hour clock
             if n >= 2 {
                 two(h as i64)
             } else {
@@ -384,13 +397,14 @@ fn render_alt(
                 i += 1;
             }
             let (n, m) = (i - start, month as usize);
+            let mi = m.clamp(1, 12) - 1; // unvalidated month must not index OOB
             match ch {
                 'y' | 'Y' => out.push_str(&year.to_string()),
                 'M' | 'L' => match n {
                     1 => out.push_str(&m.to_string()),
                     2 => out.push_str(&two(m as i64)),
-                    3 => out.push_str(cal.months_abbr[m - 1]),
-                    _ => out.push_str(cal.months_wide[m - 1]),
+                    3 => out.push_str(cal.months_abbr[mi]),
+                    _ => out.push_str(cal.months_wide[mi]),
                 },
                 'd' => out.push_str(&day.to_string()),
                 'E' | 'e' | 'c' => out.push_str(if n >= 4 {
