@@ -27,6 +27,21 @@ pub fn remove_diacritics(s: &str) -> String {
     crate::unicode::nfc(stripped).collect()
 }
 
+/// Best-effort transliteration of `s` to plain ASCII: romanize Cyrillic (ISO 9)
+/// and Greek (ELOT/ISO 843), then fold the result with [`latin_ascii`]. Latin
+/// text is accent-folded; scripts with no romanization here (e.g. CJK) are left
+/// unchanged. Handy for slugs and search keys over mixed-script input.
+///
+/// ```
+/// use intl::translit::any_ascii;
+/// assert_eq!(any_ascii("Москва café Αθήνα"), "Moskva cafe Athina");
+/// assert_eq!(any_ascii("Straße"), "Strasse");
+/// ```
+#[must_use]
+pub fn any_ascii(s: &str) -> String {
+    latin_ascii(&greek_to_latin(&cyrillic_to_latin(s)))
+}
+
 /// Transliterate Cyrillic script to Latin using **ISO 9:1995** — the single,
 /// language-independent, reversible standard (so Russian, Ukrainian, Serbian,
 /// Bulgarian, … all map consistently). The output uses Latin letters with

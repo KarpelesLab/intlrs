@@ -123,6 +123,11 @@ Beyond the `unicode` module:
   `weekday`, leap- and carry-aware), and `format_gmt_offset` renders a localized
   UTC offset (`GMT+05:30`, `UTC−08:00`).
 
+- `intl::translit` (alloc) transliterates: `latin_ascii` ("café"→"cafe",
+  "Straße"→"Strasse"), `remove_diacritics`, `cyrillic_to_latin` (ISO 9),
+  `greek_to_latin` (ELOT/ISO 843), and `any_ascii` for best-effort mixed-script
+  ASCII ("Москва café Αθήνα"→"Moskva cafe Athina").
+
 These build out the CLDR/locale layer toward full ICU-style formatting. The
 locale data is compiled by the offline codegen into flat binary blobs committed
 under `src/cldr/` and embedded with `include_bytes!`, so the table layer is

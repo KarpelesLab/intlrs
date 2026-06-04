@@ -59,3 +59,13 @@ fn greek() {
     assert_eq!(g("ΘΕΟΣ"), "THEOS");
     assert_eq!(g("hello"), "hello"); // non-Greek passthrough
 }
+
+#[test]
+fn any_ascii_mixed() {
+    use intl::translit::any_ascii as a;
+    assert_eq!(a("Москва café Αθήνα"), "Moskva cafe Athina");
+    assert_eq!(a("Straße"), "Strasse");
+    assert_eq!(a("Чехов & Δίας"), "Cehov & Dias");
+    // CJK (no romanization here) passes through.
+    assert_eq!(a("東京 Tokyo"), "東京 Tokyo");
+}
