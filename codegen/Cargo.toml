@@ -1,0 +1,13 @@
+[package]
+name = "codegen"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Internal tool: converts vendored UCD tables into committed Rust source for the `unicode` crate. Not published."
+
+[[bin]]
+name = "codegen"
+path = "src/main.rs"
+
+[dependencies]
+# Intentionally dependency-free: parses the UCD text files with std only.

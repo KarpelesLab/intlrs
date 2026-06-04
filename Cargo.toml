@@ -1,0 +1,26 @@
+[package]
+name = "unicode"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "Pure-Rust, no_std Unicode rune analysis driven by the official UCD tables, with feature-selectable codepoint ranges."
+repository = "https://github.com/KarpelesLab/unicoders"
+license = "MIT"
+readme = "README.md"
+keywords = ["unicode", "no_std", "category", "char", "ucd"]
+categories = ["no-std", "text-processing", "internationalization"]
+# Only ship generated Rust + sources; the multi-MB vendored UCD text files and the
+# codegen tool are excluded from the published crate.
+include = ["src/**/*.rs", "Cargo.toml", "README.md", "LICENSE"]
+
+[features]
+# Coarse, nested codepoint-range tiers. Selecting a tier compiles it and every
+# smaller tier; codepoints outside the compiled range resolve to `Unassigned` (Cn).
+default = ["bmp"]
+ascii = []              # U+0000..=U+007F
+latin1 = ["ascii"]      # U+0080..=U+00FF
+bmp = ["latin1"]        # U+0100..=U+FFFF (rest of the Basic Multilingual Plane)
+full = ["bmp"]          # U+10000..=U+10FFFF (supplementary planes)
+
+[workspace]
+members = ["codegen"]
