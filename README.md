@@ -75,7 +75,8 @@ Beyond the `unicode` module:
 - `intl::number` (alloc) formats numbers in a locale's conventions —
   `format_decimal("de", 1234.5)` → `"1.234,5"`, `format_decimal("hi", 1234567.0)`
   → `"12,34,567"` (Indian grouping), `format_percent("en", 0.5)` → `"50%"`,
-  `format_currency("en", 1234.5, "USD")` → `"$1,234.50"`.
+  `format_currency("en", 1234.5, "USD")` → `"$1,234.50"`, and `parse_decimal`
+  back to an `f64` (`parse_decimal("de", "1.234,5")` → `1234.5`).
 
 - `intl::list` (alloc) joins items with locale connectors —
   `format_list("en", &["a","b","c"], ListStyle::And)` → `"a, b, and c"`.

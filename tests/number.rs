@@ -48,3 +48,19 @@ fn currency() {
     assert_eq!(fc("xx", 5.0, "USD"), "$5.00");
     assert!(fc("en", 5.0, "XYZ").contains("XYZ"));
 }
+
+#[test]
+fn parsing() {
+    use intl::number::{format_decimal as f, parse_decimal as p};
+    assert_eq!(p("en", "1,234.5"), Some(1234.5));
+    assert_eq!(p("de", "1.234,5"), Some(1234.5));
+    assert_eq!(p("fr", "1\u{202f}234,5"), Some(1234.5));
+    assert_eq!(p("en", "-42"), Some(-42.0));
+    assert_eq!(p("hi", "12,34,567"), Some(1234567.0)); // Indian grouping
+    assert_eq!(p("en", "abc"), None);
+    assert_eq!(p("en", ""), None);
+    // Round-trips: format then parse.
+    for &(lang, v) in &[("en", 1234567.0_f64), ("de", -98765.43), ("fr", 1000.0)] {
+        assert_eq!(p(lang, &f(lang, v)), Some(v));
+    }
+}

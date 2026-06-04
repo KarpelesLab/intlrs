@@ -58,6 +58,61 @@ pub fn format_percent(lang: &str, value: f64) -> String {
     format_with(&s.pct, value * 100.0, s.decimal, s.group, s.minus)
 }
 
+/// Parse a number written in `lang`'s conventions back to an `f64` — the inverse
+/// of [`format_decimal`]: grouping separators are removed and the locale decimal
+/// separator is accepted. A leading minus sign (ASCII `-` or the locale's) is
+/// honored. Returns `None` if the remaining text is not a number.
+///
+/// ```
+/// use intl::number::parse_decimal;
+/// assert_eq!(parse_decimal("en", "1,234.5"), Some(1234.5));
+/// assert_eq!(parse_decimal("de", "1.234,5"), Some(1234.5));
+/// assert_eq!(parse_decimal("fr", "-1\u{202f}234,5"), Some(-1234.5));
+/// assert_eq!(parse_decimal("en", "abc"), None);
+/// ```
+#[must_use]
+pub fn parse_decimal(lang: &str, input: &str) -> Option<f64> {
+    let s = spec(lang);
+    let mut out = String::with_capacity(input.len());
+    let mut rest = input.trim();
+    if let Some(r) = rest
+        .strip_prefix(s.minus)
+        .or_else(|| rest.strip_prefix('-'))
+    {
+        out.push('-');
+        rest = r;
+    }
+    // Walk the rest, dropping group separators and normalizing the decimal point.
+    let mut seen_point = false;
+    while !rest.is_empty() {
+        if let Some(r) = rest.strip_prefix(s.group) {
+            rest = r;
+        } else if !seen_point {
+            if let Some(r) = rest.strip_prefix(s.decimal) {
+                out.push('.');
+                seen_point = true;
+                rest = r;
+                continue;
+            } else {
+                let c = rest.chars().next()?;
+                if !c.is_ascii_digit() {
+                    return None;
+                }
+                out.push(c);
+                rest = &rest[c.len_utf8()..];
+            }
+        } else {
+            let c = rest.chars().next()?;
+            if !c.is_ascii_digit() {
+                return None;
+            }
+            out.push(c);
+            rest = &rest[c.len_utf8()..];
+        }
+    }
+    out.parse().ok()
+}
+
 /// Format `value` as an amount in the currency `code` (ISO 4217, e.g. `"USD"`)
 /// using the conventions of `lang`. The fraction-digit count follows the
 /// currency (e.g. `JPY` has none), and the currency symbol is localized.
