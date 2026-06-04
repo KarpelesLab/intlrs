@@ -105,3 +105,42 @@ fn islamic_dates() {
     assert!(fi("en", 1446, 1, 1, Full).contains("Muharram"));
     assert!(fi("fr", 1445, 9, 1, Long).contains("1445"));
 }
+
+#[test]
+fn arithmetic() {
+    // Weekday (2026-06-04 is a Thursday = 4).
+    assert_eq!(DT.weekday(), 4);
+    // Add across a year boundary.
+    let nye = DateTime {
+        year: 2026,
+        month: 12,
+        day: 31,
+        hour: 23,
+        minute: 59,
+        second: 30,
+    };
+    assert_eq!(
+        nye.add_seconds(90),
+        DateTime {
+            year: 2027,
+            month: 1,
+            day: 1,
+            hour: 0,
+            minute: 1,
+            second: 0
+        }
+    );
+    // Subtract a day, leap-year aware (2024 is leap, so day before Mar 1 is Feb 29).
+    let mar1 = DateTime {
+        year: 2024,
+        month: 3,
+        day: 1,
+        hour: 12,
+        minute: 0,
+        second: 0,
+    };
+    assert_eq!(mar1.add_days(-1).day, 29);
+    assert_eq!(mar1.add_days(-1).month, 2);
+    // Round-trip.
+    assert_eq!(DT.add_seconds(12345).add_seconds(-12345), DT);
+}

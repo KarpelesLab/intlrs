@@ -103,7 +103,8 @@ Beyond the `unicode` module:
   civil (tabular) Islamic, Persian (Solar Hijri), and Hebrew calendars via the
   Julian Day Number, gives the Japanese era/year, plus ISO-8601 week dates and
   day-of-week — pure integer arithmetic. `DateTime` also does
-  ISO-8601 timestamp parse/format, and `format_gmt_offset` renders a localized
+  ISO-8601 timestamp parse/format, date arithmetic (`add_seconds`/`add_days`/
+  `weekday`, leap- and carry-aware), and `format_gmt_offset` renders a localized
   UTC offset (`GMT+05:30`, `UTC−08:00`).
 
 These build out the CLDR/locale layer toward full ICU-style formatting. The

@@ -51,6 +51,48 @@ impl DateTime {
         )
     }
 
+    /// The ISO-8601 weekday: 1 = Monday … 7 = Sunday.
+    #[must_use]
+    pub fn weekday(&self) -> u8 {
+        crate::calendar::day_of_week(self.year as i64, self.month as i64, self.day as i64)
+    }
+
+    /// This date-time advanced by `delta` seconds (negative to go back), with
+    /// day/month/year carry handled through the proleptic Gregorian calendar.
+    ///
+    /// ```
+    /// use intl::datetime::DateTime;
+    /// let dt = DateTime { year: 2026, month: 12, day: 31, hour: 23, minute: 59, second: 30 };
+    /// let next = dt.add_seconds(90); // crosses into the new year
+    /// assert_eq!(next, DateTime { year: 2027, month: 1, day: 1, hour: 0, minute: 1, second: 0 });
+    /// ```
+    #[must_use]
+    pub fn add_seconds(&self, delta: i64) -> DateTime {
+        let jdn =
+            crate::calendar::gregorian_to_jdn(self.year as i64, self.month as i64, self.day as i64);
+        let total = jdn * 86_400
+            + self.hour as i64 * 3600
+            + self.minute as i64 * 60
+            + self.second as i64
+            + delta;
+        let (new_jdn, sod) = (total.div_euclid(86_400), total.rem_euclid(86_400));
+        let (y, m, d) = crate::calendar::jdn_to_gregorian(new_jdn);
+        DateTime {
+            year: y as i32,
+            month: m as u8,
+            day: d as u8,
+            hour: (sod / 3600) as u8,
+            minute: (sod % 3600 / 60) as u8,
+            second: (sod % 60) as u8,
+        }
+    }
+
+    /// This date advanced by `delta` whole days (keeping the time of day).
+    #[must_use]
+    pub fn add_days(&self, delta: i64) -> DateTime {
+        self.add_seconds(delta * 86_400)
+    }
+
     /// Parse an ISO-8601 timestamp such as `"2026-06-04T14:30:05"`. Accepts a
     /// space instead of `T`, an omitted time or seconds, and a trailing `Z`.
     /// Returns `None` if malformed. (A time-zone offset, if present, is ignored.)
