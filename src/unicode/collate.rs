@@ -419,8 +419,8 @@ pub fn sort_key(s: &str) -> Vec<u16> {
 /// # }
 /// ```
 pub struct Tailoring {
-    /// Tailored NFD sequences → synthetic collation element, sorted longest-first.
-    entries: Vec<(Vec<char>, u64)>,
+    /// Tailored NFD sequences → collation-element sequence, sorted longest-first.
+    entries: Vec<(Vec<char>, Vec<u64>)>,
 }
 
 impl Tailoring {
@@ -444,17 +444,22 @@ impl Tailoring {
             "da" | "nb" | "nn" | "no" => "&z < æ < ø < å", // Danish, Norwegian
             "is" => "&y < ð < þ < æ < ö",                  // Icelandic
             "et" => "&s < š < z < ž < õ < ä < ö < ü",      // Estonian
+            "de" => "&ae = ä &oe = ö &ue = ü &ss = ß",     // German phonebook (expansions)
             _ => return None,
         };
         Tailoring::parse(rules)
     }
 
-    /// Parse a CLDR-style tailoring rule string (the `<`/`<<`/`<<<`/`=`
-    /// relations). Returns `None` if a reset anchor or target is malformed.
+    /// Parse a CLDR-style tailoring rule string. Supports the `<` (primary),
+    /// `<<` (secondary), `<<<` (tertiary), and `=` (identity) relations, and
+    /// **expansions** when the reset anchor is a multi-character string
+    /// (`"&ae = ä"` makes `ä` collate as `"ae"`). Returns `None` if a reset
+    /// anchor or target is malformed.
     #[must_use]
     pub fn parse(rules: &str) -> Option<Tailoring> {
         let chars: Vec<char> = rules.chars().filter(|c| !c.is_whitespace()).collect();
-        let mut entries: Vec<(Vec<char>, u64)> = Vec::new();
+        let mut entries: Vec<(Vec<char>, Vec<u64>)> = Vec::new();
+        let mut anchor: Vec<char> = Vec::new();
         let mut anchor_primary = 0u32;
         // Running offsets within each level relative to the reset anchor.
         let (mut p_off, mut s_off, mut t_off) = (0u32, 0u32, 0u32);
@@ -463,11 +468,13 @@ impl Tailoring {
             match chars[i] {
                 '&' => {
                     i += 1;
-                    let anchor = *chars.get(i)?;
-                    anchor_primary =
-                        primary(collation_elements(alloc::vec![anchor]).first().copied()?) as u32;
+                    let start = i;
+                    while i < chars.len() && !matches!(chars[i], '<' | '=' | '&') {
+                        i += 1;
+                    }
+                    anchor = chars[start..i].to_vec();
+                    anchor_primary = primary(*collation_elements(anchor.clone()).first()?) as u32;
                     (p_off, s_off, t_off) = (0, 0, 0);
-                    i += 1;
                 }
                 '<' | '=' => {
                     // The number of `<`s is the relation level: 1 = primary,
@@ -484,13 +491,23 @@ impl Tailoring {
                     if anchor_primary == 0 {
                         return None; // relation before a reset
                     }
-                    match level {
-                        0 => {}                                         // `=` identity
-                        1 => (p_off, s_off, t_off) = (p_off + 1, 0, 0), // primary
-                        2 => (s_off, t_off) = (s_off + 1, 0),           // secondary
-                        _ => t_off += 1,                                // tertiary
+                    if level == 0 {
+                        // `=` identity / expansion: target collates as the anchor.
+                        Self::push_expansion(&mut entries, target, &anchor);
+                    } else {
+                        match level {
+                            1 => (p_off, s_off, t_off) = (p_off + 1, 0, 0),
+                            2 => (s_off, t_off) = (s_off + 1, 0),
+                            _ => t_off += 1,
+                        }
+                        Self::push_letter(
+                            &mut entries,
+                            target,
+                            anchor_primary + p_off,
+                            s_off,
+                            t_off,
+                        );
                     }
-                    Self::push_letter(&mut entries, target, anchor_primary + p_off, s_off, t_off);
                 }
                 _ => i += 1, // ignore anything else (comments, options)
             }
@@ -503,11 +520,10 @@ impl Tailoring {
         Some(Tailoring { entries })
     }
 
-    /// Add tailored entries for `target` (lower form) and its upper-case form,
-    /// mapping each NFD sequence to a collation element at primary `p`, with the
-    /// base secondary/tertiary bumped by `s_off`/`t_off` (and case in tertiary).
+    /// Map `target` (and its upper-case form) to a single synthetic collation
+    /// element at primary `p`, secondary/tertiary bumped by `s_off`/`t_off`.
     fn push_letter(
-        entries: &mut Vec<(Vec<char>, u64)>,
+        entries: &mut Vec<(Vec<char>, Vec<u64>)>,
         target: char,
         p: u32,
         s_off: u32,
@@ -516,15 +532,28 @@ impl Tailoring {
         for (ch, case_t) in [(target, 0x0002u32), (upper(target), 0x0008)] {
             let seq: Vec<char> = nfd(core::iter::once(ch)).collect();
             if !seq.is_empty() {
-                entries.push((seq, pack(p, 0x0020 + s_off, case_t + t_off)));
+                entries.push((seq, alloc::vec![pack(p, 0x0020 + s_off, case_t + t_off)]));
             }
         }
     }
 
-    fn match_at(&self, rest: &[char]) -> Option<(usize, u64)> {
-        for (seq, ce) in &self.entries {
+    /// Map `target` (and its upper-case form) to the full collation-element
+    /// sequence of the `anchor` string — an expansion (`ä` → CEs of `"ae"`).
+    fn push_expansion(entries: &mut Vec<(Vec<char>, Vec<u64>)>, target: char, anchor: &[char]) {
+        let upper_anchor: Vec<char> = anchor.iter().map(|&c| upper(c)).collect();
+        for (ch, anchor_form) in [(target, anchor.to_vec()), (upper(target), upper_anchor)] {
+            let seq: Vec<char> = nfd(core::iter::once(ch)).collect();
+            let ces = collation_elements(nfd(anchor_form.into_iter()).collect());
+            if !seq.is_empty() && !ces.is_empty() {
+                entries.push((seq, ces));
+            }
+        }
+    }
+
+    fn match_at(&self, rest: &[char]) -> Option<(usize, &[u64])> {
+        for (seq, ces) in &self.entries {
             if rest.len() >= seq.len() && rest[..seq.len()] == seq[..] {
-                return Some((seq.len(), *ce));
+                return Some((seq.len(), ces));
             }
         }
         None
@@ -538,11 +567,11 @@ impl Tailoring {
         let mut buf: Vec<char> = Vec::new();
         let mut i = 0;
         while i < cv.len() {
-            if let Some((len, ce)) = self.match_at(&cv[i..]) {
+            if let Some((len, ces)) = self.match_at(&cv[i..]) {
                 if !buf.is_empty() {
                     cea.extend(collation_elements(core::mem::take(&mut buf)));
                 }
-                cea.push(ce);
+                cea.extend_from_slice(ces);
                 i += len;
             } else {
                 buf.push(cv[i]);

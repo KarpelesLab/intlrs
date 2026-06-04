@@ -95,3 +95,18 @@ fn tailoring_for_locale() {
     assert_eq!(da.compare("ø", "å"), Ordering::Less);
     assert!(Tailoring::for_locale("xx").is_none());
 }
+
+#[test]
+fn tailoring_expansion() {
+    use intl::unicode::collate::Tailoring;
+    // German-phonebook style: ä collates as "ae".
+    let de = Tailoring::parse("&ae = ä &oe = ö &ue = ü").unwrap();
+    // "ä" sorts as "ae": between "ad" and "af".
+    assert_eq!(de.compare("Bäcker", "Backer"), Ordering::Greater); // ä=ae > a
+    assert_eq!(de.compare("ä", "ae"), Ordering::Equal);
+    assert_eq!(de.compare("ö", "oe"), Ordering::Equal);
+    // Uppercase expands too: Ä as AE.
+    assert_eq!(de.compare("Ä", "AE"), Ordering::Equal);
+    // "Bär" (Baer) sorts before "Bald" (e < l at the third letter).
+    assert_eq!(de.compare("Bär", "Bald"), Ordering::Less);
+}
