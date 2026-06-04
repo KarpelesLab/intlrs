@@ -756,7 +756,64 @@ fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
         &isc_render,
     );
 
+    // ---- Indic_Positional_Category (UAX #44 / IndicPositionalCategory.txt). ----
+    emit_value_enum(
+        &mut out,
+        ucd,
+        "IndicPositionalCategory.txt",
+        "IndicPositionalCategory",
+        "indic_positional_category",
+        "ipc",
+        "Not_Applicable",
+        "The `Indic_Positional_Category` property (UAX #44): where a dependent \
+         character is positioned relative to its base.",
+    );
+
     write_module(out_dir, modules, "properties", &out);
+}
+
+/// Emit a `value enum` + paged lookup for a simple single-token ranged UCD
+/// property file whose `@missing` default is `default_name`. Index 0 is the
+/// default; the remaining values are the sorted distinct names (PascalCased).
+fn emit_value_enum(
+    out: &mut String,
+    ucd: &Path,
+    file: &str,
+    enum_name: &str,
+    fn_name: &str,
+    prefix: &str,
+    default_name: &str,
+    doc: &str,
+) {
+    let txt = fs::read_to_string(ucd.join(file)).unwrap_or_else(|_| panic!("read {file}"));
+    let mut names: BTreeSet<String> = BTreeSet::new();
+    for line in txt.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if let Some(v) = line.split(';').nth(1) {
+            let v = v.trim();
+            if !v.is_empty() {
+                names.insert(v.to_string());
+            }
+        }
+    }
+    let list: Vec<String> = names.into_iter().filter(|n| n != default_name).collect();
+    let mut code: BTreeMap<&str, u32> = BTreeMap::new();
+    code.insert(default_name, 0);
+    let mut render = vec![format!("{enum_name}::{}", pascal_case(default_name))];
+    let mut variants = format!("    {},\n", pascal_case(default_name));
+    for (i, n) in list.iter().enumerate() {
+        let v = pascal_case(n);
+        code.insert(n.as_str(), (i + 1) as u32);
+        render.push(format!("{enum_name}::{v}"));
+        let _ = write!(variants, "    {v},\n");
+    }
+    let _ = write!(
+        out,
+        "/// {doc}\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\n\
+         pub enum {enum_name} {{\n{variants}}}\n\n"
+    );
+    let codes = parse_ranged(&ucd.join(file), &code, 0);
+    emit_lookup(out, fn_name, prefix, enum_name, &codes, 0, &render);
 }
 
 fn emit_numeric(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {

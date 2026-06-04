@@ -11629,3 +11629,1032 @@ const fn isc_p16d(b: u8) -> IndicSyllabicCategory {
         _ => IndicSyllabicCategory::Other,
     }
 }
+
+/// The `Indic_Positional_Category` property (UAX #44): where a dependent character is positioned relative to its base.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IndicPositionalCategory {
+    NotApplicable,
+    Bottom,
+    BottomAndLeft,
+    BottomAndRight,
+    Left,
+    LeftAndRight,
+    Overstruck,
+    Right,
+    Top,
+    TopAndBottom,
+    TopAndBottomAndLeft,
+    TopAndBottomAndRight,
+    TopAndLeft,
+    TopAndLeftAndRight,
+    TopAndRight,
+    VisualOrderLeft,
+}
+
+#[inline]
+pub(crate) const fn indic_positional_category(cp: u32) -> IndicPositionalCategory {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => ipc_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => ipc_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => ipc_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => ipc_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => ipc_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => ipc_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => ipc_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => ipc_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => ipc_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x017 => ipc_p17(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x019 => ipc_p19(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01a => ipc_p1a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => ipc_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => ipc_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => ipc_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => ipc_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a8 => ipc_pa8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a9 => ipc_pa9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0aa => ipc_paa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => ipc_pab(cp as u8),
+        #[cfg(feature = "full")]
+        0x10a => ipc_p10a(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => ipc_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => ipc_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x112 => ipc_p112(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => ipc_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => ipc_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => ipc_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x116 => ipc_p116(cp as u8),
+        #[cfg(feature = "full")]
+        0x117 => ipc_p117(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => ipc_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => ipc_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x11a => ipc_p11a(cp as u8),
+        #[cfg(feature = "full")]
+        0x11b => ipc_p11b(cp as u8),
+        #[cfg(feature = "full")]
+        0x11c => ipc_p11c(cp as u8),
+        #[cfg(feature = "full")]
+        0x11d => ipc_p11d(cp as u8),
+        #[cfg(feature = "full")]
+        0x11e => ipc_p11e(cp as u8),
+        #[cfg(feature = "full")]
+        0x11f => ipc_p11f(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => ipc_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => ipc_p16d(cp as u8),
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn ipc_p0(b: u8) -> IndicPositionalCategory {
+    match b {
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p9(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x00..=0x02 => IndicPositionalCategory::Top,
+        0x03 => IndicPositionalCategory::Right,
+        0x3a => IndicPositionalCategory::Top,
+        0x3b => IndicPositionalCategory::Right,
+        0x3c => IndicPositionalCategory::Bottom,
+        0x3e => IndicPositionalCategory::Right,
+        0x3f => IndicPositionalCategory::Left,
+        0x40 => IndicPositionalCategory::Right,
+        0x41..=0x44 => IndicPositionalCategory::Bottom,
+        0x45..=0x48 => IndicPositionalCategory::Top,
+        0x49..=0x4c => IndicPositionalCategory::Right,
+        0x4d => IndicPositionalCategory::Bottom,
+        0x4e => IndicPositionalCategory::Left,
+        0x4f => IndicPositionalCategory::Right,
+        0x51 => IndicPositionalCategory::Top,
+        0x52 => IndicPositionalCategory::Bottom,
+        0x55 => IndicPositionalCategory::Top,
+        0x56..=0x57 => IndicPositionalCategory::Bottom,
+        0x62..=0x63 => IndicPositionalCategory::Bottom,
+        0x81 => IndicPositionalCategory::Top,
+        0x82..=0x83 => IndicPositionalCategory::Right,
+        0xbc => IndicPositionalCategory::Bottom,
+        0xbe => IndicPositionalCategory::Right,
+        0xbf => IndicPositionalCategory::Left,
+        0xc0 => IndicPositionalCategory::Right,
+        0xc1..=0xc4 => IndicPositionalCategory::Bottom,
+        0xc7..=0xc8 => IndicPositionalCategory::Left,
+        0xcb..=0xcc => IndicPositionalCategory::LeftAndRight,
+        0xcd => IndicPositionalCategory::Bottom,
+        0xd7 => IndicPositionalCategory::Right,
+        0xe2..=0xe3 => IndicPositionalCategory::Bottom,
+        0xfe => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pa(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x01..=0x02 => IndicPositionalCategory::Top,
+        0x03 => IndicPositionalCategory::Right,
+        0x3c => IndicPositionalCategory::Bottom,
+        0x3e => IndicPositionalCategory::Right,
+        0x3f => IndicPositionalCategory::Left,
+        0x40 => IndicPositionalCategory::Right,
+        0x41..=0x42 => IndicPositionalCategory::Bottom,
+        0x47..=0x48 => IndicPositionalCategory::Top,
+        0x4b..=0x4c => IndicPositionalCategory::Top,
+        0x4d => IndicPositionalCategory::Bottom,
+        0x51 => IndicPositionalCategory::Bottom,
+        0x70..=0x71 => IndicPositionalCategory::Top,
+        0x75 => IndicPositionalCategory::Bottom,
+        0x81..=0x82 => IndicPositionalCategory::Top,
+        0x83 => IndicPositionalCategory::Right,
+        0xbc => IndicPositionalCategory::Bottom,
+        0xbe => IndicPositionalCategory::Right,
+        0xbf => IndicPositionalCategory::Left,
+        0xc0 => IndicPositionalCategory::Right,
+        0xc1..=0xc4 => IndicPositionalCategory::Bottom,
+        0xc5 => IndicPositionalCategory::Top,
+        0xc7..=0xc8 => IndicPositionalCategory::Top,
+        0xc9 => IndicPositionalCategory::TopAndRight,
+        0xcb..=0xcc => IndicPositionalCategory::Right,
+        0xcd => IndicPositionalCategory::Bottom,
+        0xe2..=0xe3 => IndicPositionalCategory::Bottom,
+        0xfa..=0xff => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pb(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x01 => IndicPositionalCategory::Top,
+        0x02..=0x03 => IndicPositionalCategory::Right,
+        0x3c => IndicPositionalCategory::Bottom,
+        0x3e => IndicPositionalCategory::Right,
+        0x3f => IndicPositionalCategory::Top,
+        0x40 => IndicPositionalCategory::Right,
+        0x41..=0x44 => IndicPositionalCategory::Bottom,
+        0x47 => IndicPositionalCategory::Left,
+        0x48 => IndicPositionalCategory::TopAndLeft,
+        0x4b => IndicPositionalCategory::LeftAndRight,
+        0x4c => IndicPositionalCategory::TopAndLeftAndRight,
+        0x4d => IndicPositionalCategory::Bottom,
+        0x55..=0x56 => IndicPositionalCategory::Top,
+        0x57 => IndicPositionalCategory::TopAndRight,
+        0x62..=0x63 => IndicPositionalCategory::Bottom,
+        0x82 => IndicPositionalCategory::Top,
+        0xbe..=0xbf => IndicPositionalCategory::Right,
+        0xc0 => IndicPositionalCategory::Top,
+        0xc1..=0xc2 => IndicPositionalCategory::Right,
+        0xc6..=0xc8 => IndicPositionalCategory::Left,
+        0xca..=0xcc => IndicPositionalCategory::LeftAndRight,
+        0xcd => IndicPositionalCategory::Top,
+        0xd7 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pc(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x00 => IndicPositionalCategory::Top,
+        0x01..=0x03 => IndicPositionalCategory::Right,
+        0x04 => IndicPositionalCategory::Top,
+        0x3c => IndicPositionalCategory::Bottom,
+        0x3e..=0x40 => IndicPositionalCategory::Top,
+        0x41..=0x44 => IndicPositionalCategory::Right,
+        0x46..=0x47 => IndicPositionalCategory::Top,
+        0x48 => IndicPositionalCategory::TopAndBottom,
+        0x4a..=0x4d => IndicPositionalCategory::Top,
+        0x55 => IndicPositionalCategory::Top,
+        0x56 => IndicPositionalCategory::Bottom,
+        0x62..=0x63 => IndicPositionalCategory::Bottom,
+        0x81 => IndicPositionalCategory::Top,
+        0x82..=0x83 => IndicPositionalCategory::Right,
+        0xbc => IndicPositionalCategory::Bottom,
+        0xbe => IndicPositionalCategory::Right,
+        0xbf => IndicPositionalCategory::Top,
+        0xc0 => IndicPositionalCategory::TopAndRight,
+        0xc1..=0xc4 => IndicPositionalCategory::Right,
+        0xc6 => IndicPositionalCategory::Top,
+        0xc7..=0xc8 => IndicPositionalCategory::TopAndRight,
+        0xca..=0xcb => IndicPositionalCategory::TopAndRight,
+        0xcc..=0xcd => IndicPositionalCategory::Top,
+        0xd5..=0xd6 => IndicPositionalCategory::Right,
+        0xe2..=0xe3 => IndicPositionalCategory::Bottom,
+        0xf3 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pd(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x00..=0x01 => IndicPositionalCategory::Top,
+        0x02..=0x03 => IndicPositionalCategory::Right,
+        0x3b..=0x3c => IndicPositionalCategory::Top,
+        0x3e..=0x40 => IndicPositionalCategory::Right,
+        0x41..=0x44 => IndicPositionalCategory::Bottom,
+        0x46..=0x48 => IndicPositionalCategory::Left,
+        0x4a..=0x4c => IndicPositionalCategory::LeftAndRight,
+        0x4d..=0x4e => IndicPositionalCategory::Top,
+        0x57 => IndicPositionalCategory::Right,
+        0x62..=0x63 => IndicPositionalCategory::Bottom,
+        0x81 => IndicPositionalCategory::Top,
+        0x82..=0x83 => IndicPositionalCategory::Right,
+        0xca => IndicPositionalCategory::Top,
+        0xcf..=0xd1 => IndicPositionalCategory::Right,
+        0xd2..=0xd3 => IndicPositionalCategory::Top,
+        0xd4 => IndicPositionalCategory::Bottom,
+        0xd6 => IndicPositionalCategory::Bottom,
+        0xd8 => IndicPositionalCategory::Right,
+        0xd9 => IndicPositionalCategory::Left,
+        0xda => IndicPositionalCategory::TopAndLeft,
+        0xdb => IndicPositionalCategory::Left,
+        0xdc => IndicPositionalCategory::LeftAndRight,
+        0xdd => IndicPositionalCategory::TopAndLeftAndRight,
+        0xde => IndicPositionalCategory::LeftAndRight,
+        0xdf => IndicPositionalCategory::Right,
+        0xf2..=0xf3 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pe(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x30 => IndicPositionalCategory::Right,
+        0x31 => IndicPositionalCategory::Top,
+        0x32..=0x33 => IndicPositionalCategory::Right,
+        0x34..=0x37 => IndicPositionalCategory::Top,
+        0x38..=0x3a => IndicPositionalCategory::Bottom,
+        0x40..=0x44 => IndicPositionalCategory::VisualOrderLeft,
+        0x45 => IndicPositionalCategory::Right,
+        0x47..=0x4e => IndicPositionalCategory::Top,
+        0xb0 => IndicPositionalCategory::Right,
+        0xb1 => IndicPositionalCategory::Top,
+        0xb2..=0xb3 => IndicPositionalCategory::Right,
+        0xb4..=0xb7 => IndicPositionalCategory::Top,
+        0xb8..=0xba => IndicPositionalCategory::Bottom,
+        0xbb => IndicPositionalCategory::Top,
+        0xbc => IndicPositionalCategory::Bottom,
+        0xc0..=0xc4 => IndicPositionalCategory::VisualOrderLeft,
+        0xc8..=0xce => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pf(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x18..=0x19 => IndicPositionalCategory::Bottom,
+        0x35 => IndicPositionalCategory::Bottom,
+        0x37 => IndicPositionalCategory::Bottom,
+        0x39 => IndicPositionalCategory::Top,
+        0x3e => IndicPositionalCategory::Right,
+        0x3f => IndicPositionalCategory::Left,
+        0x71 => IndicPositionalCategory::Bottom,
+        0x72 => IndicPositionalCategory::Top,
+        0x73 => IndicPositionalCategory::TopAndBottom,
+        0x74..=0x75 => IndicPositionalCategory::Bottom,
+        0x76..=0x79 => IndicPositionalCategory::TopAndBottom,
+        0x7a..=0x7e => IndicPositionalCategory::Top,
+        0x7f => IndicPositionalCategory::Right,
+        0x80 => IndicPositionalCategory::Top,
+        0x81 => IndicPositionalCategory::TopAndBottom,
+        0x82..=0x83 => IndicPositionalCategory::Top,
+        0x84 => IndicPositionalCategory::Bottom,
+        0x86..=0x87 => IndicPositionalCategory::Top,
+        0x8d..=0x97 => IndicPositionalCategory::Bottom,
+        0x99..=0xbc => IndicPositionalCategory::Bottom,
+        0xc6 => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p10(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x2b..=0x2c => IndicPositionalCategory::Right,
+        0x2d..=0x2e => IndicPositionalCategory::Top,
+        0x2f..=0x30 => IndicPositionalCategory::Bottom,
+        0x31 => IndicPositionalCategory::Left,
+        0x32..=0x36 => IndicPositionalCategory::Top,
+        0x37 => IndicPositionalCategory::Bottom,
+        0x38 => IndicPositionalCategory::Right,
+        0x3a => IndicPositionalCategory::Top,
+        0x3b => IndicPositionalCategory::Right,
+        0x3c => IndicPositionalCategory::TopAndBottomAndLeft,
+        0x3d..=0x3e => IndicPositionalCategory::Bottom,
+        0x56..=0x57 => IndicPositionalCategory::Right,
+        0x58..=0x59 => IndicPositionalCategory::Bottom,
+        0x5e..=0x60 => IndicPositionalCategory::Bottom,
+        0x62..=0x64 => IndicPositionalCategory::Right,
+        0x67..=0x6d => IndicPositionalCategory::Right,
+        0x71..=0x74 => IndicPositionalCategory::Top,
+        0x82 => IndicPositionalCategory::Bottom,
+        0x83 => IndicPositionalCategory::Right,
+        0x84 => IndicPositionalCategory::Left,
+        0x85..=0x86 => IndicPositionalCategory::Top,
+        0x87..=0x8c => IndicPositionalCategory::Right,
+        0x8d => IndicPositionalCategory::Bottom,
+        0x8f => IndicPositionalCategory::Right,
+        0x9a..=0x9c => IndicPositionalCategory::Right,
+        0x9d => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p17(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x12 => IndicPositionalCategory::Top,
+        0x13..=0x14 => IndicPositionalCategory::Bottom,
+        0x15 => IndicPositionalCategory::Right,
+        0x32 => IndicPositionalCategory::Top,
+        0x33 => IndicPositionalCategory::Bottom,
+        0x34 => IndicPositionalCategory::Right,
+        0x52 => IndicPositionalCategory::Top,
+        0x53 => IndicPositionalCategory::Bottom,
+        0x72 => IndicPositionalCategory::Top,
+        0x73 => IndicPositionalCategory::Bottom,
+        0xb6 => IndicPositionalCategory::Right,
+        0xb7..=0xba => IndicPositionalCategory::Top,
+        0xbb..=0xbd => IndicPositionalCategory::Bottom,
+        0xbe => IndicPositionalCategory::TopAndLeft,
+        0xbf => IndicPositionalCategory::TopAndLeftAndRight,
+        0xc0 => IndicPositionalCategory::LeftAndRight,
+        0xc1..=0xc3 => IndicPositionalCategory::Left,
+        0xc4..=0xc5 => IndicPositionalCategory::LeftAndRight,
+        0xc6 => IndicPositionalCategory::Top,
+        0xc7..=0xc8 => IndicPositionalCategory::Right,
+        0xc9..=0xd1 => IndicPositionalCategory::Top,
+        0xd3 => IndicPositionalCategory::Top,
+        0xdd => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p19(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x20..=0x21 => IndicPositionalCategory::Top,
+        0x22 => IndicPositionalCategory::Bottom,
+        0x23..=0x24 => IndicPositionalCategory::Right,
+        0x25..=0x26 => IndicPositionalCategory::TopAndRight,
+        0x27..=0x28 => IndicPositionalCategory::Top,
+        0x29..=0x2b => IndicPositionalCategory::Right,
+        0x30..=0x31 => IndicPositionalCategory::Right,
+        0x32 => IndicPositionalCategory::Bottom,
+        0x33..=0x38 => IndicPositionalCategory::Right,
+        0x39 => IndicPositionalCategory::Bottom,
+        0x3a => IndicPositionalCategory::Top,
+        0x3b => IndicPositionalCategory::Bottom,
+        0xb0..=0xb4 => IndicPositionalCategory::Right,
+        0xb5..=0xb7 => IndicPositionalCategory::VisualOrderLeft,
+        0xb8..=0xb9 => IndicPositionalCategory::Right,
+        0xba => IndicPositionalCategory::VisualOrderLeft,
+        0xbb..=0xc0 => IndicPositionalCategory::Right,
+        0xc8..=0xc9 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p1a(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x17 => IndicPositionalCategory::Top,
+        0x18 => IndicPositionalCategory::Bottom,
+        0x19 => IndicPositionalCategory::Left,
+        0x1a => IndicPositionalCategory::Right,
+        0x1b => IndicPositionalCategory::Top,
+        0x55 => IndicPositionalCategory::Left,
+        0x56 => IndicPositionalCategory::Bottom,
+        0x57 => IndicPositionalCategory::Right,
+        0x58..=0x5a => IndicPositionalCategory::Top,
+        0x5b..=0x5e => IndicPositionalCategory::Bottom,
+        0x61 => IndicPositionalCategory::Right,
+        0x62 => IndicPositionalCategory::Top,
+        0x63..=0x64 => IndicPositionalCategory::Right,
+        0x65..=0x68 => IndicPositionalCategory::Top,
+        0x69..=0x6a => IndicPositionalCategory::Bottom,
+        0x6b => IndicPositionalCategory::Top,
+        0x6c => IndicPositionalCategory::Bottom,
+        0x6d => IndicPositionalCategory::Right,
+        0x6e..=0x72 => IndicPositionalCategory::Left,
+        0x73..=0x7c => IndicPositionalCategory::Top,
+        0x7f => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p1b(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x00..=0x03 => IndicPositionalCategory::Top,
+        0x04 => IndicPositionalCategory::Right,
+        0x34 => IndicPositionalCategory::Top,
+        0x35 => IndicPositionalCategory::Right,
+        0x36..=0x37 => IndicPositionalCategory::Top,
+        0x38..=0x3a => IndicPositionalCategory::Bottom,
+        0x3b => IndicPositionalCategory::BottomAndRight,
+        0x3c => IndicPositionalCategory::TopAndBottom,
+        0x3d => IndicPositionalCategory::TopAndBottomAndRight,
+        0x3e..=0x3f => IndicPositionalCategory::Left,
+        0x40..=0x41 => IndicPositionalCategory::LeftAndRight,
+        0x42 => IndicPositionalCategory::Top,
+        0x43 => IndicPositionalCategory::TopAndRight,
+        0x44 => IndicPositionalCategory::Right,
+        0x6b => IndicPositionalCategory::Top,
+        0x6c => IndicPositionalCategory::Bottom,
+        0x6d..=0x73 => IndicPositionalCategory::Top,
+        0x80..=0x81 => IndicPositionalCategory::Top,
+        0x82 => IndicPositionalCategory::Right,
+        0xa1 => IndicPositionalCategory::Right,
+        0xa2..=0xa3 => IndicPositionalCategory::Bottom,
+        0xa4 => IndicPositionalCategory::Top,
+        0xa5 => IndicPositionalCategory::Bottom,
+        0xa6 => IndicPositionalCategory::Left,
+        0xa7 => IndicPositionalCategory::Right,
+        0xa8..=0xa9 => IndicPositionalCategory::Top,
+        0xaa => IndicPositionalCategory::Right,
+        0xac..=0xad => IndicPositionalCategory::Bottom,
+        0xe6 => IndicPositionalCategory::Top,
+        0xe7 => IndicPositionalCategory::Right,
+        0xe8..=0xe9 => IndicPositionalCategory::Top,
+        0xea..=0xec => IndicPositionalCategory::Right,
+        0xed => IndicPositionalCategory::Top,
+        0xee => IndicPositionalCategory::Right,
+        0xef..=0xf1 => IndicPositionalCategory::Top,
+        0xf2..=0xf3 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p1c(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x24..=0x26 => IndicPositionalCategory::Right,
+        0x27..=0x28 => IndicPositionalCategory::Left,
+        0x29 => IndicPositionalCategory::TopAndLeft,
+        0x2a..=0x2b => IndicPositionalCategory::Right,
+        0x2c => IndicPositionalCategory::Bottom,
+        0x2d..=0x33 => IndicPositionalCategory::Top,
+        0x34..=0x35 => IndicPositionalCategory::Left,
+        0x36 => IndicPositionalCategory::Top,
+        0x37 => IndicPositionalCategory::Bottom,
+        0xd0..=0xd2 => IndicPositionalCategory::Top,
+        0xd4 => IndicPositionalCategory::Overstruck,
+        0xd5..=0xd9 => IndicPositionalCategory::Bottom,
+        0xda..=0xdb => IndicPositionalCategory::Top,
+        0xdc..=0xdf => IndicPositionalCategory::Bottom,
+        0xe0 => IndicPositionalCategory::Top,
+        0xe1 => IndicPositionalCategory::Right,
+        0xe2..=0xe8 => IndicPositionalCategory::Overstruck,
+        0xed => IndicPositionalCategory::Bottom,
+        0xf4 => IndicPositionalCategory::Top,
+        0xf7 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p1d(b: u8) -> IndicPositionalCategory {
+    match b {
+        0xfb => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_p20(b: u8) -> IndicPositionalCategory {
+    match b {
+        0xf0 => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pa8(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x02 => IndicPositionalCategory::Top,
+        0x06 => IndicPositionalCategory::Top,
+        0x0b => IndicPositionalCategory::Top,
+        0x23..=0x24 => IndicPositionalCategory::Right,
+        0x25 => IndicPositionalCategory::Bottom,
+        0x26 => IndicPositionalCategory::Top,
+        0x27 => IndicPositionalCategory::Right,
+        0x2c => IndicPositionalCategory::Bottom,
+        0x80..=0x81 => IndicPositionalCategory::Right,
+        0xb4..=0xc3 => IndicPositionalCategory::Right,
+        0xc4 => IndicPositionalCategory::Bottom,
+        0xc5 => IndicPositionalCategory::Top,
+        0xe0..=0xf1 => IndicPositionalCategory::Top,
+        0xff => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pa9(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x26..=0x2a => IndicPositionalCategory::Top,
+        0x2b..=0x2d => IndicPositionalCategory::Bottom,
+        0x47..=0x49 => IndicPositionalCategory::Bottom,
+        0x4a => IndicPositionalCategory::Top,
+        0x4b..=0x4e => IndicPositionalCategory::Bottom,
+        0x4f..=0x51 => IndicPositionalCategory::Top,
+        0x52..=0x53 => IndicPositionalCategory::Right,
+        0x80..=0x82 => IndicPositionalCategory::Top,
+        0x83 => IndicPositionalCategory::Right,
+        0xb3 => IndicPositionalCategory::Top,
+        0xb4..=0xb5 => IndicPositionalCategory::Right,
+        0xb6..=0xb7 => IndicPositionalCategory::Top,
+        0xb8..=0xb9 => IndicPositionalCategory::Bottom,
+        0xba..=0xbb => IndicPositionalCategory::Left,
+        0xbc => IndicPositionalCategory::Top,
+        0xbd => IndicPositionalCategory::Bottom,
+        0xbe => IndicPositionalCategory::BottomAndRight,
+        0xbf => IndicPositionalCategory::BottomAndLeft,
+        0xc0 => IndicPositionalCategory::BottomAndRight,
+        0xe5 => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_paa(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x29..=0x2c => IndicPositionalCategory::Top,
+        0x2d => IndicPositionalCategory::Bottom,
+        0x2e => IndicPositionalCategory::Top,
+        0x2f..=0x30 => IndicPositionalCategory::Left,
+        0x31 => IndicPositionalCategory::Top,
+        0x32 => IndicPositionalCategory::Bottom,
+        0x33 => IndicPositionalCategory::Right,
+        0x34 => IndicPositionalCategory::Left,
+        0x35..=0x36 => IndicPositionalCategory::Bottom,
+        0x43 => IndicPositionalCategory::Top,
+        0x4c => IndicPositionalCategory::Top,
+        0x4d => IndicPositionalCategory::Right,
+        0x7b => IndicPositionalCategory::Right,
+        0x7c => IndicPositionalCategory::Top,
+        0x7d => IndicPositionalCategory::Right,
+        0xb0 => IndicPositionalCategory::Top,
+        0xb1 => IndicPositionalCategory::Right,
+        0xb2..=0xb3 => IndicPositionalCategory::Top,
+        0xb4 => IndicPositionalCategory::Bottom,
+        0xb5..=0xb6 => IndicPositionalCategory::VisualOrderLeft,
+        0xb7..=0xb8 => IndicPositionalCategory::Top,
+        0xb9 => IndicPositionalCategory::VisualOrderLeft,
+        0xba => IndicPositionalCategory::Right,
+        0xbb..=0xbc => IndicPositionalCategory::VisualOrderLeft,
+        0xbd => IndicPositionalCategory::Right,
+        0xbe..=0xbf => IndicPositionalCategory::Top,
+        0xc1 => IndicPositionalCategory::Top,
+        0xeb => IndicPositionalCategory::Left,
+        0xec => IndicPositionalCategory::Bottom,
+        0xed => IndicPositionalCategory::Top,
+        0xee => IndicPositionalCategory::Left,
+        0xef => IndicPositionalCategory::Right,
+        0xf5 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn ipc_pab(b: u8) -> IndicPositionalCategory {
+    match b {
+        0xe3..=0xe4 => IndicPositionalCategory::Right,
+        0xe5 => IndicPositionalCategory::Top,
+        0xe6..=0xe7 => IndicPositionalCategory::Right,
+        0xe8 => IndicPositionalCategory::Bottom,
+        0xe9..=0xea => IndicPositionalCategory::Right,
+        0xec => IndicPositionalCategory::Right,
+        0xed => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p10a(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x01 => IndicPositionalCategory::Overstruck,
+        0x02..=0x03 => IndicPositionalCategory::Bottom,
+        0x05 => IndicPositionalCategory::Top,
+        0x06 => IndicPositionalCategory::Overstruck,
+        0x0c..=0x0e => IndicPositionalCategory::Bottom,
+        0x0f => IndicPositionalCategory::Top,
+        0x38 => IndicPositionalCategory::Top,
+        0x39..=0x3a => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p110(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x00 => IndicPositionalCategory::Right,
+        0x01 => IndicPositionalCategory::Top,
+        0x02 => IndicPositionalCategory::Right,
+        0x38..=0x3b => IndicPositionalCategory::Top,
+        0x3c..=0x41 => IndicPositionalCategory::Bottom,
+        0x42..=0x46 => IndicPositionalCategory::Top,
+        0x70 => IndicPositionalCategory::Top,
+        0x73..=0x74 => IndicPositionalCategory::Top,
+        0x80..=0x81 => IndicPositionalCategory::Top,
+        0x82 => IndicPositionalCategory::Right,
+        0xb0 => IndicPositionalCategory::Right,
+        0xb1 => IndicPositionalCategory::Left,
+        0xb2 => IndicPositionalCategory::Right,
+        0xb3..=0xb4 => IndicPositionalCategory::Bottom,
+        0xb5..=0xb6 => IndicPositionalCategory::Top,
+        0xb7..=0xb8 => IndicPositionalCategory::Right,
+        0xb9..=0xba => IndicPositionalCategory::Bottom,
+        0xc2 => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p111(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x00..=0x02 => IndicPositionalCategory::Top,
+        0x27..=0x29 => IndicPositionalCategory::Top,
+        0x2a..=0x2b => IndicPositionalCategory::Bottom,
+        0x2c => IndicPositionalCategory::Left,
+        0x2d => IndicPositionalCategory::Top,
+        0x2e..=0x2f => IndicPositionalCategory::TopAndBottom,
+        0x30 => IndicPositionalCategory::Top,
+        0x31..=0x32 => IndicPositionalCategory::Bottom,
+        0x34 => IndicPositionalCategory::Top,
+        0x45..=0x46 => IndicPositionalCategory::Right,
+        0x73 => IndicPositionalCategory::Bottom,
+        0x80..=0x81 => IndicPositionalCategory::Top,
+        0x82 => IndicPositionalCategory::Right,
+        0xb3 => IndicPositionalCategory::Right,
+        0xb4 => IndicPositionalCategory::Left,
+        0xb5 => IndicPositionalCategory::Right,
+        0xb6..=0xbb => IndicPositionalCategory::Bottom,
+        0xbc..=0xbe => IndicPositionalCategory::Top,
+        0xbf => IndicPositionalCategory::TopAndRight,
+        0xc0 => IndicPositionalCategory::Right,
+        0xc2..=0xc3 => IndicPositionalCategory::Top,
+        0xc9..=0xca => IndicPositionalCategory::Bottom,
+        0xcb => IndicPositionalCategory::Top,
+        0xcc => IndicPositionalCategory::Bottom,
+        0xce => IndicPositionalCategory::Left,
+        0xcf => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p112(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x2c..=0x2e => IndicPositionalCategory::Right,
+        0x2f => IndicPositionalCategory::Bottom,
+        0x30..=0x31 => IndicPositionalCategory::Top,
+        0x32..=0x33 => IndicPositionalCategory::TopAndRight,
+        0x34 => IndicPositionalCategory::Top,
+        0x35 => IndicPositionalCategory::Right,
+        0x36..=0x37 => IndicPositionalCategory::Top,
+        0x3e => IndicPositionalCategory::Top,
+        0x41 => IndicPositionalCategory::Bottom,
+        0xdf => IndicPositionalCategory::Top,
+        0xe0 => IndicPositionalCategory::Right,
+        0xe1 => IndicPositionalCategory::Left,
+        0xe2 => IndicPositionalCategory::Right,
+        0xe3..=0xe4 => IndicPositionalCategory::Bottom,
+        0xe5..=0xe8 => IndicPositionalCategory::Top,
+        0xe9..=0xea => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p113(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x00..=0x01 => IndicPositionalCategory::Top,
+        0x02..=0x03 => IndicPositionalCategory::Right,
+        0x3b..=0x3c => IndicPositionalCategory::Bottom,
+        0x3e..=0x3f => IndicPositionalCategory::Right,
+        0x40 => IndicPositionalCategory::Top,
+        0x41..=0x44 => IndicPositionalCategory::Right,
+        0x47..=0x48 => IndicPositionalCategory::Left,
+        0x4b..=0x4c => IndicPositionalCategory::LeftAndRight,
+        0x4d => IndicPositionalCategory::Right,
+        0x57 => IndicPositionalCategory::Right,
+        0x62..=0x63 => IndicPositionalCategory::Right,
+        0x66..=0x6c => IndicPositionalCategory::Top,
+        0x70..=0x74 => IndicPositionalCategory::Top,
+        0xb8 => IndicPositionalCategory::Right,
+        0xb9..=0xba => IndicPositionalCategory::TopAndRight,
+        0xbb..=0xc0 => IndicPositionalCategory::Bottom,
+        0xc2 => IndicPositionalCategory::Left,
+        0xc5 => IndicPositionalCategory::Left,
+        0xc7..=0xc8 => IndicPositionalCategory::LeftAndRight,
+        0xc9..=0xca => IndicPositionalCategory::Right,
+        0xcc..=0xcd => IndicPositionalCategory::Right,
+        0xce => IndicPositionalCategory::Top,
+        0xcf => IndicPositionalCategory::Right,
+        0xd1 => IndicPositionalCategory::Top,
+        0xd2 => IndicPositionalCategory::Bottom,
+        0xe1 => IndicPositionalCategory::Top,
+        0xe2 => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p114(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x35 => IndicPositionalCategory::Right,
+        0x36 => IndicPositionalCategory::Left,
+        0x37 => IndicPositionalCategory::Right,
+        0x38..=0x3d => IndicPositionalCategory::Bottom,
+        0x3e..=0x3f => IndicPositionalCategory::Top,
+        0x40..=0x41 => IndicPositionalCategory::Right,
+        0x42 => IndicPositionalCategory::Bottom,
+        0x43..=0x44 => IndicPositionalCategory::Top,
+        0x45 => IndicPositionalCategory::Right,
+        0x46 => IndicPositionalCategory::Bottom,
+        0x5e => IndicPositionalCategory::Top,
+        0xb0 => IndicPositionalCategory::Right,
+        0xb1 => IndicPositionalCategory::Left,
+        0xb2 => IndicPositionalCategory::Right,
+        0xb3..=0xb8 => IndicPositionalCategory::Bottom,
+        0xb9 => IndicPositionalCategory::Left,
+        0xba => IndicPositionalCategory::Top,
+        0xbb => IndicPositionalCategory::TopAndLeft,
+        0xbc => IndicPositionalCategory::LeftAndRight,
+        0xbd => IndicPositionalCategory::Right,
+        0xbe => IndicPositionalCategory::LeftAndRight,
+        0xbf..=0xc0 => IndicPositionalCategory::Top,
+        0xc1 => IndicPositionalCategory::Right,
+        0xc2..=0xc3 => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p115(b: u8) -> IndicPositionalCategory {
+    match b {
+        0xaf => IndicPositionalCategory::Right,
+        0xb0 => IndicPositionalCategory::Left,
+        0xb1 => IndicPositionalCategory::Right,
+        0xb2..=0xb5 => IndicPositionalCategory::Bottom,
+        0xb8 => IndicPositionalCategory::Left,
+        0xb9 => IndicPositionalCategory::TopAndLeft,
+        0xba => IndicPositionalCategory::LeftAndRight,
+        0xbb => IndicPositionalCategory::TopAndLeftAndRight,
+        0xbc..=0xbd => IndicPositionalCategory::Top,
+        0xbe => IndicPositionalCategory::Right,
+        0xbf..=0xc0 => IndicPositionalCategory::Bottom,
+        0xdc..=0xdd => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p116(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x30..=0x32 => IndicPositionalCategory::Right,
+        0x33..=0x38 => IndicPositionalCategory::Bottom,
+        0x39..=0x3a => IndicPositionalCategory::Top,
+        0x3b..=0x3c => IndicPositionalCategory::Right,
+        0x3d => IndicPositionalCategory::Top,
+        0x3e => IndicPositionalCategory::Right,
+        0x3f => IndicPositionalCategory::Bottom,
+        0x40 => IndicPositionalCategory::Top,
+        0xab => IndicPositionalCategory::Top,
+        0xac => IndicPositionalCategory::Right,
+        0xad => IndicPositionalCategory::Top,
+        0xae => IndicPositionalCategory::Left,
+        0xaf => IndicPositionalCategory::Right,
+        0xb0..=0xb1 => IndicPositionalCategory::Bottom,
+        0xb2..=0xb5 => IndicPositionalCategory::Top,
+        0xb6 => IndicPositionalCategory::Right,
+        0xb7 => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p117(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x1d => IndicPositionalCategory::Bottom,
+        0x1e => IndicPositionalCategory::TopAndBottomAndLeft,
+        0x1f => IndicPositionalCategory::Top,
+        0x20..=0x21 => IndicPositionalCategory::Right,
+        0x22..=0x23 => IndicPositionalCategory::Top,
+        0x24..=0x25 => IndicPositionalCategory::Bottom,
+        0x26 => IndicPositionalCategory::Left,
+        0x27 => IndicPositionalCategory::Top,
+        0x28 => IndicPositionalCategory::Bottom,
+        0x29..=0x2b => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p118(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x2c => IndicPositionalCategory::Right,
+        0x2d => IndicPositionalCategory::Left,
+        0x2e => IndicPositionalCategory::Right,
+        0x2f..=0x32 => IndicPositionalCategory::Bottom,
+        0x33..=0x37 => IndicPositionalCategory::Top,
+        0x38 => IndicPositionalCategory::Right,
+        0x39..=0x3a => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p119(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x30..=0x34 => IndicPositionalCategory::Right,
+        0x35 => IndicPositionalCategory::Left,
+        0x37 => IndicPositionalCategory::Left,
+        0x38 => IndicPositionalCategory::LeftAndRight,
+        0x3b..=0x3c => IndicPositionalCategory::Top,
+        0x3d => IndicPositionalCategory::Right,
+        0x3f => IndicPositionalCategory::Top,
+        0x40 => IndicPositionalCategory::Right,
+        0x41 => IndicPositionalCategory::Top,
+        0x42 => IndicPositionalCategory::BottomAndRight,
+        0x43 => IndicPositionalCategory::Bottom,
+        0xd1 => IndicPositionalCategory::Right,
+        0xd2 => IndicPositionalCategory::Left,
+        0xd3 => IndicPositionalCategory::Right,
+        0xd4..=0xd7 => IndicPositionalCategory::Bottom,
+        0xda..=0xdb => IndicPositionalCategory::Top,
+        0xdc..=0xdf => IndicPositionalCategory::Right,
+        0xe0 => IndicPositionalCategory::Bottom,
+        0xe4 => IndicPositionalCategory::Left,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p11a(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x01 => IndicPositionalCategory::Top,
+        0x02..=0x03 => IndicPositionalCategory::Bottom,
+        0x04..=0x09 => IndicPositionalCategory::Top,
+        0x0a => IndicPositionalCategory::Bottom,
+        0x33..=0x34 => IndicPositionalCategory::Bottom,
+        0x35..=0x38 => IndicPositionalCategory::Top,
+        0x39 => IndicPositionalCategory::Right,
+        0x3b..=0x3e => IndicPositionalCategory::Bottom,
+        0x51 => IndicPositionalCategory::Top,
+        0x52..=0x53 => IndicPositionalCategory::Bottom,
+        0x54..=0x56 => IndicPositionalCategory::Top,
+        0x57..=0x58 => IndicPositionalCategory::Right,
+        0x59..=0x5b => IndicPositionalCategory::Bottom,
+        0x84..=0x89 => IndicPositionalCategory::Top,
+        0x8a..=0x95 => IndicPositionalCategory::Bottom,
+        0x96 => IndicPositionalCategory::Top,
+        0x97 => IndicPositionalCategory::Right,
+        0x98 => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p11b(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x60 => IndicPositionalCategory::Top,
+        0x61 => IndicPositionalCategory::Right,
+        0x62..=0x63 => IndicPositionalCategory::Bottom,
+        0x64 => IndicPositionalCategory::Top,
+        0x65 => IndicPositionalCategory::Right,
+        0x66 => IndicPositionalCategory::Top,
+        0x67 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p11c(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x2f => IndicPositionalCategory::Right,
+        0x30..=0x31 => IndicPositionalCategory::Top,
+        0x32..=0x36 => IndicPositionalCategory::Bottom,
+        0x38..=0x3d => IndicPositionalCategory::Top,
+        0x3e => IndicPositionalCategory::Right,
+        0x3f => IndicPositionalCategory::Bottom,
+        0x92..=0xa7 => IndicPositionalCategory::Bottom,
+        0xa9 => IndicPositionalCategory::Right,
+        0xaa..=0xb0 => IndicPositionalCategory::Bottom,
+        0xb1 => IndicPositionalCategory::Left,
+        0xb2 => IndicPositionalCategory::Bottom,
+        0xb3 => IndicPositionalCategory::Top,
+        0xb4 => IndicPositionalCategory::Right,
+        0xb5..=0xb6 => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p11d(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x31..=0x35 => IndicPositionalCategory::Top,
+        0x36 => IndicPositionalCategory::Bottom,
+        0x3a => IndicPositionalCategory::Top,
+        0x3c..=0x3d => IndicPositionalCategory::Top,
+        0x3f..=0x41 => IndicPositionalCategory::Top,
+        0x42 => IndicPositionalCategory::Bottom,
+        0x43 => IndicPositionalCategory::Top,
+        0x44 => IndicPositionalCategory::Bottom,
+        0x46 => IndicPositionalCategory::Right,
+        0x47 => IndicPositionalCategory::Bottom,
+        0x8a..=0x8e => IndicPositionalCategory::Right,
+        0x90..=0x91 => IndicPositionalCategory::Top,
+        0x93..=0x94 => IndicPositionalCategory::Right,
+        0x95 => IndicPositionalCategory::Top,
+        0x96 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p11e(b: u8) -> IndicPositionalCategory {
+    match b {
+        0xf3 => IndicPositionalCategory::Top,
+        0xf4 => IndicPositionalCategory::Bottom,
+        0xf5 => IndicPositionalCategory::Left,
+        0xf6 => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p11f(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x00..=0x02 => IndicPositionalCategory::Top,
+        0x03 => IndicPositionalCategory::Right,
+        0x34..=0x35 => IndicPositionalCategory::Right,
+        0x36..=0x37 => IndicPositionalCategory::Top,
+        0x38..=0x3a => IndicPositionalCategory::Bottom,
+        0x3e..=0x3f => IndicPositionalCategory::Left,
+        0x40 => IndicPositionalCategory::Top,
+        0x41 => IndicPositionalCategory::Right,
+        0x5a => IndicPositionalCategory::Top,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p161(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x1e..=0x29 => IndicPositionalCategory::Top,
+        0x2a..=0x2b => IndicPositionalCategory::Left,
+        0x2c => IndicPositionalCategory::Right,
+        0x2d => IndicPositionalCategory::Top,
+        0x2e..=0x2f => IndicPositionalCategory::Bottom,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn ipc_p16d(b: u8) -> IndicPositionalCategory {
+    match b {
+        0x40..=0x42 => IndicPositionalCategory::Right,
+        0x63..=0x6c => IndicPositionalCategory::Right,
+        _ => IndicPositionalCategory::NotApplicable,
+    }
+}

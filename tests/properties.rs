@@ -53,3 +53,12 @@ fn indic_categories() {
     assert_eq!(isc('\u{0905}'), VowelIndependent); // DEVANAGARI A
     assert_eq!(isc('A'), Other);
 }
+
+#[cfg(feature = "bmp")]
+#[test]
+fn indic_positional() {
+    use intl::unicode::{indic_positional_category as ipc, IndicPositionalCategory::*};
+    assert_eq!(ipc('\u{093F}'), Left); // DEVANAGARI VOWEL SIGN I (pre-base)
+    assert_eq!(ipc('\u{0940}'), Right); // DEVANAGARI VOWEL SIGN II
+    assert_eq!(ipc('A'), NotApplicable);
+}

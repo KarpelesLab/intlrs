@@ -13,7 +13,9 @@
 use super::category::GeneralCategory;
 use super::generated::binary_props;
 use super::generated::general_category::general_category as gc_raw;
-pub use super::generated::properties::{IndicSyllabicCategory, JoiningType};
+pub use super::generated::properties::{
+    IndicPositionalCategory, IndicSyllabicCategory, JoiningType,
+};
 
 /// The [`GeneralCategory`] of `c`.
 #[inline]
@@ -204,6 +206,20 @@ pub const fn joining_type(c: char) -> JoiningType {
 #[must_use]
 pub const fn indic_syllabic_category(c: char) -> IndicSyllabicCategory {
     crate::unicode::generated::properties::indic_syllabic_category(c as u32)
+}
+
+/// The `Indic_Positional_Category` of `c` (UAX #44) — where a dependent
+/// character sits relative to its base; `NotApplicable` for everything else.
+///
+/// ```
+/// use intl::unicode::{indic_positional_category, IndicPositionalCategory};
+/// assert_eq!(indic_positional_category('\u{093F}'), IndicPositionalCategory::Left); // DEVANAGARI VOWEL SIGN I
+/// assert_eq!(indic_positional_category('A'), IndicPositionalCategory::NotApplicable);
+/// ```
+#[inline]
+#[must_use]
+pub const fn indic_positional_category(c: char) -> IndicPositionalCategory {
+    crate::unicode::generated::properties::indic_positional_category(c as u32)
 }
 
 /// `Dash` property (dash punctuation and dash symbols).
