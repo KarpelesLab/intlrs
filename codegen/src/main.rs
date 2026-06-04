@@ -787,7 +787,15 @@ fn emit_u64_seq_lookup(out: &mut String, fn_name: &str, prefix: &str, seqs: &[Ve
         });
         codes[cp] = code;
     }
-    emit_lookup(out, fn_name, prefix, "Option<&'static [u64]>", &codes, 0, &render);
+    emit_lookup(
+        out,
+        fn_name,
+        prefix,
+        "Option<&'static [u64]>",
+        &codes,
+        0,
+        &render,
+    );
 }
 
 /// Emit `generated/collation.rs`: DUCET single-codepoint collation elements,
@@ -841,8 +849,7 @@ fn emit_collation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path, uca: &P
         let rows: Vec<String> = entries
             .iter()
             .map(|(suf, ces)| {
-                let chars: Vec<String> =
-                    suf.iter().map(|&c| format!("'\\u{{{c:x}}}'")).collect();
+                let chars: Vec<String> = suf.iter().map(|&c| format!("'\\u{{{c:x}}}'")).collect();
                 let cestr: Vec<String> = ces.iter().map(|c| format!("0x{c:x}u64")).collect();
                 format!("(&[{}], &[{}])", chars.join(", "), cestr.join(", "))
             })
