@@ -1,17 +1,35 @@
-//! `intl` — pure-Rust, `no_std` internationalization primitives.
+//! `intl` — a pure-Rust, `#![no_std]` analog of ICU.
 //!
-//! The crate is `#![no_std]` and does not use `alloc`. Functionality is grouped
-//! into modules; today it provides:
+//! The crate is always `#![no_std]`. The Unicode layer and several locale
+//! helpers need no allocator; the `alloc` feature enables the allocating APIs
+//! (most formatters). UCD and CLDR data are compiled by an offline code
+//! generator into committed tables — `const fn` `match` lookups for the Unicode
+//! properties and embedded binary blobs for the CLDR data — so lookups allocate
+//! nothing and need no runtime initialization.
 //!
-//! - [`unicode`] — Unicode rune analysis (General_Category and character
-//!   predicates), with property tables compiled directly into `const fn` `match`
-//!   lookups and feature-selectable codepoint ranges.
+//! Modules:
+//!
+//! - [`unicode`] — General_Category and predicates, scripts, East Asian Width,
+//!   numeric values, case mapping/folding, normalization (UAX #15), collation
+//!   (UTS #10), segmentation (UAX #29), line breaking (UAX #14), bidi (UAX #9),
+//!   identifiers (UAX #31), confusables (UTS #39), IDNA (UTS #46). Property
+//!   tables are gated by feature-selectable codepoint ranges.
+//! - [`locale`] — BCP-47 parsing/canonicalization, likely-subtags
+//!   maximize/minimize, negotiation. *(alloc)*
+//! - [`plural`] — CLDR cardinal/ordinal plural categories.
+//! - [`number`] — decimal / percent / currency formatting. *(alloc)*
+//! - [`datetime`] — Gregorian date/time formatting (styles, skeletons), ISO-8601
+//!   I/O, date arithmetic, localized GMT offsets, Islamic/Persian rendering.
+//!   *(alloc)*
+//! - [`calendar`] — Gregorian / Islamic / Persian / Hebrew / Japanese / ISO-week
+//!   date conversions.
+//! - [`relative`], [`list`], `unit`, [`message`] — relative-time, list,
+//!   measurement-unit, and MessageFormat formatting. *(alloc)*
+//! - [`display`] — locale display names (language / region).
 //!
 //! ```
-//! use intl::unicode::{general_category, GeneralCategory, CharExt};
-//!
+//! use intl::unicode::{general_category, GeneralCategory};
 //! assert_eq!(general_category('A'), GeneralCategory::UppercaseLetter);
-//! assert!('A'.is_uppercase());
 //! ```
 #![no_std]
 #![forbid(unsafe_code)]
