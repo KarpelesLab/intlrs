@@ -1,0 +1,33 @@
+//! Age and Block character properties (UCD). Assertions are gated by range tier:
+//! a codepoint outside the compiled tier reads its neutral default (None /
+//! "No_Block").
+use intl::unicode::{age, block};
+
+#[test]
+fn ascii() {
+    assert_eq!(age('A'), Some((1, 1))); // ASCII: Unicode 1.1
+    assert_eq!(block('A'), "Basic Latin");
+}
+
+#[cfg(feature = "bmp")]
+#[test]
+fn bmp() {
+    assert_eq!(age('é'), Some((1, 1)));
+    assert_eq!(age('€'), Some((2, 1)));         // EURO SIGN: 2.1
+    assert_eq!(age('\u{20BF}'), Some((10, 0))); // BITCOIN SIGN: 10.0
+    assert_eq!(age('\u{0378}'), None);          // unassigned in the BMP
+    assert!(age('A').unwrap() < age('\u{20BF}').unwrap());
+
+    assert_eq!(block('é'), "Latin-1 Supplement");
+    assert_eq!(block('Ω'), "Greek and Coptic");
+    assert_eq!(block('日'), "CJK Unified Ideographs");
+    assert_eq!(block('\u{0590}'), "Hebrew");
+}
+
+#[cfg(feature = "full")]
+#[test]
+fn supplementary() {
+    assert_eq!(block('\u{1F600}'), "Emoticons");
+    assert_eq!(block('\u{E0000}'), "Tags");
+    assert_eq!(age('\u{1F600}'), Some((6, 1)));
+}

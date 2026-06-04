@@ -60,11 +60,12 @@ conformance corpus. Highest value, lowest risk — do these next.
   Greek final sigma, Lithuanian) via `SpecialCasing.txt` conditions; proper
   **titlecasing** (now unblocked by word segmentation); `Changes_When_*`
   predicates.
-- ⬜ **More properties** (incremental, cheap): `Age` (`DerivedAge.txt`), `Block`
-  (`Blocks.txt`), Bidi_Class accessor, Joining_Type/Group, Indic positional/
-  syllabic, `Default_Ignorable_Code_Point`, full `White_Space`/`Math`/etc.,
-  character `Name` ↔ codepoint, Hangul syllable name. Optional `name` lookup is
-  large (consider a perfect-hash or trie).
+- 🟡 **More properties** (incremental, cheap): ✅ `Age` (`DerivedAge.txt`),
+  ✅ `Block` (`Blocks.txt`), ✅ Bidi_Class accessor (`bidi_class`),
+  ✅ `Default_Ignorable_Code_Point` / `Math` / `Dash` / `Diacritic` /
+  `Hex_Digit` / `White_Space` / `Quotation_Mark` / `Join_Control`. Still:
+  Joining_Type/Group, Indic positional/syllabic, character `Name` ↔ codepoint,
+  Hangul syllable name. Optional `name` lookup is large (perfect-hash or trie).
 
 ---
 

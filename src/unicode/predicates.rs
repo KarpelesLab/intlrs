@@ -145,6 +145,36 @@ pub const fn is_default_ignorable(c: char) -> bool {
     binary_props::default_ignorable(c as u32)
 }
 
+/// The Unicode `Age` of `c`: the `(major, minor)` version in which the codepoint
+/// was assigned, or `None` if it is unassigned (in the compiled range).
+///
+/// ```
+/// use intl::unicode::age;
+/// assert_eq!(age('A'), Some((1, 1)));
+/// assert_eq!(age('\u{20BF}'), Some((10, 0))); // ₿ BITCOIN SIGN, Unicode 10.0
+/// assert_eq!(age('\u{E0000}'), None); // unassigned
+/// ```
+#[inline]
+#[must_use]
+pub const fn age(c: char) -> Option<(u8, u8)> {
+    crate::unicode::generated::properties::age(c as u32)
+}
+
+/// The Unicode `Block` name of `c` (e.g. `"Basic Latin"`, `"CJK Unified
+/// Ideographs"`), or `"No_Block"` if the codepoint is in no assigned block.
+///
+/// ```
+/// use intl::unicode::block;
+/// assert_eq!(block('A'), "Basic Latin");
+/// assert_eq!(block('日'), "CJK Unified Ideographs");
+/// assert_eq!(block('\u{0590}'), "Hebrew");
+/// ```
+#[inline]
+#[must_use]
+pub const fn block(c: char) -> &'static str {
+    crate::unicode::generated::properties::block(c as u32)
+}
+
 /// `Dash` property (dash punctuation and dash symbols).
 #[inline]
 #[must_use]

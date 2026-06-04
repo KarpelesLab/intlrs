@@ -182,6 +182,7 @@ fn main() {
 
     // ---- Numeric values ----
     emit_numeric(&out_dir, &mut modules, &ucd);
+    emit_properties(&out_dir, &mut modules, &ucd);
 
     // ---- Normalization ----
     emit_normalization(&out_dir, &mut modules, &ucd);
@@ -596,6 +597,86 @@ fn parse_rational(s: &str) -> (i64, u32) {
 }
 
 /// Emit `generated/numeric.rs`: numeric_value() and numeric_type().
+/// Emit `age` (Unicode version a codepoint was assigned in) and `block`
+/// (Unicode block name) lookups from `DerivedAge.txt` and `Blocks.txt`.
+fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
+    let mut out = String::new();
+
+    // ---- Age: codepoint -> Option<(major, minor)> (None == unassigned). ----
+    let age_txt = fs::read_to_string(ucd.join("DerivedAge.txt")).expect("read DerivedAge.txt");
+    let mut age_render = vec!["None".to_string()];
+    let mut age_code: BTreeMap<(u8, u8), u32> = BTreeMap::new();
+    let mut age_codes = vec![0u32; NUM_CODEPOINTS];
+    for line in age_txt.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let mut parts = line.split(';');
+        let range = parts.next().unwrap().trim();
+        let ver = parts.next().unwrap_or("").trim();
+        let mut vp = ver.split('.');
+        let (Some(maj), Some(min)) = (
+            vp.next().and_then(|s| s.parse::<u8>().ok()),
+            vp.next().and_then(|s| s.parse::<u8>().ok()),
+        ) else {
+            continue;
+        };
+        let code = *age_code.entry((maj, min)).or_insert_with(|| {
+            age_render.push(format!("Some(({maj}, {min}))"));
+            (age_render.len() - 1) as u32
+        });
+        let (start, end) = parse_range(range);
+        for c in start..=end {
+            age_codes[c as usize] = code;
+        }
+    }
+    emit_lookup(
+        &mut out,
+        "age",
+        "age",
+        "Option<(u8, u8)>",
+        &age_codes,
+        0,
+        &age_render,
+    );
+
+    // ---- Block: codepoint -> &'static str ("No_Block" == default). ----
+    let blocks_txt = fs::read_to_string(ucd.join("Blocks.txt")).expect("read Blocks.txt");
+    let mut blk_render = vec!["\"No_Block\"".to_string()];
+    let mut blk_code: BTreeMap<String, u32> = BTreeMap::new();
+    let mut blk_codes = vec![0u32; NUM_CODEPOINTS];
+    for line in blocks_txt.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let Some((range, name)) = line.split_once(';') else {
+            continue;
+        };
+        let name = name.trim();
+        let code = *blk_code.entry(name.to_string()).or_insert_with(|| {
+            blk_render.push(format!("{name:?}"));
+            (blk_render.len() - 1) as u32
+        });
+        let (start, end) = parse_range(range.trim());
+        for c in start..=end {
+            blk_codes[c as usize] = code;
+        }
+    }
+    emit_lookup(
+        &mut out,
+        "block",
+        "block",
+        "&'static str",
+        &blk_codes,
+        0,
+        &blk_render,
+    );
+
+    write_module(out_dir, modules, "properties", &out);
+}
+
 fn emit_numeric(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     // ---- Numeric_Value (exact rational). ----
     let values = fs::read_to_string(ucd.join("extracted/DerivedNumericValues.txt"))

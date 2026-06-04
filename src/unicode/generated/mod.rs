@@ -16,5 +16,6 @@ pub(crate) mod idna;
 pub(crate) mod normalization;
 pub(crate) mod numeric;
 pub(crate) mod plurals;
+pub(crate) mod properties;
 pub(crate) mod script;
 pub(crate) mod segmentation;
