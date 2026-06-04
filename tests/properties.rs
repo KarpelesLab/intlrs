@@ -74,3 +74,31 @@ fn hangul_names() {
     assert_eq!(hn('A'), None);
     assert_eq!(hn('\u{ABFF}'), None); // just before the block
 }
+
+#[cfg(feature = "alloc")]
+#[test]
+fn char_names() {
+    use intl::unicode::char_name;
+    assert_eq!(char_name('한').as_deref(), Some("HANGUL SYLLABLE HAN"));
+    assert_eq!(
+        char_name('一').as_deref(),
+        Some("CJK UNIFIED IDEOGRAPH-4E00")
+    ); // U+4E00
+    assert_eq!(
+        char_name('\u{3400}').as_deref(),
+        Some("CJK UNIFIED IDEOGRAPH-3400")
+    );
+    assert_eq!(
+        char_name('\u{20000}').as_deref(),
+        Some("CJK UNIFIED IDEOGRAPH-20000")
+    );
+    assert_eq!(
+        char_name('\u{17000}').as_deref(),
+        Some("TANGUT IDEOGRAPH-17000")
+    );
+    assert_eq!(char_name('A'), None); // tabulated name (not embedded)
+    assert_eq!(
+        char_name('\u{9FFF}').as_deref(),
+        Some("CJK UNIFIED IDEOGRAPH-9FFF")
+    );
+}

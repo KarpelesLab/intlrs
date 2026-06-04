@@ -776,6 +776,63 @@ fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
          character is positioned relative to its base.",
     );
 
+    // ---- Algorithmic ideograph name ranges (UnicodeData.txt First/Last rows). ----
+    // Codepoints in these ranges have a derived `Name` of the form
+    // `<prefix><CP hex>` (e.g. "CJK UNIFIED IDEOGRAPH-4E00"). Hangul syllables are
+    // handled separately (their suffix is computed from the jamo).
+    let ud = fs::read_to_string(ucd.join("UnicodeData.txt")).expect("read UnicodeData.txt");
+    let mut first: Option<(u32, String)> = None;
+    let mut ranges: Vec<(u32, u32, &str)> = Vec::new();
+    for line in ud.lines() {
+        let f: Vec<&str> = line.split(';').collect();
+        if f.len() < 2 {
+            continue;
+        }
+        let cp = u32::from_str_radix(f[0], 16).unwrap_or(0);
+        let name = f[1];
+        if let Some(label) = name
+            .strip_suffix(", First>")
+            .and_then(|s| s.strip_prefix('<'))
+        {
+            first = Some((cp, label.to_string()));
+        } else if let Some(label) = name
+            .strip_suffix(", Last>")
+            .and_then(|s| s.strip_prefix('<'))
+        {
+            if let Some((start, ref flabel)) = first {
+                if flabel == label {
+                    let prefix = if label.contains("CJK Ideograph") {
+                        Some("CJK UNIFIED IDEOGRAPH-")
+                    } else if label.contains("Tangut Ideograph") {
+                        Some("TANGUT IDEOGRAPH-")
+                    } else if label.contains("Khitan Small Script") {
+                        Some("KHITAN SMALL SCRIPT CHARACTER-")
+                    } else if label.contains("Nushu Character") {
+                        Some("NUSHU CHARACTER-")
+                    } else {
+                        None // Hangul (computed), surrogates, private use: no derived prefix
+                    };
+                    if let Some(p) = prefix {
+                        ranges.push((start, cp, p));
+                    }
+                }
+            }
+            first = None;
+        }
+    }
+    ranges.sort_unstable();
+    out.push_str(
+        "/// The derived-`Name` prefix for an algorithmically-named ideograph \
+         codepoint\n/// (the full name is this prefix followed by the uppercase \
+         hex codepoint), or\n/// `None` if the codepoint is not in such a range.\n\
+         pub(crate) const fn ideograph_name_prefix(cp: u32) -> Option<&'static str> {\n    \
+         match cp {\n",
+    );
+    for (start, end, prefix) in &ranges {
+        let _ = write!(out, "        {start:#x}..={end:#x} => Some({prefix:?}),\n");
+    }
+    out.push_str("        _ => None,\n    }\n}\n\n");
+
     write_module(out_dir, modules, "properties", &out);
 }
 

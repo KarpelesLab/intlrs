@@ -52,3 +52,26 @@ pub fn hangul_syllable_name(c: char) -> Option<String> {
     name.push_str(JAMO_T[t]);
     Some(name)
 }
+
+/// The Unicode `Name` of `c` **when it is derived algorithmically** — Hangul
+/// syllables and the unified-ideograph ranges (CJK, Tangut, Khitan, Nüshu),
+/// whose names are computed from the codepoint rather than tabulated. Returns
+/// `None` for characters whose name lives in the (unembedded) Name database,
+/// such as Latin letters or punctuation.
+///
+/// ```
+/// use intl::unicode::char_name;
+/// assert_eq!(char_name('한').as_deref(), Some("HANGUL SYLLABLE HAN"));
+/// assert_eq!(char_name('一').as_deref(), Some("CJK UNIFIED IDEOGRAPH-4E00"));
+/// assert_eq!(char_name('A'), None); // tabulated name, not embedded
+/// ```
+#[must_use]
+pub fn char_name(c: char) -> Option<String> {
+    if let Some(n) = hangul_syllable_name(c) {
+        return Some(n);
+    }
+    let prefix = crate::unicode::generated::properties::ideograph_name_prefix(c as u32)?;
+    let mut name = String::from(prefix);
+    name.push_str(&alloc::format!("{:04X}", c as u32));
+    Some(name)
+}

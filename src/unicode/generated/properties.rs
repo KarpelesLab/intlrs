@@ -12658,3 +12658,25 @@ const fn ipc_p16d(b: u8) -> IndicPositionalCategory {
         _ => IndicPositionalCategory::NotApplicable,
     }
 }
+
+/// The derived-`Name` prefix for an algorithmically-named ideograph codepoint
+/// (the full name is this prefix followed by the uppercase hex codepoint), or
+/// `None` if the codepoint is not in such a range.
+pub(crate) const fn ideograph_name_prefix(cp: u32) -> Option<&'static str> {
+    match cp {
+        0x3400..=0x4dbf => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x4e00..=0x9fff => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x17000..=0x187ff => Some("TANGUT IDEOGRAPH-"),
+        0x18d00..=0x18d1e => Some("TANGUT IDEOGRAPH-"),
+        0x20000..=0x2a6df => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x2a700..=0x2b73f => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x2b740..=0x2b81d => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x2b820..=0x2cead => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x2ceb0..=0x2ebe0 => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x2ebf0..=0x2ee5d => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x30000..=0x3134a => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x31350..=0x323af => Some("CJK UNIFIED IDEOGRAPH-"),
+        0x323b0..=0x33479 => Some("CJK UNIFIED IDEOGRAPH-"),
+        _ => None,
+    }
+}
