@@ -121,3 +121,12 @@ fn ordinals() {
     assert_eq!(o("de", 2), "2."); // period convention
     assert_eq!(o("sv", 1), "1:a");
 }
+
+#[test]
+fn compact_non_finite() {
+    use intl::number::format_compact as k;
+    // Non-finite values must not panic (NaN < 1000.0 is false).
+    let _ = k("en", f64::NAN);
+    let _ = k("en", f64::INFINITY);
+    let _ = k("en", f64::NEG_INFINITY);
+}

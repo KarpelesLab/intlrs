@@ -225,7 +225,9 @@ pub fn format_decimal_native(lang: &str, value: f64) -> String {
 #[must_use]
 pub fn format_compact(lang: &str, value: f64) -> String {
     let abs = if value < 0.0 { -value } else { value };
-    if abs < 1000.0 {
+    // Below 1000, non-finite (NaN/∞), so the magnitude exponent is well-defined
+    // and the `exp - 3` index below cannot underflow.
+    if !abs.is_finite() || abs < 1000.0 {
         return format_decimal(lang, value);
     }
     let s = spec(lang);
