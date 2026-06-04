@@ -133,9 +133,10 @@ codepoint would.
   `.long_name()`; `ScriptExtensions` with `.contains()` / `.iter()`).
 - `East_Asian_Width` (UAX #11) via `east_asian_width` / `east_asian_width_u32`
   (`EastAsianWidth` enum, with `.is_wide()`).
-- **Bidi properties** (UAX #9) — `bidi_class` (the `BidiClass` enum) and
-  `base_direction(&str)` (paragraph direction, rules P2–P3). The full reordering
-  algorithm is not yet implemented.
+- **Bidirectional text** (UAX #9) — `bidi_class` (the `BidiClass` enum),
+  `base_direction(&str)` (rules P2–P3), and (with `alloc`) the full reordering
+  algorithm `bidi::process(&str, …) -> BidiInfo` (embedding levels + visual
+  order). ~99.996% conformant against `BidiCharacterTest`.
 - **Identifiers** (UAX #31) — `is_xid_start`, `is_xid_continue`, and
   `is_identifier(&str)` for default identifier validation.
 - **Confusables / spoof detection** (UTS #39) — `spoof::skeleton`,

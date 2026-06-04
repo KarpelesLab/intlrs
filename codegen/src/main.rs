@@ -232,6 +232,24 @@ fn main() {
         0,
         &bc_render,
     );
+    // Bidi_Paired_Bracket + type, for rule N0: cp -> (paired, 1=open|2=close).
+    let brackets = fs::read_to_string(ucd.join("BidiBrackets.txt")).expect("read BidiBrackets.txt");
+    bc_out.push_str(
+        "/// `(Bidi_Paired_Bracket, type)` where type is 1 = open, 2 = close, 0 = none.\n\
+         pub(crate) const fn bidi_bracket(cp: u32) -> (u32, u8) {\n    match cp {\n",
+    );
+    for line in brackets.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        let cp = u32::from_str_radix(f[0], 16).unwrap();
+        let paired = u32::from_str_radix(f[1], 16).unwrap();
+        let ty = if f[2] == "o" { 1 } else { 2 };
+        let _ = write!(bc_out, "        {cp:#x} => ({paired:#x}, {ty}),\n");
+    }
+    bc_out.push_str("        _ => (0, 0),\n    }\n}\n");
     write_module(&out_dir, &mut modules, "bidi", &bc_out);
 
     // ---- generated/mod.rs ----

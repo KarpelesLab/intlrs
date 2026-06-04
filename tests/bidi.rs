@@ -20,3 +20,23 @@ fn rtl_classes_and_direction() {
     assert_eq!(base_direction("123 שלום"), Direction::RightToLeft); // numbers aren't strong
     assert_eq!(base_direction(""), Direction::LeftToRight);
 }
+
+#[cfg(feature = "alloc")]
+#[test]
+fn reorder_simple() {
+    use intl::unicode::bidi::process;
+    // Pure LTR: identity order, all level 0.
+    let info = process("abc", None);
+    assert_eq!(info.paragraph_level, 0);
+    assert_eq!(info.visual_order, [0, 1, 2]);
+
+    // "abc" + Hebrew "אבג" in an LTR paragraph: the RTL run is reversed.
+    let info = process("abc\u{5D0}\u{5D1}\u{5D2}", None);
+    assert_eq!(info.paragraph_level, 0);
+    assert_eq!(info.visual_order, [0, 1, 2, 5, 4, 3]);
+    assert_eq!(info.levels[3], Some(1)); // Hebrew is odd level
+
+    // A Hebrew-first paragraph auto-detects RTL.
+    let info = process("\u{5D0}\u{5D1} a", None);
+    assert_eq!(info.paragraph_level, 1);
+}

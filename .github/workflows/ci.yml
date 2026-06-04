@@ -133,8 +133,13 @@ jobs:
           curl -fsSL -o data/ucd/17.0.0/auxiliary/LineBreakTest.txt \
             https://www.unicode.org/Public/17.0.0/ucd/auxiliary/LineBreakTest.txt
 
-      - name: Conformance (collation, normalization, line break)
-        run: cargo test --release --all-features --test collation_conformance --test normalization_conformance --test line_conformance
+      - name: Fetch BidiCharacterTest
+        run: |
+          curl -fsSL -o data/ucd/17.0.0/BidiCharacterTest.txt \
+            https://www.unicode.org/Public/17.0.0/ucd/BidiCharacterTest.txt
+
+      - name: Conformance (collation, normalization, line break, bidi)
+        run: cargo test --release --all-features --test collation_conformance --test normalization_conformance --test line_conformance --test bidi_conformance
 
   docs:
     name: Docs build (warnings denied)

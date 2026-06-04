@@ -42,10 +42,10 @@ conformance corpus. Highest value, lowest risk — do these next.
   opportunities (mandatory vs allowed). ~99.98% conformant against
   `LineBreakTest`; remaining gap is the LB19 CJK-quotation / East_Asian_Width
   sub-rules. *Done apart from those edge cases.*
-- 🟡🔬 **Bidirectional algorithm (UAX #9)** — resolve embedding levels and
-  reorder. Data: `Bidi_Class` (UnicodeData field 4), `BidiBrackets.txt`,
-  `BidiMirroring.txt`. Conformance: `BidiTest.txt`, `BidiCharacterTest.txt`.
-  Self-contained; `alloc` for level arrays.
+- ✅🔬 **Bidirectional algorithm (UAX #9)** — `bidi::process` resolves embedding
+  levels + visual order (X/W/N/I/L rules, isolates, paired brackets).
+  ~99.996% on `BidiCharacterTest`; the residual handful are an override+isolate+
+  embedding sos/eos edge case.
 - ✅ **Identifiers (UAX #31)** — `is_xid_start`/`is_xid_continue`, identifier
   validation, default identifier syntax. Data: XID_Start/Continue (already in
   `DerivedCoreProperties.txt`). Small.
