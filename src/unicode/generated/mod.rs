@@ -13,6 +13,7 @@ pub(crate) mod confusables;
 pub(crate) mod east_asian_width;
 pub(crate) mod general_category;
 pub(crate) mod idna;
+pub(crate) mod lists;
 pub(crate) mod normalization;
 pub(crate) mod numbers;
 pub(crate) mod numeric;

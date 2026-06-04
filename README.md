@@ -74,6 +74,9 @@ Beyond the `unicode` module:
   → `"12,34,567"` (Indian grouping), `format_percent("en", 0.5)` → `"50%"`.
   Driven by CLDR symbols + patterns for a curated locale set.
 
+- `intl::list` (alloc) joins items with locale connectors —
+  `format_list("en", &["a","b","c"], ListStyle::And)` → `"a, b, and c"`.
+
 These build out the CLDR/locale layer toward full ICU-style formatting.
 
 ## Features

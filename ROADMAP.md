@@ -139,7 +139,7 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 - 🧱 **Date/Time formatting & parsing** — skeleton/pattern based (UTS #35),
   calendar- and zone-aware.
 - 🧱 **Relative date/time** ("3 days ago"), **duration**, **unit/measurement**
-  formatting, **list formatting**, **display names** (language/region/script).
+  formatting, ✅ list formatting (`intl::list`), **display names** (language/region/script).
 - 🧱 **MessageFormat** — ICU MessageFormat (and/or MessageFormat 2.0):
   select/plural/gender, nested args.
 - 🧱 **Collation tailoring** — locale-tailored collators from CLDR (beyond DUCET

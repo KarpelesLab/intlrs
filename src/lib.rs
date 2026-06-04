@@ -20,6 +20,8 @@
 extern crate alloc;
 
 #[cfg(feature = "alloc")]
+pub mod list;
+#[cfg(feature = "alloc")]
 pub mod locale;
 #[cfg(feature = "alloc")]
 pub mod number;

@@ -267,6 +267,13 @@ fn main() {
         &root.join("data/cldr/48/numbers.json"),
     );
 
+    // ---- CLDR list formats (UTS #35) ----
+    emit_lists(
+        &out_dir,
+        &mut modules,
+        &root.join("data/cldr/48/lists.json"),
+    );
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -1473,6 +1480,43 @@ fn emit_numbers(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
     }
     out.push_str("        _ => return None,\n    })\n}\n");
     write_module(out_dir, modules, "numbers", &out);
+}
+
+/// Emit `generated/lists.rs`: per-locale CLDR list connector patterns.
+fn emit_lists(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
+    let text = fs::read_to_string(path).expect("read lists.json");
+    let json = json_parse(&text);
+    let locales = json.get("locales").expect("locales");
+
+    let pats = |style: &Json| {
+        let g = |k: &str| style.get(k).and_then(Json::as_str).unwrap_or("");
+        format!(
+            "ListPatterns {{ start: {:?}, middle: {:?}, end: {:?}, two: {:?} }}",
+            g("start"),
+            g("middle"),
+            g("end"),
+            g("two"),
+        )
+    };
+
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str(
+        "use crate::list::{ListPatterns, ListSpec};\n\n\
+         /// CLDR list patterns for an exact (lowercased) locale key, or `None`.\n\
+         pub(crate) fn list_spec(lang: &str) -> Option<ListSpec> {\n    Some(match lang {\n",
+    );
+    for (lang, spec) in locales.entries() {
+        let and = pats(spec.get("and").expect("and"));
+        let or = pats(spec.get("or").expect("or"));
+        let _ = write!(
+            out,
+            "        {:?} => ListSpec {{ and: {and}, or: {or} }},\n",
+            lang.to_ascii_lowercase()
+        );
+    }
+    out.push_str("        _ => return None,\n    })\n}\n");
+    write_module(out_dir, modules, "lists", &out);
 }
 
 /// Parse a CLDR number pattern (e.g. `#,##0.###`, `#,##0 %`) into a Rust
