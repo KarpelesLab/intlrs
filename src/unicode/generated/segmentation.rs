@@ -4,7 +4,7 @@
 #![allow(unreachable_patterns)]
 #![allow(dead_code)]
 
-use crate::unicode::segment::{Gcb, Incb};
+use crate::unicode::segment::{Gcb, Incb, Wb};
 
 #[inline]
 pub(crate) const fn grapheme_break(cp: u32) -> Gcb {
@@ -4181,5 +4181,2402 @@ const fn ib_pe01(b: u8) -> Incb {
     match b {
         0x00..=0xef => Incb::Extend,
         _ => Incb::None,
+    }
+}
+
+#[inline]
+pub(crate) const fn word_break(cp: u32) -> Wb {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => wb_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x002 => wb_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => wb_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => wb_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => wb_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => wb_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x007 => wb_p7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x008 => wb_p8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => wb_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => wb_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => wb_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => wb_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => wb_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => wb_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => wb_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => wb_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x011 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x012 => wb_p12(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => wb_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x014 => wb_p14(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x015 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x016 => wb_p16(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x017 => wb_p17(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x018 => wb_p18(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x019 => wb_p19(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01a => wb_p1a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => wb_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => wb_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => wb_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x01f => wb_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => wb_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => wb_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => wb_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => wb_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => wb_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02e => wb_p2e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => wb_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x031 => wb_p31(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x032 => wb_p32(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x033 => wb_p33(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a0 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0a1 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0a2 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0a3 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0a4 => wb_pa4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a5 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0a6 => wb_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => wb_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a8 => wb_pa8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a9 => wb_pa9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0aa => wb_paa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => wb_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ac => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0ad => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0ae => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0af => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b0 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b1 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b2 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b3 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b4 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b5 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b6 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b7 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b8 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0b9 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0ba => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0bb => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0bc => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0bd => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0be => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0bf => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c0 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c1 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c2 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c3 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c4 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c5 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c6 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c7 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c8 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0c9 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0ca => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0cb => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0cc => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0cd => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0ce => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0cf => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0d0 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0d1 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0d2 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0d3 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0d4 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0d5 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0d6 => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0d7 => wb_pd7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => wb_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fc => Wb::ALetter,
+        #[cfg(feature = "bmp")]
+        0x0fd => wb_pfd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => wb_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => wb_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x100 => wb_p100(cp as u8),
+        #[cfg(feature = "full")]
+        0x101 => wb_p101(cp as u8),
+        #[cfg(feature = "full")]
+        0x102 => wb_p102(cp as u8),
+        #[cfg(feature = "full")]
+        0x103 => wb_p103(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => wb_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => wb_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x106 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x107 => wb_p107(cp as u8),
+        #[cfg(feature = "full")]
+        0x108 => wb_p108(cp as u8),
+        #[cfg(feature = "full")]
+        0x109 => wb_p109(cp as u8),
+        #[cfg(feature = "full")]
+        0x10a => wb_p10a(cp as u8),
+        #[cfg(feature = "full")]
+        0x10b => wb_p10b(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => wb_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => wb_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x10e => wb_p10e(cp as u8),
+        #[cfg(feature = "full")]
+        0x10f => wb_p10f(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => wb_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => wb_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x112 => wb_p112(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => wb_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => wb_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => wb_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x116 => wb_p116(cp as u8),
+        #[cfg(feature = "full")]
+        0x117 => wb_p117(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => wb_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => wb_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x11a => wb_p11a(cp as u8),
+        #[cfg(feature = "full")]
+        0x11b => wb_p11b(cp as u8),
+        #[cfg(feature = "full")]
+        0x11c => wb_p11c(cp as u8),
+        #[cfg(feature = "full")]
+        0x11d => wb_p11d(cp as u8),
+        #[cfg(feature = "full")]
+        0x11e => wb_p11e(cp as u8),
+        #[cfg(feature = "full")]
+        0x11f => wb_p11f(cp as u8),
+        #[cfg(feature = "full")]
+        0x120 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x121 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x122 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x123 => wb_p123(cp as u8),
+        #[cfg(feature = "full")]
+        0x124 => wb_p124(cp as u8),
+        #[cfg(feature = "full")]
+        0x125 => wb_p125(cp as u8),
+        #[cfg(feature = "full")]
+        0x12f => wb_p12f(cp as u8),
+        #[cfg(feature = "full")]
+        0x130 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x131 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x132 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x133 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x134 => wb_p134(cp as u8),
+        #[cfg(feature = "full")]
+        0x135 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x136 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x137 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x138 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x139 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x13a => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x13b => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x13c => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x13d => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x13e => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x13f => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x140 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x141 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x142 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x143 => wb_p143(cp as u8),
+        #[cfg(feature = "full")]
+        0x144 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x145 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x146 => wb_p146(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => wb_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x168 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x169 => Wb::ALetter,
+        #[cfg(feature = "full")]
+        0x16a => wb_p16a(cp as u8),
+        #[cfg(feature = "full")]
+        0x16b => wb_p16b(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => wb_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => wb_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x16f => wb_p16f(cp as u8),
+        #[cfg(feature = "full")]
+        0x1af => wb_p1af(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b0 => wb_p1b0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b1 => wb_p1b1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1bc => wb_p1bc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cc => wb_p1cc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cf => wb_p1cf(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => wb_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d2 => wb_p1d2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d4 => wb_p1d4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d5 => wb_p1d5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d6 => wb_p1d6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d7 => wb_p1d7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1da => wb_p1da(cp as u8),
+        #[cfg(feature = "full")]
+        0x1df => wb_p1df(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => wb_p1e0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e1 => wb_p1e1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e2 => wb_p1e2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e4 => wb_p1e4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e5 => wb_p1e5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e6 => wb_p1e6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e7 => wb_p1e7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e8 => wb_p1e8(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => wb_p1e9(cp as u8),
+        #[cfg(feature = "full")]
+        0x1ee => wb_p1ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f1 => wb_p1f1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f3 => wb_p1f3(cp as u8),
+        #[cfg(feature = "full")]
+        0x1fb => wb_p1fb(cp as u8),
+        #[cfg(feature = "full")]
+        0xe00 => wb_pe00(cp as u8),
+        #[cfg(feature = "full")]
+        0xe01 => wb_pe01(cp as u8),
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn wb_p0(b: u8) -> Wb {
+    match b {
+        0x0a => Wb::LF,
+        0x0b..=0x0c => Wb::Newline,
+        0x0d => Wb::CR,
+        0x20 => Wb::WSegSpace,
+        0x22 => Wb::DoubleQuote,
+        0x27 => Wb::SingleQuote,
+        0x2c => Wb::MidNum,
+        0x2e => Wb::MidNumLet,
+        0x30..=0x39 => Wb::Numeric,
+        0x3a => Wb::MidLetter,
+        0x3b => Wb::MidNum,
+        0x41..=0x5a => Wb::ALetter,
+        0x5f => Wb::ExtendNumLet,
+        0x61..=0x7a => Wb::ALetter,
+        #[cfg(feature = "latin1")]
+        0x85 => Wb::Newline,
+        #[cfg(feature = "latin1")]
+        0xaa => Wb::ALetter,
+        #[cfg(feature = "latin1")]
+        0xad => Wb::Format,
+        #[cfg(feature = "latin1")]
+        0xb5 => Wb::ALetter,
+        #[cfg(feature = "latin1")]
+        0xb7 => Wb::MidLetter,
+        #[cfg(feature = "latin1")]
+        0xb8 => Wb::ALetter,
+        #[cfg(feature = "latin1")]
+        0xba => Wb::ALetter,
+        #[cfg(feature = "latin1")]
+        0xc0..=0xd6 => Wb::ALetter,
+        #[cfg(feature = "latin1")]
+        0xd8..=0xf6 => Wb::ALetter,
+        #[cfg(feature = "latin1")]
+        0xf8..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p2(b: u8) -> Wb {
+    match b {
+        0x00..=0xd7 => Wb::ALetter,
+        0xde..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p3(b: u8) -> Wb {
+    match b {
+        0x00..=0x6f => Wb::Extend,
+        0x70..=0x74 => Wb::ALetter,
+        0x76..=0x77 => Wb::ALetter,
+        0x7a..=0x7d => Wb::ALetter,
+        0x7e => Wb::MidNum,
+        0x7f => Wb::ALetter,
+        0x86 => Wb::ALetter,
+        0x87 => Wb::MidLetter,
+        0x88..=0x8a => Wb::ALetter,
+        0x8c => Wb::ALetter,
+        0x8e..=0xa1 => Wb::ALetter,
+        0xa3..=0xf5 => Wb::ALetter,
+        0xf7..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p4(b: u8) -> Wb {
+    match b {
+        0x00..=0x81 => Wb::ALetter,
+        0x83..=0x89 => Wb::Extend,
+        0x8a..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p5(b: u8) -> Wb {
+    match b {
+        0x00..=0x2f => Wb::ALetter,
+        0x31..=0x56 => Wb::ALetter,
+        0x59..=0x5c => Wb::ALetter,
+        0x5e => Wb::ALetter,
+        0x5f => Wb::MidLetter,
+        0x60..=0x88 => Wb::ALetter,
+        0x89 => Wb::MidNum,
+        0x8a => Wb::ALetter,
+        0x91..=0xbd => Wb::Extend,
+        0xbf => Wb::Extend,
+        0xc1..=0xc2 => Wb::Extend,
+        0xc4..=0xc5 => Wb::Extend,
+        0xc7 => Wb::Extend,
+        0xd0..=0xea => Wb::HebrewLetter,
+        0xef..=0xf2 => Wb::HebrewLetter,
+        0xf3 => Wb::ALetter,
+        0xf4 => Wb::MidLetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p6(b: u8) -> Wb {
+    match b {
+        0x00..=0x05 => Wb::Numeric,
+        0x0c..=0x0d => Wb::MidNum,
+        0x10..=0x1a => Wb::Extend,
+        0x1c => Wb::Format,
+        0x20..=0x4a => Wb::ALetter,
+        0x4b..=0x5f => Wb::Extend,
+        0x60..=0x69 => Wb::Numeric,
+        0x6b => Wb::Numeric,
+        0x6c => Wb::MidNum,
+        0x6e..=0x6f => Wb::ALetter,
+        0x70 => Wb::Extend,
+        0x71..=0xd3 => Wb::ALetter,
+        0xd5 => Wb::ALetter,
+        0xd6..=0xdc => Wb::Extend,
+        0xdd => Wb::Numeric,
+        0xdf..=0xe4 => Wb::Extend,
+        0xe5..=0xe6 => Wb::ALetter,
+        0xe7..=0xe8 => Wb::Extend,
+        0xea..=0xed => Wb::Extend,
+        0xee..=0xef => Wb::ALetter,
+        0xf0..=0xf9 => Wb::Numeric,
+        0xfa..=0xfc => Wb::ALetter,
+        0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p7(b: u8) -> Wb {
+    match b {
+        0x0f..=0x10 => Wb::ALetter,
+        0x11 => Wb::Extend,
+        0x12..=0x2f => Wb::ALetter,
+        0x30..=0x4a => Wb::Extend,
+        0x4d..=0xa5 => Wb::ALetter,
+        0xa6..=0xb0 => Wb::Extend,
+        0xb1 => Wb::ALetter,
+        0xc0..=0xc9 => Wb::Numeric,
+        0xca..=0xea => Wb::ALetter,
+        0xeb..=0xf3 => Wb::Extend,
+        0xf4..=0xf5 => Wb::ALetter,
+        0xf8 => Wb::MidNum,
+        0xfa => Wb::ALetter,
+        0xfd => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p8(b: u8) -> Wb {
+    match b {
+        0x00..=0x15 => Wb::ALetter,
+        0x16..=0x19 => Wb::Extend,
+        0x1a => Wb::ALetter,
+        0x1b..=0x23 => Wb::Extend,
+        0x24 => Wb::ALetter,
+        0x25..=0x27 => Wb::Extend,
+        0x28 => Wb::ALetter,
+        0x29..=0x2d => Wb::Extend,
+        0x40..=0x58 => Wb::ALetter,
+        0x59..=0x5b => Wb::Extend,
+        0x60..=0x6a => Wb::ALetter,
+        0x70..=0x87 => Wb::ALetter,
+        0x89..=0x8f => Wb::ALetter,
+        0x90..=0x91 => Wb::Numeric,
+        0x97..=0x9f => Wb::Extend,
+        0xa0..=0xc9 => Wb::ALetter,
+        0xca..=0xe1 => Wb::Extend,
+        0xe2 => Wb::Numeric,
+        0xe3..=0xff => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p9(b: u8) -> Wb {
+    match b {
+        0x00..=0x03 => Wb::Extend,
+        0x04..=0x39 => Wb::ALetter,
+        0x3a..=0x3c => Wb::Extend,
+        0x3d => Wb::ALetter,
+        0x3e..=0x4f => Wb::Extend,
+        0x50 => Wb::ALetter,
+        0x51..=0x57 => Wb::Extend,
+        0x58..=0x61 => Wb::ALetter,
+        0x62..=0x63 => Wb::Extend,
+        0x66..=0x6f => Wb::Numeric,
+        0x71..=0x80 => Wb::ALetter,
+        0x81..=0x83 => Wb::Extend,
+        0x85..=0x8c => Wb::ALetter,
+        0x8f..=0x90 => Wb::ALetter,
+        0x93..=0xa8 => Wb::ALetter,
+        0xaa..=0xb0 => Wb::ALetter,
+        0xb2 => Wb::ALetter,
+        0xb6..=0xb9 => Wb::ALetter,
+        0xbc => Wb::Extend,
+        0xbd => Wb::ALetter,
+        0xbe..=0xc4 => Wb::Extend,
+        0xc7..=0xc8 => Wb::Extend,
+        0xcb..=0xcd => Wb::Extend,
+        0xce => Wb::ALetter,
+        0xd7 => Wb::Extend,
+        0xdc..=0xdd => Wb::ALetter,
+        0xdf..=0xe1 => Wb::ALetter,
+        0xe2..=0xe3 => Wb::Extend,
+        0xe6..=0xef => Wb::Numeric,
+        0xf0..=0xf1 => Wb::ALetter,
+        0xfc => Wb::ALetter,
+        0xfe => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pa(b: u8) -> Wb {
+    match b {
+        0x01..=0x03 => Wb::Extend,
+        0x05..=0x0a => Wb::ALetter,
+        0x0f..=0x10 => Wb::ALetter,
+        0x13..=0x28 => Wb::ALetter,
+        0x2a..=0x30 => Wb::ALetter,
+        0x32..=0x33 => Wb::ALetter,
+        0x35..=0x36 => Wb::ALetter,
+        0x38..=0x39 => Wb::ALetter,
+        0x3c => Wb::Extend,
+        0x3e..=0x42 => Wb::Extend,
+        0x47..=0x48 => Wb::Extend,
+        0x4b..=0x4d => Wb::Extend,
+        0x51 => Wb::Extend,
+        0x59..=0x5c => Wb::ALetter,
+        0x5e => Wb::ALetter,
+        0x66..=0x6f => Wb::Numeric,
+        0x70..=0x71 => Wb::Extend,
+        0x72..=0x74 => Wb::ALetter,
+        0x75 => Wb::Extend,
+        0x81..=0x83 => Wb::Extend,
+        0x85..=0x8d => Wb::ALetter,
+        0x8f..=0x91 => Wb::ALetter,
+        0x93..=0xa8 => Wb::ALetter,
+        0xaa..=0xb0 => Wb::ALetter,
+        0xb2..=0xb3 => Wb::ALetter,
+        0xb5..=0xb9 => Wb::ALetter,
+        0xbc => Wb::Extend,
+        0xbd => Wb::ALetter,
+        0xbe..=0xc5 => Wb::Extend,
+        0xc7..=0xc9 => Wb::Extend,
+        0xcb..=0xcd => Wb::Extend,
+        0xd0 => Wb::ALetter,
+        0xe0..=0xe1 => Wb::ALetter,
+        0xe2..=0xe3 => Wb::Extend,
+        0xe6..=0xef => Wb::Numeric,
+        0xf9 => Wb::ALetter,
+        0xfa..=0xff => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pb(b: u8) -> Wb {
+    match b {
+        0x01..=0x03 => Wb::Extend,
+        0x05..=0x0c => Wb::ALetter,
+        0x0f..=0x10 => Wb::ALetter,
+        0x13..=0x28 => Wb::ALetter,
+        0x2a..=0x30 => Wb::ALetter,
+        0x32..=0x33 => Wb::ALetter,
+        0x35..=0x39 => Wb::ALetter,
+        0x3c => Wb::Extend,
+        0x3d => Wb::ALetter,
+        0x3e..=0x44 => Wb::Extend,
+        0x47..=0x48 => Wb::Extend,
+        0x4b..=0x4d => Wb::Extend,
+        0x55..=0x57 => Wb::Extend,
+        0x5c..=0x5d => Wb::ALetter,
+        0x5f..=0x61 => Wb::ALetter,
+        0x62..=0x63 => Wb::Extend,
+        0x66..=0x6f => Wb::Numeric,
+        0x71 => Wb::ALetter,
+        0x82 => Wb::Extend,
+        0x83 => Wb::ALetter,
+        0x85..=0x8a => Wb::ALetter,
+        0x8e..=0x90 => Wb::ALetter,
+        0x92..=0x95 => Wb::ALetter,
+        0x99..=0x9a => Wb::ALetter,
+        0x9c => Wb::ALetter,
+        0x9e..=0x9f => Wb::ALetter,
+        0xa3..=0xa4 => Wb::ALetter,
+        0xa8..=0xaa => Wb::ALetter,
+        0xae..=0xb9 => Wb::ALetter,
+        0xbe..=0xc2 => Wb::Extend,
+        0xc6..=0xc8 => Wb::Extend,
+        0xca..=0xcd => Wb::Extend,
+        0xd0 => Wb::ALetter,
+        0xd7 => Wb::Extend,
+        0xe6..=0xef => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pc(b: u8) -> Wb {
+    match b {
+        0x00..=0x04 => Wb::Extend,
+        0x05..=0x0c => Wb::ALetter,
+        0x0e..=0x10 => Wb::ALetter,
+        0x12..=0x28 => Wb::ALetter,
+        0x2a..=0x39 => Wb::ALetter,
+        0x3c => Wb::Extend,
+        0x3d => Wb::ALetter,
+        0x3e..=0x44 => Wb::Extend,
+        0x46..=0x48 => Wb::Extend,
+        0x4a..=0x4d => Wb::Extend,
+        0x55..=0x56 => Wb::Extend,
+        0x58..=0x5a => Wb::ALetter,
+        0x5c..=0x5d => Wb::ALetter,
+        0x60..=0x61 => Wb::ALetter,
+        0x62..=0x63 => Wb::Extend,
+        0x66..=0x6f => Wb::Numeric,
+        0x80 => Wb::ALetter,
+        0x81..=0x83 => Wb::Extend,
+        0x85..=0x8c => Wb::ALetter,
+        0x8e..=0x90 => Wb::ALetter,
+        0x92..=0xa8 => Wb::ALetter,
+        0xaa..=0xb3 => Wb::ALetter,
+        0xb5..=0xb9 => Wb::ALetter,
+        0xbc => Wb::Extend,
+        0xbd => Wb::ALetter,
+        0xbe..=0xc4 => Wb::Extend,
+        0xc6..=0xc8 => Wb::Extend,
+        0xca..=0xcd => Wb::Extend,
+        0xd5..=0xd6 => Wb::Extend,
+        0xdc..=0xde => Wb::ALetter,
+        0xe0..=0xe1 => Wb::ALetter,
+        0xe2..=0xe3 => Wb::Extend,
+        0xe6..=0xef => Wb::Numeric,
+        0xf1..=0xf2 => Wb::ALetter,
+        0xf3 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pd(b: u8) -> Wb {
+    match b {
+        0x00..=0x03 => Wb::Extend,
+        0x04..=0x0c => Wb::ALetter,
+        0x0e..=0x10 => Wb::ALetter,
+        0x12..=0x3a => Wb::ALetter,
+        0x3b..=0x3c => Wb::Extend,
+        0x3d => Wb::ALetter,
+        0x3e..=0x44 => Wb::Extend,
+        0x46..=0x48 => Wb::Extend,
+        0x4a..=0x4d => Wb::Extend,
+        0x4e => Wb::ALetter,
+        0x54..=0x56 => Wb::ALetter,
+        0x57 => Wb::Extend,
+        0x5f..=0x61 => Wb::ALetter,
+        0x62..=0x63 => Wb::Extend,
+        0x66..=0x6f => Wb::Numeric,
+        0x7a..=0x7f => Wb::ALetter,
+        0x81..=0x83 => Wb::Extend,
+        0x85..=0x96 => Wb::ALetter,
+        0x9a..=0xb1 => Wb::ALetter,
+        0xb3..=0xbb => Wb::ALetter,
+        0xbd => Wb::ALetter,
+        0xc0..=0xc6 => Wb::ALetter,
+        0xca => Wb::Extend,
+        0xcf..=0xd4 => Wb::Extend,
+        0xd6 => Wb::Extend,
+        0xd8..=0xdf => Wb::Extend,
+        0xe6..=0xef => Wb::Numeric,
+        0xf2..=0xf3 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pe(b: u8) -> Wb {
+    match b {
+        0x31 => Wb::Extend,
+        0x34..=0x3a => Wb::Extend,
+        0x47..=0x4e => Wb::Extend,
+        0x50..=0x59 => Wb::Numeric,
+        0xb1 => Wb::Extend,
+        0xb4..=0xbc => Wb::Extend,
+        0xc8..=0xce => Wb::Extend,
+        0xd0..=0xd9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pf(b: u8) -> Wb {
+    match b {
+        0x00 => Wb::ALetter,
+        0x18..=0x19 => Wb::Extend,
+        0x20..=0x29 => Wb::Numeric,
+        0x35 => Wb::Extend,
+        0x37 => Wb::Extend,
+        0x39 => Wb::Extend,
+        0x3e..=0x3f => Wb::Extend,
+        0x40..=0x47 => Wb::ALetter,
+        0x49..=0x6c => Wb::ALetter,
+        0x71..=0x84 => Wb::Extend,
+        0x86..=0x87 => Wb::Extend,
+        0x88..=0x8c => Wb::ALetter,
+        0x8d..=0x97 => Wb::Extend,
+        0x99..=0xbc => Wb::Extend,
+        0xc6 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p10(b: u8) -> Wb {
+    match b {
+        0x2b..=0x3e => Wb::Extend,
+        0x40..=0x49 => Wb::Numeric,
+        0x56..=0x59 => Wb::Extend,
+        0x5e..=0x60 => Wb::Extend,
+        0x62..=0x64 => Wb::Extend,
+        0x67..=0x6d => Wb::Extend,
+        0x71..=0x74 => Wb::Extend,
+        0x82..=0x8d => Wb::Extend,
+        0x8f => Wb::Extend,
+        0x90..=0x99 => Wb::Numeric,
+        0x9a..=0x9d => Wb::Extend,
+        0xa0..=0xc5 => Wb::ALetter,
+        0xc7 => Wb::ALetter,
+        0xcd => Wb::ALetter,
+        0xd0..=0xfa => Wb::ALetter,
+        0xfc..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p12(b: u8) -> Wb {
+    match b {
+        0x00..=0x48 => Wb::ALetter,
+        0x4a..=0x4d => Wb::ALetter,
+        0x50..=0x56 => Wb::ALetter,
+        0x58 => Wb::ALetter,
+        0x5a..=0x5d => Wb::ALetter,
+        0x60..=0x88 => Wb::ALetter,
+        0x8a..=0x8d => Wb::ALetter,
+        0x90..=0xb0 => Wb::ALetter,
+        0xb2..=0xb5 => Wb::ALetter,
+        0xb8..=0xbe => Wb::ALetter,
+        0xc0 => Wb::ALetter,
+        0xc2..=0xc5 => Wb::ALetter,
+        0xc8..=0xd6 => Wb::ALetter,
+        0xd8..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p13(b: u8) -> Wb {
+    match b {
+        0x00..=0x10 => Wb::ALetter,
+        0x12..=0x15 => Wb::ALetter,
+        0x18..=0x5a => Wb::ALetter,
+        0x5d..=0x5f => Wb::Extend,
+        0x80..=0x8f => Wb::ALetter,
+        0xa0..=0xf5 => Wb::ALetter,
+        0xf8..=0xfd => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p14(b: u8) -> Wb {
+    match b {
+        0x01..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p16(b: u8) -> Wb {
+    match b {
+        0x00..=0x6c => Wb::ALetter,
+        0x6f..=0x7f => Wb::ALetter,
+        0x80 => Wb::WSegSpace,
+        0x81..=0x9a => Wb::ALetter,
+        0xa0..=0xea => Wb::ALetter,
+        0xee..=0xf8 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p17(b: u8) -> Wb {
+    match b {
+        0x00..=0x11 => Wb::ALetter,
+        0x12..=0x15 => Wb::Extend,
+        0x1f..=0x31 => Wb::ALetter,
+        0x32..=0x34 => Wb::Extend,
+        0x40..=0x51 => Wb::ALetter,
+        0x52..=0x53 => Wb::Extend,
+        0x60..=0x6c => Wb::ALetter,
+        0x6e..=0x70 => Wb::ALetter,
+        0x72..=0x73 => Wb::Extend,
+        0xb4..=0xd3 => Wb::Extend,
+        0xdd => Wb::Extend,
+        0xe0..=0xe9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p18(b: u8) -> Wb {
+    match b {
+        0x0b..=0x0d => Wb::Extend,
+        0x0e => Wb::Format,
+        0x0f => Wb::Extend,
+        0x10..=0x19 => Wb::Numeric,
+        0x20..=0x78 => Wb::ALetter,
+        0x80..=0x84 => Wb::ALetter,
+        0x85..=0x86 => Wb::Extend,
+        0x87..=0xa8 => Wb::ALetter,
+        0xa9 => Wb::Extend,
+        0xaa => Wb::ALetter,
+        0xb0..=0xf5 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p19(b: u8) -> Wb {
+    match b {
+        0x00..=0x1e => Wb::ALetter,
+        0x20..=0x2b => Wb::Extend,
+        0x30..=0x3b => Wb::Extend,
+        0x46..=0x4f => Wb::Numeric,
+        0xd0..=0xda => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p1a(b: u8) -> Wb {
+    match b {
+        0x00..=0x16 => Wb::ALetter,
+        0x17..=0x1b => Wb::Extend,
+        0x55..=0x5e => Wb::Extend,
+        0x60..=0x7c => Wb::Extend,
+        0x7f => Wb::Extend,
+        0x80..=0x89 => Wb::Numeric,
+        0x90..=0x99 => Wb::Numeric,
+        0xb0..=0xdd => Wb::Extend,
+        0xe0..=0xeb => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p1b(b: u8) -> Wb {
+    match b {
+        0x00..=0x04 => Wb::Extend,
+        0x05..=0x33 => Wb::ALetter,
+        0x34..=0x44 => Wb::Extend,
+        0x45..=0x4c => Wb::ALetter,
+        0x50..=0x59 => Wb::Numeric,
+        0x6b..=0x73 => Wb::Extend,
+        0x80..=0x82 => Wb::Extend,
+        0x83..=0xa0 => Wb::ALetter,
+        0xa1..=0xad => Wb::Extend,
+        0xae..=0xaf => Wb::ALetter,
+        0xb0..=0xb9 => Wb::Numeric,
+        0xba..=0xe5 => Wb::ALetter,
+        0xe6..=0xf3 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p1c(b: u8) -> Wb {
+    match b {
+        0x00..=0x23 => Wb::ALetter,
+        0x24..=0x37 => Wb::Extend,
+        0x40..=0x49 => Wb::Numeric,
+        0x4d..=0x4f => Wb::ALetter,
+        0x50..=0x59 => Wb::Numeric,
+        0x5a..=0x7d => Wb::ALetter,
+        0x80..=0x8a => Wb::ALetter,
+        0x90..=0xba => Wb::ALetter,
+        0xbd..=0xbf => Wb::ALetter,
+        0xd0..=0xd2 => Wb::Extend,
+        0xd4..=0xe8 => Wb::Extend,
+        0xe9..=0xec => Wb::ALetter,
+        0xed => Wb::Extend,
+        0xee..=0xf3 => Wb::ALetter,
+        0xf4 => Wb::Extend,
+        0xf5..=0xf6 => Wb::ALetter,
+        0xf7..=0xf9 => Wb::Extend,
+        0xfa => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p1d(b: u8) -> Wb {
+    match b {
+        0x00..=0xbf => Wb::ALetter,
+        0xc0..=0xff => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p1f(b: u8) -> Wb {
+    match b {
+        0x00..=0x15 => Wb::ALetter,
+        0x18..=0x1d => Wb::ALetter,
+        0x20..=0x45 => Wb::ALetter,
+        0x48..=0x4d => Wb::ALetter,
+        0x50..=0x57 => Wb::ALetter,
+        0x59 => Wb::ALetter,
+        0x5b => Wb::ALetter,
+        0x5d => Wb::ALetter,
+        0x5f..=0x7d => Wb::ALetter,
+        0x80..=0xb4 => Wb::ALetter,
+        0xb6..=0xbc => Wb::ALetter,
+        0xbe => Wb::ALetter,
+        0xc2..=0xc4 => Wb::ALetter,
+        0xc6..=0xcc => Wb::ALetter,
+        0xd0..=0xd3 => Wb::ALetter,
+        0xd6..=0xdb => Wb::ALetter,
+        0xe0..=0xec => Wb::ALetter,
+        0xf2..=0xf4 => Wb::ALetter,
+        0xf6..=0xfc => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p20(b: u8) -> Wb {
+    match b {
+        0x00..=0x06 => Wb::WSegSpace,
+        0x08..=0x0a => Wb::WSegSpace,
+        0x0c => Wb::Extend,
+        0x0d => Wb::ZWJ,
+        0x0e..=0x0f => Wb::Format,
+        0x18..=0x19 => Wb::MidNumLet,
+        0x24 => Wb::MidNumLet,
+        0x27 => Wb::MidLetter,
+        0x28..=0x29 => Wb::Newline,
+        0x2a..=0x2e => Wb::Format,
+        0x2f => Wb::ExtendNumLet,
+        0x3f..=0x40 => Wb::ExtendNumLet,
+        0x44 => Wb::MidNum,
+        0x54 => Wb::ExtendNumLet,
+        0x5f => Wb::WSegSpace,
+        0x60..=0x64 => Wb::Format,
+        0x66..=0x6f => Wb::Format,
+        0x71 => Wb::ALetter,
+        0x7f => Wb::ALetter,
+        0x90..=0x9c => Wb::ALetter,
+        0xd0..=0xf0 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p21(b: u8) -> Wb {
+    match b {
+        0x02 => Wb::ALetter,
+        0x07 => Wb::ALetter,
+        0x0a..=0x13 => Wb::ALetter,
+        0x15 => Wb::ALetter,
+        0x19..=0x1d => Wb::ALetter,
+        0x24 => Wb::ALetter,
+        0x26 => Wb::ALetter,
+        0x28 => Wb::ALetter,
+        0x2a..=0x2d => Wb::ALetter,
+        0x2f..=0x39 => Wb::ALetter,
+        0x3c..=0x3f => Wb::ALetter,
+        0x45..=0x49 => Wb::ALetter,
+        0x4e => Wb::ALetter,
+        0x60..=0x88 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p24(b: u8) -> Wb {
+    match b {
+        0xb6..=0xe9 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p2c(b: u8) -> Wb {
+    match b {
+        0x00..=0xe4 => Wb::ALetter,
+        0xeb..=0xee => Wb::ALetter,
+        0xef..=0xf1 => Wb::Extend,
+        0xf2..=0xf3 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p2d(b: u8) -> Wb {
+    match b {
+        0x00..=0x25 => Wb::ALetter,
+        0x27 => Wb::ALetter,
+        0x2d => Wb::ALetter,
+        0x30..=0x67 => Wb::ALetter,
+        0x6f => Wb::ALetter,
+        0x7f => Wb::Extend,
+        0x80..=0x96 => Wb::ALetter,
+        0xa0..=0xa6 => Wb::ALetter,
+        0xa8..=0xae => Wb::ALetter,
+        0xb0..=0xb6 => Wb::ALetter,
+        0xb8..=0xbe => Wb::ALetter,
+        0xc0..=0xc6 => Wb::ALetter,
+        0xc8..=0xce => Wb::ALetter,
+        0xd0..=0xd6 => Wb::ALetter,
+        0xd8..=0xde => Wb::ALetter,
+        0xe0..=0xff => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p2e(b: u8) -> Wb {
+    match b {
+        0x2f => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p30(b: u8) -> Wb {
+    match b {
+        0x00 => Wb::WSegSpace,
+        0x05 => Wb::ALetter,
+        0x2a..=0x2f => Wb::Extend,
+        0x31..=0x35 => Wb::Katakana,
+        0x3b..=0x3c => Wb::ALetter,
+        0x99..=0x9a => Wb::Extend,
+        0x9b..=0x9c => Wb::Katakana,
+        0xa0..=0xfa => Wb::Katakana,
+        0xfc..=0xff => Wb::Katakana,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p31(b: u8) -> Wb {
+    match b {
+        0x05..=0x2f => Wb::ALetter,
+        0x31..=0x8e => Wb::ALetter,
+        0xa0..=0xbf => Wb::ALetter,
+        0xf0..=0xff => Wb::Katakana,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p32(b: u8) -> Wb {
+    match b {
+        0xd0..=0xfe => Wb::Katakana,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_p33(b: u8) -> Wb {
+    match b {
+        0x00..=0x57 => Wb::Katakana,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pa4(b: u8) -> Wb {
+    match b {
+        0x00..=0x8c => Wb::ALetter,
+        0xd0..=0xfd => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pa6(b: u8) -> Wb {
+    match b {
+        0x00..=0x0c => Wb::ALetter,
+        0x10..=0x1f => Wb::ALetter,
+        0x20..=0x29 => Wb::Numeric,
+        0x2a..=0x2b => Wb::ALetter,
+        0x40..=0x6e => Wb::ALetter,
+        0x6f..=0x72 => Wb::Extend,
+        0x74..=0x7d => Wb::Extend,
+        0x7f..=0x9d => Wb::ALetter,
+        0x9e..=0x9f => Wb::Extend,
+        0xa0..=0xef => Wb::ALetter,
+        0xf0..=0xf1 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pa7(b: u8) -> Wb {
+    match b {
+        0x08..=0xdc => Wb::ALetter,
+        0xf1..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pa8(b: u8) -> Wb {
+    match b {
+        0x00..=0x01 => Wb::ALetter,
+        0x02 => Wb::Extend,
+        0x03..=0x05 => Wb::ALetter,
+        0x06 => Wb::Extend,
+        0x07..=0x0a => Wb::ALetter,
+        0x0b => Wb::Extend,
+        0x0c..=0x22 => Wb::ALetter,
+        0x23..=0x27 => Wb::Extend,
+        0x2c => Wb::Extend,
+        0x40..=0x73 => Wb::ALetter,
+        0x80..=0x81 => Wb::Extend,
+        0x82..=0xb3 => Wb::ALetter,
+        0xb4..=0xc5 => Wb::Extend,
+        0xd0..=0xd9 => Wb::Numeric,
+        0xe0..=0xf1 => Wb::Extend,
+        0xf2..=0xf7 => Wb::ALetter,
+        0xfb => Wb::ALetter,
+        0xfd..=0xfe => Wb::ALetter,
+        0xff => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pa9(b: u8) -> Wb {
+    match b {
+        0x00..=0x09 => Wb::Numeric,
+        0x0a..=0x25 => Wb::ALetter,
+        0x26..=0x2d => Wb::Extend,
+        0x30..=0x46 => Wb::ALetter,
+        0x47..=0x53 => Wb::Extend,
+        0x60..=0x7c => Wb::ALetter,
+        0x80..=0x83 => Wb::Extend,
+        0x84..=0xb2 => Wb::ALetter,
+        0xb3..=0xc0 => Wb::Extend,
+        0xcf => Wb::ALetter,
+        0xd0..=0xd9 => Wb::Numeric,
+        0xe5 => Wb::Extend,
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_paa(b: u8) -> Wb {
+    match b {
+        0x00..=0x28 => Wb::ALetter,
+        0x29..=0x36 => Wb::Extend,
+        0x40..=0x42 => Wb::ALetter,
+        0x43 => Wb::Extend,
+        0x44..=0x4b => Wb::ALetter,
+        0x4c..=0x4d => Wb::Extend,
+        0x50..=0x59 => Wb::Numeric,
+        0x7b..=0x7d => Wb::Extend,
+        0xb0 => Wb::Extend,
+        0xb2..=0xb4 => Wb::Extend,
+        0xb7..=0xb8 => Wb::Extend,
+        0xbe..=0xbf => Wb::Extend,
+        0xc1 => Wb::Extend,
+        0xe0..=0xea => Wb::ALetter,
+        0xeb..=0xef => Wb::Extend,
+        0xf2..=0xf4 => Wb::ALetter,
+        0xf5..=0xf6 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pab(b: u8) -> Wb {
+    match b {
+        0x01..=0x06 => Wb::ALetter,
+        0x09..=0x0e => Wb::ALetter,
+        0x11..=0x16 => Wb::ALetter,
+        0x20..=0x26 => Wb::ALetter,
+        0x28..=0x2e => Wb::ALetter,
+        0x30..=0x69 => Wb::ALetter,
+        0x70..=0xe2 => Wb::ALetter,
+        0xe3..=0xea => Wb::Extend,
+        0xec..=0xed => Wb::Extend,
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pd7(b: u8) -> Wb {
+    match b {
+        0x00..=0xa3 => Wb::ALetter,
+        0xb0..=0xc6 => Wb::ALetter,
+        0xcb..=0xfb => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pfb(b: u8) -> Wb {
+    match b {
+        0x00..=0x06 => Wb::ALetter,
+        0x13..=0x17 => Wb::ALetter,
+        0x1d => Wb::HebrewLetter,
+        0x1e => Wb::Extend,
+        0x1f..=0x28 => Wb::HebrewLetter,
+        0x2a..=0x36 => Wb::HebrewLetter,
+        0x38..=0x3c => Wb::HebrewLetter,
+        0x3e => Wb::HebrewLetter,
+        0x40..=0x41 => Wb::HebrewLetter,
+        0x43..=0x44 => Wb::HebrewLetter,
+        0x46..=0x4f => Wb::HebrewLetter,
+        0x50..=0xb1 => Wb::ALetter,
+        0xd3..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pfd(b: u8) -> Wb {
+    match b {
+        0x00..=0x3d => Wb::ALetter,
+        0x50..=0x8f => Wb::ALetter,
+        0x92..=0xc7 => Wb::ALetter,
+        0xf0..=0xfb => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pfe(b: u8) -> Wb {
+    match b {
+        0x00..=0x0f => Wb::Extend,
+        0x13 => Wb::MidLetter,
+        0x20..=0x2f => Wb::Extend,
+        0x33..=0x34 => Wb::ExtendNumLet,
+        0x4d..=0x4f => Wb::ExtendNumLet,
+        0x50 => Wb::MidNum,
+        0x52 => Wb::MidNumLet,
+        0x54 => Wb::MidNum,
+        0x55 => Wb::MidLetter,
+        0x70..=0x74 => Wb::ALetter,
+        0x76..=0xfc => Wb::ALetter,
+        0xff => Wb::Format,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn wb_pff(b: u8) -> Wb {
+    match b {
+        0x07 => Wb::MidNumLet,
+        0x0c => Wb::MidNum,
+        0x0e => Wb::MidNumLet,
+        0x10..=0x19 => Wb::Numeric,
+        0x1a => Wb::MidLetter,
+        0x1b => Wb::MidNum,
+        0x21..=0x3a => Wb::ALetter,
+        0x3f => Wb::ExtendNumLet,
+        0x41..=0x5a => Wb::ALetter,
+        0x66..=0x9d => Wb::Katakana,
+        0x9e..=0x9f => Wb::Extend,
+        0xa0..=0xbe => Wb::ALetter,
+        0xc2..=0xc7 => Wb::ALetter,
+        0xca..=0xcf => Wb::ALetter,
+        0xd2..=0xd7 => Wb::ALetter,
+        0xda..=0xdc => Wb::ALetter,
+        0xf9..=0xfb => Wb::Format,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p100(b: u8) -> Wb {
+    match b {
+        0x00..=0x0b => Wb::ALetter,
+        0x0d..=0x26 => Wb::ALetter,
+        0x28..=0x3a => Wb::ALetter,
+        0x3c..=0x3d => Wb::ALetter,
+        0x3f..=0x4d => Wb::ALetter,
+        0x50..=0x5d => Wb::ALetter,
+        0x80..=0xfa => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p101(b: u8) -> Wb {
+    match b {
+        0x40..=0x74 => Wb::ALetter,
+        0xfd => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p102(b: u8) -> Wb {
+    match b {
+        0x80..=0x9c => Wb::ALetter,
+        0xa0..=0xd0 => Wb::ALetter,
+        0xe0 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p103(b: u8) -> Wb {
+    match b {
+        0x00..=0x1f => Wb::ALetter,
+        0x2d..=0x4a => Wb::ALetter,
+        0x50..=0x75 => Wb::ALetter,
+        0x76..=0x7a => Wb::Extend,
+        0x80..=0x9d => Wb::ALetter,
+        0xa0..=0xc3 => Wb::ALetter,
+        0xc8..=0xcf => Wb::ALetter,
+        0xd1..=0xd5 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p104(b: u8) -> Wb {
+    match b {
+        0x00..=0x9d => Wb::ALetter,
+        0xa0..=0xa9 => Wb::Numeric,
+        0xb0..=0xd3 => Wb::ALetter,
+        0xd8..=0xfb => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p105(b: u8) -> Wb {
+    match b {
+        0x00..=0x27 => Wb::ALetter,
+        0x30..=0x63 => Wb::ALetter,
+        0x70..=0x7a => Wb::ALetter,
+        0x7c..=0x8a => Wb::ALetter,
+        0x8c..=0x92 => Wb::ALetter,
+        0x94..=0x95 => Wb::ALetter,
+        0x97..=0xa1 => Wb::ALetter,
+        0xa3..=0xb1 => Wb::ALetter,
+        0xb3..=0xb9 => Wb::ALetter,
+        0xbb..=0xbc => Wb::ALetter,
+        0xc0..=0xf3 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p107(b: u8) -> Wb {
+    match b {
+        0x00..=0x36 => Wb::ALetter,
+        0x40..=0x55 => Wb::ALetter,
+        0x60..=0x67 => Wb::ALetter,
+        0x80..=0x85 => Wb::ALetter,
+        0x87..=0xb0 => Wb::ALetter,
+        0xb2..=0xba => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p108(b: u8) -> Wb {
+    match b {
+        0x00..=0x05 => Wb::ALetter,
+        0x08 => Wb::ALetter,
+        0x0a..=0x35 => Wb::ALetter,
+        0x37..=0x38 => Wb::ALetter,
+        0x3c => Wb::ALetter,
+        0x3f..=0x55 => Wb::ALetter,
+        0x60..=0x76 => Wb::ALetter,
+        0x80..=0x9e => Wb::ALetter,
+        0xe0..=0xf2 => Wb::ALetter,
+        0xf4..=0xf5 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p109(b: u8) -> Wb {
+    match b {
+        0x00..=0x15 => Wb::ALetter,
+        0x20..=0x39 => Wb::ALetter,
+        0x40..=0x59 => Wb::ALetter,
+        0x80..=0xb7 => Wb::ALetter,
+        0xbe..=0xbf => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p10a(b: u8) -> Wb {
+    match b {
+        0x00 => Wb::ALetter,
+        0x01..=0x03 => Wb::Extend,
+        0x05..=0x06 => Wb::Extend,
+        0x0c..=0x0f => Wb::Extend,
+        0x10..=0x13 => Wb::ALetter,
+        0x15..=0x17 => Wb::ALetter,
+        0x19..=0x35 => Wb::ALetter,
+        0x38..=0x3a => Wb::Extend,
+        0x3f => Wb::Extend,
+        0x60..=0x7c => Wb::ALetter,
+        0x80..=0x9c => Wb::ALetter,
+        0xc0..=0xc7 => Wb::ALetter,
+        0xc9..=0xe4 => Wb::ALetter,
+        0xe5..=0xe6 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p10b(b: u8) -> Wb {
+    match b {
+        0x00..=0x35 => Wb::ALetter,
+        0x40..=0x55 => Wb::ALetter,
+        0x60..=0x72 => Wb::ALetter,
+        0x80..=0x91 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p10c(b: u8) -> Wb {
+    match b {
+        0x00..=0x48 => Wb::ALetter,
+        0x80..=0xb2 => Wb::ALetter,
+        0xc0..=0xf2 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p10d(b: u8) -> Wb {
+    match b {
+        0x00..=0x23 => Wb::ALetter,
+        0x24..=0x27 => Wb::Extend,
+        0x30..=0x39 => Wb::Numeric,
+        0x40..=0x49 => Wb::Numeric,
+        0x4a..=0x65 => Wb::ALetter,
+        0x69..=0x6d => Wb::Extend,
+        0x6f..=0x85 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p10e(b: u8) -> Wb {
+    match b {
+        0x80..=0xa9 => Wb::ALetter,
+        0xab..=0xac => Wb::Extend,
+        0xb0..=0xb1 => Wb::ALetter,
+        0xc2..=0xc7 => Wb::ALetter,
+        0xfa..=0xff => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p10f(b: u8) -> Wb {
+    match b {
+        0x00..=0x1c => Wb::ALetter,
+        0x27 => Wb::ALetter,
+        0x30..=0x45 => Wb::ALetter,
+        0x46..=0x50 => Wb::Extend,
+        0x70..=0x81 => Wb::ALetter,
+        0x82..=0x85 => Wb::Extend,
+        0xb0..=0xc4 => Wb::ALetter,
+        0xe0..=0xf6 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p110(b: u8) -> Wb {
+    match b {
+        0x00..=0x02 => Wb::Extend,
+        0x03..=0x37 => Wb::ALetter,
+        0x38..=0x46 => Wb::Extend,
+        0x66..=0x6f => Wb::Numeric,
+        0x70 => Wb::Extend,
+        0x71..=0x72 => Wb::ALetter,
+        0x73..=0x74 => Wb::Extend,
+        0x75 => Wb::ALetter,
+        0x7f..=0x82 => Wb::Extend,
+        0x83..=0xaf => Wb::ALetter,
+        0xb0..=0xba => Wb::Extend,
+        0xbd => Wb::Numeric,
+        0xc2 => Wb::Extend,
+        0xcd => Wb::Numeric,
+        0xd0..=0xe8 => Wb::ALetter,
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p111(b: u8) -> Wb {
+    match b {
+        0x00..=0x02 => Wb::Extend,
+        0x03..=0x26 => Wb::ALetter,
+        0x27..=0x34 => Wb::Extend,
+        0x36..=0x3f => Wb::Numeric,
+        0x44 => Wb::ALetter,
+        0x45..=0x46 => Wb::Extend,
+        0x47 => Wb::ALetter,
+        0x50..=0x72 => Wb::ALetter,
+        0x73 => Wb::Extend,
+        0x76 => Wb::ALetter,
+        0x80..=0x82 => Wb::Extend,
+        0x83..=0xb2 => Wb::ALetter,
+        0xb3..=0xc0 => Wb::Extend,
+        0xc1..=0xc4 => Wb::ALetter,
+        0xc9..=0xcc => Wb::Extend,
+        0xce..=0xcf => Wb::Extend,
+        0xd0..=0xd9 => Wb::Numeric,
+        0xda => Wb::ALetter,
+        0xdc => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p112(b: u8) -> Wb {
+    match b {
+        0x00..=0x11 => Wb::ALetter,
+        0x13..=0x2b => Wb::ALetter,
+        0x2c..=0x37 => Wb::Extend,
+        0x3e => Wb::Extend,
+        0x3f..=0x40 => Wb::ALetter,
+        0x41 => Wb::Extend,
+        0x80..=0x86 => Wb::ALetter,
+        0x88 => Wb::ALetter,
+        0x8a..=0x8d => Wb::ALetter,
+        0x8f..=0x9d => Wb::ALetter,
+        0x9f..=0xa8 => Wb::ALetter,
+        0xb0..=0xde => Wb::ALetter,
+        0xdf..=0xea => Wb::Extend,
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p113(b: u8) -> Wb {
+    match b {
+        0x00..=0x03 => Wb::Extend,
+        0x05..=0x0c => Wb::ALetter,
+        0x0f..=0x10 => Wb::ALetter,
+        0x13..=0x28 => Wb::ALetter,
+        0x2a..=0x30 => Wb::ALetter,
+        0x32..=0x33 => Wb::ALetter,
+        0x35..=0x39 => Wb::ALetter,
+        0x3b..=0x3c => Wb::Extend,
+        0x3d => Wb::ALetter,
+        0x3e..=0x44 => Wb::Extend,
+        0x47..=0x48 => Wb::Extend,
+        0x4b..=0x4d => Wb::Extend,
+        0x50 => Wb::ALetter,
+        0x57 => Wb::Extend,
+        0x5d..=0x61 => Wb::ALetter,
+        0x62..=0x63 => Wb::Extend,
+        0x66..=0x6c => Wb::Extend,
+        0x70..=0x74 => Wb::Extend,
+        0x80..=0x89 => Wb::ALetter,
+        0x8b => Wb::ALetter,
+        0x8e => Wb::ALetter,
+        0x90..=0xb5 => Wb::ALetter,
+        0xb7 => Wb::ALetter,
+        0xb8..=0xc0 => Wb::Extend,
+        0xc2 => Wb::Extend,
+        0xc5 => Wb::Extend,
+        0xc7..=0xca => Wb::Extend,
+        0xcc..=0xd0 => Wb::Extend,
+        0xd1 => Wb::ALetter,
+        0xd2 => Wb::Extend,
+        0xd3 => Wb::ALetter,
+        0xe1..=0xe2 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p114(b: u8) -> Wb {
+    match b {
+        0x00..=0x34 => Wb::ALetter,
+        0x35..=0x46 => Wb::Extend,
+        0x47..=0x4a => Wb::ALetter,
+        0x50..=0x59 => Wb::Numeric,
+        0x5e => Wb::Extend,
+        0x5f..=0x61 => Wb::ALetter,
+        0x80..=0xaf => Wb::ALetter,
+        0xb0..=0xc3 => Wb::Extend,
+        0xc4..=0xc5 => Wb::ALetter,
+        0xc7 => Wb::ALetter,
+        0xd0..=0xd9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p115(b: u8) -> Wb {
+    match b {
+        0x80..=0xae => Wb::ALetter,
+        0xaf..=0xb5 => Wb::Extend,
+        0xb8..=0xc0 => Wb::Extend,
+        0xd8..=0xdb => Wb::ALetter,
+        0xdc..=0xdd => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p116(b: u8) -> Wb {
+    match b {
+        0x00..=0x2f => Wb::ALetter,
+        0x30..=0x40 => Wb::Extend,
+        0x44 => Wb::ALetter,
+        0x50..=0x59 => Wb::Numeric,
+        0x80..=0xaa => Wb::ALetter,
+        0xab..=0xb7 => Wb::Extend,
+        0xb8 => Wb::ALetter,
+        0xc0..=0xc9 => Wb::Numeric,
+        0xd0..=0xe3 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p117(b: u8) -> Wb {
+    match b {
+        0x1d..=0x2b => Wb::Extend,
+        0x30..=0x39 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p118(b: u8) -> Wb {
+    match b {
+        0x00..=0x2b => Wb::ALetter,
+        0x2c..=0x3a => Wb::Extend,
+        0xa0..=0xdf => Wb::ALetter,
+        0xe0..=0xe9 => Wb::Numeric,
+        0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p119(b: u8) -> Wb {
+    match b {
+        0x00..=0x06 => Wb::ALetter,
+        0x09 => Wb::ALetter,
+        0x0c..=0x13 => Wb::ALetter,
+        0x15..=0x16 => Wb::ALetter,
+        0x18..=0x2f => Wb::ALetter,
+        0x30..=0x35 => Wb::Extend,
+        0x37..=0x38 => Wb::Extend,
+        0x3b..=0x3e => Wb::Extend,
+        0x3f => Wb::ALetter,
+        0x40 => Wb::Extend,
+        0x41 => Wb::ALetter,
+        0x42..=0x43 => Wb::Extend,
+        0x50..=0x59 => Wb::Numeric,
+        0xa0..=0xa7 => Wb::ALetter,
+        0xaa..=0xd0 => Wb::ALetter,
+        0xd1..=0xd7 => Wb::Extend,
+        0xda..=0xe0 => Wb::Extend,
+        0xe1 => Wb::ALetter,
+        0xe3 => Wb::ALetter,
+        0xe4 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p11a(b: u8) -> Wb {
+    match b {
+        0x00 => Wb::ALetter,
+        0x01..=0x0a => Wb::Extend,
+        0x0b..=0x32 => Wb::ALetter,
+        0x33..=0x39 => Wb::Extend,
+        0x3a => Wb::ALetter,
+        0x3b..=0x3e => Wb::Extend,
+        0x47 => Wb::Extend,
+        0x50 => Wb::ALetter,
+        0x51..=0x5b => Wb::Extend,
+        0x5c..=0x89 => Wb::ALetter,
+        0x8a..=0x99 => Wb::Extend,
+        0x9d => Wb::ALetter,
+        0xb0..=0xf8 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p11b(b: u8) -> Wb {
+    match b {
+        0x60..=0x67 => Wb::Extend,
+        0xc0..=0xe0 => Wb::ALetter,
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p11c(b: u8) -> Wb {
+    match b {
+        0x00..=0x08 => Wb::ALetter,
+        0x0a..=0x2e => Wb::ALetter,
+        0x2f..=0x36 => Wb::Extend,
+        0x38..=0x3f => Wb::Extend,
+        0x40 => Wb::ALetter,
+        0x50..=0x59 => Wb::Numeric,
+        0x72..=0x8f => Wb::ALetter,
+        0x92..=0xa7 => Wb::Extend,
+        0xa9..=0xb6 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p11d(b: u8) -> Wb {
+    match b {
+        0x00..=0x06 => Wb::ALetter,
+        0x08..=0x09 => Wb::ALetter,
+        0x0b..=0x30 => Wb::ALetter,
+        0x31..=0x36 => Wb::Extend,
+        0x3a => Wb::Extend,
+        0x3c..=0x3d => Wb::Extend,
+        0x3f..=0x45 => Wb::Extend,
+        0x46 => Wb::ALetter,
+        0x47 => Wb::Extend,
+        0x50..=0x59 => Wb::Numeric,
+        0x60..=0x65 => Wb::ALetter,
+        0x67..=0x68 => Wb::ALetter,
+        0x6a..=0x89 => Wb::ALetter,
+        0x8a..=0x8e => Wb::Extend,
+        0x90..=0x91 => Wb::Extend,
+        0x93..=0x97 => Wb::Extend,
+        0x98 => Wb::ALetter,
+        0xa0..=0xa9 => Wb::Numeric,
+        0xb0..=0xdb => Wb::ALetter,
+        0xe0..=0xe9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p11e(b: u8) -> Wb {
+    match b {
+        0xe0..=0xf2 => Wb::ALetter,
+        0xf3..=0xf6 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p11f(b: u8) -> Wb {
+    match b {
+        0x00..=0x01 => Wb::Extend,
+        0x02 => Wb::ALetter,
+        0x03 => Wb::Extend,
+        0x04..=0x10 => Wb::ALetter,
+        0x12..=0x33 => Wb::ALetter,
+        0x34..=0x3a => Wb::Extend,
+        0x3e..=0x42 => Wb::Extend,
+        0x50..=0x59 => Wb::Numeric,
+        0x5a => Wb::Extend,
+        0xb0 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p123(b: u8) -> Wb {
+    match b {
+        0x00..=0x99 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p124(b: u8) -> Wb {
+    match b {
+        0x00..=0x6e => Wb::ALetter,
+        0x80..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p125(b: u8) -> Wb {
+    match b {
+        0x00..=0x43 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p12f(b: u8) -> Wb {
+    match b {
+        0x90..=0xf0 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p134(b: u8) -> Wb {
+    match b {
+        0x00..=0x2f => Wb::ALetter,
+        0x30..=0x3f => Wb::Format,
+        0x40 => Wb::Extend,
+        0x41..=0x46 => Wb::ALetter,
+        0x47..=0x55 => Wb::Extend,
+        0x60..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p143(b: u8) -> Wb {
+    match b {
+        0x00..=0xfa => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p146(b: u8) -> Wb {
+    match b {
+        0x00..=0x46 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p161(b: u8) -> Wb {
+    match b {
+        0x00..=0x1d => Wb::ALetter,
+        0x1e..=0x2f => Wb::Extend,
+        0x30..=0x39 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p16a(b: u8) -> Wb {
+    match b {
+        0x00..=0x38 => Wb::ALetter,
+        0x40..=0x5e => Wb::ALetter,
+        0x60..=0x69 => Wb::Numeric,
+        0x70..=0xbe => Wb::ALetter,
+        0xc0..=0xc9 => Wb::Numeric,
+        0xd0..=0xed => Wb::ALetter,
+        0xf0..=0xf4 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p16b(b: u8) -> Wb {
+    match b {
+        0x00..=0x2f => Wb::ALetter,
+        0x30..=0x36 => Wb::Extend,
+        0x40..=0x43 => Wb::ALetter,
+        0x50..=0x59 => Wb::Numeric,
+        0x63..=0x77 => Wb::ALetter,
+        0x7d..=0x8f => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p16d(b: u8) -> Wb {
+    match b {
+        0x40..=0x6c => Wb::ALetter,
+        0x70..=0x79 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p16e(b: u8) -> Wb {
+    match b {
+        0x40..=0x7f => Wb::ALetter,
+        0xa0..=0xb8 => Wb::ALetter,
+        0xbb..=0xd3 => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p16f(b: u8) -> Wb {
+    match b {
+        0x00..=0x4a => Wb::ALetter,
+        0x4f => Wb::Extend,
+        0x50 => Wb::ALetter,
+        0x51..=0x87 => Wb::Extend,
+        0x8f..=0x92 => Wb::Extend,
+        0x93..=0x9f => Wb::ALetter,
+        0xe0..=0xe1 => Wb::ALetter,
+        0xe3 => Wb::ALetter,
+        0xe4 => Wb::Extend,
+        0xf0..=0xf1 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1af(b: u8) -> Wb {
+    match b {
+        0xf0..=0xf3 => Wb::Katakana,
+        0xf5..=0xfb => Wb::Katakana,
+        0xfd..=0xfe => Wb::Katakana,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1b0(b: u8) -> Wb {
+    match b {
+        0x00 => Wb::Katakana,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1b1(b: u8) -> Wb {
+    match b {
+        0x20..=0x22 => Wb::Katakana,
+        0x55 => Wb::Katakana,
+        0x64..=0x67 => Wb::Katakana,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1bc(b: u8) -> Wb {
+    match b {
+        0x00..=0x6a => Wb::ALetter,
+        0x70..=0x7c => Wb::ALetter,
+        0x80..=0x88 => Wb::ALetter,
+        0x90..=0x99 => Wb::ALetter,
+        0x9d..=0x9e => Wb::Extend,
+        0xa0..=0xa3 => Wb::Format,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1cc(b: u8) -> Wb {
+    match b {
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1cf(b: u8) -> Wb {
+    match b {
+        0x00..=0x2d => Wb::Extend,
+        0x30..=0x46 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1d1(b: u8) -> Wb {
+    match b {
+        0x65..=0x69 => Wb::Extend,
+        0x6d..=0x72 => Wb::Extend,
+        0x73..=0x7a => Wb::Format,
+        0x7b..=0x82 => Wb::Extend,
+        0x85..=0x8b => Wb::Extend,
+        0xaa..=0xad => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1d2(b: u8) -> Wb {
+    match b {
+        0x42..=0x44 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1d4(b: u8) -> Wb {
+    match b {
+        0x00..=0x54 => Wb::ALetter,
+        0x56..=0x9c => Wb::ALetter,
+        0x9e..=0x9f => Wb::ALetter,
+        0xa2 => Wb::ALetter,
+        0xa5..=0xa6 => Wb::ALetter,
+        0xa9..=0xac => Wb::ALetter,
+        0xae..=0xb9 => Wb::ALetter,
+        0xbb => Wb::ALetter,
+        0xbd..=0xc3 => Wb::ALetter,
+        0xc5..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1d5(b: u8) -> Wb {
+    match b {
+        0x00..=0x05 => Wb::ALetter,
+        0x07..=0x0a => Wb::ALetter,
+        0x0d..=0x14 => Wb::ALetter,
+        0x16..=0x1c => Wb::ALetter,
+        0x1e..=0x39 => Wb::ALetter,
+        0x3b..=0x3e => Wb::ALetter,
+        0x40..=0x44 => Wb::ALetter,
+        0x46 => Wb::ALetter,
+        0x4a..=0x50 => Wb::ALetter,
+        0x52..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1d6(b: u8) -> Wb {
+    match b {
+        0x00..=0xa5 => Wb::ALetter,
+        0xa8..=0xc0 => Wb::ALetter,
+        0xc2..=0xda => Wb::ALetter,
+        0xdc..=0xfa => Wb::ALetter,
+        0xfc..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1d7(b: u8) -> Wb {
+    match b {
+        0x00..=0x14 => Wb::ALetter,
+        0x16..=0x34 => Wb::ALetter,
+        0x36..=0x4e => Wb::ALetter,
+        0x50..=0x6e => Wb::ALetter,
+        0x70..=0x88 => Wb::ALetter,
+        0x8a..=0xa8 => Wb::ALetter,
+        0xaa..=0xc2 => Wb::ALetter,
+        0xc4..=0xcb => Wb::ALetter,
+        0xce..=0xff => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1da(b: u8) -> Wb {
+    match b {
+        0x00..=0x36 => Wb::Extend,
+        0x3b..=0x6c => Wb::Extend,
+        0x75 => Wb::Extend,
+        0x84 => Wb::Extend,
+        0x9b..=0x9f => Wb::Extend,
+        0xa1..=0xaf => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1df(b: u8) -> Wb {
+    match b {
+        0x00..=0x1e => Wb::ALetter,
+        0x25..=0x2a => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e0(b: u8) -> Wb {
+    match b {
+        0x00..=0x06 => Wb::Extend,
+        0x08..=0x18 => Wb::Extend,
+        0x1b..=0x21 => Wb::Extend,
+        0x23..=0x24 => Wb::Extend,
+        0x26..=0x2a => Wb::Extend,
+        0x30..=0x6d => Wb::ALetter,
+        0x8f => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e1(b: u8) -> Wb {
+    match b {
+        0x00..=0x2c => Wb::ALetter,
+        0x30..=0x36 => Wb::Extend,
+        0x37..=0x3d => Wb::ALetter,
+        0x40..=0x49 => Wb::Numeric,
+        0x4e => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e2(b: u8) -> Wb {
+    match b {
+        0x90..=0xad => Wb::ALetter,
+        0xae => Wb::Extend,
+        0xc0..=0xeb => Wb::ALetter,
+        0xec..=0xef => Wb::Extend,
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e4(b: u8) -> Wb {
+    match b {
+        0xd0..=0xeb => Wb::ALetter,
+        0xec..=0xef => Wb::Extend,
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e5(b: u8) -> Wb {
+    match b {
+        0xd0..=0xed => Wb::ALetter,
+        0xee..=0xef => Wb::Extend,
+        0xf0 => Wb::ALetter,
+        0xf1..=0xfa => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e6(b: u8) -> Wb {
+    match b {
+        0xc0..=0xde => Wb::ALetter,
+        0xe0..=0xe2 => Wb::ALetter,
+        0xe3 => Wb::Extend,
+        0xe4..=0xe5 => Wb::ALetter,
+        0xe6 => Wb::Extend,
+        0xe7..=0xed => Wb::ALetter,
+        0xee..=0xef => Wb::Extend,
+        0xf0..=0xf4 => Wb::ALetter,
+        0xf5 => Wb::Extend,
+        0xfe..=0xff => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e7(b: u8) -> Wb {
+    match b {
+        0xe0..=0xe6 => Wb::ALetter,
+        0xe8..=0xeb => Wb::ALetter,
+        0xed..=0xee => Wb::ALetter,
+        0xf0..=0xfe => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e8(b: u8) -> Wb {
+    match b {
+        0x00..=0xc4 => Wb::ALetter,
+        0xd0..=0xd6 => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1e9(b: u8) -> Wb {
+    match b {
+        0x00..=0x43 => Wb::ALetter,
+        0x44..=0x4a => Wb::Extend,
+        0x4b => Wb::ALetter,
+        0x50..=0x59 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1ee(b: u8) -> Wb {
+    match b {
+        0x00..=0x03 => Wb::ALetter,
+        0x05..=0x1f => Wb::ALetter,
+        0x21..=0x22 => Wb::ALetter,
+        0x24 => Wb::ALetter,
+        0x27 => Wb::ALetter,
+        0x29..=0x32 => Wb::ALetter,
+        0x34..=0x37 => Wb::ALetter,
+        0x39 => Wb::ALetter,
+        0x3b => Wb::ALetter,
+        0x42 => Wb::ALetter,
+        0x47 => Wb::ALetter,
+        0x49 => Wb::ALetter,
+        0x4b => Wb::ALetter,
+        0x4d..=0x4f => Wb::ALetter,
+        0x51..=0x52 => Wb::ALetter,
+        0x54 => Wb::ALetter,
+        0x57 => Wb::ALetter,
+        0x59 => Wb::ALetter,
+        0x5b => Wb::ALetter,
+        0x5d => Wb::ALetter,
+        0x5f => Wb::ALetter,
+        0x61..=0x62 => Wb::ALetter,
+        0x64 => Wb::ALetter,
+        0x67..=0x6a => Wb::ALetter,
+        0x6c..=0x72 => Wb::ALetter,
+        0x74..=0x77 => Wb::ALetter,
+        0x79..=0x7c => Wb::ALetter,
+        0x7e => Wb::ALetter,
+        0x80..=0x89 => Wb::ALetter,
+        0x8b..=0x9b => Wb::ALetter,
+        0xa1..=0xa3 => Wb::ALetter,
+        0xa5..=0xa9 => Wb::ALetter,
+        0xab..=0xbb => Wb::ALetter,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1f1(b: u8) -> Wb {
+    match b {
+        0x30..=0x49 => Wb::ALetter,
+        0x50..=0x69 => Wb::ALetter,
+        0x70..=0x89 => Wb::ALetter,
+        0xe6..=0xff => Wb::RegionalIndicator,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1f3(b: u8) -> Wb {
+    match b {
+        0xfb..=0xff => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_p1fb(b: u8) -> Wb {
+    match b {
+        0xf0..=0xf9 => Wb::Numeric,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_pe00(b: u8) -> Wb {
+    match b {
+        0x01 => Wb::Format,
+        0x20..=0x7f => Wb::Extend,
+        _ => Wb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn wb_pe01(b: u8) -> Wb {
+    match b {
+        0x00..=0xef => Wb::Extend,
+        _ => Wb::Other,
     }
 }

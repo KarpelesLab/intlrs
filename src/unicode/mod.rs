@@ -65,5 +65,5 @@ pub use predicates::{
 pub use script::{
     script, script_extensions, script_extensions_u32, script_u32, Script, ScriptExtensions,
 };
-pub use segment::{graphemes, Graphemes};
+pub use segment::{graphemes, words, Graphemes, Words};
 pub use width::{east_asian_width, east_asian_width_u32, EastAsianWidth};

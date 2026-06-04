@@ -881,7 +881,7 @@ fn emit_collation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path, uca: &P
 fn emit_segmentation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     let mut out = String::new();
     write_header(&mut out);
-    out.push_str("use crate::unicode::segment::{Gcb, Incb};\n\n");
+    out.push_str("use crate::unicode::segment::{Gcb, Incb, Wb};\n\n");
 
     let gcb_map: BTreeMap<&str, u32> = [
         ("CR", 1),
@@ -954,6 +954,37 @@ fn emit_segmentation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
         0,
         &incb_render,
     );
+
+    // Word_Break (UAX #29).
+    let wb_names = [
+        "CR",
+        "LF",
+        "Newline",
+        "Extend",
+        "ZWJ",
+        "Regional_Indicator",
+        "Format",
+        "Katakana",
+        "Hebrew_Letter",
+        "ALetter",
+        "Single_Quote",
+        "Double_Quote",
+        "MidNumLet",
+        "MidLetter",
+        "MidNum",
+        "Numeric",
+        "ExtendNumLet",
+        "WSegSpace",
+    ];
+    let wb_map: BTreeMap<&str, u32> = wb_names
+        .iter()
+        .enumerate()
+        .map(|(i, &n)| (n, (i + 1) as u32))
+        .collect();
+    let wb = parse_ranged(&ucd.join("auxiliary/WordBreakProperty.txt"), &wb_map, 0);
+    let mut wb_render = vec!["Wb::Other".to_string()];
+    wb_render.extend(wb_names.iter().map(|n| format!("Wb::{}", pascal_case(n))));
+    emit_lookup(&mut out, "word_break", "wb", "Wb", &wb, 0, &wb_render);
 
     write_module(out_dir, modules, "segmentation", &out);
 }

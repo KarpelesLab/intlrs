@@ -1,10 +1,22 @@
 //! Readable grapheme segmentation checks. The exhaustive UAX #29 run lives in
 //! `grapheme_conformance.rs`.
 
-use intl::unicode::graphemes;
+use intl::unicode::{graphemes, words};
 
 fn g(s: &str) -> Vec<&str> {
     graphemes(s).collect()
+}
+
+#[test]
+fn word_boundaries() {
+    let w: Vec<&str> = words("The (quick) fox").collect();
+    assert_eq!(w, ["The", " ", "(", "quick", ")", " ", "fox"]);
+
+    // Numbers with internal separators stay together; filter for word-like tokens.
+    let toks: Vec<&str> = words("Hello, world! 3.14")
+        .filter(|w| w.chars().next().is_some_and(char::is_alphanumeric))
+        .collect();
+    assert_eq!(toks, ["Hello", "world", "3.14"]);
 }
 
 #[test]

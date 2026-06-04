@@ -44,6 +44,31 @@ pub(crate) enum Incb {
     Extend,
 }
 
+/// Word_Break value (UAX #29). Order must match the generated table.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::upper_case_acronyms, dead_code)]
+pub(crate) enum Wb {
+    Other,
+    CR,
+    LF,
+    Newline,
+    Extend,
+    ZWJ,
+    RegionalIndicator,
+    Format,
+    Katakana,
+    HebrewLetter,
+    ALetter,
+    SingleQuote,
+    DoubleQuote,
+    MidNumLet,
+    MidLetter,
+    MidNum,
+    Numeric,
+    ExtendNumLet,
+    WSegSpace,
+}
+
 #[inline]
 fn gcb(c: char) -> Gcb {
     gen::grapheme_break(c as u32)
@@ -203,4 +228,181 @@ impl<'a> Iterator for Graphemes<'a> {
 #[must_use]
 pub fn graphemes(s: &str) -> Graphemes<'_> {
     Graphemes { s, pos: 0 }
+}
+
+// ---- Word boundaries (UAX #29) ----
+
+#[inline]
+fn wb(c: char) -> Wb {
+    gen::word_break(c as u32)
+}
+
+/// An "effective" word-break unit: a base character plus any trailing
+/// Extend/Format/ZWJ that rule WB4 folds into it.
+#[derive(Clone, Copy)]
+struct WbUnit {
+    cat: Wb,
+    pictographic: bool, // base is Extended_Pictographic (for WB3c)
+    ends_zwj: bool,     // last character of the unit is ZWJ (for WB3c)
+    bare: bool,         // the unit absorbed no Extend/Format/ZWJ (for WB3d)
+    end: usize,         // byte index just past the unit
+}
+
+/// Read the effective word-break unit starting at byte index `i`.
+fn wb_unit(s: &str, i: usize) -> WbUnit {
+    let base = s[i..].chars().next().unwrap();
+    let cat = wb(base);
+    let base_end = i + base.len_utf8();
+    let mut end = base_end;
+    let mut ends_zwj = cat == Wb::ZWJ;
+    // WB4: fold trailing Extend/Format/ZWJ into the unit — but not after a
+    // mandatory break (CR/LF/Newline absorb nothing).
+    if !matches!(cat, Wb::CR | Wb::LF | Wb::Newline) {
+        for c in s[end..].chars() {
+            match wb(c) {
+                t @ (Wb::Extend | Wb::Format | Wb::ZWJ) => {
+                    ends_zwj = t == Wb::ZWJ;
+                    end += c.len_utf8();
+                }
+                _ => break,
+            }
+        }
+    }
+    WbUnit {
+        cat,
+        pictographic: pictographic(base),
+        ends_zwj,
+        bare: end == base_end,
+        end,
+    }
+}
+
+#[inline]
+fn ah(w: Wb) -> bool {
+    matches!(w, Wb::ALetter | Wb::HebrewLetter)
+}
+
+/// Decide whether there is a word break before `cur`, given the two preceding
+/// effective categories, the unit after `cur` (`next`), and RI parity.
+#[allow(clippy::too_many_arguments)]
+fn word_break(prev2: Wb, prev: &WbUnit, cur: &WbUnit, next: Wb, ri: u32) -> bool {
+    use Wb::*;
+    let (p, c) = (prev.cat, cur.cat);
+    if p == CR && c == LF {
+        return false; // WB3
+    }
+    if matches!(p, Newline | CR | LF) || matches!(c, Newline | CR | LF) {
+        return true; // WB3a / WB3b
+    }
+    if prev.ends_zwj && cur.pictographic {
+        return false; // WB3c
+    }
+    if p == WSegSpace && c == WSegSpace && prev.bare {
+        return false; // WB3d (literal adjacency; pre-WB4)
+    }
+    if matches!(c, Extend | Format | ZWJ) {
+        return false; // WB4: Any × (Format | Extend | ZWJ)
+    }
+    if ah(p) && ah(c) {
+        return false; // WB5
+    }
+    if ah(p) && matches!(c, MidLetter | MidNumLet | SingleQuote) && ah(next) {
+        return false; // WB6
+    }
+    if ah(prev2) && matches!(p, MidLetter | MidNumLet | SingleQuote) && ah(c) {
+        return false; // WB7
+    }
+    if p == HebrewLetter && c == SingleQuote {
+        return false; // WB7a
+    }
+    if p == HebrewLetter && c == DoubleQuote && next == HebrewLetter {
+        return false; // WB7b
+    }
+    if prev2 == HebrewLetter && p == DoubleQuote && c == HebrewLetter {
+        return false; // WB7c
+    }
+    if p == Numeric && c == Numeric {
+        return false; // WB8
+    }
+    if ah(p) && c == Numeric {
+        return false; // WB9
+    }
+    if p == Numeric && ah(c) {
+        return false; // WB10
+    }
+    if prev2 == Numeric && matches!(p, MidNum | MidNumLet | SingleQuote) && c == Numeric {
+        return false; // WB11
+    }
+    if p == Numeric && matches!(c, MidNum | MidNumLet | SingleQuote) && next == Numeric {
+        return false; // WB12
+    }
+    if p == Katakana && c == Katakana {
+        return false; // WB13
+    }
+    if matches!(
+        p,
+        ALetter | HebrewLetter | Numeric | Katakana | ExtendNumLet
+    ) && c == ExtendNumLet
+    {
+        return false; // WB13a
+    }
+    if p == ExtendNumLet && matches!(c, ALetter | HebrewLetter | Numeric | Katakana) {
+        return false; // WB13b
+    }
+    if p == RegionalIndicator && c == RegionalIndicator && ri % 2 == 1 {
+        return false; // WB15 / WB16
+    }
+    true // WB999
+}
+
+/// Iterator over the words (UAX #29 word-boundary spans) of a string.
+#[derive(Clone)]
+pub struct Words<'a> {
+    s: &'a str,
+    pos: usize,
+}
+
+impl<'a> Iterator for Words<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<&'a str> {
+        if self.pos >= self.s.len() {
+            return None;
+        }
+        let start = self.pos;
+        let mut prev2 = Wb::Other; // sot
+        let mut prev = wb_unit(self.s, start);
+        let mut ri = u32::from(prev.cat == Wb::RegionalIndicator);
+        let mut at = prev.end;
+        while at < self.s.len() {
+            let cur = wb_unit(self.s, at);
+            let next = if cur.end < self.s.len() {
+                wb_unit(self.s, cur.end).cat
+            } else {
+                Wb::Other
+            };
+            if word_break(prev2, &prev, &cur, next, ri) {
+                break;
+            }
+            ri = if cur.cat == Wb::RegionalIndicator {
+                ri + 1
+            } else {
+                0
+            };
+            prev2 = prev.cat;
+            prev = cur;
+            at = cur.end;
+        }
+        let word = &self.s[start..at];
+        self.pos = at;
+        Some(word)
+    }
+}
+
+/// Iterate over the word-boundary spans of `s` (UAX #29). Spans include
+/// whitespace and punctuation runs, not just "letters"; filter with e.g.
+/// [`char::is_alphanumeric`] for word-like tokens.
+#[must_use]
+pub fn words(s: &str) -> Words<'_> {
+    Words { s, pos: 0 }
 }
