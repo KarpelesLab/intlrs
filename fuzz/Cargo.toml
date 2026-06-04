@@ -1,0 +1,36 @@
+# Coverage-guided fuzzing harness (cargo-fuzz / libFuzzer). Standalone package,
+# never published (excluded from the crate `include` set). Run a target with:
+#   cargo +nightly fuzz run unicode
+#   cargo +nightly fuzz run formatters
+[package]
+name = "intl-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.intl]
+path = ".."
+features = ["alloc"]
+
+[[bin]]
+name = "unicode"
+path = "fuzz_targets/unicode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "formatters"
+path = "fuzz_targets/formatters.rs"
+test = false
+doc = false
+bench = false
+
+# Standalone, not part of the `intl` workspace (mirrors the `codegen` tool).
+[workspace]

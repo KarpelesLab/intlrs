@@ -81,7 +81,9 @@ all the conformance work as the surface grows.
   ordering invariants across normalization, segmentation, case, collation; runs
   in CI). ✅ differential
   testing vs `std` (`tests/differential.rs`: case mapping + predicates over the
-  stable ranges). Still to add: a `cargo-fuzz` project and `codegen`-parser fuzzing.
+  stable ranges). ✅ a `cargo-fuzz`
+  harness (`fuzz/`, targets `unicode` + `formatters`; built in CI, run via
+  `cargo +nightly fuzz run`). Still to add: `codegen`-parser fuzzing.
 - ✅ **Benchmarks (`criterion`)** — `benches/throughput.rs` over ASCII/Latin/CJK/
   mixed corpora (general_category, nfc, nfd, graphemes, words, sort_key); the
   throughput baseline. `cargo bench --features alloc`.

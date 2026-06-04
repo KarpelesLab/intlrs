@@ -205,3 +205,21 @@ jobs:
             cargo build --no-default-features --features "$feat"
             echo "::endgroup::"
           done
+
+  fuzz:
+    name: Fuzz targets compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Type-check the cargo-fuzz targets (under fuzz/) so they don't bit-rot as
+      # the public API evolves. This does not run the fuzzer — coverage-guided
+      # fuzzing is driven locally / by OSS-Fuzz with `cargo +nightly fuzz run`.
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: cargo check the fuzz harness
+        run: cargo check --manifest-path fuzz/Cargo.toml
