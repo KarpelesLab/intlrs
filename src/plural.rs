@@ -73,12 +73,38 @@ impl PluralOperands {
 
     /// Parse operands from a decimal string such as `"1.230"` (the trailing
     /// zeros matter: they set `v`/`f`). An optional leading `-` is ignored
-    /// (operands use the absolute value). Returns `None` if not a decimal
-    /// number. Compact exponents are not parsed (`c` is always 0).
+    /// (operands use the absolute value). A compact/scientific exponent is
+    /// accepted (`"1.2c6"` or `"1.2e6"` = 1 200 000, setting `c` = `e` = 6).
+    /// Returns `None` if not a number.
+    ///
+    /// ```
+    /// use intl::plural::PluralOperands;
+    /// let c = PluralOperands::parse("1.2c6").unwrap();
+    /// assert_eq!(c.i, 1_200_000);
+    /// assert_eq!(c.c, 6);
+    /// assert_eq!(c.v, 0); // the expanded value is an integer
+    /// ```
     #[must_use]
     pub fn parse(s: &str) -> Option<Self> {
         let s = s.trim();
         let s = s.strip_prefix(['-', '+']).unwrap_or(s);
+        // Compact/scientific exponent: expand the mantissa into a stack buffer
+        // (this module is `no_std`/no-alloc), then parse the plain decimal.
+        if let Some((mantissa, exp_str)) = s.split_once(['c', 'e', 'C', 'E']) {
+            let exp: u32 = exp_str.parse().ok()?;
+            if exp > 30 {
+                return None;
+            }
+            let mut buf = [0u8; 48];
+            let expanded = expand_compact(&mut buf, mantissa, exp as usize)?;
+            let mut ops = Self::parse_plain(expanded)?;
+            ops.c = exp;
+            return Some(ops);
+        }
+        Self::parse_plain(s)
+    }
+
+    fn parse_plain(s: &str) -> Option<Self> {
         let (int_str, frac_str) = match s.split_once('.') {
             Some((a, b)) => (a, b),
             None => (s, ""),
@@ -114,6 +140,39 @@ impl PluralOperands {
             c: 0,
         })
     }
+}
+
+/// Write the plain decimal form of `mantissa × 10^exp` into `buf` and return it
+/// as a `&str` (no allocation). Shifts the decimal point right by `exp` digits.
+fn expand_compact<'a>(buf: &'a mut [u8], mantissa: &str, exp: usize) -> Option<&'a str> {
+    let (int_str, frac_str) = match mantissa.split_once('.') {
+        Some((a, b)) => (a, b),
+        None => (mantissa, ""),
+    };
+    if int_str.is_empty() || !int_str.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    if !frac_str.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    let point = int_str.len() + exp; // digit count before the decimal afterwards
+    let mut pos = 0usize;
+    let mut idx = 0usize;
+    for &b in int_str.as_bytes().iter().chain(frac_str.as_bytes()) {
+        if idx == point {
+            *buf.get_mut(pos)? = b'.';
+            pos += 1;
+        }
+        *buf.get_mut(pos)? = b;
+        pos += 1;
+        idx += 1;
+    }
+    while idx < point {
+        *buf.get_mut(pos)? = b'0'; // pad integer part with trailing zeros
+        pos += 1;
+        idx += 1;
+    }
+    core::str::from_utf8(&buf[..pos]).ok()
 }
 
 /// `true` if `x` is an integer that lies in one of the inclusive `ranges`. (Used

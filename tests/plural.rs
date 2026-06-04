@@ -38,3 +38,22 @@ fn ordinal_categories() {
                                                     // A language without ordinal rules: always other.
     assert_eq!(oc("ja", &Op::from_int(1)), Other);
 }
+
+#[test]
+fn compact_operands() {
+    use intl::plural::PluralOperands as P;
+    // "1.2c6" = 1,200,000 (integer): i=1200000, v=0, c=6.
+    let a = P::parse("1.2c6").unwrap();
+    assert_eq!((a.i, a.v, a.f, a.c), (1_200_000, 0, 0, 6));
+    // "1.2e6" alias.
+    assert_eq!(P::parse("1.2e6").unwrap().i, 1_200_000);
+    // Non-integer expansion keeps fraction operands: "1.23c1" = 12.3.
+    let b = P::parse("1.23c1").unwrap();
+    assert_eq!((b.i, b.v, b.f, b.c), (12, 1, 3, 1));
+    // c0 = no shift.
+    let c = P::parse("1.2c0").unwrap();
+    assert_eq!((c.i, c.v, c.f, c.c), (1, 1, 2, 0));
+    // Plain numbers still parse with c=0.
+    assert_eq!(P::parse("42").unwrap().c, 0);
+    assert!(P::parse("1.2cx").is_none());
+}

@@ -132,7 +132,8 @@ shaped data source than UCD. This phase is the gate for Phase 4.
   likely-subtags (maximize/minimize), negotiation/matching.
 - 🟡🔬 **Plural rules (CLDR)** — cardinal `PluralCategory` selection via
   `intl::plural` (rules compiled to a match; 224 locales, validated against the
-  CLDR sample data). Cardinal + ordinal. Still to add: the compact `c`/`e` operand.
+  CLDR sample data). Cardinal + ordinal, including the compact `c`/`e` operand
+  (`PluralOperands::parse("1.2c6")`). Phase 3 complete.
 
 ---
 
