@@ -73,20 +73,14 @@ conformance corpus. Highest value, lowest risk — do these next.
 Stand this up early; it gates the table-representation optimization and protects
 all the conformance work as the surface grows.
 
-- ⬜ **Fuzzing (`cargo-fuzz` / libFuzzer)** targets:
-  - Robustness: every `&str`/`char`-stream API must never panic or loop on
-    arbitrary input — `nfc/nfd/nfkc/nfkd`, `graphemes/words/sentences`,
-    `collate::*`, case adaptors, future line-break/bidi.
-  - **Differential fuzzing** vs a reference (ICU4X / `unicode-*` crates / `std`):
-    normalization vs `unicode-normalization`, segmentation vs
-    `unicode-segmentation`, collation vs `icu_collator`, case vs `std`. Any
-    divergence is a bug in us or a documented difference.
-  - Idempotence/round-trip invariants (e.g. `nf*(nf*(x)) == nf*(x)`,
-    grapheme concat == input).
-  - The `codegen` parsers (fuzz malformed UCD lines).
-- ⬜ **Benchmarks (`criterion`)** — per-algorithm throughput on representative
-  corpora (ASCII-heavy, Latin+diacritics, CJK, mixed-plane, emoji, RTL). Track
-  regressions in CI (informational). Establishes the baseline for optimization.
+- 🟡 **Fuzzing** — in-process invariant fuzzing is live (`tests/robustness.rs`,
+  20k deterministic random strings: no-panic + idempotence / round-trip /
+  ordering invariants across normalization, segmentation, case, collation; runs
+  in CI). Still to add: a `cargo-fuzz` project and **differential** fuzzing vs
+  ICU4X / `unicode-*` / `std`, plus fuzzing the `codegen` parsers.
+- ✅ **Benchmarks (`criterion`)** — `benches/throughput.rs` over ASCII/Latin/CJK/
+  mixed corpora (general_category, nfc, nfd, graphemes, words, sort_key); the
+  baseline for the trie optimization. `cargo bench --features alloc`.
 - ⬜ **Profiling** — flamegraph the hot loops (normalization decompose,
   collation CEA generation, property lookups) on the bench corpora; identify
   whether lookups, branches, or allocation dominate.
@@ -104,9 +98,9 @@ all the conformance work as the surface grows.
     bounds check) — the one real ergonomic regression vs `#[cfg]`-gated `match`;
   - keep `const fn` lookups; keep deterministic, diffable codegen output.
   Conformance suites are the safety net for the rewrite.
-- ⬜ **`#![no_std]`/`no_alloc` CI matrix hardening** — build on a real
-  `no_std` target (e.g. `thumbv7em-none-eabi`) to prove no accidental `std`/
-  `alloc` leakage; `cargo-public-api` to guard the API surface; MSRV check.
+- 🟡 **`#![no_std]`/`no_alloc` CI matrix hardening** — CI builds on a bare-metal
+  `thumbv7em-none-eabi` target (with and without `alloc`) to prove no `std`
+  leakage. Still to add: `cargo-public-api` API-surface guard, MSRV check.
 - ⬜ **Binary-size tracking** — measure `.text`/`.rodata` per feature tier; the
   whole point of tiers is size, so regressions should be visible.
 

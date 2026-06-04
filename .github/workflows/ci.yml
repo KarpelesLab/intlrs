@@ -50,9 +50,18 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabi
 
       - name: Cache
         uses: Swatinem/rust-cache@v2
+
+      # Build on a bare-metal target with no std available, to prove there is no
+      # accidental `std` leakage (with and without `alloc`).
+      - name: Bare no_std target build
+        run: |
+          cargo build --target thumbv7em-none-eabi --no-default-features --features full
+          cargo build --target thumbv7em-none-eabi --no-default-features --features alloc
 
       # The library is #![no_std] with no `alloc`; build the empty-table base
       # (no tier compiled in) to guard the per-tier `#[cfg]` gating.
