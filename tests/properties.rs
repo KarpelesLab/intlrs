@@ -62,3 +62,15 @@ fn indic_positional() {
     assert_eq!(ipc('\u{0940}'), Right); // DEVANAGARI VOWEL SIGN II
     assert_eq!(ipc('A'), NotApplicable);
 }
+
+#[cfg(feature = "alloc")]
+#[test]
+fn hangul_names() {
+    use intl::unicode::hangul_syllable_name as hn;
+    assert_eq!(hn('가').as_deref(), Some("HANGUL SYLLABLE GA")); // U+AC00
+    assert_eq!(hn('한').as_deref(), Some("HANGUL SYLLABLE HAN"));
+    assert_eq!(hn('글').as_deref(), Some("HANGUL SYLLABLE GEUL"));
+    assert_eq!(hn('\u{D7A3}').as_deref(), Some("HANGUL SYLLABLE HIH")); // last syllable
+    assert_eq!(hn('A'), None);
+    assert_eq!(hn('\u{ABFF}'), None); // just before the block
+}

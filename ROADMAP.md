@@ -65,8 +65,9 @@ conformance corpus. Highest value, lowest risk — do these next.
   ✅ `Indic_Syllabic_Category`, ✅ `Indic_Positional_Category`, ✅ Bidi_Class accessor (`bidi_class`),
   ✅ `Default_Ignorable_Code_Point` / `Math` / `Dash` / `Diacritic` /
   `Hex_Digit` / `White_Space` / `Quotation_Mark` / `Join_Control`. Still:
-  Joining_Group, character `Name` ↔ codepoint, Hangul
-  syllable name. Optional `name` lookup is large (perfect-hash or trie).
+  Joining_Group, character `Name` ↔ codepoint (the full Name database is large
+  — perfect-hash or trie). ✅ Hangul syllable name (`hangul_syllable_name`,
+  algorithmic).
 
 ---
 
