@@ -278,6 +278,7 @@ fn main() {
     );
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
+    emit_islamic(&cldr_dir, &cldr.join("islamic.json"));
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1655,6 +1656,31 @@ fn emit_units(cldr_dir: &Path, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "units", &records);
+}
+
+/// Write `cldr/islamic.bin`: per-locale Islamic month names (wide + abbr), the
+/// era abbreviation, and date patterns (full/long/medium/short).
+fn emit_islamic(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read islamic.json");
+    let json = json_parse(&text);
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let mut p = Vec::new();
+        let push_arr = |p: &mut Vec<u8>, key: &str| {
+            for v in loc.get(key).map(Json::array).unwrap_or(&[]) {
+                enc_str(p, v.as_str().unwrap_or(""));
+            }
+        };
+        push_arr(&mut p, "months_wide");
+        push_arr(&mut p, "months_abbr");
+        enc_str(
+            &mut p,
+            loc.get("era").and_then(Json::as_str).unwrap_or("AH"),
+        );
+        push_arr(&mut p, "date");
+        records.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "islamic", &records);
 }
 
 /// Write `cldr/timezone.bin`: per-locale localized GMT offset formats

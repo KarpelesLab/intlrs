@@ -97,7 +97,8 @@ Beyond the `unicode` module:
   `format_date("de", &dt, DateStyle::Long)` → `"4. Juni 2026"` (CLDR patterns,
   month/weekday names, am/pm; weekday via Sakamoto's algorithm). Also
   `format_skeleton("en", &dt, "yMMMd")` → `"Jun 4, 2026"` (flexible field-set
-  formatting).
+  formatting), and renders **Islamic (Hijri)** dates with localized month names
+  (`format_islamic_date("en", 1445, 9, 1, DateStyle::Long)` → `"Ramadan 1, 1445 AH"`).
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
   civil (tabular) Islamic, Persian (Solar Hijri), and Hebrew calendars via the
   Julian Day Number, gives the Japanese era/year, plus ISO-8601 week dates and

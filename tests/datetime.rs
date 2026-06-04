@@ -94,3 +94,14 @@ fn gmt_offset() {
     assert_eq!(g("fr", -480), "UTC\u{2212}08:00"); // French uses UTC + minus sign
     assert_eq!(g("en", 60), "GMT+01:00");
 }
+
+#[test]
+fn islamic_dates() {
+    use intl::datetime::{format_islamic_date as fi, DateStyle::*};
+    // 9 Ramadan 1445 AH (Ramadan = month 9).
+    assert_eq!(fi("en", 1445, 9, 1, Long), "Ramadan 1, 1445 AH");
+    assert_eq!(fi("en", 1445, 1, 10, Medium), "Muh. 10, 1445 AH");
+    // The corresponding Gregorian date for the year/era are localized.
+    assert!(fi("en", 1446, 1, 1, Full).contains("Muharram"));
+    assert!(fi("fr", 1445, 9, 1, Long).contains("1445"));
+}

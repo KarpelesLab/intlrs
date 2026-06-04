@@ -307,6 +307,97 @@ pub fn format_skeleton(lang: &str, dt: &DateTime, skeleton: &str) -> String {
     render(pattern, dt, &s)
 }
 
+/// Format an Islamic (Hijri) date in `lang`, e.g.
+/// `format_islamic_date("en", 1445, 9, 1, DateStyle::Long)` →
+/// `"Ramadan 1, 1445 AH"`. Uses the localized Islamic month names and era; the
+/// weekday name (if the pattern has one) comes from the Gregorian day names.
+#[must_use]
+pub fn format_islamic_date(
+    lang: &str,
+    year: i64,
+    month: i64,
+    day: i64,
+    style: DateStyle,
+) -> String {
+    let isl = islamic_spec(lang);
+    let greg = spec(lang); // for weekday names
+    let jdn = crate::calendar::islamic_to_jdn(year, month, day);
+    // Gregorian day-name index (0 = Sunday).
+    let wd = ((jdn.rem_euclid(7) + 1) % 7) as usize;
+
+    let pattern = isl.date[style.idx()];
+    let c: Vec<char> = pattern.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < c.len() {
+        let ch = c[i];
+        if ch == '\'' {
+            i += 1;
+            if i < c.len() && c[i] == '\'' {
+                out.push('\'');
+                i += 1;
+                continue;
+            }
+            while i < c.len() && c[i] != '\'' {
+                out.push(c[i]);
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < c.len() && c[i] == ch {
+                i += 1;
+            }
+            let n = i - start;
+            let m = month as usize;
+            match ch {
+                'y' | 'Y' => out.push_str(&year.to_string()),
+                'M' | 'L' => match n {
+                    1 => out.push_str(&m.to_string()),
+                    2 => out.push_str(&two(m as i64)),
+                    3 => out.push_str(isl.months_abbr[m - 1]),
+                    _ => out.push_str(isl.months_wide[m - 1]),
+                },
+                'd' => out.push_str(&day.to_string()),
+                'E' | 'e' | 'c' => out.push_str(if n >= 4 {
+                    greg.days_wide[wd]
+                } else {
+                    greg.days_abbr[wd]
+                }),
+                'G' => out.push_str(isl.era),
+                _ => {}
+            }
+        } else {
+            out.push(ch);
+            i += 1;
+        }
+    }
+    out
+}
+
+fn islamic_spec(lang: &str) -> crate::cldr::IslamicSpec {
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut end = norm.len();
+    loop {
+        if let Some(s) = crate::cldr::islamic_spec(&norm[..end]) {
+            return s;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return crate::cldr::islamic_spec("en").expect("root islamic present"),
+        }
+    }
+}
+
 /// Format a fixed UTC offset (in minutes) in the localized GMT form, e.g.
 /// `"GMT+5:30"`-style output: `format_gmt_offset("en", 330)` → `"GMT+05:30"`,
 /// `format_gmt_offset("fr", -480)` → `"UTC−08:00"`, `0` → `"GMT"` / `"UTC"`.
