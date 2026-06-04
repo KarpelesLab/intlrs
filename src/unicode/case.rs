@@ -13,7 +13,11 @@ use super::generated::case as gen;
 
 /// Internal per-codepoint mapping value. `Same` means "maps to the input
 /// character itself"; the wrapper substitutes the original `char`.
+///
+/// `One`/`Two`/`Three` are constructed only in the generated tables, so under a
+/// narrow range tier (or none) some are unused — hence `allow(dead_code)`.
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 pub(crate) enum CaseMap {
     Same,
     One(char),

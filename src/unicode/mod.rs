@@ -34,6 +34,7 @@
 pub mod case;
 pub mod category;
 mod generated;
+pub mod numeric;
 mod predicates;
 pub mod script;
 pub mod width;
@@ -41,6 +42,7 @@ pub mod width;
 pub use case::{case_fold, to_lowercase, to_titlecase, to_uppercase, CaseMapIter};
 pub use category::{GeneralCategory, Group};
 pub use generated::general_category::UNICODE_VERSION;
+pub use numeric::{numeric_type, numeric_value, numeric_value_u32, NumericType, NumericValue};
 pub use predicates::{
     general_category, general_category_u32, is_alphabetic, is_assigned, is_control,
     is_decimal_digit, is_format, is_letter, is_lowercase, is_mark, is_numeric, is_punctuation,

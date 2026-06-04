@@ -1,10 +1,13 @@
 # intl
 
-Pure-Rust, `#![no_std]` internationalization primitives. Today the crate
-provides a **`unicode`** module: Unicode rune analysis driven by the official
-Unicode Character Database (UCD), with character properties compiled directly
-into Rust `match` dispatch by an offline code generator — so every lookup is a
-`const fn`, allocates nothing, and needs no runtime initialization.
+Pure-Rust, `#![no_std]` internationalization primitives — a long-term, pure-Rust
+analog of ICU (collation, number formatting, normalization, transliteration, …).
+
+The foundational layer, available today, is the **`unicode`** module: Unicode
+rune analysis driven by the official Unicode Character Database (UCD), with
+character properties compiled directly into Rust `match` dispatch by an offline
+code generator — so every lookup is a `const fn`, allocates nothing, and needs
+no runtime initialization.
 
 - **`no_std`, no `alloc`** — usable in embedded, kernel, and WASM contexts.
 - **Tables as code** — the UCD is converted into a two-level paged `match`
@@ -77,6 +80,9 @@ codepoint would.
   `.long_name()`; `ScriptExtensions` with `.contains()` / `.iter()`).
 - `East_Asian_Width` (UAX #11) via `east_asian_width` / `east_asian_width_u32`
   (`EastAsianWidth` enum, with `.is_wide()`).
+- `Numeric_Type` and exact `Numeric_Value` via `numeric_type` and
+  `numeric_value` / `numeric_value_u32` (`NumericValue` is a rational
+  `numerator / denominator`, with `.to_i64()` / `.as_f64()`).
 - `UNICODE_VERSION` of the embedded tables.
 
 ## Regenerating the tables

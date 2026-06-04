@@ -160,6 +160,9 @@ fn main() {
     // ---- Case mapping ----
     emit_case(&out_dir, &mut modules, &ucd);
 
+    // ---- Numeric values ----
+    emit_numeric(&out_dir, &mut modules, &ucd);
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -458,6 +461,83 @@ fn emit_case(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     emit_casemap(&mut out, "to_title", "ti", &title);
     emit_casemap(&mut out, "fold", "fo", &fold);
     write_module(out_dir, modules, "case", &out);
+}
+
+/// Parse an exact numeric value (`3`, `-1/2`) into (numerator, denominator).
+fn parse_rational(s: &str) -> (i64, u32) {
+    match s.split_once('/') {
+        Some((a, b)) => (
+            a.trim().parse().expect("numerator fits i64"),
+            b.trim().parse().expect("denominator fits u32"),
+        ),
+        None => (s.trim().parse().expect("integer fits i64"), 1),
+    }
+}
+
+/// Emit `generated/numeric.rs`: numeric_value() and numeric_type().
+fn emit_numeric(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
+    // ---- Numeric_Value (exact rational). ----
+    let values = fs::read_to_string(ucd.join("extracted/DerivedNumericValues.txt"))
+        .expect("read DerivedNumericValues.txt");
+    let mut render = vec!["None".to_string()];
+    let mut val_to_code: BTreeMap<(i64, u32), u32> = BTreeMap::new();
+    let mut value_codes = vec![0u32; NUM_CODEPOINTS];
+    for line in values.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let f: Vec<&str> = line.split(';').collect();
+        if f.len() < 4 {
+            continue;
+        }
+        let (num, den) = parse_rational(f[3]);
+        let code = *val_to_code.entry((num, den)).or_insert_with(|| {
+            render.push(format!(
+                "Some(NumericValue {{ numerator: {num}, denominator: {den} }})"
+            ));
+            (render.len() - 1) as u32
+        });
+        let (start, end) = parse_range(f[0].trim());
+        for c in start..=end {
+            value_codes[c as usize] = code;
+        }
+    }
+
+    // ---- Numeric_Type. ----
+    let ty_map: BTreeMap<&str, u32> = [("Decimal", 1), ("Digit", 2), ("Numeric", 3)]
+        .into_iter()
+        .collect();
+    let type_codes = parse_ranged(&ucd.join("extracted/DerivedNumericType.txt"), &ty_map, 0);
+    let type_render = vec![
+        "None".to_string(),
+        "Some(NumericType::Decimal)".to_string(),
+        "Some(NumericType::Digit)".to_string(),
+        "Some(NumericType::Numeric)".to_string(),
+    ];
+
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str("use crate::unicode::numeric::{NumericType, NumericValue};\n\n");
+    emit_lookup(
+        &mut out,
+        "numeric_value",
+        "nv",
+        "Option<NumericValue>",
+        &value_codes,
+        0,
+        &render,
+    );
+    emit_lookup(
+        &mut out,
+        "numeric_type",
+        "nt",
+        "Option<NumericType>",
+        &type_codes,
+        0,
+        &type_render,
+    );
+    write_module(out_dir, modules, "numeric", &out);
 }
 
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.

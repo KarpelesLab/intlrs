@@ -54,26 +54,21 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v2
 
-      # The library is #![no_std] with no `alloc`; build the empty-table base and
-      # each nested range tier to guard the per-tier `#[cfg]` gating.
+      # The library is #![no_std] with no `alloc`; build the empty-table base
+      # (no tier compiled in) to guard the per-tier `#[cfg]` gating.
       - name: Build bare (no tier features)
         run: cargo build --no-default-features
 
-      - name: Build each tier
+      # Run the whole suite under each nested tier. This exercises both the
+      # tier-specific property assertions and the subset-semantics tests, whose
+      # active branches differ per tier.
+      - name: Test each tier
         run: |
           for feat in ascii latin1 bmp full; do
             echo "::group::features=$feat"
-            cargo build --no-default-features --features "$feat"
+            cargo test --no-default-features --features "$feat"
             echo "::endgroup::"
           done
-
-      # The subset-semantics tests only have active assertions under the narrow
-      # tiers, so run them there explicitly.
-      - name: Subset-semantics tests
-        run: |
-          cargo test --test subset --no-default-features --features ascii
-          cargo test --test subset --no-default-features --features latin1
-          cargo test --test subset --no-default-features --features bmp
 
   codegen:
     name: Generated tables are up to date
