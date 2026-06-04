@@ -37,8 +37,6 @@ pub mod number;
 pub mod plural;
 #[cfg(feature = "alloc")]
 pub mod relative;
-#[cfg(feature = "alloc")]
-pub mod spellout;
 pub mod unicode;
 #[cfg(feature = "alloc")]
 pub mod unit;

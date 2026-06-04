@@ -89,9 +89,6 @@ Beyond the `unicode` module:
 - `intl::message` (alloc) is a subset of ICU MessageFormat — `{arg}`
   substitution, `plural`/`selectordinal` (with `=N` and `#`), and `select`,
   composing the plural rules and number formatting.
-- `intl::spellout` (alloc) spells numbers in words (RBNF, English) —
-  `spell_cardinal(1234)` → `"one thousand two hundred thirty-four"`,
-  `spell_ordinal(21)` → `"twenty-first"`.
 - `intl::datetime` (alloc) formats Gregorian dates/times —
   `format_date("en", &dt, DateStyle::Long)` → `"June 4, 2026"`,
   `format_date("de", &dt, DateStyle::Long)` → `"4. Juni 2026"` (CLDR patterns,
