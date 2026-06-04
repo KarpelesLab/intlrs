@@ -397,3 +397,133 @@ pub fn compare(a: &str, b: &str) -> Ordering {
 pub fn sort_key(s: &str) -> Vec<u16> {
     Collator::default().sort_key(s)
 }
+
+/// A **locale-tailored** collator: the DUCET order with per-locale primary
+/// reordering applied (CLDR tailoring rules). Built from a rule string such as
+/// `"&z < å < ä < ö"` (Swedish), which places `å`/`ä`/`ö` immediately after `z`.
+///
+/// Supported relations: `<` (primary — a new sort position) and `=` (identical
+/// to the previous element). Each tailored letter is given a primary weight in
+/// the reserved gap just above its reset anchor; upper-case forms are added
+/// automatically. Characters not mentioned keep their DUCET order.
+///
+/// ```
+/// # #[cfg(feature = "alloc")] {
+/// use intl::unicode::collate::Tailoring;
+/// use core::cmp::Ordering;
+/// let sv = Tailoring::parse("&z < å < ä < ö").unwrap();
+/// // In Swedish, å/ä/ö sort *after* z, not near a/o.
+/// assert_eq!(sv.compare("z", "å"), Ordering::Less);
+/// assert_eq!(sv.compare("ä", "ö"), Ordering::Less);
+/// assert_eq!(sv.compare("z", "ö"), Ordering::Less);
+/// # }
+/// ```
+pub struct Tailoring {
+    /// Tailored NFD sequences → synthetic collation element, sorted longest-first.
+    entries: Vec<(Vec<char>, u64)>,
+}
+
+impl Tailoring {
+    /// Parse a CLDR-style tailoring rule string (the `<` and `=` relations).
+    /// Returns `None` if a reset anchor or target is malformed.
+    #[must_use]
+    pub fn parse(rules: &str) -> Option<Tailoring> {
+        let chars: Vec<char> = rules.chars().filter(|c| !c.is_whitespace()).collect();
+        let mut entries: Vec<(Vec<char>, u64)> = Vec::new();
+        let mut anchor_primary = 0u32;
+        let mut offset = 0u32;
+        let mut i = 0;
+        while i < chars.len() {
+            match chars[i] {
+                '&' => {
+                    i += 1;
+                    let anchor = *chars.get(i)?;
+                    anchor_primary =
+                        primary(collation_elements(alloc::vec![anchor]).first().copied()?) as u32;
+                    offset = 0;
+                    i += 1;
+                }
+                '<' | '=' => {
+                    let primary_rel = chars[i] == '<';
+                    // Consume a run of the same operator (`<<`, `<<<` → one step).
+                    while i < chars.len() && (chars[i] == '<' || chars[i] == '=') {
+                        i += 1;
+                    }
+                    let target = *chars.get(i)?;
+                    i += 1;
+                    if primary_rel {
+                        offset += 1;
+                    }
+                    if anchor_primary == 0 {
+                        return None; // relation before a reset
+                    }
+                    let p = anchor_primary + offset;
+                    Self::push_letter(&mut entries, target, p);
+                }
+                _ => i += 1, // ignore anything else (comments, options)
+            }
+        }
+        if entries.is_empty() {
+            return None;
+        }
+        // Longest sequences first so contractions win during matching.
+        entries.sort_by_key(|e| core::cmp::Reverse(e.0.len()));
+        Some(Tailoring { entries })
+    }
+
+    /// Add tailored entries for `target` (lower form) and its upper-case form,
+    /// each as its NFD sequence mapped to a primary-`p` collation element.
+    fn push_letter(entries: &mut Vec<(Vec<char>, u64)>, target: char, p: u32) {
+        for (ch, tert) in [(target, 0x0002u32), (upper(target), 0x0008)] {
+            let seq: Vec<char> = nfd(core::iter::once(ch)).collect();
+            if !seq.is_empty() {
+                entries.push((seq, pack(p, 0x0020, tert)));
+            }
+        }
+    }
+
+    fn match_at(&self, rest: &[char]) -> Option<(usize, u64)> {
+        for (seq, ce) in &self.entries {
+            if rest.len() >= seq.len() && rest[..seq.len()] == seq[..] {
+                return Some((seq.len(), *ce));
+            }
+        }
+        None
+    }
+
+    /// The tailored sort key for `s`.
+    #[must_use]
+    pub fn sort_key(&self, s: &str) -> Vec<u16> {
+        let cv: Vec<char> = nfd(s.chars()).collect();
+        let mut cea = Vec::new();
+        let mut buf: Vec<char> = Vec::new();
+        let mut i = 0;
+        while i < cv.len() {
+            if let Some((len, ce)) = self.match_at(&cv[i..]) {
+                if !buf.is_empty() {
+                    cea.extend(collation_elements(core::mem::take(&mut buf)));
+                }
+                cea.push(ce);
+                i += len;
+            } else {
+                buf.push(cv[i]);
+                i += 1;
+            }
+        }
+        if !buf.is_empty() {
+            cea.extend(collation_elements(buf));
+        }
+        build_sort_key(&cea, AlternateHandling::Shifted, Strength::Tertiary)
+    }
+
+    /// Compare two strings in this tailored order.
+    #[must_use]
+    pub fn compare(&self, a: &str, b: &str) -> Ordering {
+        self.sort_key(a).cmp(&self.sort_key(b))
+    }
+}
+
+/// The upper-case form of `c` (first char of its full mapping), or `c` itself.
+fn upper(c: char) -> char {
+    super::case::to_uppercase(c).next().unwrap_or(c)
+}

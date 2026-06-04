@@ -44,3 +44,25 @@ fn numeric_ordering() {
     // Pure text unaffected.
     assert_eq!(n.compare("apple", "banana"), Ordering::Less);
 }
+
+#[test]
+fn locale_tailoring() {
+    use intl::unicode::collate::Tailoring;
+    // Swedish: å ä ö sort after z.
+    let sv = Tailoring::parse("&z < å < ä < ö").unwrap();
+    assert_eq!(sv.compare("z", "å"), Ordering::Less);
+    assert_eq!(sv.compare("å", "ä"), Ordering::Less);
+    assert_eq!(sv.compare("ä", "ö"), Ordering::Less);
+    assert_eq!(sv.compare("ö", "a"), Ordering::Greater); // ö after z, so after a
+                                                         // A word list sorts correctly: "z" before "ångström".
+    assert_eq!(sv.compare("zebra", "ångström"), Ordering::Less);
+    // Uppercase tailored too.
+    assert_eq!(sv.compare("Z", "Å"), Ordering::Less);
+    // Danish/Norwegian: æ ø å after z.
+    let da = Tailoring::parse("&z < æ < ø < å").unwrap();
+    assert_eq!(da.compare("z", "æ"), Ordering::Less);
+    assert_eq!(da.compare("æ", "ø"), Ordering::Less);
+    assert_eq!(da.compare("ø", "å"), Ordering::Less);
+    // In default DUCET, å sorts near a (before z) — tailoring changed that.
+    assert_eq!(intl::unicode::collate::compare("å", "z"), Ordering::Less);
+}
