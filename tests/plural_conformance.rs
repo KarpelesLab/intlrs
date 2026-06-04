@@ -2,7 +2,7 @@
 //! sample numbers embedded in CLDR's plurals.json (every sample must select the
 //! category it is listed under).
 
-use intl::plural::{plural_category, PluralCategory, PluralOperands};
+use intl::plural::{ordinal_category, plural_category, PluralCategory, PluralOperands};
 
 fn cat(name: &str) -> PluralCategory {
     match name {
@@ -44,17 +44,16 @@ fn expand(token: &str, out: &mut Vec<String>) {
     }
 }
 
-#[test]
-fn plurals_samples() {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/data/cldr/48/plurals.json");
-    let text = std::fs::read_to_string(path).expect("read plurals.json");
+/// Check every embedded sample in a CLDR plural file against `select`.
+fn check_samples(file: &str, select: fn(&str, &PluralOperands) -> PluralCategory) -> usize {
+    let path = format!("{}/data/cldr/48/{file}", env!("CARGO_MANIFEST_DIR"));
+    let text = std::fs::read_to_string(&path).expect("read plural json");
 
     let mut locale = String::new();
     let mut checked = 0usize;
     for line in text.lines() {
         let t = line.trim();
         if let Some(rest) = t.strip_prefix("\"pluralRule-count-") {
-            // "pluralRule-count-<cat>": "<rule> @integer ... @decimal ..."
             let (catname, after) = rest.split_once('"').unwrap();
             let value = after.split_once(": \"").map_or("", |x| x.1);
             let value = value.trim_end_matches(',').trim_end_matches('"');
@@ -62,7 +61,6 @@ fn plurals_samples() {
 
             let mut samples = Vec::new();
             for section in value.split('@').skip(1) {
-                // section like "integer 1, 2~17, …" or "decimal 0.0~1.5, …"
                 let nums = section
                     .trim_start_matches("integer")
                     .trim_start_matches("decimal");
@@ -73,15 +71,14 @@ fn plurals_samples() {
             for s in samples {
                 let op = PluralOperands::parse(&s)
                     .unwrap_or_else(|| panic!("parse sample {s:?} ({locale})"));
-                let got = plural_category(&locale, &op);
+                let got = select(&locale, &op);
                 assert_eq!(
                     got, expected,
-                    "locale {locale}, sample {s:?}: got {got:?}, want {expected:?}"
+                    "{file} {locale}, sample {s:?}: got {got:?}, want {expected:?}"
                 );
                 checked += 1;
             }
-        } else if t.ends_with("{") && t.starts_with('"') {
-            // A locale key line: "<locale>": {
+        } else if t.ends_with('{') && t.starts_with('"') {
             if let Some(name) = t.split('"').nth(1) {
                 if !name.starts_with("pluralRule") {
                     locale = name.to_string();
@@ -89,6 +86,19 @@ fn plurals_samples() {
             }
         }
     }
-    eprintln!("plural samples checked: {checked}");
-    assert!(checked > 5000, "too few samples checked: {checked}");
+    checked
+}
+
+#[test]
+fn cardinal_samples() {
+    let n = check_samples("plurals.json", plural_category);
+    eprintln!("cardinal samples checked: {n}");
+    assert!(n > 5000, "too few samples checked: {n}");
+}
+
+#[test]
+fn ordinal_samples() {
+    let n = check_samples("ordinals.json", ordinal_category);
+    eprintln!("ordinal samples checked: {n}");
+    assert!(n > 500, "too few samples checked: {n}");
 }

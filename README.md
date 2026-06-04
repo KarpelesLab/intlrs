@@ -63,10 +63,11 @@ Beyond the `unicode` module:
 
 - `intl::locale` (alloc) parses and canonicalizes BCP-47 language tags
   (`Locale::parse("zh-hant-hk")` → `"zh-Hant-HK"`).
-- `intl::plural` (`no_std`, no alloc) selects the CLDR cardinal
-  [`PluralCategory`] for a number in a language — the rules are compiled from
-  CLDR into a `match`. `plural_category("pl", &PluralOperands::from_int(5))`
-  → `Many`. Validated against the CLDR sample data (224 locales).
+- `intl::plural` (`no_std`, no alloc) selects the CLDR `PluralCategory` for a
+  number in a language — `plural_category` (cardinal) and `ordinal_category`
+  ("1st"/"2nd"/"3rd"), rules compiled from CLDR into a `match`.
+  `plural_category("pl", &PluralOperands::from_int(5))` → `Many`. Validated
+  against the CLDR sample data (cardinal + ordinal).
 
 These start the CLDR/locale layer toward number/message formatting.
 

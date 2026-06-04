@@ -257,6 +257,7 @@ fn main() {
         &out_dir,
         &mut modules,
         &root.join("data/cldr/48/plurals.json"),
+        &root.join("data/cldr/48/ordinals.json"),
     );
 
     // ---- generated/mod.rs ----
@@ -1349,15 +1350,39 @@ fn json_str(c: &[char], i: &mut usize) -> String {
     s
 }
 
-/// Emit `generated/plurals.rs`: per-language cardinal plural selection, compiled
-/// from the CLDR plural rules into a `match`.
-fn emit_plurals(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
-    let text = fs::read_to_string(path).expect("read plurals.json");
+/// Emit `generated/plurals.rs`: per-language cardinal and ordinal plural
+/// selection, compiled from the CLDR plural rules into `match` functions.
+fn emit_plurals(out_dir: &Path, modules: &mut Vec<String>, cardinal: &Path, ordinal: &Path) {
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str(
+        "use crate::plural::in_set;\nuse crate::plural::PluralCategory::{self, *};\nuse crate::plural::PluralOperands as Op;\n\n",
+    );
+    emit_plural_fn(
+        &mut out,
+        cardinal,
+        "plurals-type-cardinal",
+        "plural_category",
+        "cardinal",
+    );
+    emit_plural_fn(
+        &mut out,
+        ordinal,
+        "plurals-type-ordinal",
+        "ordinal_category",
+        "ordinal",
+    );
+    write_module(out_dir, modules, "plurals", &out);
+}
+
+/// Emit one plural-selection function (cardinal or ordinal) from a CLDR file.
+fn emit_plural_fn(out: &mut String, path: &Path, section: &str, fn_name: &str, kind: &str) {
+    let text = fs::read_to_string(path).expect("read plural json");
     let json = json_parse(&text);
-    let cardinal = json
+    let table = json
         .get("supplemental")
-        .and_then(|s| s.get("plurals-type-cardinal"))
-        .expect("plurals-type-cardinal");
+        .and_then(|s| s.get(section))
+        .expect("plural section");
 
     let cats = [
         ("zero", "Zero"),
@@ -1368,7 +1393,7 @@ fn emit_plurals(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
     ];
     // Group languages by identical compiled rule body (many share one).
     let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for (lang, rules) in cardinal.entries() {
+    for (lang, rules) in table.entries() {
         let mut body = String::new();
         for (cat, variant) in cats {
             if let Some(rule) = rules
@@ -1389,13 +1414,11 @@ fn emit_plurals(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
         groups.entry(body).or_default().push(lang.clone());
     }
 
-    let mut out = String::new();
-    write_header(&mut out);
-    out.push_str(
-        "use crate::plural::in_set;\nuse crate::plural::PluralCategory::{self, *};\nuse crate::plural::PluralOperands as Op;\n\n\
-         /// CLDR cardinal plural category for an exact locale key (already\n\
+    let _ = write!(
+        out,
+        "/// CLDR {kind} plural category for an exact locale key (already\n\
          /// case-normalized), or `None` if the key is unknown (caller falls back).\n\
-         pub(crate) fn plural_category(lang: &str, op: &Op) -> Option<PluralCategory> {\n    match lang {\n",
+         pub(crate) fn {fn_name}(lang: &str, op: &Op) -> Option<PluralCategory> {{\n    match lang {{\n",
     );
     for (body, langs) in &groups {
         if body.is_empty() {
@@ -1412,8 +1435,7 @@ fn emit_plurals(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
             body
         );
     }
-    out.push_str("        _ => None,\n    }\n}\n");
-    write_module(out_dir, modules, "plurals", &out);
+    out.push_str("        _ => None,\n    }\n}\n\n");
 }
 
 /// Compile a CLDR plural-rule condition (e.g. `i = 1 and v = 0`) into a Rust

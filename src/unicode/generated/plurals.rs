@@ -602,3 +602,321 @@ pub(crate) fn plural_category(lang: &str, op: &Op) -> Option<PluralCategory> {
         _ => None,
     }
 }
+
+/// CLDR ordinal plural category for an exact locale key (already
+/// case-normalized), or `None` if the key is unknown (caller falls back).
+pub(crate) fn ordinal_category(lang: &str, op: &Op) -> Option<PluralCategory> {
+    match lang {
+        "az" => {
+            if (in_set(
+                ((op.i as f64) % 10.0),
+                &[(1.0, 1.0), (2.0, 2.0), (5.0, 5.0), (7.0, 7.0), (8.0, 8.0)],
+            )) || (in_set(
+                ((op.i as f64) % 100.0),
+                &[(20.0, 20.0), (50.0, 50.0), (70.0, 70.0), (80.0, 80.0)],
+            )) {
+                return Some(One);
+            }
+            if (in_set(((op.i as f64) % 10.0), &[(3.0, 3.0), (4.0, 4.0)]))
+                || (in_set(
+                    ((op.i as f64) % 1000.0),
+                    &[
+                        (100.0, 100.0),
+                        (200.0, 200.0),
+                        (300.0, 300.0),
+                        (400.0, 400.0),
+                        (500.0, 500.0),
+                        (600.0, 600.0),
+                        (700.0, 700.0),
+                        (800.0, 800.0),
+                        (900.0, 900.0),
+                    ],
+                ))
+            {
+                return Some(Few);
+            }
+            if (in_set((op.i as f64), &[(0.0, 0.0)]))
+                || (in_set(((op.i as f64) % 10.0), &[(6.0, 6.0)]))
+                || (in_set(
+                    ((op.i as f64) % 100.0),
+                    &[(40.0, 40.0), (60.0, 60.0), (90.0, 90.0)],
+                ))
+            {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "mk" => {
+            if (in_set(((op.i as f64) % 10.0), &[(1.0, 1.0)])
+                && !in_set(((op.i as f64) % 100.0), &[(11.0, 11.0)]))
+            {
+                return Some(One);
+            }
+            if (in_set(((op.i as f64) % 10.0), &[(2.0, 2.0)])
+                && !in_set(((op.i as f64) % 100.0), &[(12.0, 12.0)]))
+            {
+                return Some(Two);
+            }
+            if (in_set(((op.i as f64) % 10.0), &[(7.0, 7.0), (8.0, 8.0)])
+                && !in_set(((op.i as f64) % 100.0), &[(17.0, 17.0), (18.0, 18.0)]))
+            {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "blo" => {
+            if (in_set((op.i as f64), &[(0.0, 0.0)])) {
+                return Some(Zero);
+            }
+            if (in_set((op.i as f64), &[(1.0, 1.0)])) {
+                return Some(One);
+            }
+            if (in_set(
+                (op.i as f64),
+                &[(2.0, 2.0), (3.0, 3.0), (4.0, 4.0), (5.0, 5.0), (6.0, 6.0)],
+            )) {
+                return Some(Few);
+            }
+            Some(Other)
+        }
+        "ka" => {
+            if (in_set((op.i as f64), &[(1.0, 1.0)])) {
+                return Some(One);
+            }
+            if (in_set((op.i as f64), &[(0.0, 0.0)]))
+                || (in_set(
+                    ((op.i as f64) % 100.0),
+                    &[(2.0, 20.0), (40.0, 40.0), (60.0, 60.0), (80.0, 80.0)],
+                ))
+            {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "sv" => {
+            if (in_set((op.n % 10.0), &[(1.0, 1.0), (2.0, 2.0)])
+                && !in_set((op.n % 100.0), &[(11.0, 11.0), (12.0, 12.0)]))
+            {
+                return Some(One);
+            }
+            Some(Other)
+        }
+        "en" => {
+            if (in_set((op.n % 10.0), &[(1.0, 1.0)]) && !in_set((op.n % 100.0), &[(11.0, 11.0)])) {
+                return Some(One);
+            }
+            if (in_set((op.n % 10.0), &[(2.0, 2.0)]) && !in_set((op.n % 100.0), &[(12.0, 12.0)])) {
+                return Some(Two);
+            }
+            if (in_set((op.n % 10.0), &[(3.0, 3.0)]) && !in_set((op.n % 100.0), &[(13.0, 13.0)])) {
+                return Some(Few);
+            }
+            Some(Other)
+        }
+        "be" => {
+            if (in_set((op.n % 10.0), &[(2.0, 2.0), (3.0, 3.0)])
+                && !in_set((op.n % 100.0), &[(12.0, 12.0), (13.0, 13.0)]))
+            {
+                return Some(Few);
+            }
+            Some(Other)
+        }
+        "uk" => {
+            if (in_set((op.n % 10.0), &[(3.0, 3.0)]) && !in_set((op.n % 100.0), &[(13.0, 13.0)])) {
+                return Some(Few);
+            }
+            Some(Other)
+        }
+        "tk" => {
+            if (in_set((op.n % 10.0), &[(6.0, 6.0), (9.0, 9.0)])) || (in_set(op.n, &[(10.0, 10.0)]))
+            {
+                return Some(Few);
+            }
+            Some(Other)
+        }
+        "kk" => {
+            if (in_set((op.n % 10.0), &[(6.0, 6.0)]))
+                || (in_set((op.n % 10.0), &[(9.0, 9.0)]))
+                || (in_set((op.n % 10.0), &[(0.0, 0.0)]) && !in_set(op.n, &[(0.0, 0.0)]))
+            {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "cy" => {
+            if (in_set(op.n, &[(0.0, 0.0), (7.0, 7.0), (8.0, 8.0), (9.0, 9.0)])) {
+                return Some(Zero);
+            }
+            if (in_set(op.n, &[(1.0, 1.0)])) {
+                return Some(One);
+            }
+            if (in_set(op.n, &[(2.0, 2.0)])) {
+                return Some(Two);
+            }
+            if (in_set(op.n, &[(3.0, 3.0), (4.0, 4.0)])) {
+                return Some(Few);
+            }
+            if (in_set(op.n, &[(5.0, 5.0), (6.0, 6.0)])) {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "gd" => {
+            if (in_set(op.n, &[(1.0, 1.0), (11.0, 11.0)])) {
+                return Some(One);
+            }
+            if (in_set(op.n, &[(2.0, 2.0), (12.0, 12.0)])) {
+                return Some(Two);
+            }
+            if (in_set(op.n, &[(3.0, 3.0), (13.0, 13.0)])) {
+                return Some(Few);
+            }
+            Some(Other)
+        }
+        "ca" => {
+            if (in_set(op.n, &[(1.0, 1.0), (3.0, 3.0)])) {
+                return Some(One);
+            }
+            if (in_set(op.n, &[(2.0, 2.0)])) {
+                return Some(Two);
+            }
+            if (in_set(op.n, &[(4.0, 4.0)])) {
+                return Some(Few);
+            }
+            Some(Other)
+        }
+        "as" | "bn" => {
+            if (in_set(
+                op.n,
+                &[
+                    (1.0, 1.0),
+                    (5.0, 5.0),
+                    (7.0, 7.0),
+                    (8.0, 8.0),
+                    (9.0, 9.0),
+                    (10.0, 10.0),
+                ],
+            )) {
+                return Some(One);
+            }
+            if (in_set(op.n, &[(2.0, 2.0), (3.0, 3.0)])) {
+                return Some(Two);
+            }
+            if (in_set(op.n, &[(4.0, 4.0)])) {
+                return Some(Few);
+            }
+            if (in_set(op.n, &[(6.0, 6.0)])) {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "or" => {
+            if (in_set(op.n, &[(1.0, 1.0), (5.0, 5.0), (7.0, 9.0)])) {
+                return Some(One);
+            }
+            if (in_set(op.n, &[(2.0, 2.0), (3.0, 3.0)])) {
+                return Some(Two);
+            }
+            if (in_set(op.n, &[(4.0, 4.0)])) {
+                return Some(Few);
+            }
+            if (in_set(op.n, &[(6.0, 6.0)])) {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "hu" => {
+            if (in_set(op.n, &[(1.0, 1.0), (5.0, 5.0)])) {
+                return Some(One);
+            }
+            Some(Other)
+        }
+        "bal" | "fil" | "fr" | "ga" | "hy" | "lo" | "mo" | "ms" | "ro" | "tl" | "vi" => {
+            if (in_set(op.n, &[(1.0, 1.0)])) {
+                return Some(One);
+            }
+            Some(Other)
+        }
+        "sq" => {
+            if (in_set(op.n, &[(1.0, 1.0)])) {
+                return Some(One);
+            }
+            if (in_set((op.n % 10.0), &[(4.0, 4.0)]) && !in_set((op.n % 100.0), &[(14.0, 14.0)])) {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "kok" | "kok-latn" | "mr" => {
+            if (in_set(op.n, &[(1.0, 1.0)])) {
+                return Some(One);
+            }
+            if (in_set(op.n, &[(2.0, 2.0), (3.0, 3.0)])) {
+                return Some(Two);
+            }
+            if (in_set(op.n, &[(4.0, 4.0)])) {
+                return Some(Few);
+            }
+            Some(Other)
+        }
+        "gu" | "hi" => {
+            if (in_set(op.n, &[(1.0, 1.0)])) {
+                return Some(One);
+            }
+            if (in_set(op.n, &[(2.0, 2.0), (3.0, 3.0)])) {
+                return Some(Two);
+            }
+            if (in_set(op.n, &[(4.0, 4.0)])) {
+                return Some(Few);
+            }
+            if (in_set(op.n, &[(6.0, 6.0)])) {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "ne" => {
+            if (in_set(op.n, &[(1.0, 4.0)])) {
+                return Some(One);
+            }
+            Some(Other)
+        }
+        "kw" => {
+            if (in_set(op.n, &[(1.0, 4.0)]))
+                || (in_set(
+                    (op.n % 100.0),
+                    &[
+                        (1.0, 4.0),
+                        (21.0, 24.0),
+                        (41.0, 44.0),
+                        (61.0, 64.0),
+                        (81.0, 84.0),
+                    ],
+                ))
+            {
+                return Some(One);
+            }
+            if (in_set(op.n, &[(5.0, 5.0)])) || (in_set((op.n % 100.0), &[(5.0, 5.0)])) {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "it" | "lld" | "sc" | "vec" => {
+            if (in_set(
+                op.n,
+                &[(11.0, 11.0), (8.0, 8.0), (80.0, 80.0), (800.0, 800.0)],
+            )) {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        "lij" | "scn" => {
+            if (in_set(
+                op.n,
+                &[(11.0, 11.0), (8.0, 8.0), (80.0, 89.0), (800.0, 899.0)],
+            )) {
+                return Some(Many);
+            }
+            Some(Other)
+        }
+        _ => None,
+    }
+}

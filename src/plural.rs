@@ -132,6 +132,32 @@ pub fn in_set(x: f64, ranges: &[(f64, f64)]) -> bool {
 /// to `"pt"`). Unknown languages resolve to [`PluralCategory::Other`].
 #[must_use]
 pub fn plural_category(lang: &str, operands: &PluralOperands) -> PluralCategory {
+    select(
+        operands,
+        lang,
+        crate::unicode::generated::plurals::plural_category,
+    )
+}
+
+/// Select the [`PluralCategory`] (ordinal — "1st", "2nd", "3rd") for `operands`
+/// in the language of `lang`, with the same locale fallback as
+/// [`plural_category`]. Languages without ordinal rules resolve to
+/// [`PluralCategory::Other`].
+#[must_use]
+pub fn ordinal_category(lang: &str, operands: &PluralOperands) -> PluralCategory {
+    select(
+        operands,
+        lang,
+        crate::unicode::generated::plurals::ordinal_category,
+    )
+}
+
+/// Shared locale-fallback dispatch for the cardinal/ordinal generated tables.
+fn select(
+    operands: &PluralOperands,
+    lang: &str,
+    lookup: fn(&str, &PluralOperands) -> Option<PluralCategory>,
+) -> PluralCategory {
     // Case-fold and normalize separators into a small stack buffer (no alloc).
     let mut buf = [0u8; 40];
     let bytes = lang.as_bytes();
@@ -144,9 +170,7 @@ pub fn plural_category(lang: &str, operands: &PluralOperands) -> PluralCategory 
 
     let mut end = norm.len();
     loop {
-        if let Some(cat) =
-            crate::unicode::generated::plurals::plural_category(&norm[..end], operands)
-        {
+        if let Some(cat) = lookup(&norm[..end], operands) {
             return cat;
         }
         match norm[..end].rfind('-') {

@@ -120,7 +120,7 @@ shaped data source than UCD. This phase is the gate for Phase 4.
   (add/remove/maximize), locale fallback & negotiation/matching.
 - 🟡🔬 **Plural rules (CLDR)** — cardinal `PluralCategory` selection via
   `intl::plural` (rules compiled to a match; 224 locales, validated against the
-  CLDR sample data). Still to add: ordinal rules and the compact `c`/`e` operand.
+  CLDR sample data). Cardinal + ordinal. Still to add: the compact `c`/`e` operand.
 
 ---
 
