@@ -86,6 +86,9 @@ Beyond the `unicode` module:
 - `intl::unit` (alloc) formats measurement units —
   `format_unit("en", 5.0, Unit::Kilometer, UnitWidth::Long)` → `"5 kilometers"`
   (plural- and number-aware, long/short widths).
+- `intl::message` (alloc) is a subset of ICU MessageFormat — `{arg}`
+  substitution, `plural`/`selectordinal` (with `=N` and `#`), and `select`,
+  composing the plural rules and number formatting.
 
 These build out the CLDR/locale layer toward full ICU-style formatting. The
 locale data is compiled by the offline codegen into flat binary blobs committed

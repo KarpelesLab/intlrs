@@ -29,6 +29,8 @@ pub mod list;
 #[cfg(feature = "alloc")]
 pub mod locale;
 #[cfg(feature = "alloc")]
+pub mod message;
+#[cfg(feature = "alloc")]
 pub mod number;
 pub mod plural;
 #[cfg(feature = "alloc")]
