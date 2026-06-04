@@ -185,6 +185,13 @@ fn main() {
     let security = root.join("data/security").join(version);
     emit_confusables(&out_dir, &mut modules, &security);
 
+    // ---- IDNA mapping (UTS #46) ----
+    emit_idna(
+        &out_dir,
+        &mut modules,
+        &root.join("data/idna").join(version),
+    );
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -1100,6 +1107,62 @@ fn emit_confusables(out_dir: &Path, modules: &mut Vec<String>, security: &Path) 
     write_header(&mut out);
     emit_char_seq_lookup(&mut out, "confusable_prototype", "cf", "CF", &protos);
     write_module(out_dir, modules, "confusables", &out);
+}
+
+/// Emit `generated/idna.rs`: the UTS #46 mapping table, collapsed to the
+/// nontransitional, non-STD3 profile (status 0 valid, 1 mapped, 2 ignored,
+/// 3 disallowed) plus the per-codepoint mapping for `mapped` status.
+fn emit_idna(out_dir: &Path, modules: &mut Vec<String>, idna: &Path) {
+    let text =
+        fs::read_to_string(idna.join("IdnaMappingTable.txt")).expect("read IdnaMappingTable.txt");
+    let mut status = vec![3u32; NUM_CODEPOINTS]; // unassigned -> disallowed
+    let mut mapped: Vec<Vec<u32>> = vec![vec![]; NUM_CODEPOINTS];
+    for line in text.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        let (start, end) = parse_range(f[0]);
+        let st = f.get(1).copied().unwrap_or("disallowed");
+        let code = match st {
+            "valid" | "disallowed_STD3_valid" | "deviation" => 0,
+            "mapped" | "disallowed_STD3_mapped" => 1,
+            "ignored" => 2,
+            _ => 3, // disallowed
+        };
+        let seq: Vec<u32> = if code == 1 {
+            f.get(2)
+                .map(|m| {
+                    m.split_whitespace()
+                        .map(|h| u32::from_str_radix(h, 16).unwrap())
+                        .collect()
+                })
+                .unwrap_or_default()
+        } else {
+            vec![]
+        };
+        for cp in start..=end {
+            status[cp as usize] = code;
+            if code == 1 {
+                mapped[cp as usize] = seq.clone();
+            }
+        }
+    }
+    let mut out = String::new();
+    write_header(&mut out);
+    let status_render: Vec<String> = (0..=3u32).map(|v| v.to_string()).collect();
+    emit_lookup(
+        &mut out,
+        "idna_status",
+        "is",
+        "u8",
+        &status,
+        3,
+        &status_render,
+    );
+    emit_char_seq_lookup(&mut out, "idna_mapped", "im", "IM", &mapped);
+    write_module(out_dir, modules, "idna", &out);
 }
 
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.

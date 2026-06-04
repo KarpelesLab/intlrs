@@ -53,7 +53,7 @@ conformance corpus. Highest value, lowest risk — do these next.
   mixed-script & restriction-level checks. Data: `confusables.txt`,
   `IdentifierStatus.txt`, `IdentifierType.txt`. Conformance: examples in the
   spec; cross-check vs ICU `uspoof`.
-- ⬜🔬 **IDNA / UTS #46** — domain-name `to_ascii`/`to_unicode` (Punycode +
+- 🟡🔬 **IDNA / UTS #46** — domain-name `to_ascii`/`to_unicode` (Punycode +
   mapping + validation). Data: `IdnaMappingTable.txt`. Conformance:
   `IdnaTestV2.txt`. Depends on normalization (have) + Punycode (RFC 3492, small).
 - 🟡 **Case completeness** — add: conditional/locale case (Turkic dotless-i,

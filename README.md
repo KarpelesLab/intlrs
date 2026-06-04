@@ -131,6 +131,10 @@ codepoint would.
 - **Confusables / spoof detection** (UTS #39) — `spoof::skeleton`,
   `spoof::confusable`, and `spoof::is_single_script` (mixed-script detection).
   Requires `alloc`.
+- **IDNA / Punycode** (UTS #46 / RFC 3492) — `idna::to_ascii` / `idna::to_unicode`
+  for domain names (mapping + NFC + Punycode). The mapping/Punycode core passes
+  every clean-success line of IdnaTestV2; the contextual validity rules
+  (CheckBidi/CheckJoiners) are not yet enforced. Requires `alloc`.
 - `Numeric_Type` and exact `Numeric_Value` via `numeric_type` and
   `numeric_value` / `numeric_value_u32` (`NumericValue` is a rational
   `numerator / denominator`, with `.to_i64()` / `.as_f64()`).

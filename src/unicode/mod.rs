@@ -37,6 +37,8 @@ pub mod category;
 pub mod collate;
 mod generated;
 pub mod ident;
+#[cfg(feature = "alloc")]
+pub mod idna;
 pub mod normalize;
 pub mod numeric;
 mod predicates;
