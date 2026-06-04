@@ -102,3 +102,13 @@ fn char_names() {
         Some("CJK UNIFIED IDEOGRAPH-9FFF")
     );
 }
+
+#[cfg(feature = "bmp")]
+#[test]
+fn joining_groups() {
+    use intl::unicode::{joining_group, JoiningGroup::*};
+    assert_eq!(joining_group('\u{0628}'), Beh); // ARABIC BEH
+    assert_eq!(joining_group('\u{0627}'), Alef); // ARABIC ALEF
+    assert_eq!(joining_group('\u{0641}'), Feh); // ARABIC FEH
+    assert_eq!(joining_group('A'), NoJoiningGroup);
+}

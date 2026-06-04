@@ -62,10 +62,10 @@ conformance corpus. Highest value, lowest risk — do these next.
   `Changes_When_*` predicates.
 - 🟡 **More properties** (incremental, cheap): ✅ `Age` (`DerivedAge.txt`),
   ✅ `Block` (`Blocks.txt`), ✅ `Joining_Type` (`DerivedJoiningType.txt`),
-  ✅ `Indic_Syllabic_Category`, ✅ `Indic_Positional_Category`, ✅ Bidi_Class accessor (`bidi_class`),
+  ✅ `Indic_Syllabic_Category`, ✅ `Indic_Positional_Category`, ✅ `Joining_Group`, ✅ Bidi_Class accessor (`bidi_class`),
   ✅ `Default_Ignorable_Code_Point` / `Math` / `Dash` / `Diacritic` /
   `Hex_Digit` / `White_Space` / `Quotation_Mark` / `Join_Control`. Still:
-  Joining_Group; the full tabulated `Name` database (large — perfect-hash or
+  the full tabulated `Name` database (large — perfect-hash or
   trie). ✅ Algorithmic names (`char_name` / `hangul_syllable_name`): Hangul
   syllables + CJK/Tangut/Khitan/Nüshu ideograph ranges.
 

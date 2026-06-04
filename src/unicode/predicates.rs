@@ -14,7 +14,7 @@ use super::category::GeneralCategory;
 use super::generated::binary_props;
 use super::generated::general_category::general_category as gc_raw;
 pub use super::generated::properties::{
-    IndicPositionalCategory, IndicSyllabicCategory, JoiningType,
+    IndicPositionalCategory, IndicSyllabicCategory, JoiningGroup, JoiningType,
 };
 
 /// The [`GeneralCategory`] of `c`.
@@ -191,6 +191,21 @@ pub const fn block(c: char) -> &'static str {
 #[must_use]
 pub const fn joining_type(c: char) -> JoiningType {
     crate::unicode::generated::properties::joining_type(c as u32)
+}
+
+/// The `Joining_Group` of `c` (the Arabic/Syriac letter shaping class, UAX #9) —
+/// `NoJoiningGroup` for non-joining characters.
+///
+/// ```
+/// use intl::unicode::{joining_group, JoiningGroup};
+/// assert_eq!(joining_group('\u{0628}'), JoiningGroup::Beh);  // ARABIC BEH
+/// assert_eq!(joining_group('\u{0627}'), JoiningGroup::Alef); // ARABIC ALEF
+/// assert_eq!(joining_group('A'), JoiningGroup::NoJoiningGroup);
+/// ```
+#[inline]
+#[must_use]
+pub const fn joining_group(c: char) -> JoiningGroup {
+    crate::unicode::generated::properties::joining_group(c as u32)
 }
 
 /// The `Indic_Syllabic_Category` of `c` (UAX #44) — the structural role a

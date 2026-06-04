@@ -76,8 +76,8 @@ pub use predicates::{
     indic_syllabic_category, is_alphabetic, is_assigned, is_control, is_dash, is_decimal_digit,
     is_default_ignorable, is_diacritic, is_format, is_hex_digit, is_join_control, is_letter,
     is_lowercase, is_mark, is_math, is_numeric, is_punctuation, is_quotation_mark, is_separator,
-    is_symbol, is_uppercase, is_whitespace, joining_type, CharExt, IndicPositionalCategory,
-    IndicSyllabicCategory, JoiningType,
+    is_symbol, is_uppercase, is_whitespace, joining_group, joining_type, CharExt,
+    IndicPositionalCategory, IndicSyllabicCategory, JoiningGroup, JoiningType,
 };
 pub use script::{
     script, script_extensions, script_extensions_u32, script_u32, Script, ScriptExtensions,

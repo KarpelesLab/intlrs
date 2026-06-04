@@ -776,6 +776,58 @@ fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
          character is positioned relative to its base.",
     );
 
+    // ---- Joining_Group (ArabicShaping.txt field 3). ----
+    let as_txt = fs::read_to_string(ucd.join("ArabicShaping.txt")).expect("read ArabicShaping.txt");
+    let mut jg_names: BTreeSet<String> = BTreeSet::new();
+    for line in as_txt.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        if f.len() >= 4 && f[3] != "No_Joining_Group" {
+            jg_names.insert(f[3].to_string());
+        }
+    }
+    let jg_list: Vec<String> = jg_names.into_iter().collect();
+    let mut jg_code: BTreeMap<&str, u32> = BTreeMap::new();
+    jg_code.insert("No_Joining_Group", 0);
+    let mut jg_render = vec!["JoiningGroup::NoJoiningGroup".to_string()];
+    let mut jg_variants = String::from("    NoJoiningGroup,\n");
+    for (i, n) in jg_list.iter().enumerate() {
+        // Group names use spaces and/or underscores (e.g. "AFRICAN FEH",
+        // "No_Joining_Group"); normalize both to word separators.
+        let v = pascal_case(&n.to_lowercase().replace(' ', "_"));
+        jg_code.insert(n.as_str(), (i + 1) as u32);
+        jg_render.push(format!("JoiningGroup::{v}"));
+        let _ = write!(jg_variants, "    {v},\n");
+    }
+    let mut jg_codes = vec![0u32; NUM_CODEPOINTS];
+    for line in as_txt.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        if f.len() >= 4 {
+            if let Some(&code) = jg_code.get(f[3]) {
+                let (start, end) = parse_range(f[0]);
+                for c in start..=end {
+                    jg_codes[c as usize] = code;
+                }
+            }
+        }
+    }
+    let _ = write!(
+        out,
+        "/// The `Joining_Group` property (Arabic/Syriac letter shaping class, \
+         UAX #9).\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\n\
+         pub enum JoiningGroup {{\n{jg_variants}}}\n\n"
+    );
+    emit_lookup(
+        &mut out,
+        "joining_group",
+        "jg",
+        "JoiningGroup",
+        &jg_codes,
+        0,
+        &jg_render,
+    );
+
     // ---- Algorithmic ideograph name ranges (UnicodeData.txt First/Last rows). ----
     // Codepoints in these ranges have a derived `Name` of the form
     // `<prefix><CP hex>` (e.g. "CJK UNIFIED IDEOGRAPH-4E00"). Hangul syllables are
