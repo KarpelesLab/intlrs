@@ -1,47 +1,19 @@
-//! Pure-Rust, `no_std` Unicode rune analysis driven by the official Unicode
-//! Character Database (UCD).
+//! `intl` — pure-Rust, `no_std` internationalization primitives.
 //!
-//! Character properties are compiled directly into Rust `match` dispatch by an
-//! offline code generator (see `codegen/`), so lookups are `const fn`, allocate
-//! nothing, and require no runtime initialization. The crate is `#![no_std]` and
-//! does not use `alloc`.
+//! The crate is `#![no_std]` and does not use `alloc`. Functionality is grouped
+//! into modules; today it provides:
 //!
-//! # Range tiers
-//!
-//! Cargo features select how much of the codepoint space is compiled in, trading
-//! coverage for binary size. The tiers are nested:
-//!
-//! | feature  | codepoints compiled        |
-//! |----------|----------------------------|
-//! | `ascii`  | `U+0000..=U+007F`          |
-//! | `latin1` | `U+0000..=U+00FF`          |
-//! | `bmp`    | `U+0000..=U+FFFF` (default) |
-//! | `full`   | `U+0000..=U+10FFFF`        |
-//!
-//! Any codepoint outside the compiled range — like a genuinely unassigned one —
-//! resolves to the neutral default: [`GeneralCategory::Unassigned`] / `false`.
-//!
-//! # Examples
+//! - [`unicode`] — Unicode rune analysis (General_Category and character
+//!   predicates), with property tables compiled directly into `const fn` `match`
+//!   lookups and feature-selectable codepoint ranges.
 //!
 //! ```
-//! use unicode::{general_category, GeneralCategory, CharExt};
+//! use intl::unicode::{general_category, GeneralCategory, CharExt};
 //!
 //! assert_eq!(general_category('A'), GeneralCategory::UppercaseLetter);
 //! assert!('A'.is_uppercase());
-//! assert!('٣'.is_numeric()); // Arabic-Indic digit three
-//! assert!(!'\u{0378}'.is_assigned()); // a reserved codepoint
 //! ```
 #![no_std]
 #![forbid(unsafe_code)]
 
-pub mod category;
-mod generated;
-mod predicates;
-
-pub use category::{GeneralCategory, Group};
-pub use generated::general_category::UNICODE_VERSION;
-pub use predicates::{
-    general_category, general_category_u32, is_alphabetic, is_assigned, is_control,
-    is_decimal_digit, is_format, is_letter, is_lowercase, is_mark, is_numeric, is_punctuation,
-    is_separator, is_symbol, is_uppercase, is_whitespace, CharExt,
-};
+pub mod unicode;

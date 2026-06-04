@@ -3,7 +3,7 @@
 #![allow(clippy::all)]
 #![allow(unreachable_patterns)]
 
-use crate::category::GeneralCategory;
+use crate::unicode::category::GeneralCategory;
 
 /// The Unicode version this table was generated from.
 pub const UNICODE_VERSION: (u8, u8, u8) = (17, 0, 0);

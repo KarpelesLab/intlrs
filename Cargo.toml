@@ -1,14 +1,14 @@
 [package]
-name = "unicode"
+name = "intl"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.70"
-description = "Pure-Rust, no_std Unicode rune analysis driven by the official UCD tables, with feature-selectable codepoint ranges."
+description = "Pure-Rust, no_std internationalization primitives. Provides a `unicode` module (General_Category + character predicates) with property tables compiled into const-fn match lookups and feature-selectable codepoint ranges."
 repository = "https://github.com/KarpelesLab/unicoders"
 license = "MIT"
 readme = "README.md"
-keywords = ["unicode", "no_std", "category", "char", "ucd"]
-categories = ["no-std", "text-processing", "internationalization"]
+keywords = ["intl", "unicode", "no_std", "i18n", "ucd"]
+categories = ["no-std", "internationalization", "text-processing"]
 # Only ship generated Rust + sources; the multi-MB vendored UCD text files and the
 # codegen tool are excluded from the published crate.
 include = ["src/**/*.rs", "Cargo.toml", "README.md", "LICENSE"]

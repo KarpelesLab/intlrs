@@ -10,9 +10,9 @@
 //! that is genuinely unassigned) reports its neutral value (`false`, or
 //! [`GeneralCategory::Unassigned`]).
 
-use crate::category::GeneralCategory;
-use crate::generated::binary_props;
-use crate::generated::general_category::general_category as gc_raw;
+use super::category::GeneralCategory;
+use super::generated::binary_props;
+use super::generated::general_category::general_category as gc_raw;
 
 /// The [`GeneralCategory`] of `c`.
 #[inline]

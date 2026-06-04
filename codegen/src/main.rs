@@ -67,8 +67,8 @@ fn main() {
         .to_path_buf();
     let version = "17.0.0";
     let ucd = root.join("data/ucd").join(version);
-    let out_dir = root.join("src/generated");
-    fs::create_dir_all(&out_dir).expect("create src/generated");
+    let out_dir = root.join("src/unicode/generated");
+    fs::create_dir_all(&out_dir).expect("create src/unicode/generated");
 
     let (vmaj, vmin, vpatch) = parse_version(&ucd.join("ReadMe.txt"));
     eprintln!(
@@ -86,7 +86,7 @@ fn main() {
     write_header(&mut gc_out);
     let _ = write!(
         gc_out,
-        "use crate::category::GeneralCategory;\n\n\
+        "use crate::unicode::category::GeneralCategory;\n\n\
          /// The Unicode version this table was generated from.\n\
          pub const UNICODE_VERSION: (u8, u8, u8) = ({vmaj}, {vmin}, {vpatch});\n\n"
     );

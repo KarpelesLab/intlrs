@@ -1,13 +1,14 @@
-# unicode
+# intl
 
-Pure-Rust, `#![no_std]` Unicode rune analysis driven by the official Unicode
-Character Database (UCD). Character properties are compiled directly into Rust
-`match` dispatch by an offline code generator, so every lookup is a `const fn`,
-allocates nothing, and needs no runtime initialization.
+Pure-Rust, `#![no_std]` internationalization primitives. Today the crate
+provides a **`unicode`** module: Unicode rune analysis driven by the official
+Unicode Character Database (UCD), with character properties compiled directly
+into Rust `match` dispatch by an offline code generator — so every lookup is a
+`const fn`, allocates nothing, and needs no runtime initialization.
 
 - **`no_std`, no `alloc`** — usable in embedded, kernel, and WASM contexts.
 - **Tables as code** — the UCD is converted into a two-level paged `match`
-  ("switch/case") index at build-of-the-crate time, not parsed at runtime.
+  ("switch/case") index, not parsed at runtime.
 - **Feature-selectable ranges** — compile only the slice of the codepoint space
   you need. Anything outside the compiled range resolves to the neutral default
   (`Unassigned` / `false`), so every lookup is total.
@@ -17,11 +18,11 @@ allocates nothing, and needs no runtime initialization.
 
 ```toml
 [dependencies]
-unicode = "0.1"
+intl = "0.1"
 ```
 
 ```rust
-use unicode::{general_category, GeneralCategory, CharExt};
+use intl::unicode::{general_category, GeneralCategory, CharExt};
 
 assert_eq!(general_category('A'), GeneralCategory::UppercaseLetter);
 assert_eq!(general_category('中'), GeneralCategory::OtherLetter);
@@ -33,7 +34,7 @@ assert!(!'\u{0378}'.is_assigned()); // a reserved codepoint
 ```
 
 Every predicate exists both as a free `const fn` taking a `char`
-(`unicode::is_uppercase('A')`) and as a method via the `CharExt` trait
+(`intl::unicode::is_uppercase('A')`) and as a method via the `CharExt` trait
 (`'A'.is_uppercase()`).
 
 ## Range tiers
@@ -50,16 +51,16 @@ coverage for binary size. The tiers are nested (each implies the smaller ones):
 
 ```toml
 # Latin-1 only, no default BMP tables:
-unicode = { version = "0.1", default-features = false, features = ["latin1"] }
+intl = { version = "0.1", default-features = false, features = ["latin1"] }
 # Everything, including supplementary planes:
-unicode = { version = "0.1", default-features = false, features = ["full"] }
+intl = { version = "0.1", default-features = false, features = ["full"] }
 ```
 
 A codepoint outside the compiled tier reports `GeneralCategory::Unassigned`
 (and `false` for every boolean predicate) — exactly as a genuinely unassigned
 codepoint would.
 
-## What's covered
+## What the `unicode` module covers
 
 - `General_Category` (the 29 UAX #44 categories) and their major `Group`s,
   via `general_category` / `general_category_u32`.
@@ -72,8 +73,8 @@ codepoint would.
 
 ## Regenerating the tables
 
-The committed files under `src/generated/` are produced from the vendored UCD
-text files in `data/ucd/<version>/` by the `codegen` tool:
+The committed files under `src/unicode/generated/` are produced from the
+vendored UCD text files in `data/ucd/<version>/` by the `codegen` tool:
 
 ```sh
 cargo run -p codegen
