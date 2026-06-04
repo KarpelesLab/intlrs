@@ -97,3 +97,68 @@ pub fn to_titlecase(c: char) -> CaseMapIter {
 pub fn case_fold(c: char) -> CaseMapIter {
     CaseMapIter::new(c, gen::fold(c as u32))
 }
+
+/// Iterator adaptor applying a per-character case mapping across a whole `char`
+/// stream, flattening multi-character mappings. Allocates nothing.
+///
+/// Constructed via [`uppercase`], [`lowercase`], or [`fold`]. With `std`/`alloc`
+/// you can `.collect::<String>()`:
+///
+/// ```
+/// use intl::unicode::uppercase;
+/// assert_eq!(uppercase("Weiß".chars()).collect::<String>(), "WEISS");
+/// ```
+#[derive(Clone)]
+pub struct CaseMapping<I> {
+    iter: I,
+    map: fn(char) -> CaseMapIter,
+    cur: Option<CaseMapIter>,
+}
+
+impl<I: Iterator<Item = char>> Iterator for CaseMapping<I> {
+    type Item = char;
+
+    #[inline]
+    fn next(&mut self) -> Option<char> {
+        loop {
+            if let Some(m) = self.cur.as_mut() {
+                if let Some(c) = m.next() {
+                    return Some(c);
+                }
+            }
+            let ch = self.iter.next()?;
+            self.cur = Some((self.map)(ch));
+        }
+    }
+}
+
+/// Map a `char` stream to its full uppercase form (e.g. `"Weiß"` → `"WEISS"`).
+#[inline]
+pub fn uppercase<I: Iterator<Item = char>>(iter: I) -> CaseMapping<I> {
+    CaseMapping {
+        iter,
+        map: to_uppercase,
+        cur: None,
+    }
+}
+
+/// Map a `char` stream to its full lowercase form.
+#[inline]
+pub fn lowercase<I: Iterator<Item = char>>(iter: I) -> CaseMapping<I> {
+    CaseMapping {
+        iter,
+        map: to_lowercase,
+        cur: None,
+    }
+}
+
+/// Map a `char` stream to its full case-folded form, for caseless comparison:
+/// `fold(a).eq(fold(b))` is `true` when `a` and `b` differ only by case.
+#[inline]
+pub fn fold<I: Iterator<Item = char>>(iter: I) -> CaseMapping<I> {
+    CaseMapping {
+        iter,
+        map: case_fold,
+        cur: None,
+    }
+}

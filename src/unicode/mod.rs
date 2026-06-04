@@ -42,7 +42,10 @@ mod predicates;
 pub mod script;
 pub mod width;
 
-pub use case::{case_fold, to_lowercase, to_titlecase, to_uppercase, CaseMapIter};
+pub use case::{
+    case_fold, fold, lowercase, to_lowercase, to_titlecase, to_uppercase, uppercase, CaseMapIter,
+    CaseMapping,
+};
 pub use category::{GeneralCategory, Group};
 #[cfg(feature = "alloc")]
 pub use collate::{compare, sort_key, AlternateHandling, Collator};

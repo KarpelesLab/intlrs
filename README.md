@@ -100,9 +100,11 @@ codepoint would.
   helpers `is_nfc`/`is_nfd`/`is_nfkc`/`is_nfkd` (and tri-state
   `quick_check_*` → `IsNormalized`); plus `canonical_combining_class`.
   Validated against the full official `NormalizationTest.txt` conformance suite.
-- Full, unconditional **case mapping** — `to_uppercase`, `to_lowercase`,
-  `to_titlecase`, and `case_fold`, each returning a `CaseMapIter` (1–3 chars,
-  e.g. `ß` → `SS`; no allocation).
+- Full, unconditional **case mapping** — per-`char` `to_uppercase`,
+  `to_lowercase`, `to_titlecase`, `case_fold` (each a `CaseMapIter`, 1–3 chars,
+  e.g. `ß` → `SS`), plus whole-stream adaptors `uppercase` / `lowercase` /
+  `fold` over `Iterator<Item = char>` (e.g. `uppercase("Weiß".chars())`; no
+  allocation). `fold` gives caseless comparison.
 - `Script` and `Script_Extensions` (UAX #24) via `script` / `script_u32` and
   `script_extensions` / `script_extensions_u32` (`Script` enum with
   `.long_name()`; `ScriptExtensions` with `.contains()` / `.iter()`).

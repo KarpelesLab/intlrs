@@ -27,6 +27,17 @@ fn latin1_case() {
     assert_eq!(to_uppercase('ß').len(), 2);
 }
 
+#[cfg(feature = "latin1")]
+#[test]
+fn stream_adaptors() {
+    use intl::unicode::{fold, lowercase, uppercase};
+    assert_eq!(s(uppercase("Weiß".chars())), "WEISS");
+    assert_eq!(s(lowercase("HÉLLO".chars())), "héllo");
+    // Caseless comparison via folding.
+    assert!(fold("STRASSE".chars()).eq(fold("strasse".chars())));
+    assert!(!fold("straße".chars()).eq(fold("strasches".chars())));
+}
+
 #[cfg(feature = "bmp")]
 #[test]
 fn bmp_case() {
