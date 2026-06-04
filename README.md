@@ -83,6 +83,9 @@ Beyond the `unicode` module:
 - `intl::display` (`no_std`, no alloc) gives locale display names —
   `language_name("fr", "de")` → `Some("allemand")`, `region_name("en", "JP")`
   → `Some("Japan")`.
+- `intl::unit` (alloc) formats measurement units —
+  `format_unit("en", 5.0, Unit::Kilometer, UnitWidth::Long)` → `"5 kilometers"`
+  (plural- and number-aware, long/short widths).
 
 These build out the CLDR/locale layer toward full ICU-style formatting. The
 locale data is compiled by the offline codegen into flat binary blobs committed

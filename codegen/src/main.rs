@@ -268,6 +268,7 @@ fn main() {
     emit_relative(&cldr_dir, &cldr.join("relative.json"));
     emit_currency(&cldr_dir, &cldr.join("currency.json"));
     emit_display(&cldr_dir, &cldr.join("display.json"));
+    emit_units(&cldr_dir, &cldr.join("units.json"));
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1551,6 +1552,63 @@ fn emit_currency(cldr_dir: &Path, path: &Path) {
         digit_records.push((code.clone(), vec![digit_value(&text, code)]));
     }
     write_blob(cldr_dir, "currency_digits", &digit_records);
+}
+
+/// The curated measurement units, in the order the runtime `Unit` enum expects.
+const UNITS: [&str; 28] = [
+    "duration-second",
+    "duration-minute",
+    "duration-hour",
+    "duration-day",
+    "duration-week",
+    "duration-month",
+    "duration-year",
+    "length-millimeter",
+    "length-centimeter",
+    "length-meter",
+    "length-kilometer",
+    "length-inch",
+    "length-foot",
+    "length-mile",
+    "mass-gram",
+    "mass-kilogram",
+    "mass-ounce",
+    "mass-pound",
+    "digital-byte",
+    "digital-kilobyte",
+    "digital-megabyte",
+    "digital-gigabyte",
+    "temperature-celsius",
+    "temperature-fahrenheit",
+    "speed-kilometer-per-hour",
+    "speed-mile-per-hour",
+    "volume-liter",
+    "volume-milliliter",
+];
+
+/// Write `cldr/units.bin`: per-locale unit patterns. Payload is
+/// `width(long, short) × unit(28) × plural-count(6)` optional strings, in that
+/// nested order.
+fn emit_units(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read units.json");
+    let json = json_parse(&text);
+    let counts = ["zero", "one", "two", "few", "many", "other"];
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let mut p = Vec::new();
+        for width in ["long", "short"] {
+            let w = loc.get(width).expect("width");
+            for unit in UNITS {
+                let f = w.get(unit);
+                for count in counts {
+                    let pat = f.and_then(|x| x.get(count)).and_then(Json::as_str);
+                    enc_opt(&mut p, pat);
+                }
+            }
+        }
+        records.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "units", &records);
 }
 
 /// Write `cldr/display_languages.bin` and `cldr/display_territories.bin`: for

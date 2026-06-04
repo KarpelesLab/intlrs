@@ -111,6 +111,10 @@ const CURRENCY: &[u8] = include_bytes!("cldr/currency.bin");
 const CURRENCY_DIGITS: &[u8] = include_bytes!("cldr/currency_digits.bin");
 const DISPLAY_LANG: &[u8] = include_bytes!("cldr/display_languages.bin");
 const DISPLAY_TERR: &[u8] = include_bytes!("cldr/display_territories.bin");
+const UNITS: &[u8] = include_bytes!("cldr/units.bin");
+
+/// Number of curated units (must match codegen's `UNITS` and the `Unit` enum).
+pub(crate) const UNIT_COUNT: usize = 28;
 
 fn rd_u16(b: &[u8], o: usize) -> usize {
     u16::from_le_bytes([b[o], b[o + 1]]) as usize
@@ -144,6 +148,14 @@ impl Cursor {
             None
         } else {
             Some(self.str())
+        }
+    }
+    fn skip_opt(&mut self) {
+        if self.b[self.o] == 0xFF {
+            self.o += 1;
+        } else {
+            let n = self.b[self.o] as usize;
+            self.o += 1 + n;
         }
     }
     fn pattern(&mut self) -> Pattern {
@@ -274,4 +286,22 @@ pub(crate) fn language_name(display_locale: &str, code: &str) -> Option<&'static
 /// Display name of region `code` in `display_locale`.
 pub(crate) fn region_name(display_locale: &str, code: &str) -> Option<&'static str> {
     display_name(DISPLAY_TERR, display_locale, code)
+}
+
+/// Unit pattern for `(width, unit, plural category)` in an exact locale key,
+/// falling back to the `other` category. `width` is 0 (long) or 1 (short).
+pub(crate) fn unit_pattern(
+    lang: &str,
+    width: usize,
+    unit: usize,
+    cat: usize,
+) -> Option<&'static str> {
+    let mut c = find(UNITS, lang)?;
+    // Skip to this (width, unit)'s block of 6 plural-count slots.
+    let base = (width * UNIT_COUNT + unit) * 6;
+    for _ in 0..base {
+        c.skip_opt();
+    }
+    let slots: [Option<&'static str>; 6] = core::array::from_fn(|_| c.opt());
+    slots[cat].or(slots[5])
 }
