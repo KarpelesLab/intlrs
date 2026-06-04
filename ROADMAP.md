@@ -83,24 +83,23 @@ all the conformance work as the surface grows.
   ICU4X / `unicode-*` / `std`, plus fuzzing the `codegen` parsers.
 - ✅ **Benchmarks (`criterion`)** — `benches/throughput.rs` over ASCII/Latin/CJK/
   mixed corpora (general_category, nfc, nfd, graphemes, words, sort_key); the
-  baseline for the trie optimization. `cargo bench --features alloc`.
-- ⬜ **Profiling** — flamegraph the hot loops (normalization decompose,
-  collation CEA generation, property lookups) on the bench corpora; identify
-  whether lookups, branches, or allocation dominate.
-- ⬜ **Table-representation optimization (profiling-driven).** Current property
-  tables are paged `match` ("switch/case") — branchy, and large generated
-  source (collation alone is ~42k lines; slow `rustc`). Evaluate and likely
-  migrate the codegen emitter to a **two-level deduplicated trie** (the std /
-  ICU4X representation): `block_index[cp>>8] → block_data[...]`, packed to the
-  property's bit-width (1/2/4/8), identical blocks deduped. Expected wins:
-  branchless O(1) lookups, big throughput gain on bulk/mixed text, far smaller
-  generated source, faster compiles. Open questions to settle with data:
-  - trie vs flat bit-packed blob (`include_bytes!`) vs keep-match, per property
-    density;
-  - how feature-tier gating maps onto tables (per-tier blobs vs full-table +
-    bounds check) — the one real ergonomic regression vs `#[cfg]`-gated `match`;
-  - keep `const fn` lookups; keep deterministic, diffable codegen output.
-  Conformance suites are the safety net for the rewrite.
+  throughput baseline. `cargo bench --features alloc`.
+- ⬜ **Profiling** (optional) — flamegraph the hot loops (normalization
+  decompose, collation CEA generation) on the bench corpora if a regression
+  surfaces. No longer gates a table rewrite (see below — the `match`
+  representation is settled), so this is opportunistic.
+- ✅ **Table-representation: keep the paged `match` (trie migration rejected).**
+  Decision: do *not* migrate the property tables to a runtime two-level trie.
+  The paged `match` ("switch/case") is what `rustc`/LLVM lower to dense jump
+  tables and range comparisons — the lookup stays in the instruction stream with
+  no data-dependent memory loads. A runtime trie (`block_index[cp>>8]` →
+  `block_data[...]`) replaces that with two dependent array loads, i.e. *slower*
+  lookups and more cache pressure on the hot path, to save generated-source size
+  and compile time. LLVM optimizes the generated `match` very well, so the
+  representation stays as-is. (The CLDR side already uses `include_bytes!` blobs
+  where the data is genuinely table-shaped; that's a separate, data-driven
+  choice, not a property-lookup hot path.) Large generated source / compile time
+  is accepted as the cost of the fastest lookups and `#[cfg]`-tier gating.
 - 🟡 **`#![no_std]`/`no_alloc` CI matrix hardening** — CI builds on a bare-metal
   `thumbv7em-none-eabi` target (with and without `alloc`) to prove no `std`
   leakage. ✅ MSRV check
