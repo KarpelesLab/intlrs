@@ -424,8 +424,33 @@ pub struct Tailoring {
 }
 
 impl Tailoring {
-    /// Parse a CLDR-style tailoring rule string (the `<` and `=` relations).
-    /// Returns `None` if a reset anchor or target is malformed.
+    /// A built-in tailoring for a well-known locale (by language subtag), or
+    /// `None` if no built-in rule is bundled. Covers the Nordic reorderings
+    /// where the accented letters sort *after* `z`.
+    ///
+    /// ```
+    /// # #[cfg(feature = "alloc")] {
+    /// use intl::unicode::collate::Tailoring;
+    /// use core::cmp::Ordering;
+    /// let sv = Tailoring::for_locale("sv").unwrap();
+    /// assert_eq!(sv.compare("z", "å"), Ordering::Less);
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn for_locale(lang: &str) -> Option<Tailoring> {
+        let lc = lang.get(..2).unwrap_or(lang);
+        let rules = match lc {
+            "sv" | "fi" => "&z < å < ä < ö",               // Swedish, Finnish
+            "da" | "nb" | "nn" | "no" => "&z < æ < ø < å", // Danish, Norwegian
+            "is" => "&y < ð < þ < æ < ö",                  // Icelandic
+            "et" => "&s < š < z < ž < õ < ä < ö < ü",      // Estonian
+            _ => return None,
+        };
+        Tailoring::parse(rules)
+    }
+
+    /// Parse a CLDR-style tailoring rule string (the `<`/`<<`/`<<<`/`=`
+    /// relations). Returns `None` if a reset anchor or target is malformed.
     #[must_use]
     pub fn parse(rules: &str) -> Option<Tailoring> {
         let chars: Vec<char> = rules.chars().filter(|c| !c.is_whitespace()).collect();

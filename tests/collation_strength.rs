@@ -84,3 +84,14 @@ fn tailoring_levels() {
     let _ = Strength::Primary; // strength type is reachable
     assert_eq!(id.compare("v", "w"), Ordering::Equal);
 }
+
+#[test]
+fn tailoring_for_locale() {
+    use intl::unicode::collate::Tailoring;
+    let sv = Tailoring::for_locale("sv").unwrap();
+    assert_eq!(sv.compare("z", "å"), Ordering::Less);
+    let da = Tailoring::for_locale("da-DK").unwrap();
+    assert_eq!(da.compare("z", "æ"), Ordering::Less);
+    assert_eq!(da.compare("ø", "å"), Ordering::Less);
+    assert!(Tailoring::for_locale("xx").is_none());
+}
