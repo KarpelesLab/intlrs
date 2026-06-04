@@ -8,5 +8,6 @@ pub(crate) mod binary_props;
 pub(crate) mod case;
 pub(crate) mod east_asian_width;
 pub(crate) mod general_category;
+pub(crate) mod normalization;
 pub(crate) mod numeric;
 pub(crate) mod script;

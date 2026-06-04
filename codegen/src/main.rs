@@ -163,6 +163,9 @@ fn main() {
     // ---- Numeric values ----
     emit_numeric(&out_dir, &mut modules, &ucd);
 
+    // ---- Normalization ----
+    emit_normalization(&out_dir, &mut modules, &ucd);
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -538,6 +541,186 @@ fn emit_numeric(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
         &type_render,
     );
     write_module(out_dir, modules, "numeric", &out);
+}
+
+/// Recursively expand the decomposition of `cp`. With `canonical_only`, only
+/// canonical (untagged) mappings are followed; otherwise compatibility mappings
+/// are followed too. Returns the fully-decomposed sequence (just `[cp]` if `cp`
+/// does not decompose).
+fn expand_decomp(
+    cp: u32,
+    raw: &[Option<(bool, Vec<u32>)>],
+    canonical_only: bool,
+    cache: &mut BTreeMap<u32, Vec<u32>>,
+) -> Vec<u32> {
+    if let Some(v) = cache.get(&cp) {
+        return v.clone();
+    }
+    let result = match &raw[cp as usize] {
+        Some((is_canonical, seq)) if *is_canonical || !canonical_only => seq
+            .iter()
+            .flat_map(|&c| expand_decomp(c, raw, canonical_only, cache))
+            .collect(),
+        _ => vec![cp],
+    };
+    cache.insert(cp, result.clone());
+    result
+}
+
+/// Emit an `Option<&'static [char]>` lookup backed by deduplicated static
+/// arrays (`<cprefix>N`), one per distinct non-empty sequence.
+fn emit_char_seq_lookup(
+    out: &mut String,
+    fn_name: &str,
+    prefix: &str,
+    cprefix: &str,
+    seqs: &[Vec<u32>],
+) {
+    let mut render = vec!["None".to_string()];
+    let mut dedup: BTreeMap<Vec<u32>, u32> = BTreeMap::new();
+    let mut codes = vec![0u32; NUM_CODEPOINTS];
+    let mut consts = String::new();
+    for (cp, seq) in seqs.iter().enumerate() {
+        if seq.is_empty() {
+            continue;
+        }
+        let code = *dedup.entry(seq.clone()).or_insert_with(|| {
+            let i = render.len();
+            let elems: Vec<String> = seq.iter().map(|&c| format!("'\\u{{{c:x}}}'")).collect();
+            let _ = write!(
+                consts,
+                "const {cprefix}{i}: &[char] = &[{}];\n",
+                elems.join(", ")
+            );
+            render.push(format!("Some({cprefix}{i})"));
+            i as u32
+        });
+        codes[cp] = code;
+    }
+    out.push_str(&consts);
+    out.push('\n');
+    emit_lookup(
+        out,
+        fn_name,
+        prefix,
+        "Option<&'static [char]>",
+        &codes,
+        0,
+        &render,
+    );
+}
+
+/// Emit `generated/normalization.rs`: CCC, canonical/compatibility
+/// decomposition, and canonical composition tables.
+fn emit_normalization(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
+    let n = NUM_CODEPOINTS;
+    let mut ccc = vec![0u32; n];
+    let mut raw: Vec<Option<(bool, Vec<u32>)>> = vec![None; n];
+
+    let udata = fs::read_to_string(ucd.join("UnicodeData.txt")).expect("read UnicodeData.txt");
+    for line in udata.lines() {
+        let f: Vec<&str> = line.split(';').collect();
+        if f.len() < 6 {
+            continue;
+        }
+        let cp = u32::from_str_radix(f[0], 16).unwrap() as usize;
+        ccc[cp] = f[3].parse().unwrap_or(0);
+        if !f[5].is_empty() {
+            let canonical = !f[5].starts_with('<');
+            let seq: Vec<u32> = f[5]
+                .split_whitespace()
+                .filter(|t| !t.starts_with('<'))
+                .map(|t| u32::from_str_radix(t, 16).unwrap())
+                .collect();
+            raw[cp] = Some((canonical, seq));
+        }
+    }
+
+    // Fully-expanded canonical and compatibility decompositions (empty = none).
+    let mut canon_seqs = vec![vec![]; n];
+    let mut compat_seqs = vec![vec![]; n];
+    let mut cache_c = BTreeMap::new();
+    let mut cache_k = BTreeMap::new();
+    for cp in 0..n as u32 {
+        if raw[cp as usize].is_none() {
+            continue;
+        }
+        let c = expand_decomp(cp, &raw, true, &mut cache_c);
+        if c != [cp] {
+            canon_seqs[cp as usize] = c;
+        }
+        let k = expand_decomp(cp, &raw, false, &mut cache_k);
+        if k != [cp] {
+            compat_seqs[cp as usize] = k;
+        }
+    }
+
+    // Canonical composition pairs: primary composites are canonical length-2
+    // decompositions that are not Full_Composition_Exclusion.
+    let excluded = parse_binary_prop(
+        &ucd.join("DerivedNormalizationProps.txt"),
+        "Full_Composition_Exclusion",
+    );
+    let mut compose: BTreeMap<u32, Vec<(u32, u32)>> = BTreeMap::new();
+    for cp in 0..n as u32 {
+        if let Some((true, seq)) = &raw[cp as usize] {
+            if seq.len() == 2 && excluded[cp as usize] == 0 {
+                compose.entry(seq[0]).or_default().push((seq[1], cp));
+            }
+        }
+    }
+
+    let mut out = String::new();
+    write_header(&mut out);
+
+    // CCC.
+    let ccc_render: Vec<String> = (0..=254u32).map(|v| v.to_string()).collect();
+    emit_lookup(
+        &mut out,
+        "canonical_combining_class",
+        "ccc",
+        "u8",
+        &ccc,
+        0,
+        &ccc_render,
+    );
+
+    // Decompositions.
+    emit_char_seq_lookup(&mut out, "decompose_canonical", "dc", "DC", &canon_seqs);
+    emit_char_seq_lookup(&mut out, "decompose_compatible", "dk", "DK", &compat_seqs);
+
+    // Composition: per-starter (second, composed) pairs.
+    let mut comp_codes = vec![0u32; n];
+    let mut comp_render = vec!["None".to_string()];
+    let mut comp_consts = String::new();
+    for (a, mut pairs) in compose {
+        pairs.sort_unstable();
+        let i = comp_render.len();
+        let elems: Vec<String> = pairs
+            .iter()
+            .map(|(b, c)| format!("('\\u{{{b:x}}}', '\\u{{{c:x}}}')"))
+            .collect();
+        let _ = write!(
+            comp_consts,
+            "const CO{i}: &[(char, char)] = &[{}];\n",
+            elems.join(", ")
+        );
+        comp_render.push(format!("Some(CO{i})"));
+        comp_codes[a as usize] = i as u32;
+    }
+    out.push_str(&comp_consts);
+    out.push('\n');
+    emit_lookup(
+        &mut out,
+        "compose_pairs",
+        "co",
+        "Option<&'static [(char, char)]>",
+        &comp_codes,
+        0,
+        &comp_render,
+    );
+
+    write_module(out_dir, modules, "normalization", &out);
 }
 
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.

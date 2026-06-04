@@ -72,6 +72,10 @@ codepoint would.
   category-derived `is_letter`, `is_mark`, `is_numeric`, `is_decimal_digit`,
   `is_punctuation`, `is_symbol`, `is_separator`, `is_control`, `is_format`,
   and `is_assigned`.
+- **Normalization** (UAX #15) — `nfd`, `nfc`, `nfkd`, `nfkc` as streaming,
+  allocation-free iterator adaptors over `Iterator<Item = char>` (plus
+  `canonical_combining_class`). Validated against the full official
+  `NormalizationTest.txt` conformance suite.
 - Full, unconditional **case mapping** — `to_uppercase`, `to_lowercase`,
   `to_titlecase`, and `case_fold`, each returning a `CaseMapIter` (1–3 chars,
   e.g. `ß` → `SS`; no allocation).

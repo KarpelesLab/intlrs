@@ -34,6 +34,7 @@
 pub mod case;
 pub mod category;
 mod generated;
+pub mod normalize;
 pub mod numeric;
 mod predicates;
 pub mod script;
@@ -42,6 +43,10 @@ pub mod width;
 pub use case::{case_fold, to_lowercase, to_titlecase, to_uppercase, CaseMapIter};
 pub use category::{GeneralCategory, Group};
 pub use generated::general_category::UNICODE_VERSION;
+pub use normalize::{
+    canonical_combining_class, canonical_combining_class_u32, nfc, nfd, nfkc, nfkd, Decompositions,
+    Recompositions,
+};
 pub use numeric::{numeric_type, numeric_value, numeric_value_u32, NumericType, NumericValue};
 pub use predicates::{
     general_category, general_category_u32, is_alphabetic, is_assigned, is_control,
