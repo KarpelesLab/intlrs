@@ -4,6 +4,7 @@
 #![allow(unreachable_patterns)]
 #![allow(dead_code)]
 
+pub(crate) mod bidi;
 pub(crate) mod binary_props;
 pub(crate) mod case;
 pub(crate) mod collation;

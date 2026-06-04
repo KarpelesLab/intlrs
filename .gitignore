@@ -6,3 +6,4 @@ Cargo.lock
 # (not committed): UCA collation (~40 MB) and the UAX #14 line-break test (~3 MB).
 data/uca/*/CollationTest/
 data/ucd/*/auxiliary/LineBreakTest.txt
+data/ucd/*/BidiCharacterTest.txt

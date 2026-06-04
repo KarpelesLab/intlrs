@@ -31,6 +31,7 @@
 //! assert!(!'\u{0378}'.is_assigned()); // a reserved codepoint
 //! ```
 
+pub mod bidi;
 pub mod case;
 pub mod category;
 #[cfg(feature = "alloc")]
@@ -48,6 +49,7 @@ pub mod segment;
 pub mod spoof;
 pub mod width;
 
+pub use bidi::{base_direction, bidi_class, BidiClass, Direction};
 #[cfg(feature = "alloc")]
 pub use case::titlecase;
 pub use case::{

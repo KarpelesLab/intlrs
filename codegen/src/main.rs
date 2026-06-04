@@ -192,6 +192,36 @@ fn main() {
         &root.join("data/idna").join(version),
     );
 
+    // ---- Bidi_Class (UAX #9) ----
+    let bc_names = [
+        "L", "R", "AL", "EN", "ES", "ET", "AN", "CS", "NSM", "BN", "B", "S", "WS", "ON", "LRE",
+        "LRO", "RLE", "RLO", "PDF", "LRI", "RLI", "FSI", "PDI",
+    ];
+    let bc_map: BTreeMap<&str, u32> = bc_names
+        .iter()
+        .enumerate()
+        .map(|(i, &n)| (n, i as u32))
+        .collect();
+    let bc = parse_ranged(
+        &ucd.join("extracted/DerivedBidiClass.txt"),
+        &bc_map,
+        0, // default Left_To_Right
+    );
+    let bc_render: Vec<String> = bc_names.iter().map(|n| format!("BidiClass::{n}")).collect();
+    let mut bc_out = String::new();
+    write_header(&mut bc_out);
+    bc_out.push_str("use crate::unicode::bidi::BidiClass;\n\n");
+    emit_lookup(
+        &mut bc_out,
+        "bidi_class",
+        "bc",
+        "BidiClass",
+        &bc,
+        0,
+        &bc_render,
+    );
+    write_module(&out_dir, &mut modules, "bidi", &bc_out);
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
