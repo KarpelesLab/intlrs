@@ -59,14 +59,16 @@ jobs:
       - name: Build bare (no tier features)
         run: cargo build --no-default-features
 
-      # Run the whole suite under each nested tier. This exercises both the
-      # tier-specific property assertions and the subset-semantics tests, whose
-      # active branches differ per tier.
+      # Run the integration + unit tests under each nested tier. This exercises
+      # both the tier-specific property assertions and the subset-semantics
+      # tests, whose active branches differ per tier. Doctests are skipped here
+      # (`--tests`): they assume the default/full feature set and are validated
+      # by the `test` job under `--all-features`.
       - name: Test each tier
         run: |
           for feat in ascii latin1 bmp full; do
             echo "::group::features=$feat"
-            cargo test --no-default-features --features "$feat"
+            cargo test --no-default-features --features "$feat" --tests
             echo "::endgroup::"
           done
 
