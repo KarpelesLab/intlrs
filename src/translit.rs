@@ -27,6 +27,67 @@ pub fn remove_diacritics(s: &str) -> String {
     crate::unicode::nfc(stripped).collect()
 }
 
+/// A simple rule-based transform: an ordered set of `source > target` string
+/// rewrites, applied left-to-right with **longest-match-first** at each
+/// position. A lightweight subset of ICU transform rules (literal rewrites; no
+/// context, sets, or back-references). Build it once and reuse it.
+///
+/// ```
+/// use intl::translit::Transform;
+/// let leet = Transform::parse("a > 4; e > 3; o > 0; ck > k").unwrap();
+/// assert_eq!(leet.apply("rocket"), "r0k3t");   // "ck" wins over "c","k"
+/// assert_eq!(leet.apply("hello"), "h3ll0");
+/// ```
+#[derive(Debug, Clone)]
+pub struct Transform {
+    rules: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>,
+}
+
+impl Transform {
+    /// Parse a rule string: rules are separated by `;`, each `source > target`
+    /// (whitespace around the parts is trimmed). Returns `None` if no valid rule
+    /// is found. Rules are matched longest-source-first.
+    #[must_use]
+    pub fn parse(rules: &str) -> Option<Transform> {
+        let mut parsed: alloc::vec::Vec<(alloc::string::String, alloc::string::String)> =
+            alloc::vec::Vec::new();
+        for rule in rules.split(';') {
+            let Some((src, dst)) = rule.split_once('>') else {
+                continue;
+            };
+            let (src, dst) = (src.trim(), dst.trim());
+            if !src.is_empty() {
+                parsed.push((src.into(), dst.into()));
+            }
+        }
+        if parsed.is_empty() {
+            return None;
+        }
+        parsed.sort_by_key(|(s, _)| core::cmp::Reverse(s.chars().count()));
+        Some(Transform { rules: parsed })
+    }
+
+    /// Apply the transform to `s`.
+    #[must_use]
+    pub fn apply(&self, s: &str) -> String {
+        let mut out = String::with_capacity(s.len());
+        let mut rest = s;
+        'outer: while !rest.is_empty() {
+            for (src, dst) in &self.rules {
+                if let Some(after) = rest.strip_prefix(src.as_str()) {
+                    out.push_str(dst);
+                    rest = after;
+                    continue 'outer;
+                }
+            }
+            let c = rest.chars().next().unwrap();
+            out.push(c);
+            rest = &rest[c.len_utf8()..];
+        }
+        out
+    }
+}
+
 /// Best-effort transliteration of `s` to plain ASCII: romanize Cyrillic (ISO 9)
 /// and Greek (ELOT/ISO 843), then fold the result with [`latin_ascii`]. Latin
 /// text is accent-folded; scripts with no romanization here (e.g. CJK) are left

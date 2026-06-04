@@ -69,3 +69,19 @@ fn any_ascii_mixed() {
     // CJK (no romanization here) passes through.
     assert_eq!(a("東京 Tokyo"), "東京 Tokyo");
 }
+
+#[test]
+fn rule_transform() {
+    use intl::translit::Transform;
+    // Longest-match-first: "ck" beats "c"+"k".
+    let leet = Transform::parse("a > 4; e > 3; o > 0; ck > k").unwrap();
+    assert_eq!(leet.apply("rocket"), "r0k3t");
+    assert_eq!(leet.apply("hello world"), "h3ll0 w0rld");
+    // Empty target deletes; multi-char source/target.
+    let t = Transform::parse("th > þ;  x > ;").unwrap();
+    assert_eq!(t.apply("the box"), "þe bo");
+    // No rules -> None.
+    assert!(Transform::parse("   ").is_none());
+    // Unmatched chars pass through.
+    assert_eq!(Transform::parse("a>b").unwrap().apply("cat"), "cbt");
+}
