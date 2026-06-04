@@ -182,6 +182,7 @@ fn fuzz_locale_apis() {
         let _ = parse_decimal(&lang, &pstr);
         let _ = intl::number::to_numbering_system(&lang, &nstr);
         let _ = intl::spellout::spell_cardinal(&lang, rng.next() as i64);
+        let _ = intl::unit::format_duration(&lang, rng.next() as i64, intl::unit::UnitWidth::Long);
 
         // Locale parsing/negotiation on random (often malformed) tags.
         let _ = intl::locale::Locale::parse(&lang);

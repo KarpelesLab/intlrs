@@ -112,13 +112,16 @@ all the conformance work as the surface grows.
 The formatting/locale half of ICU needs **CLDR**, a much larger and differently
 shaped data source than UCD. This phase is the gate for Phase 4.
 
-- 🧱 **CLDR ingestion pipeline** — extend `codegen` (or a sibling tool) to
-  consume CLDR JSON, vendor a pinned CLDR version, generate compact per-locale
-  tables. Decide locale-data packaging: baked-in (feature/locale-gated) vs
-  loadable blobs. (ICU4X's `databake`/`provider` model is the reference design.)
-- 🟡 **Locale identifiers (BCP 47 / UTS #35)** — parse/canonicalize `Locale`,
-  language/script/region/variant/extensions. ✅ likely-subtags
-  (maximize/minimize). ✅ negotiation/matching. Still: full extension subtags (-u-/-t-).
+- ✅ **CLDR ingestion pipeline** — `codegen` consumes a pinned CLDR (v48) JSON
+  set, vendored and committed under `data/cldr/48/`, and transforms it into
+  committed binary blobs under `src/cldr/` (`include_bytes!`'d by the `no_std`
+  `crate::cldr` module). ~15 transforms (numbers, currency, calendars, units,
+  lists, relative, display, likely-subtags, RBNF, compact, numbering systems,
+  timezone formats). Deterministic; the CI drift guard regenerates from the
+  committed data with no network.
+- ✅ **Locale identifiers (BCP 47 / UTS #35)** — parse/canonicalize `Locale`,
+  language/script/region/variant/extensions (incl. `-u-`/`-t-`/`-x-`),
+  likely-subtags (maximize/minimize), negotiation/matching.
 - 🟡🔬 **Plural rules (CLDR)** — cardinal `PluralCategory` selection via
   `intl::plural` (rules compiled to a match; 224 locales, validated against the
   CLDR sample data). Cardinal + ordinal. Still to add: the compact `c`/`e` operand.
@@ -129,24 +132,29 @@ shaped data source than UCD. This phase is the gate for Phase 4.
 
 Each needs Phase 3. These are where "ICU parity" mostly lives.
 
-- 🟡 **Number formatting** — `intl::number::format_decimal` / `format_percent`
-  (CLDR symbols + grouping/fraction patterns; curated locale set). Still to add:
-  currency, scientific, compact, parsing, native digit systems.
+- ✅ **Number formatting** — `intl::number`: decimal, percent, currency,
+  scientific, compact, parsing (`parse_decimal`), and native digit systems
+  (`to_numbering_system`). CLDR symbols + grouping/fraction patterns, curated
+  locale set.
 - 🟡🧱 **Rule-based number formatting (RBNF)** — `intl::spellout::spell_cardinal`
   is a locale-driven CLDR RBNF engine (rule selection, radix, substitution,
   ruleset references); cardinal spell-out for a curated locale set. Still:
   ordinals and fractional/year forms.
-- 🟡 **Calendars** — `intl::calendar`: Gregorian<->civil Islamic conversion
-  (Julian Day Number pivot), ISO week dates, day-of-week. Persian (Solar Hijri) and
-  Japanese (era/year) added too. Hebrew added. Islamic date rendering added
-  (localized month names + era). Still: Chinese (lunisolar); CLDR rendering of
-  Hebrew/Persian dates.
+- 🟡 **Calendars** — `intl::calendar`: Gregorian, civil Islamic, Persian (Solar
+  Hijri), Hebrew, Japanese (era/year), and ISO week dates / day-of-week, all via
+  a Julian-Day-Number pivot. Islamic + Persian localized date *rendering*
+  (`datetime::format_islamic_date` / `format_persian_date`). Still: **Chinese
+  (lunisolar)** — needs a lunar table or astronomical computation, not derivable
+  from CLDR (which only has the month *names*).
 - ✅ **Time zones** — `intl::timezone`: POSIX TZ rules (no_std), plus the full
   IANA tz database behind the `iana-tz` feature (via the embedded `timezone-data`
   crate): historical transitions, DST, abbreviations. Still: zone display names.
-- 🧱 🟡 **Date/Time formatting** (`intl::datetime`, Gregorian) — skeleton/pattern based (UTS #35),
-  calendar- and zone-aware.
-- 🧱 **Relative date/time** ("3 days ago"), **duration**, ✅ unit/measurement formatting (`intl::unit`), ✅ list formatting (`intl::list`), ✅ display names (`intl::display`, language/region).
+- ✅ **Date/Time formatting** (`intl::datetime`, Gregorian) — date/time/datetime
+  styles, skeleton/pattern based (UTS #35), ISO-8601 I/O, date arithmetic,
+  localized GMT offsets, Islamic/Persian rendering.
+- ✅ **Relative date/time** (`intl::relative`, "3 days ago"), ✅ **duration**
+  (`intl::unit::format_duration`), ✅ unit/measurement formatting (`intl::unit`),
+  ✅ list formatting (`intl::list`), ✅ display names (`intl::display`).
 - 🧱 ✅ MessageFormat (`intl::message`, subset) — ICU MessageFormat (and/or MessageFormat 2.0):
   select/plural/gender, nested args.
 - 🧱 **Collation tailoring** — locale-tailored collators from CLDR (beyond DUCET

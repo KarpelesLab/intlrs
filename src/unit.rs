@@ -109,3 +109,40 @@ pub fn format_unit(lang: &str, value: f64, unit: Unit, width: UnitWidth) -> Stri
     let number = format_decimal(lang, value);
     pattern.replace("{0}", &number)
 }
+
+/// Format a duration given as a whole number of seconds, e.g.
+/// `format_duration("en", 3661, UnitWidth::Long)` → `"1 hour 1 minute 1 second"`.
+/// The largest non-zero units (days, hours, minutes, seconds) are each rendered
+/// with [`format_unit`] (plural-correct, localized) and joined with a space —
+/// CLDR's narrow unit-list convention. A zero duration renders as `0` seconds.
+#[must_use]
+pub fn format_duration(lang: &str, total_seconds: i64, width: UnitWidth) -> String {
+    let neg = total_seconds < 0;
+    let mut rem = total_seconds.unsigned_abs();
+    let parts = [
+        (86_400u64, Unit::Day),
+        (3_600, Unit::Hour),
+        (60, Unit::Minute),
+        (1, Unit::Second),
+    ];
+    let mut out = String::new();
+    for (size, unit) in parts {
+        let v = rem / size;
+        rem %= size;
+        // Skip leading zero components, but always keep seconds if nothing else.
+        if v == 0 && !(unit == Unit::Second && out.is_empty()) {
+            continue;
+        }
+        if !out.is_empty() {
+            out.push(' ');
+        }
+        out.push_str(&format_unit(lang, v as f64, unit, width));
+    }
+    if neg {
+        let mut signed = String::from("-");
+        signed.push_str(&out);
+        signed
+    } else {
+        out
+    }
+}

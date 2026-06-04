@@ -91,7 +91,8 @@ Beyond the `unicode` module:
   → `Some("Japan")`.
 - `intl::unit` (alloc) formats measurement units —
   `format_unit("en", 5.0, Unit::Kilometer, UnitWidth::Long)` → `"5 kilometers"`
-  (plural- and number-aware, long/short widths).
+  (plural- and number-aware, long/short widths) — and durations:
+  `format_duration("en", 3661, UnitWidth::Long)` → `"1 hour 1 minute 1 second"`.
 - `intl::message` (alloc) is a subset of ICU MessageFormat — `{arg}`
   substitution, `plural`/`selectordinal` (with `=N` and `#`), and `select`,
   composing the plural rules and number formatting.

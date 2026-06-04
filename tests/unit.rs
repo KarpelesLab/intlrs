@@ -14,3 +14,16 @@ fn units() {
     // Locale fallback to English for unknown locale.
     assert_eq!(fu("xx", 5.0, Kilometer, Long), "5 kilometers");
 }
+
+#[test]
+fn durations() {
+    use intl::unit::{format_duration as fd, UnitWidth::*};
+    assert_eq!(fd("en", 3661, Long), "1 hour 1 minute 1 second");
+    assert_eq!(fd("en", 90, Long), "1 minute 30 seconds");
+    assert_eq!(fd("en", 90, Short), "1 min 30 sec");
+    assert_eq!(fd("en", 0, Long), "0 seconds");
+    assert_eq!(fd("en", 86400 + 3600, Long), "1 day 1 hour");
+    assert_eq!(fd("en", -120, Long), "-2 minutes");
+    // Localized: German wording + number.
+    assert!(fd("de", 3661, Long).contains("Stunde"));
+}
