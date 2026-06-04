@@ -35,6 +35,65 @@ pub struct DateTime {
     pub second: u8,
 }
 
+impl DateTime {
+    /// Render as a machine-readable ISO-8601 timestamp
+    /// (`YYYY-MM-DDTHH:MM:SS`), independent of locale.
+    #[must_use]
+    pub fn to_iso8601(&self) -> String {
+        alloc::format!(
+            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
+            self.year,
+            self.month,
+            self.day,
+            self.hour,
+            self.minute,
+            self.second
+        )
+    }
+
+    /// Parse an ISO-8601 timestamp such as `"2026-06-04T14:30:05"`. Accepts a
+    /// space instead of `T`, an omitted time or seconds, and a trailing `Z`.
+    /// Returns `None` if malformed. (A time-zone offset, if present, is ignored.)
+    #[must_use]
+    pub fn parse_iso8601(s: &str) -> Option<DateTime> {
+        let s = s.trim().trim_end_matches('Z');
+        let (date, time) = match s.split_once(['T', ' ']) {
+            Some((d, t)) => (d, Some(t)),
+            None => (s, None),
+        };
+        let mut dp = date.split('-');
+        let year: i32 = dp.next()?.parse().ok()?;
+        let month: u8 = dp.next()?.parse().ok()?;
+        let day: u8 = dp.next()?.parse().ok()?;
+        if dp.next().is_some() || !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+            return None;
+        }
+        let (hour, minute, second) = match time {
+            None => (0, 0, 0),
+            Some(t) => {
+                // Drop any zone offset on the time component.
+                let t = t.split(['+', '-']).next().unwrap_or(t);
+                let mut tp = t.split(':');
+                let h: u8 = tp.next()?.parse().ok()?;
+                let mi: u8 = tp.next()?.parse().ok()?;
+                let se: u8 = match tp.next() {
+                    Some(x) => x.parse().ok()?,
+                    None => 0,
+                };
+                (h, mi, se)
+            }
+        };
+        Some(DateTime {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+        })
+    }
+}
+
 /// One of the four CLDR length styles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DateStyle {

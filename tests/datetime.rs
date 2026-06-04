@@ -59,3 +59,27 @@ fn skeletons() {
     assert_eq!(fs("de", &DT, "yMMMd"), "4. Juni 2026");
     assert_eq!(fs("fr", &DT, "MMMd"), "4 juin");
 }
+
+#[test]
+fn iso8601() {
+    assert_eq!(DT.to_iso8601(), "2026-06-04T14:30:05");
+    assert_eq!(DateTime::parse_iso8601("2026-06-04T14:30:05"), Some(DT));
+    assert_eq!(DateTime::parse_iso8601("2026-06-04 14:30:05"), Some(DT)); // space
+    assert_eq!(DateTime::parse_iso8601("2026-06-04T14:30:05Z"), Some(DT)); // Z
+                                                                           // Omitted seconds / time default to zero.
+    let midnight = DateTime {
+        year: 2026,
+        month: 6,
+        day: 4,
+        hour: 0,
+        minute: 0,
+        second: 0,
+    };
+    assert_eq!(DateTime::parse_iso8601("2026-06-04"), Some(midnight));
+    assert_eq!(DateTime::parse_iso8601("2026-06-04T00:00"), Some(midnight));
+    // Round-trip.
+    assert_eq!(DateTime::parse_iso8601(&DT.to_iso8601()), Some(DT));
+    // Malformed.
+    assert_eq!(DateTime::parse_iso8601("not-a-date"), None);
+    assert_eq!(DateTime::parse_iso8601("2026-13-01"), None); // bad month
+}
