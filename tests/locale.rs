@@ -81,3 +81,29 @@ fn negotiation() {
     assert_eq!(negotiate(&["ja"], &avail), None);
     assert_eq!(negotiate(&[], &avail), None);
 }
+
+#[test]
+fn extensions() {
+    use intl::locale::Locale;
+    let l = Locale::parse("en-US-u-ca-buddhist-nu-thai").unwrap();
+    assert_eq!(l.language, "en");
+    assert_eq!(l.region.as_deref(), Some("US"));
+    assert_eq!(l.extensions, ["u-ca-buddhist-nu-thai"]);
+    assert_eq!(l.to_string(), "en-US-u-ca-buddhist-nu-thai");
+    // Extensions are reordered into canonical (singleton-alphabetical) form,
+    // case-normalized, with private use ('x') last.
+    assert_eq!(
+        Locale::parse("DE-Latn-u-co-phonebk-t-de")
+            .unwrap()
+            .to_string(),
+        "de-Latn-t-de-u-co-phonebk"
+    );
+    assert_eq!(
+        Locale::parse("en-u-nu-thai-x-Foo").unwrap().to_string(),
+        "en-u-nu-thai-x-foo"
+    );
+    // A singleton with no subtag is invalid; single-char subtags need 'x'.
+    assert!(Locale::parse("en-u").is_err());
+    assert!(Locale::parse("en-a-b").is_err()); // 'b' too short for a non-x ext
+    assert_eq!(Locale::parse("en-x-a-b").unwrap().to_string(), "en-x-a-b");
+}

@@ -20,6 +20,9 @@ pub struct Locale {
     pub region: Option<String>,
     /// Variant subtags, lowercased (e.g. `["fonipa"]`).
     pub variants: Vec<String>,
+    /// Extension and private-use sequences, each as `singleton-subtag-…`,
+    /// lowercased and sorted by singleton (`x` last). E.g. `["u-ca-buddhist"]`.
+    pub extensions: Vec<String>,
 }
 
 /// An error parsing a locale identifier.
@@ -87,11 +90,42 @@ impl Locale {
             parts.next();
         }
 
-        // Anything left (extensions, private use) is not modelled; reject so we
-        // don't silently drop it.
-        if parts.next().is_some() {
-            return Err(ParseError::InvalidSubtag);
+        // Extensions and private use: `singleton (-subtag)+`, where a singleton
+        // is one alphanumeric character ('x' = private use).
+        let mut current: Option<String> = None;
+        for p in parts {
+            // Under private use ('x'), single characters are subtags, not new
+            // singletons; otherwise a single alphanumeric starts a new singleton.
+            let in_private = current.as_deref().is_some_and(|c| c.starts_with('x'));
+            if p.len() == 1 && p.bytes().next().unwrap().is_ascii_alphanumeric() && !in_private {
+                if let Some(ext) = current.take() {
+                    if !ext.contains('-') {
+                        return Err(ParseError::InvalidSubtag); // singleton with no subtag
+                    }
+                    loc.extensions.push(ext);
+                }
+                current = Some(p.to_ascii_lowercase());
+            } else if let Some(ext) = current.as_mut() {
+                if p.is_empty() || !p.bytes().all(|b| b.is_ascii_alphanumeric()) {
+                    return Err(ParseError::InvalidSubtag);
+                }
+                ext.push('-');
+                ext.push_str(&p.to_ascii_lowercase());
+            } else {
+                return Err(ParseError::InvalidSubtag); // subtag before any singleton
+            }
         }
+        if let Some(ext) = current {
+            if !ext.contains('-') {
+                return Err(ParseError::InvalidSubtag);
+            }
+            loc.extensions.push(ext);
+        }
+        // Canonical order: by singleton, with private use ('x') last.
+        loc.extensions.sort_by(|a, b| {
+            let key = |s: &String| (s.starts_with("x-"), s.clone());
+            key(a).cmp(&key(b))
+        });
         Ok(loc)
     }
 
@@ -130,6 +164,7 @@ impl Locale {
                         script: self.script.clone().or(m.script),
                         region: self.region.clone().or(m.region),
                         variants: self.variants.clone(),
+                        extensions: self.extensions.clone(),
                     };
                 }
             }
@@ -183,6 +218,9 @@ impl core::fmt::Display for Locale {
         }
         for v in &self.variants {
             write!(f, "-{v}")?;
+        }
+        for e in &self.extensions {
+            write!(f, "-{e}")?;
         }
         Ok(())
     }
