@@ -64,3 +64,15 @@ fn parsing() {
         assert_eq!(p(lang, &f(lang, v)), Some(v));
     }
 }
+
+#[test]
+fn scientific() {
+    use intl::number::format_scientific as sci;
+    assert_eq!(sci("en", 12345.0, 6), "1.2345E4");
+    assert_eq!(sci("en", 1.0, 6), "1E0");
+    assert_eq!(sci("en", 1000.0, 6), "1E3");
+    assert_eq!(sci("en", -250.0, 6), "-2.5E2");
+    assert_eq!(sci("de", 0.00042, 6), "4,2E-4");
+    assert_eq!(sci("en", 0.0, 6), "0");
+    assert_eq!(sci("en", 6.022e23, 6), "6.022E23");
+}

@@ -58,6 +58,56 @@ pub fn format_percent(lang: &str, value: f64) -> String {
     format_with(&s.pct, value * 100.0, s.decimal, s.group, s.minus)
 }
 
+/// Format `value` in scientific notation (mantissa × 10ⁿ) in `lang`, e.g.
+/// `format_scientific("en", 12345.0)` → `"1.2345E4"`. The mantissa uses the
+/// locale decimal separator and is rounded to at most `1 + sig_after` digits
+/// (trailing zeros trimmed); `0` is rendered as `"0"`.
+///
+/// ```
+/// use intl::number::format_scientific;
+/// assert_eq!(format_scientific("en", 12345.0, 6), "1.2345E4");
+/// assert_eq!(format_scientific("de", 0.00042, 6), "4,2E-4");
+/// assert_eq!(format_scientific("en", 0.0, 6), "0");
+/// ```
+#[must_use]
+pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
+    if value == 0.0 {
+        return String::from("0");
+    }
+    let s = spec(lang);
+    let neg = value < 0.0;
+    let mut m = if neg { -value } else { value };
+    // Normalize the mantissa to 1 ≤ m < 10 without `std::f64::log10`.
+    let mut exp = 0i32;
+    while m >= 10.0 {
+        m /= 10.0;
+        exp += 1;
+    }
+    while m < 1.0 {
+        m *= 10.0;
+        exp -= 1;
+    }
+    let mantissa = alloc::format!("{:.*}", sig_after, m);
+    let (int_part, frac_full) = mantissa.split_once('.').unwrap_or((&mantissa, ""));
+    let frac = frac_full.trim_end_matches('0');
+
+    let mut out = String::new();
+    if neg {
+        out.push_str(s.minus);
+    }
+    out.push_str(int_part);
+    if !frac.is_empty() {
+        out.push_str(s.decimal);
+        out.push_str(frac);
+    }
+    out.push('E');
+    if exp < 0 {
+        out.push_str(s.minus);
+    }
+    out.push_str(&alloc::format!("{}", exp.unsigned_abs()));
+    out
+}
+
 /// Parse a number written in `lang`'s conventions back to an `f64` — the inverse
 /// of [`format_decimal`]: grouping separators are removed and the locale decimal
 /// separator is accepted. A leading minus sign (ASCII `-` or the locale's) is
