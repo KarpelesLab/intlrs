@@ -98,6 +98,9 @@ Beyond the `unicode` module:
   month/weekday names, am/pm; weekday via Sakamoto's algorithm). Also
   `format_skeleton("en", &dt, "yMMMd")` → `"Jun 4, 2026"` (flexible field-set
   formatting).
+- `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian and
+  civil (tabular) Islamic calendars via the Julian Day Number, plus ISO-8601
+  week dates and day-of-week — pure integer arithmetic.
 
 These build out the CLDR/locale layer toward full ICU-style formatting. The
 locale data is compiled by the offline codegen into flat binary blobs committed
