@@ -7,6 +7,7 @@
 
 Pure-Rust, `#![no_std]` internationalization primitives — a long-term, pure-Rust
 analog of ICU (collation, number formatting, normalization, transliteration, …).
+See [ROADMAP.md](ROADMAP.md) for the plan toward ICU feature parity.
 
 The foundational layer, available today, is the **`unicode`** module: Unicode
 rune analysis driven by the official Unicode Character Database (UCD), with
