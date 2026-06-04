@@ -674,6 +674,46 @@ fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
         &blk_render,
     );
 
+    // ---- Joining_Type (Arabic shaping, UAX #9 / ArabicShaping.txt). ----
+    out.push_str(
+        "/// The `Joining_Type` property (Arabic/Syriac cursive joining, UAX #9).\n\
+         #[derive(Debug, Clone, Copy, PartialEq, Eq)]\n\
+         pub enum JoiningType {\n    \
+         /// `U` — does not join (the default).\n    NonJoining,\n    \
+         /// `C` — join-causing (e.g. ARABIC TATWEEL).\n    JoinCausing,\n    \
+         /// `D` — dual-joining.\n    DualJoining,\n    \
+         /// `L` — left-joining.\n    LeftJoining,\n    \
+         /// `R` — right-joining.\n    RightJoining,\n    \
+         /// `T` — transparent (combining marks, format chars).\n    Transparent,\n}\n\n",
+    );
+    let jt_render: Vec<String> = [
+        "NonJoining",
+        "JoinCausing",
+        "DualJoining",
+        "LeftJoining",
+        "RightJoining",
+        "Transparent",
+    ]
+    .iter()
+    .map(|v| format!("JoiningType::{v}"))
+    .collect();
+    let mut jt_letter: BTreeMap<&str, u32> = BTreeMap::new();
+    jt_letter.insert("C", 1);
+    jt_letter.insert("D", 2);
+    jt_letter.insert("L", 3);
+    jt_letter.insert("R", 4);
+    jt_letter.insert("T", 5);
+    let jt_codes = parse_ranged(&ucd.join("extracted/DerivedJoiningType.txt"), &jt_letter, 0);
+    emit_lookup(
+        &mut out,
+        "joining_type",
+        "jt",
+        "JoiningType",
+        &jt_codes,
+        0,
+        &jt_render,
+    );
+
     write_module(out_dir, modules, "properties", &out);
 }
 

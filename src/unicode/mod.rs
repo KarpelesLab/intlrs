@@ -71,7 +71,8 @@ pub use predicates::{
     age, block, general_category, general_category_u32, is_alphabetic, is_assigned, is_control,
     is_dash, is_decimal_digit, is_default_ignorable, is_diacritic, is_format, is_hex_digit,
     is_join_control, is_letter, is_lowercase, is_mark, is_math, is_numeric, is_punctuation,
-    is_quotation_mark, is_separator, is_symbol, is_uppercase, is_whitespace, CharExt,
+    is_quotation_mark, is_separator, is_symbol, is_uppercase, is_whitespace, joining_type, CharExt,
+    JoiningType,
 };
 pub use script::{
     script, script_extensions, script_extensions_u32, script_u32, Script, ScriptExtensions,

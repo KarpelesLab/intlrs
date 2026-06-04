@@ -9140,3 +9140,1269 @@ const fn block_pe01(b: u8) -> &'static str {
         _ => "No_Block",
     }
 }
+
+/// The `Joining_Type` property (Arabic/Syriac cursive joining, UAX #9).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum JoiningType {
+    /// `U` — does not join (the default).
+    NonJoining,
+    /// `C` — join-causing (e.g. ARABIC TATWEEL).
+    JoinCausing,
+    /// `D` — dual-joining.
+    DualJoining,
+    /// `L` — left-joining.
+    LeftJoining,
+    /// `R` — right-joining.
+    RightJoining,
+    /// `T` — transparent (combining marks, format chars).
+    Transparent,
+}
+
+#[inline]
+pub(crate) const fn joining_type(cp: u32) -> JoiningType {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => jt_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => jt_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => jt_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => jt_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => jt_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x007 => jt_p7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x008 => jt_p8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => jt_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => jt_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => jt_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => jt_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => jt_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => jt_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => jt_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => jt_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => jt_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x017 => jt_p17(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x018 => jt_p18(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x019 => jt_p19(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01a => jt_p1a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => jt_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => jt_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => jt_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => jt_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => jt_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => jt_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => jt_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a6 => jt_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a8 => jt_pa8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a9 => jt_pa9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0aa => jt_paa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => jt_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => jt_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => jt_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => jt_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x101 => jt_p101(cp as u8),
+        #[cfg(feature = "full")]
+        0x102 => jt_p102(cp as u8),
+        #[cfg(feature = "full")]
+        0x103 => jt_p103(cp as u8),
+        #[cfg(feature = "full")]
+        0x10a => jt_p10a(cp as u8),
+        #[cfg(feature = "full")]
+        0x10b => jt_p10b(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => jt_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x10e => jt_p10e(cp as u8),
+        #[cfg(feature = "full")]
+        0x10f => jt_p10f(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => jt_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => jt_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x112 => jt_p112(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => jt_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => jt_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => jt_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x116 => jt_p116(cp as u8),
+        #[cfg(feature = "full")]
+        0x117 => jt_p117(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => jt_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => jt_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x11a => jt_p11a(cp as u8),
+        #[cfg(feature = "full")]
+        0x11b => jt_p11b(cp as u8),
+        #[cfg(feature = "full")]
+        0x11c => jt_p11c(cp as u8),
+        #[cfg(feature = "full")]
+        0x11d => jt_p11d(cp as u8),
+        #[cfg(feature = "full")]
+        0x11e => jt_p11e(cp as u8),
+        #[cfg(feature = "full")]
+        0x11f => jt_p11f(cp as u8),
+        #[cfg(feature = "full")]
+        0x134 => jt_p134(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => jt_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x16a => jt_p16a(cp as u8),
+        #[cfg(feature = "full")]
+        0x16b => jt_p16b(cp as u8),
+        #[cfg(feature = "full")]
+        0x16f => jt_p16f(cp as u8),
+        #[cfg(feature = "full")]
+        0x1bc => jt_p1bc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cf => jt_p1cf(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => jt_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d2 => jt_p1d2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1da => jt_p1da(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => jt_p1e0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e1 => jt_p1e1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e2 => jt_p1e2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e4 => jt_p1e4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e5 => jt_p1e5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e6 => jt_p1e6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e8 => jt_p1e8(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => jt_p1e9(cp as u8),
+        #[cfg(feature = "full")]
+        0xe00 => jt_pe00(cp as u8),
+        #[cfg(feature = "full")]
+        0xe01 => jt_pe01(cp as u8),
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn jt_p0(b: u8) -> JoiningType {
+    match b {
+        #[cfg(feature = "latin1")]
+        0xad => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p3(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x6f => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p4(b: u8) -> JoiningType {
+    match b {
+        0x83..=0x89 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p5(b: u8) -> JoiningType {
+    match b {
+        0x91..=0xbd => JoiningType::Transparent,
+        0xbf => JoiningType::Transparent,
+        0xc1..=0xc2 => JoiningType::Transparent,
+        0xc4..=0xc5 => JoiningType::Transparent,
+        0xc7 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p6(b: u8) -> JoiningType {
+    match b {
+        0x10..=0x1a => JoiningType::Transparent,
+        0x1c => JoiningType::Transparent,
+        0x20 => JoiningType::DualJoining,
+        0x22..=0x25 => JoiningType::RightJoining,
+        0x26 => JoiningType::DualJoining,
+        0x27 => JoiningType::RightJoining,
+        0x28 => JoiningType::DualJoining,
+        0x29 => JoiningType::RightJoining,
+        0x2a..=0x2e => JoiningType::DualJoining,
+        0x2f..=0x32 => JoiningType::RightJoining,
+        0x33..=0x3f => JoiningType::DualJoining,
+        0x40 => JoiningType::JoinCausing,
+        0x41..=0x47 => JoiningType::DualJoining,
+        0x48 => JoiningType::RightJoining,
+        0x49..=0x4a => JoiningType::DualJoining,
+        0x4b..=0x5f => JoiningType::Transparent,
+        0x6e..=0x6f => JoiningType::DualJoining,
+        0x70 => JoiningType::Transparent,
+        0x71..=0x73 => JoiningType::RightJoining,
+        0x75..=0x77 => JoiningType::RightJoining,
+        0x78..=0x87 => JoiningType::DualJoining,
+        0x88..=0x99 => JoiningType::RightJoining,
+        0x9a..=0xbf => JoiningType::DualJoining,
+        0xc0 => JoiningType::RightJoining,
+        0xc1..=0xc2 => JoiningType::DualJoining,
+        0xc3..=0xcb => JoiningType::RightJoining,
+        0xcc => JoiningType::DualJoining,
+        0xcd => JoiningType::RightJoining,
+        0xce => JoiningType::DualJoining,
+        0xcf => JoiningType::RightJoining,
+        0xd0..=0xd1 => JoiningType::DualJoining,
+        0xd2..=0xd3 => JoiningType::RightJoining,
+        0xd5 => JoiningType::RightJoining,
+        0xd6..=0xdc => JoiningType::Transparent,
+        0xdf..=0xe4 => JoiningType::Transparent,
+        0xe7..=0xe8 => JoiningType::Transparent,
+        0xea..=0xed => JoiningType::Transparent,
+        0xee..=0xef => JoiningType::RightJoining,
+        0xfa..=0xfc => JoiningType::DualJoining,
+        0xff => JoiningType::DualJoining,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p7(b: u8) -> JoiningType {
+    match b {
+        0x0f => JoiningType::Transparent,
+        0x10 => JoiningType::RightJoining,
+        0x11 => JoiningType::Transparent,
+        0x12..=0x14 => JoiningType::DualJoining,
+        0x15..=0x19 => JoiningType::RightJoining,
+        0x1a..=0x1d => JoiningType::DualJoining,
+        0x1e => JoiningType::RightJoining,
+        0x1f..=0x27 => JoiningType::DualJoining,
+        0x28 => JoiningType::RightJoining,
+        0x29 => JoiningType::DualJoining,
+        0x2a => JoiningType::RightJoining,
+        0x2b => JoiningType::DualJoining,
+        0x2c => JoiningType::RightJoining,
+        0x2d..=0x2e => JoiningType::DualJoining,
+        0x2f => JoiningType::RightJoining,
+        0x30..=0x4a => JoiningType::Transparent,
+        0x4d => JoiningType::RightJoining,
+        0x4e..=0x58 => JoiningType::DualJoining,
+        0x59..=0x5b => JoiningType::RightJoining,
+        0x5c..=0x6a => JoiningType::DualJoining,
+        0x6b..=0x6c => JoiningType::RightJoining,
+        0x6d..=0x70 => JoiningType::DualJoining,
+        0x71 => JoiningType::RightJoining,
+        0x72 => JoiningType::DualJoining,
+        0x73..=0x74 => JoiningType::RightJoining,
+        0x75..=0x77 => JoiningType::DualJoining,
+        0x78..=0x79 => JoiningType::RightJoining,
+        0x7a..=0x7f => JoiningType::DualJoining,
+        0xa6..=0xb0 => JoiningType::Transparent,
+        0xca..=0xea => JoiningType::DualJoining,
+        0xeb..=0xf3 => JoiningType::Transparent,
+        0xfa => JoiningType::JoinCausing,
+        0xfd => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p8(b: u8) -> JoiningType {
+    match b {
+        0x16..=0x19 => JoiningType::Transparent,
+        0x1b..=0x23 => JoiningType::Transparent,
+        0x25..=0x27 => JoiningType::Transparent,
+        0x29..=0x2d => JoiningType::Transparent,
+        0x40 => JoiningType::RightJoining,
+        0x41..=0x45 => JoiningType::DualJoining,
+        0x46..=0x47 => JoiningType::RightJoining,
+        0x48 => JoiningType::DualJoining,
+        0x49 => JoiningType::RightJoining,
+        0x4a..=0x53 => JoiningType::DualJoining,
+        0x54 => JoiningType::RightJoining,
+        0x55 => JoiningType::DualJoining,
+        0x56..=0x58 => JoiningType::RightJoining,
+        0x59..=0x5b => JoiningType::Transparent,
+        0x60 => JoiningType::DualJoining,
+        0x62..=0x65 => JoiningType::DualJoining,
+        0x67 => JoiningType::RightJoining,
+        0x68 => JoiningType::DualJoining,
+        0x69..=0x6a => JoiningType::RightJoining,
+        0x70..=0x82 => JoiningType::RightJoining,
+        0x83..=0x85 => JoiningType::JoinCausing,
+        0x86 => JoiningType::DualJoining,
+        0x89..=0x8d => JoiningType::DualJoining,
+        0x8e => JoiningType::RightJoining,
+        0x8f => JoiningType::DualJoining,
+        0x97..=0x9f => JoiningType::Transparent,
+        0xa0..=0xa9 => JoiningType::DualJoining,
+        0xaa..=0xac => JoiningType::RightJoining,
+        0xae => JoiningType::RightJoining,
+        0xaf..=0xb0 => JoiningType::DualJoining,
+        0xb1..=0xb2 => JoiningType::RightJoining,
+        0xb3..=0xb8 => JoiningType::DualJoining,
+        0xb9 => JoiningType::RightJoining,
+        0xba..=0xc8 => JoiningType::DualJoining,
+        0xca..=0xe1 => JoiningType::Transparent,
+        0xe3..=0xff => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p9(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x02 => JoiningType::Transparent,
+        0x3a => JoiningType::Transparent,
+        0x3c => JoiningType::Transparent,
+        0x41..=0x48 => JoiningType::Transparent,
+        0x4d => JoiningType::Transparent,
+        0x51..=0x57 => JoiningType::Transparent,
+        0x62..=0x63 => JoiningType::Transparent,
+        0x81 => JoiningType::Transparent,
+        0xbc => JoiningType::Transparent,
+        0xc1..=0xc4 => JoiningType::Transparent,
+        0xcd => JoiningType::Transparent,
+        0xe2..=0xe3 => JoiningType::Transparent,
+        0xfe => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pa(b: u8) -> JoiningType {
+    match b {
+        0x01..=0x02 => JoiningType::Transparent,
+        0x3c => JoiningType::Transparent,
+        0x41..=0x42 => JoiningType::Transparent,
+        0x47..=0x48 => JoiningType::Transparent,
+        0x4b..=0x4d => JoiningType::Transparent,
+        0x51 => JoiningType::Transparent,
+        0x70..=0x71 => JoiningType::Transparent,
+        0x75 => JoiningType::Transparent,
+        0x81..=0x82 => JoiningType::Transparent,
+        0xbc => JoiningType::Transparent,
+        0xc1..=0xc5 => JoiningType::Transparent,
+        0xc7..=0xc8 => JoiningType::Transparent,
+        0xcd => JoiningType::Transparent,
+        0xe2..=0xe3 => JoiningType::Transparent,
+        0xfa..=0xff => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pb(b: u8) -> JoiningType {
+    match b {
+        0x01 => JoiningType::Transparent,
+        0x3c => JoiningType::Transparent,
+        0x3f => JoiningType::Transparent,
+        0x41..=0x44 => JoiningType::Transparent,
+        0x4d => JoiningType::Transparent,
+        0x55..=0x56 => JoiningType::Transparent,
+        0x62..=0x63 => JoiningType::Transparent,
+        0x82 => JoiningType::Transparent,
+        0xc0 => JoiningType::Transparent,
+        0xcd => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pc(b: u8) -> JoiningType {
+    match b {
+        0x00 => JoiningType::Transparent,
+        0x04 => JoiningType::Transparent,
+        0x3c => JoiningType::Transparent,
+        0x3e..=0x40 => JoiningType::Transparent,
+        0x46..=0x48 => JoiningType::Transparent,
+        0x4a..=0x4d => JoiningType::Transparent,
+        0x55..=0x56 => JoiningType::Transparent,
+        0x62..=0x63 => JoiningType::Transparent,
+        0x81 => JoiningType::Transparent,
+        0xbc => JoiningType::Transparent,
+        0xbf => JoiningType::Transparent,
+        0xc6 => JoiningType::Transparent,
+        0xcc..=0xcd => JoiningType::Transparent,
+        0xe2..=0xe3 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pd(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x01 => JoiningType::Transparent,
+        0x3b..=0x3c => JoiningType::Transparent,
+        0x41..=0x44 => JoiningType::Transparent,
+        0x4d => JoiningType::Transparent,
+        0x62..=0x63 => JoiningType::Transparent,
+        0x81 => JoiningType::Transparent,
+        0xca => JoiningType::Transparent,
+        0xd2..=0xd4 => JoiningType::Transparent,
+        0xd6 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pe(b: u8) -> JoiningType {
+    match b {
+        0x31 => JoiningType::Transparent,
+        0x34..=0x3a => JoiningType::Transparent,
+        0x47..=0x4e => JoiningType::Transparent,
+        0xb1 => JoiningType::Transparent,
+        0xb4..=0xbc => JoiningType::Transparent,
+        0xc8..=0xce => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pf(b: u8) -> JoiningType {
+    match b {
+        0x18..=0x19 => JoiningType::Transparent,
+        0x35 => JoiningType::Transparent,
+        0x37 => JoiningType::Transparent,
+        0x39 => JoiningType::Transparent,
+        0x71..=0x7e => JoiningType::Transparent,
+        0x80..=0x84 => JoiningType::Transparent,
+        0x86..=0x87 => JoiningType::Transparent,
+        0x8d..=0x97 => JoiningType::Transparent,
+        0x99..=0xbc => JoiningType::Transparent,
+        0xc6 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p10(b: u8) -> JoiningType {
+    match b {
+        0x2d..=0x30 => JoiningType::Transparent,
+        0x32..=0x37 => JoiningType::Transparent,
+        0x39..=0x3a => JoiningType::Transparent,
+        0x3d..=0x3e => JoiningType::Transparent,
+        0x58..=0x59 => JoiningType::Transparent,
+        0x5e..=0x60 => JoiningType::Transparent,
+        0x71..=0x74 => JoiningType::Transparent,
+        0x82 => JoiningType::Transparent,
+        0x85..=0x86 => JoiningType::Transparent,
+        0x8d => JoiningType::Transparent,
+        0x9d => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p13(b: u8) -> JoiningType {
+    match b {
+        0x5d..=0x5f => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p17(b: u8) -> JoiningType {
+    match b {
+        0x12..=0x14 => JoiningType::Transparent,
+        0x32..=0x33 => JoiningType::Transparent,
+        0x52..=0x53 => JoiningType::Transparent,
+        0x72..=0x73 => JoiningType::Transparent,
+        0xb4..=0xb5 => JoiningType::Transparent,
+        0xb7..=0xbd => JoiningType::Transparent,
+        0xc6 => JoiningType::Transparent,
+        0xc9..=0xd3 => JoiningType::Transparent,
+        0xdd => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p18(b: u8) -> JoiningType {
+    match b {
+        0x07 => JoiningType::DualJoining,
+        0x0a => JoiningType::JoinCausing,
+        0x0b..=0x0d => JoiningType::Transparent,
+        0x0f => JoiningType::Transparent,
+        0x20..=0x78 => JoiningType::DualJoining,
+        0x85..=0x86 => JoiningType::Transparent,
+        0x87..=0xa8 => JoiningType::DualJoining,
+        0xa9 => JoiningType::Transparent,
+        0xaa => JoiningType::DualJoining,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p19(b: u8) -> JoiningType {
+    match b {
+        0x20..=0x22 => JoiningType::Transparent,
+        0x27..=0x28 => JoiningType::Transparent,
+        0x32 => JoiningType::Transparent,
+        0x39..=0x3b => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p1a(b: u8) -> JoiningType {
+    match b {
+        0x17..=0x18 => JoiningType::Transparent,
+        0x1b => JoiningType::Transparent,
+        0x56 => JoiningType::Transparent,
+        0x58..=0x5e => JoiningType::Transparent,
+        0x60 => JoiningType::Transparent,
+        0x62 => JoiningType::Transparent,
+        0x65..=0x6c => JoiningType::Transparent,
+        0x73..=0x7c => JoiningType::Transparent,
+        0x7f => JoiningType::Transparent,
+        0xb0..=0xdd => JoiningType::Transparent,
+        0xe0..=0xeb => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p1b(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x03 => JoiningType::Transparent,
+        0x34 => JoiningType::Transparent,
+        0x36..=0x3a => JoiningType::Transparent,
+        0x3c => JoiningType::Transparent,
+        0x42 => JoiningType::Transparent,
+        0x6b..=0x73 => JoiningType::Transparent,
+        0x80..=0x81 => JoiningType::Transparent,
+        0xa2..=0xa5 => JoiningType::Transparent,
+        0xa8..=0xa9 => JoiningType::Transparent,
+        0xab..=0xad => JoiningType::Transparent,
+        0xe6 => JoiningType::Transparent,
+        0xe8..=0xe9 => JoiningType::Transparent,
+        0xed => JoiningType::Transparent,
+        0xef..=0xf1 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p1c(b: u8) -> JoiningType {
+    match b {
+        0x2c..=0x33 => JoiningType::Transparent,
+        0x36..=0x37 => JoiningType::Transparent,
+        0xd0..=0xd2 => JoiningType::Transparent,
+        0xd4..=0xe0 => JoiningType::Transparent,
+        0xe2..=0xe8 => JoiningType::Transparent,
+        0xed => JoiningType::Transparent,
+        0xf4 => JoiningType::Transparent,
+        0xf8..=0xf9 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p1d(b: u8) -> JoiningType {
+    match b {
+        0xc0..=0xff => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p20(b: u8) -> JoiningType {
+    match b {
+        0x0b => JoiningType::Transparent,
+        0x0d => JoiningType::JoinCausing,
+        0x0e..=0x0f => JoiningType::Transparent,
+        0x2a..=0x2e => JoiningType::Transparent,
+        0x60..=0x64 => JoiningType::Transparent,
+        0x6a..=0x6f => JoiningType::Transparent,
+        0xd0..=0xf0 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p2c(b: u8) -> JoiningType {
+    match b {
+        0xef..=0xf1 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p2d(b: u8) -> JoiningType {
+    match b {
+        0x7f => JoiningType::Transparent,
+        0xe0..=0xff => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_p30(b: u8) -> JoiningType {
+    match b {
+        0x2a..=0x2d => JoiningType::Transparent,
+        0x99..=0x9a => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pa6(b: u8) -> JoiningType {
+    match b {
+        0x6f..=0x72 => JoiningType::Transparent,
+        0x74..=0x7d => JoiningType::Transparent,
+        0x9e..=0x9f => JoiningType::Transparent,
+        0xf0..=0xf1 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pa8(b: u8) -> JoiningType {
+    match b {
+        0x02 => JoiningType::Transparent,
+        0x06 => JoiningType::Transparent,
+        0x0b => JoiningType::Transparent,
+        0x25..=0x26 => JoiningType::Transparent,
+        0x2c => JoiningType::Transparent,
+        0x40..=0x71 => JoiningType::DualJoining,
+        0x72 => JoiningType::LeftJoining,
+        0xc4..=0xc5 => JoiningType::Transparent,
+        0xe0..=0xf1 => JoiningType::Transparent,
+        0xff => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pa9(b: u8) -> JoiningType {
+    match b {
+        0x26..=0x2d => JoiningType::Transparent,
+        0x47..=0x51 => JoiningType::Transparent,
+        0x80..=0x82 => JoiningType::Transparent,
+        0xb3 => JoiningType::Transparent,
+        0xb6..=0xb9 => JoiningType::Transparent,
+        0xbc..=0xbd => JoiningType::Transparent,
+        0xe5 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_paa(b: u8) -> JoiningType {
+    match b {
+        0x29..=0x2e => JoiningType::Transparent,
+        0x31..=0x32 => JoiningType::Transparent,
+        0x35..=0x36 => JoiningType::Transparent,
+        0x43 => JoiningType::Transparent,
+        0x4c => JoiningType::Transparent,
+        0x7c => JoiningType::Transparent,
+        0xb0 => JoiningType::Transparent,
+        0xb2..=0xb4 => JoiningType::Transparent,
+        0xb7..=0xb8 => JoiningType::Transparent,
+        0xbe..=0xbf => JoiningType::Transparent,
+        0xc1 => JoiningType::Transparent,
+        0xec..=0xed => JoiningType::Transparent,
+        0xf6 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pab(b: u8) -> JoiningType {
+    match b {
+        0xe5 => JoiningType::Transparent,
+        0xe8 => JoiningType::Transparent,
+        0xed => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pfb(b: u8) -> JoiningType {
+    match b {
+        0x1e => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pfe(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x0f => JoiningType::Transparent,
+        0x20..=0x2f => JoiningType::Transparent,
+        0xff => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn jt_pff(b: u8) -> JoiningType {
+    match b {
+        0xf9..=0xfb => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p101(b: u8) -> JoiningType {
+    match b {
+        0xfd => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p102(b: u8) -> JoiningType {
+    match b {
+        0xe0 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p103(b: u8) -> JoiningType {
+    match b {
+        0x76..=0x7a => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p10a(b: u8) -> JoiningType {
+    match b {
+        0x01..=0x03 => JoiningType::Transparent,
+        0x05..=0x06 => JoiningType::Transparent,
+        0x0c..=0x0f => JoiningType::Transparent,
+        0x38..=0x3a => JoiningType::Transparent,
+        0x3f => JoiningType::Transparent,
+        0xc0..=0xc4 => JoiningType::DualJoining,
+        0xc5 => JoiningType::RightJoining,
+        0xc7 => JoiningType::RightJoining,
+        0xc9..=0xca => JoiningType::RightJoining,
+        0xcd => JoiningType::LeftJoining,
+        0xce..=0xd2 => JoiningType::RightJoining,
+        0xd3..=0xd6 => JoiningType::DualJoining,
+        0xd7 => JoiningType::LeftJoining,
+        0xd8..=0xdc => JoiningType::DualJoining,
+        0xdd => JoiningType::RightJoining,
+        0xde..=0xe0 => JoiningType::DualJoining,
+        0xe1 => JoiningType::RightJoining,
+        0xe4 => JoiningType::RightJoining,
+        0xe5..=0xe6 => JoiningType::Transparent,
+        0xeb..=0xee => JoiningType::DualJoining,
+        0xef => JoiningType::RightJoining,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p10b(b: u8) -> JoiningType {
+    match b {
+        0x80 => JoiningType::DualJoining,
+        0x81 => JoiningType::RightJoining,
+        0x82 => JoiningType::DualJoining,
+        0x83..=0x85 => JoiningType::RightJoining,
+        0x86..=0x88 => JoiningType::DualJoining,
+        0x89 => JoiningType::RightJoining,
+        0x8a..=0x8b => JoiningType::DualJoining,
+        0x8c => JoiningType::RightJoining,
+        0x8d => JoiningType::DualJoining,
+        0x8e..=0x8f => JoiningType::RightJoining,
+        0x90 => JoiningType::DualJoining,
+        0x91 => JoiningType::RightJoining,
+        0xa9..=0xac => JoiningType::RightJoining,
+        0xad..=0xae => JoiningType::DualJoining,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p10d(b: u8) -> JoiningType {
+    match b {
+        0x00 => JoiningType::LeftJoining,
+        0x01..=0x21 => JoiningType::DualJoining,
+        0x22 => JoiningType::RightJoining,
+        0x23 => JoiningType::DualJoining,
+        0x24..=0x27 => JoiningType::Transparent,
+        0x69..=0x6d => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p10e(b: u8) -> JoiningType {
+    match b {
+        0xab..=0xac => JoiningType::Transparent,
+        0xc2 => JoiningType::RightJoining,
+        0xc3..=0xc4 => JoiningType::DualJoining,
+        0xc6..=0xc7 => JoiningType::DualJoining,
+        0xfa..=0xff => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p10f(b: u8) -> JoiningType {
+    match b {
+        0x30..=0x32 => JoiningType::DualJoining,
+        0x33 => JoiningType::RightJoining,
+        0x34..=0x44 => JoiningType::DualJoining,
+        0x46..=0x50 => JoiningType::Transparent,
+        0x51..=0x53 => JoiningType::DualJoining,
+        0x54 => JoiningType::RightJoining,
+        0x70..=0x73 => JoiningType::DualJoining,
+        0x74..=0x75 => JoiningType::RightJoining,
+        0x76..=0x81 => JoiningType::DualJoining,
+        0x82..=0x85 => JoiningType::Transparent,
+        0xb0 => JoiningType::DualJoining,
+        0xb2..=0xb3 => JoiningType::DualJoining,
+        0xb4..=0xb6 => JoiningType::RightJoining,
+        0xb8 => JoiningType::DualJoining,
+        0xb9..=0xba => JoiningType::RightJoining,
+        0xbb..=0xbc => JoiningType::DualJoining,
+        0xbd => JoiningType::RightJoining,
+        0xbe..=0xbf => JoiningType::DualJoining,
+        0xc1 => JoiningType::DualJoining,
+        0xc2..=0xc3 => JoiningType::RightJoining,
+        0xc4 => JoiningType::DualJoining,
+        0xc9 => JoiningType::RightJoining,
+        0xca => JoiningType::DualJoining,
+        0xcb => JoiningType::LeftJoining,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p110(b: u8) -> JoiningType {
+    match b {
+        0x01 => JoiningType::Transparent,
+        0x38..=0x46 => JoiningType::Transparent,
+        0x70 => JoiningType::Transparent,
+        0x73..=0x74 => JoiningType::Transparent,
+        0x7f..=0x81 => JoiningType::Transparent,
+        0xb3..=0xb6 => JoiningType::Transparent,
+        0xb9..=0xba => JoiningType::Transparent,
+        0xc2 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p111(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x02 => JoiningType::Transparent,
+        0x27..=0x2b => JoiningType::Transparent,
+        0x2d..=0x34 => JoiningType::Transparent,
+        0x73 => JoiningType::Transparent,
+        0x80..=0x81 => JoiningType::Transparent,
+        0xb6..=0xbe => JoiningType::Transparent,
+        0xc9..=0xcc => JoiningType::Transparent,
+        0xcf => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p112(b: u8) -> JoiningType {
+    match b {
+        0x2f..=0x31 => JoiningType::Transparent,
+        0x34 => JoiningType::Transparent,
+        0x36..=0x37 => JoiningType::Transparent,
+        0x3e => JoiningType::Transparent,
+        0x41 => JoiningType::Transparent,
+        0xdf => JoiningType::Transparent,
+        0xe3..=0xea => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p113(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x01 => JoiningType::Transparent,
+        0x3b..=0x3c => JoiningType::Transparent,
+        0x40 => JoiningType::Transparent,
+        0x66..=0x6c => JoiningType::Transparent,
+        0x70..=0x74 => JoiningType::Transparent,
+        0xbb..=0xc0 => JoiningType::Transparent,
+        0xce => JoiningType::Transparent,
+        0xd0 => JoiningType::Transparent,
+        0xd2 => JoiningType::Transparent,
+        0xe1..=0xe2 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p114(b: u8) -> JoiningType {
+    match b {
+        0x38..=0x3f => JoiningType::Transparent,
+        0x42..=0x44 => JoiningType::Transparent,
+        0x46 => JoiningType::Transparent,
+        0x5e => JoiningType::Transparent,
+        0xb3..=0xb8 => JoiningType::Transparent,
+        0xba => JoiningType::Transparent,
+        0xbf..=0xc0 => JoiningType::Transparent,
+        0xc2..=0xc3 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p115(b: u8) -> JoiningType {
+    match b {
+        0xb2..=0xb5 => JoiningType::Transparent,
+        0xbc..=0xbd => JoiningType::Transparent,
+        0xbf..=0xc0 => JoiningType::Transparent,
+        0xdc..=0xdd => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p116(b: u8) -> JoiningType {
+    match b {
+        0x33..=0x3a => JoiningType::Transparent,
+        0x3d => JoiningType::Transparent,
+        0x3f..=0x40 => JoiningType::Transparent,
+        0xab => JoiningType::Transparent,
+        0xad => JoiningType::Transparent,
+        0xb0..=0xb5 => JoiningType::Transparent,
+        0xb7 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p117(b: u8) -> JoiningType {
+    match b {
+        0x1d => JoiningType::Transparent,
+        0x1f => JoiningType::Transparent,
+        0x22..=0x25 => JoiningType::Transparent,
+        0x27..=0x2b => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p118(b: u8) -> JoiningType {
+    match b {
+        0x2f..=0x37 => JoiningType::Transparent,
+        0x39..=0x3a => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p119(b: u8) -> JoiningType {
+    match b {
+        0x3b..=0x3c => JoiningType::Transparent,
+        0x3e => JoiningType::Transparent,
+        0x43 => JoiningType::Transparent,
+        0xd4..=0xd7 => JoiningType::Transparent,
+        0xda..=0xdb => JoiningType::Transparent,
+        0xe0 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p11a(b: u8) -> JoiningType {
+    match b {
+        0x01..=0x0a => JoiningType::Transparent,
+        0x33..=0x38 => JoiningType::Transparent,
+        0x3b..=0x3e => JoiningType::Transparent,
+        0x47 => JoiningType::Transparent,
+        0x51..=0x56 => JoiningType::Transparent,
+        0x59..=0x5b => JoiningType::Transparent,
+        0x8a..=0x96 => JoiningType::Transparent,
+        0x98..=0x99 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p11b(b: u8) -> JoiningType {
+    match b {
+        0x60 => JoiningType::Transparent,
+        0x62..=0x64 => JoiningType::Transparent,
+        0x66 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p11c(b: u8) -> JoiningType {
+    match b {
+        0x30..=0x36 => JoiningType::Transparent,
+        0x38..=0x3d => JoiningType::Transparent,
+        0x3f => JoiningType::Transparent,
+        0x92..=0xa7 => JoiningType::Transparent,
+        0xaa..=0xb0 => JoiningType::Transparent,
+        0xb2..=0xb3 => JoiningType::Transparent,
+        0xb5..=0xb6 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p11d(b: u8) -> JoiningType {
+    match b {
+        0x31..=0x36 => JoiningType::Transparent,
+        0x3a => JoiningType::Transparent,
+        0x3c..=0x3d => JoiningType::Transparent,
+        0x3f..=0x45 => JoiningType::Transparent,
+        0x47 => JoiningType::Transparent,
+        0x90..=0x91 => JoiningType::Transparent,
+        0x95 => JoiningType::Transparent,
+        0x97 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p11e(b: u8) -> JoiningType {
+    match b {
+        0xf3..=0xf4 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p11f(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x01 => JoiningType::Transparent,
+        0x36..=0x3a => JoiningType::Transparent,
+        0x40 => JoiningType::Transparent,
+        0x42 => JoiningType::Transparent,
+        0x5a => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p134(b: u8) -> JoiningType {
+    match b {
+        0x30..=0x40 => JoiningType::Transparent,
+        0x47..=0x55 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p161(b: u8) -> JoiningType {
+    match b {
+        0x1e..=0x29 => JoiningType::Transparent,
+        0x2d..=0x2f => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p16a(b: u8) -> JoiningType {
+    match b {
+        0xf0..=0xf4 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p16b(b: u8) -> JoiningType {
+    match b {
+        0x30..=0x36 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p16f(b: u8) -> JoiningType {
+    match b {
+        0x4f => JoiningType::Transparent,
+        0x8f..=0x92 => JoiningType::Transparent,
+        0xe4 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1bc(b: u8) -> JoiningType {
+    match b {
+        0x9d..=0x9e => JoiningType::Transparent,
+        0xa0..=0xa3 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1cf(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x2d => JoiningType::Transparent,
+        0x30..=0x46 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1d1(b: u8) -> JoiningType {
+    match b {
+        0x67..=0x69 => JoiningType::Transparent,
+        0x73..=0x82 => JoiningType::Transparent,
+        0x85..=0x8b => JoiningType::Transparent,
+        0xaa..=0xad => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1d2(b: u8) -> JoiningType {
+    match b {
+        0x42..=0x44 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1da(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x36 => JoiningType::Transparent,
+        0x3b..=0x6c => JoiningType::Transparent,
+        0x75 => JoiningType::Transparent,
+        0x84 => JoiningType::Transparent,
+        0x9b..=0x9f => JoiningType::Transparent,
+        0xa1..=0xaf => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1e0(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x06 => JoiningType::Transparent,
+        0x08..=0x18 => JoiningType::Transparent,
+        0x1b..=0x21 => JoiningType::Transparent,
+        0x23..=0x24 => JoiningType::Transparent,
+        0x26..=0x2a => JoiningType::Transparent,
+        0x8f => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1e1(b: u8) -> JoiningType {
+    match b {
+        0x30..=0x36 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1e2(b: u8) -> JoiningType {
+    match b {
+        0xae => JoiningType::Transparent,
+        0xec..=0xef => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1e4(b: u8) -> JoiningType {
+    match b {
+        0xec..=0xef => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1e5(b: u8) -> JoiningType {
+    match b {
+        0xee..=0xef => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1e6(b: u8) -> JoiningType {
+    match b {
+        0xe3 => JoiningType::Transparent,
+        0xe6 => JoiningType::Transparent,
+        0xee..=0xef => JoiningType::Transparent,
+        0xf5 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1e8(b: u8) -> JoiningType {
+    match b {
+        0xd0..=0xd6 => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_p1e9(b: u8) -> JoiningType {
+    match b {
+        0x00..=0x43 => JoiningType::DualJoining,
+        0x44..=0x4b => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_pe00(b: u8) -> JoiningType {
+    match b {
+        0x01 => JoiningType::Transparent,
+        0x20..=0x7f => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn jt_pe01(b: u8) -> JoiningType {
+    match b {
+        0x00..=0xef => JoiningType::Transparent,
+        _ => JoiningType::NonJoining,
+    }
+}

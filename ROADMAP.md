@@ -61,11 +61,12 @@ conformance corpus. Highest value, lowest risk — do these next.
   **titlecasing** (now unblocked by word segmentation); `Changes_When_*`
   predicates.
 - 🟡 **More properties** (incremental, cheap): ✅ `Age` (`DerivedAge.txt`),
-  ✅ `Block` (`Blocks.txt`), ✅ Bidi_Class accessor (`bidi_class`),
-  ✅ `Default_Ignorable_Code_Point` / `Math` / `Dash` / `Diacritic` /
-  `Hex_Digit` / `White_Space` / `Quotation_Mark` / `Join_Control`. Still:
-  Joining_Type/Group, Indic positional/syllabic, character `Name` ↔ codepoint,
-  Hangul syllable name. Optional `name` lookup is large (perfect-hash or trie).
+  ✅ `Block` (`Blocks.txt`), ✅ `Joining_Type` (`DerivedJoiningType.txt`),
+  ✅ Bidi_Class accessor (`bidi_class`), ✅ `Default_Ignorable_Code_Point` /
+  `Math` / `Dash` / `Diacritic` / `Hex_Digit` / `White_Space` /
+  `Quotation_Mark` / `Join_Control`. Still: Joining_Group, Indic positional/
+  syllabic, character `Name` ↔ codepoint, Hangul syllable name. Optional `name`
+  lookup is large (perfect-hash or trie).
 
 ---
 

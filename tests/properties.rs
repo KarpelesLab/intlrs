@@ -31,3 +31,15 @@ fn supplementary() {
     assert_eq!(block('\u{E0000}'), "Tags");
     assert_eq!(age('\u{1F600}'), Some((6, 1)));
 }
+
+#[cfg(feature = "bmp")]
+#[test]
+fn joining_types() {
+    use intl::unicode::{joining_type, JoiningType::*};
+    assert_eq!(joining_type('\u{0628}'), DualJoining); // ARABIC BEH
+    assert_eq!(joining_type('\u{0627}'), RightJoining); // ARABIC ALEF
+    assert_eq!(joining_type('\u{0640}'), JoinCausing); // ARABIC TATWEEL
+    assert_eq!(joining_type('\u{0610}'), Transparent); // ARABIC SIGN (combining)
+    assert_eq!(joining_type('A'), NonJoining);
+    assert_eq!(joining_type(' '), NonJoining);
+}

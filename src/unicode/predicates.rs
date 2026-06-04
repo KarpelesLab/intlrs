@@ -13,6 +13,7 @@
 use super::category::GeneralCategory;
 use super::generated::binary_props;
 use super::generated::general_category::general_category as gc_raw;
+pub use super::generated::properties::JoiningType;
 
 /// The [`GeneralCategory`] of `c`.
 #[inline]
@@ -173,6 +174,21 @@ pub const fn age(c: char) -> Option<(u8, u8)> {
 #[must_use]
 pub const fn block(c: char) -> &'static str {
     crate::unicode::generated::properties::block(c as u32)
+}
+
+/// The `Joining_Type` of `c` (Arabic/Syriac cursive joining behavior, UAX #9).
+///
+/// ```
+/// use intl::unicode::{joining_type, JoiningType};
+/// assert_eq!(joining_type('\u{0628}'), JoiningType::DualJoining);  // ARABIC BEH
+/// assert_eq!(joining_type('\u{0627}'), JoiningType::RightJoining); // ARABIC ALEF
+/// assert_eq!(joining_type('\u{0640}'), JoiningType::JoinCausing);  // TATWEEL
+/// assert_eq!(joining_type('A'), JoiningType::NonJoining);
+/// ```
+#[inline]
+#[must_use]
+pub const fn joining_type(c: char) -> JoiningType {
+    crate::unicode::generated::properties::joining_type(c as u32)
 }
 
 /// `Dash` property (dash punctuation and dash symbols).
