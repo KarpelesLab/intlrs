@@ -782,6 +782,7 @@ fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
 /// Emit a `value enum` + paged lookup for a simple single-token ranged UCD
 /// property file whose `@missing` default is `default_name`. Index 0 is the
 /// default; the remaining values are the sorted distinct names (PascalCased).
+#[allow(clippy::too_many_arguments)]
 fn emit_value_enum(
     out: &mut String,
     ucd: &Path,
