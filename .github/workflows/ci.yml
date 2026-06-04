@@ -106,8 +106,8 @@ jobs:
       - name: Regenerate and diff
         run: |
           cargo run --manifest-path codegen/Cargo.toml
-          git diff --exit-code -- src/unicode/generated \
-            || { echo "::error::src/unicode/generated is stale; run 'cargo run --manifest-path codegen/Cargo.toml'"; exit 1; }
+          git diff --exit-code -- src/unicode/generated src/cldr \
+            || { echo "::error::generated tables are stale; run 'cargo run --manifest-path codegen/Cargo.toml'"; exit 1; }
 
   conformance:
     name: UCA collation conformance

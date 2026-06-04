@@ -36,3 +36,15 @@ fn unknown_locale_falls_back() {
     assert_eq!(dec("xx", 1234.5), dec("en", 1234.5));
     assert_eq!(dec("en-US", 1234.5), "1,234.5"); // region falls back to language
 }
+
+#[test]
+fn currency() {
+    use intl::number::format_currency as fc;
+    assert_eq!(fc("en", 1234.5, "USD"), "$1,234.50");
+    assert_eq!(fc("de", 1234.5, "EUR"), "1.234,50\u{a0}€");
+    assert_eq!(fc("ja", 1234.0, "JPY"), "￥1,234"); // 0 fraction digits
+    assert_eq!(fc("en", -5.0, "USD"), "-$5.00");
+    // Unknown locale falls back; unknown currency uses its code as the symbol.
+    assert_eq!(fc("xx", 5.0, "USD"), "$5.00");
+    assert!(fc("en", 5.0, "XYZ").contains("XYZ"));
+}

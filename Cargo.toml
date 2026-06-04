@@ -9,9 +9,9 @@ license = "MIT"
 readme = "README.md"
 keywords = ["intl", "unicode", "no_std", "i18n", "ucd"]
 categories = ["no-std", "internationalization", "text-processing"]
-# Only ship generated Rust + sources; the multi-MB vendored UCD text files and the
-# codegen tool are excluded from the published crate.
-include = ["src/**/*.rs", "Cargo.toml", "README.md", "LICENSE"]
+# Only ship generated Rust + the embedded CLDR `.bin` tables + sources; the
+# multi-MB vendored UCD/CLDR data and the codegen tool are excluded.
+include = ["src/**/*.rs", "src/cldr/*.bin", "Cargo.toml", "README.md", "LICENSE"]
 
 [features]
 # Coarse, nested codepoint-range tiers. Selecting a tier compiles it and every

@@ -11,6 +11,8 @@
 
 use alloc::string::{String, ToString};
 
+pub use crate::cldr::{ListPatterns, ListSpec};
+
 /// Whether a list is conjunctive ("and") or disjunctive ("or").
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ListStyle {
@@ -18,28 +20,6 @@ pub enum ListStyle {
     And,
     /// Disjunction — "a, b, or c".
     Or,
-}
-
-/// The four CLDR list connector patterns (each contains `{0}` and `{1}`).
-#[derive(Debug, Clone, Copy)]
-pub struct ListPatterns {
-    /// Joins the first two items of a 3+ list.
-    pub start: &'static str,
-    /// Joins an accumulated head with the next middle item.
-    pub middle: &'static str,
-    /// Joins the accumulated head with the final item.
-    pub end: &'static str,
-    /// Joins exactly two items.
-    pub two: &'static str,
-}
-
-/// The list patterns for one locale (both styles).
-#[derive(Debug, Clone, Copy)]
-pub struct ListSpec {
-    /// Conjunction ("and") patterns.
-    pub and: ListPatterns,
-    /// Disjunction ("or") patterns.
-    pub or: ListPatterns,
 }
 
 /// Substitute `{0}`→`a` and `{1}`→`b` in a connector pattern (single pass).
@@ -63,7 +43,7 @@ fn fmt2(pat: &str, a: &str, b: &str) -> String {
 }
 
 fn spec(lang: &str) -> ListSpec {
-    use crate::unicode::generated::lists::list_spec;
+    use crate::cldr::list_spec;
     let norm: String = lang
         .chars()
         .map(|c| {

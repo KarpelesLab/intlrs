@@ -260,38 +260,19 @@ fn main() {
         &root.join("data/cldr/48/ordinals.json"),
     );
 
-    // ---- CLDR number formats (UTS #35) ----
-    emit_numbers(
-        &out_dir,
-        &mut modules,
-        &root.join("data/cldr/48/numbers.json"),
-    );
-
-    // ---- CLDR list formats (UTS #35) ----
-    emit_lists(
-        &out_dir,
-        &mut modules,
-        &root.join("data/cldr/48/lists.json"),
-    );
-
-    // ---- CLDR relative-time formats (UTS #35) ----
-    emit_relative(
-        &out_dir,
-        &mut modules,
-        &root.join("data/cldr/48/relative.json"),
-    );
+    // ---- CLDR locale formatter tables -> committed binary blobs (no_std). ----
+    let cldr_dir = root.join("src/cldr");
+    let cldr = root.join("data/cldr/48");
+    emit_numbers(&cldr_dir, &cldr.join("numbers.json"));
+    emit_lists(&cldr_dir, &cldr.join("lists.json"));
+    emit_relative(&cldr_dir, &cldr.join("relative.json"));
+    emit_currency(&cldr_dir, &cldr.join("currency.json"));
 
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
     write_header(&mut mod_out);
-    // These tables reference runtime types that only exist under `alloc`, so
-    // their generated modules must be gated to match.
-    let alloc_only = ["numbers", "lists", "relative"];
     for m in &modules {
-        if alloc_only.contains(&m.as_str()) {
-            mod_out.push_str("#[cfg(feature = \"alloc\")]\n");
-        }
         let _ = write!(mod_out, "pub(crate) mod {m};\n");
     }
     fs::write(out_dir.join("mod.rs"), &mod_out).expect("write generated/mod.rs");
@@ -1465,139 +1446,139 @@ fn emit_plural_fn(out: &mut String, path: &Path, section: &str, fn_name: &str, k
     out.push_str("        _ => None,\n    }\n}\n\n");
 }
 
-/// Emit `generated/numbers.rs`: per-locale CLDR number symbols and the resolved
-/// standard decimal / percent patterns.
-fn emit_numbers(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
+/// Write `cldr/numbers.bin`: per-locale symbols + decimal/percent patterns.
+fn emit_numbers(cldr_dir: &Path, path: &Path) {
     let text = fs::read_to_string(path).expect("read numbers.json");
     let json = json_parse(&text);
-    let locales = json.get("locales").expect("locales");
-
-    let mut out = String::new();
-    write_header(&mut out);
-    out.push_str(
-        "use crate::number::{NumberSpec, Pattern};\n\n\
-         /// CLDR number spec for an exact (lowercased) locale key, or `None`.\n\
-         pub(crate) fn number_spec(lang: &str) -> Option<NumberSpec> {\n    Some(match lang {\n",
-    );
-    for (lang, n) in locales.entries() {
+    let mut records = Vec::new();
+    for (lang, n) in json.get("locales").expect("locales").entries() {
         let s = |k: &str| n.get(k).and_then(Json::as_str).unwrap_or("");
-        let (decimal, group) = (s("decimal"), s("group"));
-        let (minus, plus, percent) = (s("minus"), s("plus"), s("percent"));
-        let dec = parse_number_pattern(s("decimalPattern"), percent);
-        let pct = parse_number_pattern(s("percentPattern"), percent);
-        let _ = write!(
-            out,
-            "        {:?} => NumberSpec {{ decimal: {decimal:?}, group: {group:?}, minus: {minus:?}, plus: {plus:?}, percent: {percent:?}, dec: {dec}, pct: {pct} }},\n",
-            lang.to_ascii_lowercase()
-        );
+        let percent = s("percent");
+        let mut p = Vec::new();
+        for sym in [s("decimal"), s("group"), s("minus"), s("plus"), percent] {
+            enc_str(&mut p, sym);
+        }
+        enc_pattern(&mut p, &parse_number_pattern(s("decimalPattern"), percent));
+        enc_pattern(&mut p, &parse_number_pattern(s("percentPattern"), percent));
+        records.push((lang.to_ascii_lowercase(), p));
     }
-    out.push_str("        _ => return None,\n    })\n}\n");
-    write_module(out_dir, modules, "numbers", &out);
+    write_blob(cldr_dir, "numbers", &records);
 }
 
-/// Emit `generated/relative.rs`: per-locale CLDR relative-time strings.
-fn emit_relative(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
+/// Write `cldr/lists.bin`: per-locale list connector patterns (and / or).
+fn emit_lists(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read lists.json");
+    let json = json_parse(&text);
+    let mut records = Vec::new();
+    for (lang, spec) in json.get("locales").expect("locales").entries() {
+        let mut p = Vec::new();
+        for style in ["and", "or"] {
+            let st = spec.get(style).expect("style");
+            for k in ["start", "middle", "end", "two"] {
+                enc_str(&mut p, st.get(k).and_then(Json::as_str).unwrap_or(""));
+            }
+        }
+        records.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "lists", &records);
+}
+
+/// Write `cldr/relative.bin`: per-locale relative-time strings (7 units).
+fn emit_relative(cldr_dir: &Path, path: &Path) {
     let text = fs::read_to_string(path).expect("read relative.json");
     let json = json_parse(&text);
-    let locales = json.get("locales").expect("locales");
     let units = ["year", "month", "week", "day", "hour", "minute", "second"];
-    // Plural-count name -> PluralCategory index.
     let cat_index = |name: &str| match name {
         "zero" => 0,
         "one" => 1,
         "two" => 2,
         "few" => 3,
         "many" => 4,
-        _ => 5, // other
+        _ => 5,
     };
-    let opt = |v: Option<&str>| match v {
-        Some(s) => format!("Some({s:?})"),
-        None => "None".to_string(),
-    };
-    let tense_arr = |field: &Json, key: &str| {
-        let mut arr: [Option<String>; 6] = Default::default();
-        if let Some(obj) = field.get(key) {
-            for (count, pat) in obj.entries() {
-                if let Some(p) = pat.as_str() {
-                    arr[cat_index(count)] = Some(p.to_string());
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let mut p = Vec::new();
+        for u in units {
+            let f = loc.get(u).expect("unit");
+            enc_opt(&mut p, f.get("prev").and_then(Json::as_str));
+            enc_opt(&mut p, f.get("cur").and_then(Json::as_str));
+            enc_opt(&mut p, f.get("next").and_then(Json::as_str));
+            for tense in ["past", "future"] {
+                let mut arr: [Option<&str>; 6] = [None; 6];
+                if let Some(obj) = f.get(tense) {
+                    for (count, pat) in obj.entries() {
+                        if let Some(s) = pat.as_str() {
+                            arr[cat_index(count)] = Some(s);
+                        }
+                    }
+                }
+                for slot in arr {
+                    enc_opt(&mut p, slot);
                 }
             }
         }
-        let cells: Vec<String> = arr.iter().map(|c| opt(c.as_deref())).collect();
-        format!("[{}]", cells.join(", "))
-    };
-
-    let mut out = String::new();
-    write_header(&mut out);
-    out.push_str(
-        "use crate::relative::{RelUnit, RelativeSpec};\n\n\
-         /// CLDR relative-time spec for an exact (lowercased) locale key, or `None`.\n\
-         pub(crate) fn relative_spec(lang: &str) -> Option<RelativeSpec> {\n    Some(match lang {\n",
-    );
-    for (lang, loc) in locales.entries() {
-        let mut unit_lits = Vec::new();
-        for u in units {
-            let f = loc.get(u).expect("unit");
-            let prev = opt(f.get("prev").and_then(Json::as_str));
-            let cur = opt(f.get("cur").and_then(Json::as_str));
-            let next = opt(f.get("next").and_then(Json::as_str));
-            unit_lits.push(format!(
-                "RelUnit {{ prev: {prev}, cur: {cur}, next: {next}, past: {}, future: {} }}",
-                tense_arr(f, "past"),
-                tense_arr(f, "future"),
-            ));
-        }
-        let _ = write!(
-            out,
-            "        {:?} => RelativeSpec {{ units: [{}] }},\n",
-            lang.to_ascii_lowercase(),
-            unit_lits.join(", "),
-        );
+        records.push((lang.to_ascii_lowercase(), p));
     }
-    out.push_str("        _ => return None,\n    })\n}\n");
-    write_module(out_dir, modules, "relative", &out);
+    write_blob(cldr_dir, "relative", &records);
 }
 
-/// Emit `generated/lists.rs`: per-locale CLDR list connector patterns.
-fn emit_lists(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
-    let text = fs::read_to_string(path).expect("read lists.json");
+/// Write `cldr/currency.bin` (per-locale pattern + symbols) and
+/// `cldr/currency_digits.bin` (per-currency fraction digits).
+fn emit_currency(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read currency.json");
     let json = json_parse(&text);
-    let locales = json.get("locales").expect("locales");
-
-    let pats = |style: &Json| {
-        let g = |k: &str| style.get(k).and_then(Json::as_str).unwrap_or("");
-        format!(
-            "ListPatterns {{ start: {:?}, middle: {:?}, end: {:?}, two: {:?} }}",
-            g("start"),
-            g("middle"),
-            g("end"),
-            g("two"),
-        )
-    };
-
-    let mut out = String::new();
-    write_header(&mut out);
-    out.push_str(
-        "use crate::list::{ListPatterns, ListSpec};\n\n\
-         /// CLDR list patterns for an exact (lowercased) locale key, or `None`.\n\
-         pub(crate) fn list_spec(lang: &str) -> Option<ListSpec> {\n    Some(match lang {\n",
-    );
-    for (lang, spec) in locales.entries() {
-        let and = pats(spec.get("and").expect("and"));
-        let or = pats(spec.get("or").expect("or"));
-        let _ = write!(
-            out,
-            "        {:?} => ListSpec {{ and: {and}, or: {or} }},\n",
-            lang.to_ascii_lowercase()
-        );
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let mut p = Vec::new();
+        let pat = loc.get("pattern").and_then(Json::as_str).unwrap_or("");
+        enc_pattern(&mut p, &parse_number_pattern(pat, ""));
+        let syms = loc.get("symbols").expect("symbols");
+        p.push(syms.entries().len() as u8);
+        for (code, sym) in syms.entries() {
+            enc_str(&mut p, code);
+            enc_str(&mut p, sym.as_str().unwrap_or(code));
+        }
+        records.push((lang.to_ascii_lowercase(), p));
     }
-    out.push_str("        _ => return None,\n    })\n}\n");
-    write_module(out_dir, modules, "lists", &out);
+    write_blob(cldr_dir, "currency", &records);
+
+    // Per-currency fraction digits (bare JSON numbers parse as `Other`, so read
+    // them directly from the source). Key = code, payload = one byte.
+    let mut digit_records = Vec::new();
+    for (code, _) in json.get("digits").expect("digits").entries() {
+        digit_records.push((code.clone(), vec![digit_value(&text, code)]));
+    }
+    write_blob(cldr_dir, "currency_digits", &digit_records);
+}
+
+/// Pull the integer value of `"CODE":N` out of the digits object of the raw
+/// currency JSON (the minimal JSON parser collapses bare numbers to `Other`).
+fn digit_value(raw: &str, code: &str) -> u8 {
+    let digits_start = raw.rfind("\"digits\"").map_or(0, |i| i);
+    let key = format!("\"{code}\":");
+    if let Some(p) = raw[digits_start..].find(&key) {
+        let after = raw[digits_start + p + key.len()..].trim_start();
+        let num: String = after.chars().take_while(|c| c.is_ascii_digit()).collect();
+        return num.parse().unwrap_or(2);
+    }
+    2
 }
 
 /// Parse a CLDR number pattern (e.g. `#,##0.###`, `#,##0 %`) into a Rust
 /// `Pattern { ... }` literal. `%` in the affixes is replaced by `percent_sym`.
-fn parse_number_pattern(pat: &str, percent_sym: &str) -> String {
+/// The parsed fields of a CLDR number pattern.
+struct PatFields {
+    prefix: String,
+    suffix: String,
+    min_int: u8,
+    min_frac: u8,
+    max_frac: u8,
+    primary: u8,
+    secondary: u8,
+}
+
+fn parse_number_pattern(pat: &str, percent_sym: &str) -> PatFields {
     let pat = pat.split(';').next().unwrap_or(pat); // positive subpattern only
     let is_core = |c: char| matches!(c, '#' | '0' | '.' | ',');
     let first = pat.find(is_core).unwrap_or(0);
@@ -1630,9 +1611,56 @@ fn parse_number_pattern(pat: &str, percent_sym: &str) -> String {
         .chars()
         .filter(|&c| matches!(c, '0' | '#'))
         .count() as u8;
-    format!(
-        "Pattern {{ prefix: {prefix:?}, suffix: {suffix:?}, min_int: {min_int}, min_frac: {min_frac}, max_frac: {max_frac}, primary_group: {primary}, secondary_group: {secondary} }}"
-    )
+    PatFields {
+        prefix,
+        suffix,
+        min_int,
+        min_frac,
+        max_frac,
+        primary,
+        secondary,
+    }
+}
+
+// ---- Binary blob encoding for the locale formatter tables (psl2 style). ----
+//
+// Each table is a flat `.bin` committed under `src/cldr/` and `include_bytes!`d
+// by the `no_std` `crate::cldr` module, so the data has no dependency on the
+// (alloc-only) formatter runtime types. Layout:
+//   [u16 LE: record count]
+//   record × count: [u8 key_len][key bytes][u16 LE payload_len][payload bytes]
+// Strings inside a payload are `[u8 len][bytes]`; optional strings use a leading
+// 0xFF byte for `None` (every string in this data is < 255 bytes).
+
+fn enc_str(buf: &mut Vec<u8>, s: &str) {
+    assert!(s.len() < 255, "formatter string too long: {s:?}");
+    buf.push(s.len() as u8);
+    buf.extend_from_slice(s.as_bytes());
+}
+fn enc_opt(buf: &mut Vec<u8>, s: Option<&str>) {
+    match s {
+        None => buf.push(0xFF),
+        Some(x) => enc_str(buf, x),
+    }
+}
+fn enc_pattern(buf: &mut Vec<u8>, p: &PatFields) {
+    enc_str(buf, &p.prefix);
+    enc_str(buf, &p.suffix);
+    buf.extend_from_slice(&[p.min_int, p.min_frac, p.max_frac, p.primary, p.secondary]);
+}
+
+/// Write a keyed-record blob to `<cldr_dir>/<name>.bin`.
+fn write_blob(cldr_dir: &Path, name: &str, records: &[(String, Vec<u8>)]) {
+    let mut buf = Vec::new();
+    buf.extend_from_slice(&(records.len() as u16).to_le_bytes());
+    for (key, payload) in records {
+        buf.push(key.len() as u8);
+        buf.extend_from_slice(key.as_bytes());
+        buf.extend_from_slice(&(payload.len() as u16).to_le_bytes());
+        buf.extend_from_slice(payload);
+    }
+    fs::create_dir_all(cldr_dir).expect("create src/cldr");
+    fs::write(cldr_dir.join(format!("{name}.bin")), buf).expect("write blob");
 }
 
 /// Compile a CLDR plural-rule condition (e.g. `i = 1 and v = 0`) into a Rust

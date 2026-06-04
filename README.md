@@ -71,8 +71,8 @@ Beyond the `unicode` module:
 
 - `intl::number` (alloc) formats numbers in a locale's conventions —
   `format_decimal("de", 1234.5)` → `"1.234,5"`, `format_decimal("hi", 1234567.0)`
-  → `"12,34,567"` (Indian grouping), `format_percent("en", 0.5)` → `"50%"`.
-  Driven by CLDR symbols + patterns for a curated locale set.
+  → `"12,34,567"` (Indian grouping), `format_percent("en", 0.5)` → `"50%"`,
+  `format_currency("en", 1234.5, "USD")` → `"$1,234.50"`.
 
 - `intl::list` (alloc) joins items with locale connectors —
   `format_list("en", &["a","b","c"], ListStyle::And)` → `"a, b, and c"`.
@@ -81,7 +81,10 @@ Beyond the `unicode` module:
   `format_relative("en", -1, RelativeUnit::Day)` → `"yesterday"` (plural- and
   number-aware).
 
-These build out the CLDR/locale layer toward full ICU-style formatting.
+These build out the CLDR/locale layer toward full ICU-style formatting. The
+locale data is compiled by the offline codegen into flat binary blobs committed
+under `src/cldr/` and embedded with `include_bytes!`, so the table layer is
+`no_std` (no `alloc` dependency); only the formatting functions need `alloc`.
 
 ## Features
 

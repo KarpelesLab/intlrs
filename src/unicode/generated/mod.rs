@@ -13,14 +13,8 @@ pub(crate) mod confusables;
 pub(crate) mod east_asian_width;
 pub(crate) mod general_category;
 pub(crate) mod idna;
-#[cfg(feature = "alloc")]
-pub(crate) mod lists;
 pub(crate) mod normalization;
-#[cfg(feature = "alloc")]
-pub(crate) mod numbers;
 pub(crate) mod numeric;
 pub(crate) mod plurals;
-#[cfg(feature = "alloc")]
-pub(crate) mod relative;
 pub(crate) mod script;
 pub(crate) mod segmentation;

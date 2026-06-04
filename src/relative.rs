@@ -15,6 +15,8 @@ use crate::number::format_decimal;
 use crate::plural::{plural_category, PluralCategory, PluralOperands};
 use alloc::string::String;
 
+pub use crate::cldr::{RelUnit, RelativeSpec};
+
 /// A relative time unit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelativeUnit {
@@ -34,31 +36,8 @@ pub enum RelativeUnit {
     Second,
 }
 
-/// CLDR relative-time strings for one unit. `past`/`future` are indexed by the
-/// [`PluralCategory`] discriminant.
-#[derive(Debug, Clone, Copy)]
-pub struct RelUnit {
-    /// Literal for offset −1 (e.g. "yesterday"), if any.
-    pub prev: Option<&'static str>,
-    /// Literal for offset 0 (e.g. "today"), if any.
-    pub cur: Option<&'static str>,
-    /// Literal for offset +1 (e.g. "tomorrow"), if any.
-    pub next: Option<&'static str>,
-    /// Past patterns ("{0} days ago") by plural category.
-    pub past: [Option<&'static str>; 6],
-    /// Future patterns ("in {0} days") by plural category.
-    pub future: [Option<&'static str>; 6],
-}
-
-/// CLDR relative-time strings for all units of one locale.
-#[derive(Debug, Clone, Copy)]
-pub struct RelativeSpec {
-    /// One [`RelUnit`] per [`RelativeUnit`], in declaration order.
-    pub units: [RelUnit; 7],
-}
-
 fn spec(lang: &str) -> RelativeSpec {
-    use crate::unicode::generated::relative::relative_spec;
+    use crate::cldr::relative_spec;
     let norm: String = lang
         .chars()
         .map(|c| {

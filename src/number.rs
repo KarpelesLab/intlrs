@@ -16,49 +16,12 @@
 
 use alloc::string::String;
 
-/// A resolved CLDR number pattern (the affixes and the integer-grouping /
-/// fraction-digit counts parsed from a pattern like `#,##0.###`).
-#[derive(Debug, Clone, Copy)]
-pub struct Pattern {
-    /// Literal text before the number.
-    pub prefix: &'static str,
-    /// Literal text after the number (for percent, includes the percent sign).
-    pub suffix: &'static str,
-    /// Minimum integer digits.
-    pub min_int: u8,
-    /// Minimum fraction digits.
-    pub min_frac: u8,
-    /// Maximum fraction digits.
-    pub max_frac: u8,
-    /// Primary (rightmost) grouping size, or 0 for no grouping.
-    pub primary_group: u8,
-    /// Secondary grouping size (e.g. 2 for Indian `#,##,##0`).
-    pub secondary_group: u8,
-}
-
-/// The number symbols and patterns for one locale.
-#[derive(Debug, Clone, Copy)]
-pub struct NumberSpec {
-    /// Decimal separator.
-    pub decimal: &'static str,
-    /// Grouping separator.
-    pub group: &'static str,
-    /// Minus sign.
-    pub minus: &'static str,
-    /// Plus sign.
-    pub plus: &'static str,
-    /// Percent sign.
-    pub percent: &'static str,
-    /// The standard decimal pattern.
-    pub dec: Pattern,
-    /// The standard percent pattern.
-    pub pct: Pattern,
-}
+pub use crate::cldr::{NumberSpec, Pattern};
 
 /// Resolve the [`NumberSpec`] for `lang`, walking up the locale fallback chain
 /// and finally to the root (English) convention.
 fn spec(lang: &str) -> NumberSpec {
-    use crate::unicode::generated::numbers::number_spec;
+    use crate::cldr::number_spec;
     let norm: String = lang
         .chars()
         .map(|c| {
@@ -93,6 +56,73 @@ pub fn format_decimal(lang: &str, value: f64) -> String {
 pub fn format_percent(lang: &str, value: f64) -> String {
     let s = spec(lang);
     format_with(&s.pct, value * 100.0, s.decimal, s.group, s.minus)
+}
+
+/// Format `value` as an amount in the currency `code` (ISO 4217, e.g. `"USD"`)
+/// using the conventions of `lang`. The fraction-digit count follows the
+/// currency (e.g. `JPY` has none), and the currency symbol is localized.
+///
+/// ```
+/// use intl::number::format_currency;
+/// assert_eq!(format_currency("en", 1234.5, "USD"), "$1,234.50");
+/// assert_eq!(format_currency("de", 1234.5, "EUR"), "1.234,50\u{a0}€");
+/// assert_eq!(format_currency("ja", 1234.0, "JPY"), "￥1,234"); // no fraction digits
+/// ```
+#[must_use]
+pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
+    use crate::cldr as cur;
+    let s = spec(lang);
+
+    // Resolve the currency pattern and symbol through the locale fallback chain.
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut pat = cur::currency_pattern("en").expect("root currency pattern");
+    let mut symbol = code;
+    let mut end = norm.len();
+    let (mut got_pat, mut got_sym) = (false, false);
+    loop {
+        if !got_pat {
+            if let Some(p) = cur::currency_pattern(&norm[..end]) {
+                pat = p;
+                got_pat = true;
+            }
+        }
+        if !got_sym {
+            if let Some(sym) = cur::currency_symbol(&norm[..end], code) {
+                symbol = sym;
+                got_sym = true;
+            }
+        }
+        if got_pat && got_sym {
+            break;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => break,
+        }
+    }
+    // Root fallback (English) for anything the locale chain didn't supply.
+    if !got_sym {
+        if let Some(sym) = cur::currency_symbol("en", code) {
+            symbol = sym;
+        }
+    }
+
+    let digits = cur::currency_digits(code);
+    pat.min_frac = digits;
+    pat.max_frac = digits;
+
+    let formatted = format_with(&pat, value, s.decimal, s.group, s.minus);
+    // The pattern carries the ¤ placeholder; replace it with the symbol.
+    formatted.replace('\u{a4}', symbol)
 }
 
 fn format_with(p: &Pattern, value: f64, decimal: &str, group: &str, minus: &str) -> String {
