@@ -12,3 +12,4 @@ pub(crate) mod general_category;
 pub(crate) mod normalization;
 pub(crate) mod numeric;
 pub(crate) mod script;
+pub(crate) mod segmentation;

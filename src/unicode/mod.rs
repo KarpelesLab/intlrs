@@ -40,6 +40,7 @@ pub mod normalize;
 pub mod numeric;
 mod predicates;
 pub mod script;
+pub mod segment;
 pub mod width;
 
 pub use case::{
@@ -64,4 +65,5 @@ pub use predicates::{
 pub use script::{
     script, script_extensions, script_extensions_u32, script_u32, Script, ScriptExtensions,
 };
+pub use segment::{graphemes, Graphemes};
 pub use width::{east_asian_width, east_asian_width_u32, EastAsianWidth};

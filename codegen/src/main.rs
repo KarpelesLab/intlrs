@@ -171,6 +171,9 @@ fn main() {
     let uca = root.join("data/uca").join(version);
     emit_collation(&out_dir, &mut modules, &ucd, &uca);
 
+    // ---- Segmentation (UAX #29) ----
+    emit_segmentation(&out_dir, &mut modules, &ucd);
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -873,6 +876,88 @@ fn emit_collation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path, uca: &P
     write_module(out_dir, modules, "collation", &out);
 }
 
+/// Emit `generated/segmentation.rs`: Grapheme_Cluster_Break,
+/// Extended_Pictographic, and Indic_Conjunct_Break tables (UAX #29).
+fn emit_segmentation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str("use crate::unicode::segment::{Gcb, Incb};\n\n");
+
+    let gcb_map: BTreeMap<&str, u32> = [
+        ("CR", 1),
+        ("LF", 2),
+        ("Control", 3),
+        ("Extend", 4),
+        ("ZWJ", 5),
+        ("Regional_Indicator", 6),
+        ("Prepend", 7),
+        ("SpacingMark", 8),
+        ("L", 9),
+        ("V", 10),
+        ("T", 11),
+        ("LV", 12),
+        ("LVT", 13),
+    ]
+    .into_iter()
+    .collect();
+    let gcb = parse_ranged(
+        &ucd.join("auxiliary/GraphemeBreakProperty.txt"),
+        &gcb_map,
+        0,
+    );
+    let gcb_render: Vec<String> = [
+        "Other",
+        "CR",
+        "LF",
+        "Control",
+        "Extend",
+        "ZWJ",
+        "RegionalIndicator",
+        "Prepend",
+        "SpacingMark",
+        "L",
+        "V",
+        "T",
+        "LV",
+        "LVT",
+    ]
+    .iter()
+    .map(|v| format!("Gcb::{v}"))
+    .collect();
+    emit_lookup(
+        &mut out,
+        "grapheme_break",
+        "gb",
+        "Gcb",
+        &gcb,
+        0,
+        &gcb_render,
+    );
+
+    let ep = parse_binary_prop(&ucd.join("emoji/emoji-data.txt"), "Extended_Pictographic");
+    emit_bool_lookup(&mut out, "extended_pictographic", "ep", &ep);
+
+    let incb_map: BTreeMap<&str, u32> = [("Consonant", 1), ("Linker", 2), ("Extend", 3)]
+        .into_iter()
+        .collect();
+    let incb = parse_prop_value(&ucd.join("DerivedCoreProperties.txt"), "InCB", &incb_map, 0);
+    let incb_render: Vec<String> = ["None", "Consonant", "Linker", "Extend"]
+        .iter()
+        .map(|v| format!("Incb::{v}"))
+        .collect();
+    emit_lookup(
+        &mut out,
+        "indic_conjunct_break",
+        "ib",
+        "Incb",
+        &incb,
+        0,
+        &incb_render,
+    );
+
+    write_module(out_dir, modules, "segmentation", &out);
+}
+
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.
 fn write_module(out_dir: &Path, modules: &mut Vec<String>, name: &str, content: &str) {
     let path = out_dir.join(format!("{name}.rs"));
@@ -1035,6 +1120,37 @@ fn parse_qc(path: &Path, prop: &str) -> Vec<u32> {
             "N" => 0,
             "M" => 1,
             _ => 2,
+        };
+        let (start, end) = parse_range(f[0]);
+        for c in start..=end {
+            codes[c as usize] = code;
+        }
+    }
+    codes
+}
+
+/// Parse a `range ; PROP ; VALUE # ...` file (e.g. InCB in
+/// DerivedCoreProperties.txt) into per-codepoint codes from `val_code`, keeping
+/// only lines whose middle field is `prop`.
+fn parse_prop_value(
+    path: &Path,
+    prop: &str,
+    val_code: &BTreeMap<&str, u32>,
+    default: u32,
+) -> Vec<u32> {
+    let text = fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
+    let mut codes = vec![default; NUM_CODEPOINTS];
+    for line in text.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        if f.len() < 3 || f[1] != prop {
+            continue;
+        }
+        let Some(&code) = val_code.get(f[2]) else {
+            continue;
         };
         let (start, end) = parse_range(f[0]);
         for c in start..=end {
