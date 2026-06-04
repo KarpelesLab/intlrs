@@ -27,6 +27,14 @@ full = ["bmp"]          # U+10000..=U+10FFFF (supplementary planes)
 # because collation operates over the whole codepoint space.
 alloc = ["full"]
 
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "throughput"
+harness = false
+required-features = ["alloc"]
+
 # This crate is intentionally NOT a cargo workspace. The `codegen/` directory is
 # a standalone, packaging-time tool (its own independent package) that
 # regenerates the committed tables under src/unicode/generated/ when the UCD
