@@ -140,9 +140,9 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   Japanese (era/year) added too. Hebrew added. Islamic date rendering added
   (localized month names + era). Still: Chinese (lunisolar); CLDR rendering of
   Hebrew/Persian dates.
-- 🟡 **Time zones** — `intl::timezone::PosixTz` parses POSIX TZ strings and
-  computes offset/DST for any date (current rules). Still: the full IANA tzdb
-  (historical transitions) and zone display names.
+- ✅ **Time zones** — `intl::timezone`: POSIX TZ rules (no_std), plus the full
+  IANA tz database behind the `iana-tz` feature (via the embedded `timezone-data`
+  crate): historical transitions, DST, abbreviations. Still: zone display names.
 - 🧱 🟡 **Date/Time formatting** (`intl::datetime`, Gregorian) — skeleton/pattern based (UTS #35),
   calendar- and zone-aware.
 - 🧱 **Relative date/time** ("3 days ago"), **duration**, ✅ unit/measurement formatting (`intl::unit`), ✅ list formatting (`intl::list`), ✅ display names (`intl::display`, language/region).

@@ -16,6 +16,91 @@
 
 use crate::datetime::DateTime;
 
+#[cfg(feature = "iana-tz")]
+pub use iana::{load_zone, zone_names, IanaZone};
+
+/// Full IANA time-zone database support (the `iana-tz` feature), backed by the
+/// embedded `timezone-data` crate.
+#[cfg(feature = "iana-tz")]
+mod iana {
+    use crate::datetime::DateTime;
+
+    /// Julian Day Number of the Unix epoch (1970-01-01).
+    const UNIX_EPOCH_JDN: i64 = 2_440_588;
+
+    fn to_unix(dt: &DateTime) -> i64 {
+        let jdn = crate::calendar::gregorian_to_jdn(dt.year as i64, dt.month as i64, dt.day as i64);
+        (jdn - UNIX_EPOCH_JDN) * 86_400
+            + dt.hour as i64 * 3600
+            + dt.minute as i64 * 60
+            + dt.second as i64
+    }
+
+    fn from_unix(secs: i64) -> DateTime {
+        let (days, sod) = (secs.div_euclid(86_400), secs.rem_euclid(86_400));
+        let (y, m, d) = crate::calendar::jdn_to_gregorian(UNIX_EPOCH_JDN + days);
+        DateTime {
+            year: y as i32,
+            month: m as u8,
+            day: d as u8,
+            hour: (sod / 3600) as u8,
+            minute: (sod % 3600 / 60) as u8,
+            second: (sod % 60) as u8,
+        }
+    }
+
+    /// A loaded IANA time zone (e.g. `"America/New_York"`) with its full history
+    /// of UTC-offset/DST transitions.
+    pub struct IanaZone(timezone_data::Zone<'static>);
+
+    /// Load an IANA zone by name. Returns `None` for an unknown name. Lookups are
+    /// case-sensitive (`"America/New_York"`).
+    #[must_use]
+    pub fn load_zone(name: &str) -> Option<IanaZone> {
+        timezone_data::load(name).ok().map(IanaZone)
+    }
+
+    impl IanaZone {
+        /// UTC offset (seconds east of UTC) in effect at the UTC instant `unix`.
+        #[must_use]
+        pub fn offset_at(&self, unix: i64) -> i32 {
+            self.0.lookup(unix).offset
+        }
+
+        /// The zone abbreviation (e.g. `"EST"` / `"EDT"`) at the UTC instant `unix`.
+        #[must_use]
+        pub fn abbrev_at(&self, unix: i64) -> &'static str {
+            self.0.lookup(unix).abbrev
+        }
+
+        /// Whether daylight time is in effect at the UTC instant `unix`.
+        #[must_use]
+        pub fn is_dst_at(&self, unix: i64) -> bool {
+            self.0.lookup(unix).is_dst
+        }
+
+        /// The local broken-down time in this zone for the UTC instant `unix`.
+        #[must_use]
+        pub fn to_local(&self, unix: i64) -> DateTime {
+            from_unix(unix + self.0.lookup(unix).offset as i64)
+        }
+
+        /// The UTC offset (seconds east) for a *local* date-time in this zone.
+        /// (At the one ambiguous hour of a DST transition this picks one side.)
+        #[must_use]
+        pub fn offset_for_local(&self, dt: &DateTime) -> i32 {
+            let approx = to_unix(dt);
+            let off = self.0.lookup(approx).offset as i64;
+            self.0.lookup(approx - off).offset
+        }
+    }
+
+    /// Iterate over every IANA zone name in the embedded database.
+    pub fn zone_names() -> impl Iterator<Item = &'static str> {
+        timezone_data::names()
+    }
+}
+
 /// A daylight-saving transition rule in the `Mm.w.d[/time]` form: the `d`th
 /// weekday of week `w` in month `m`, at `time` seconds after local midnight.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

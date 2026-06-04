@@ -107,8 +107,11 @@ Beyond the `unicode` module:
   (locale-driven) — `spell_cardinal("en", 1234)` → `"one thousand two hundred
   thirty-four"`, `spell_cardinal("fr", 80)` → `"quatre-vingts"`. *(alloc)*
 - `intl::timezone` parses a POSIX `TZ` string (`"PST8PDT,M3.2.0,M11.1.0/2"`)
-  and computes the UTC offset / DST state for any date — the current-rules part
-  of time-zone support, without the full IANA historical database.
+  and computes the UTC offset / DST state for any date. With the **`iana-tz`**
+  feature it also loads the full **IANA tz database** (via the embedded
+  `timezone-data` crate): `load_zone("America/New_York")` then `offset_at` /
+  `abbrev_at` / `is_dst_at` / `to_local` for any instant, with historical
+  transitions. (`iana-tz` raises the MSRV to 1.86; the rest of the crate is 1.70.)
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
   civil (tabular) Islamic, Persian (Solar Hijri), and Hebrew calendars via the
   Julian Day Number, gives the Japanese era/year, plus ISO-8601 week dates and

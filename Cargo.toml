@@ -27,6 +27,16 @@ full = ["bmp"]          # U+10000..=U+10FFFF (supplementary planes)
 # because collation operates over the whole codepoint space.
 alloc = ["full"]
 
+# Full IANA time-zone support via the embedded `timezone-data` crate (the IANA
+# tz database: historical transitions, DST, abbreviations). Implies `alloc` for
+# the `DateTime` bridge. NOTE: `timezone-data` raises the MSRV to 1.86 when this
+# feature is enabled; the rest of the crate stays at 1.70.
+iana-tz = ["dep:timezone-data", "alloc"]
+
+[dependencies]
+# Optional: only pulled in by the `iana-tz` feature. no_std / no-alloc itself.
+timezone-data = { version = "0.1", optional = true }
+
 [dev-dependencies]
 criterion = { version = "0.5", default-features = false }
 
