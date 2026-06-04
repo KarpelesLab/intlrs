@@ -81,6 +81,18 @@ jobs:
             echo "::endgroup::"
           done
 
+      # Report the embedded-data footprint (informational): the generated
+      # Unicode tables and CLDR blobs are what drive binary size, so changes
+      # should be visible in the log.
+      - name: Embedded data footprint
+        run: |
+          echo "Unicode property tables (src/unicode/generated/*.rs):"
+          du -bc src/unicode/generated/*.rs | tail -1
+          echo "CLDR binary blobs (src/cldr/*.bin):"
+          du -bc src/cldr/*.bin | tail -1
+          echo "Per-blob:"
+          du -b src/cldr/*.bin | sort -n
+
   codegen:
     name: Generated tables are up to date
     runs-on: ubuntu-latest
