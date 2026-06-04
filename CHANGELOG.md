@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/KarpelesLab/intlrs/compare/v0.1.1...v0.1.2) - 2026-06-04
+
+### Other
+
+- Add normalization quick-check (is_nfc/is_nfd/is_nfkc/is_nfkd)
+- Make codegen a standalone packaging-time tool; drop the workspace
+- Update crate description for the full unicode module surface
+- Add Unicode normalization (NFD/NFC/NFKD/NFKC, UAX #15)
+
 ## [0.1.1](https://github.com/KarpelesLab/intlrs/compare/intl-v0.1.0...intl-v0.1.1) - 2026-06-04
 
 ### Other
