@@ -73,3 +73,17 @@ fn persian() {
         assert_eq!(persian_to_gregorian(py, pm, pd), (y, m, d));
     }
 }
+
+#[test]
+fn hebrew() {
+    use intl::calendar::*;
+    // 1 Tishrei 5785 (Rosh Hashanah 5785) = 3 October 2024.
+    assert_eq!(gregorian_to_hebrew(2024, 10, 3), (5785, 7, 1));
+    assert_eq!(hebrew_to_gregorian(5785, 7, 1), (2024, 10, 3));
+    // Round-trips across a span of Gregorian dates.
+    for &(y, m, d) in &[(2000, 1, 1), (1970, 1, 1), (2026, 6, 4), (2025, 3, 20)] {
+        let (hy, hm, hd) = gregorian_to_hebrew(y, m, d);
+        assert!((1..=13).contains(&hm) && (1..=30).contains(&hd));
+        assert_eq!(hebrew_to_gregorian(hy, hm, hd), (y, m, d));
+    }
+}
