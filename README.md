@@ -40,6 +40,25 @@ Every predicate exists both as a free `const fn` taking a `char`
 (`intl::unicode::is_uppercase('A')`) and as a method via the `CharExt` trait
 (`'A'.is_uppercase()`).
 
+Normalization and collation (the latter behind the `alloc` feature):
+
+```rust
+use intl::unicode::{nfc, nfd};
+assert_eq!(nfc("e\u{0301}".chars()).collect::<String>(), "é");
+assert_eq!(nfd("é".chars()).collect::<String>(), "e\u{0301}");
+
+// With the `alloc` feature:
+use intl::unicode::collate::compare;
+use std::cmp::Ordering;
+assert_eq!(compare("café", "cafz"), Ordering::Less); // é (≈ e) sorts before z
+```
+
+## Features
+
+`default = ["bmp"]`. Range tiers are `ascii ⊂ latin1 ⊂ bmp ⊂ full` (below). The
+**`alloc`** feature (still `no_std`) enables the `unicode::collate` module; it
+implies `full`.
+
 ## Range tiers
 
 Cargo features select how much of the codepoint space is compiled in, trading
@@ -72,6 +91,10 @@ codepoint would.
   category-derived `is_letter`, `is_mark`, `is_numeric`, `is_decimal_digit`,
   `is_punctuation`, `is_symbol`, `is_separator`, `is_control`, `is_format`,
   and `is_assigned`.
+- **Collation** (UTS #10) — DUCET root collation via `collate::compare` /
+  `collate::Collator` (and `sort_key`), with non-ignorable or shifted variable
+  handling. Validated against the full official `CollationTest` suite (both
+  modes). Requires the `alloc` feature.
 - **Normalization** (UAX #15) — `nfd`, `nfc`, `nfkd`, `nfkc` as streaming,
   allocation-free iterator adaptors over `Iterator<Item = char>`; quick-check
   helpers `is_nfc`/`is_nfd`/`is_nfkc`/`is_nfkd` (and tri-state

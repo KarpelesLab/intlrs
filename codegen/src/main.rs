@@ -167,6 +167,10 @@ fn main() {
     // ---- Normalization ----
     emit_normalization(&out_dir, &mut modules, &ucd);
 
+    // ---- Collation (DUCET) ----
+    let uca = root.join("data/uca").join(version);
+    emit_collation(&out_dir, &mut modules, &ucd, &uca);
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -735,6 +739,131 @@ fn emit_normalization(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     }
 
     write_module(out_dir, modules, "normalization", &out);
+}
+
+/// Pack a collation element into a u64: bit48 = variable, bits32-47 = primary,
+/// bits16-31 = secondary, bits0-15 = tertiary.
+fn pack_ce(variable: bool, p: u32, s: u32, t: u32) -> u64 {
+    ((variable as u64) << 48) | ((p as u64) << 32) | ((s as u64) << 16) | (t as u64)
+}
+
+/// Parse the collation-element side of an allkeys line, e.g.
+/// `[.1C47.0020.0002][*0201.0020.0002]`, into packed u64s.
+fn parse_ces(s: &str) -> Vec<u64> {
+    let mut ces = Vec::new();
+    for grp in s.split('[').skip(1) {
+        let inner = grp.split(']').next().unwrap_or("");
+        if inner.is_empty() {
+            continue;
+        }
+        let variable = inner.starts_with('*');
+        let parts: Vec<&str> = inner[1..].split('.').collect();
+        if parts.len() < 3 {
+            continue;
+        }
+        let p = u32::from_str_radix(parts[0].trim(), 16).unwrap();
+        let s = u32::from_str_radix(parts[1].trim(), 16).unwrap();
+        let t = u32::from_str_radix(parts[2].trim(), 16).unwrap();
+        ces.push(pack_ce(variable, p, s, t));
+    }
+    ces
+}
+
+/// Emit an `Option<&'static [u64]>` lookup with the CE arrays inlined (promoted
+/// to statics), deduplicated by sequence.
+fn emit_u64_seq_lookup(out: &mut String, fn_name: &str, prefix: &str, seqs: &[Vec<u64>]) {
+    let mut render = vec!["None".to_string()];
+    let mut dedup: BTreeMap<Vec<u64>, u32> = BTreeMap::new();
+    let mut codes = vec![0u32; NUM_CODEPOINTS];
+    for (cp, seq) in seqs.iter().enumerate() {
+        if seq.is_empty() {
+            continue;
+        }
+        let code = *dedup.entry(seq.clone()).or_insert_with(|| {
+            let i = render.len();
+            let elems: Vec<String> = seq.iter().map(|c| format!("0x{c:x}u64")).collect();
+            render.push(format!("Some(&[{}])", elems.join(", ")));
+            i as u32
+        });
+        codes[cp] = code;
+    }
+    emit_lookup(out, fn_name, prefix, "Option<&'static [u64]>", &codes, 0, &render);
+}
+
+/// Emit `generated/collation.rs`: DUCET single-codepoint collation elements,
+/// contractions, and the Unified_Ideograph table (for implicit weights).
+fn emit_collation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path, uca: &Path) {
+    // First code point -> list of (suffix code points, collation elements).
+    type Contractions = BTreeMap<u32, Vec<(Vec<u32>, Vec<u64>)>>;
+
+    let allkeys = fs::read_to_string(uca.join("allkeys.txt")).expect("read allkeys.txt");
+    let mut singles: Vec<Vec<u64>> = vec![vec![]; NUM_CODEPOINTS];
+    let mut contractions: Contractions = BTreeMap::new();
+    for line in allkeys.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() || line.starts_with('@') {
+            continue;
+        }
+        let mut it = line.split(';');
+        let left = it.next().unwrap().trim();
+        let right = it.next().unwrap_or("").trim();
+        if right.is_empty() {
+            continue;
+        }
+        let cps: Vec<u32> = left
+            .split_whitespace()
+            .map(|h| u32::from_str_radix(h, 16).unwrap())
+            .collect();
+        let ces = parse_ces(right);
+        if cps.len() == 1 {
+            singles[cps[0] as usize] = ces;
+        } else {
+            contractions
+                .entry(cps[0])
+                .or_default()
+                .push((cps[1..].to_vec(), ces));
+        }
+    }
+
+    let unified = parse_binary_prop(&ucd.join("PropList.txt"), "Unified_Ideograph");
+
+    let mut out = String::new();
+    write_header(&mut out);
+
+    emit_u64_seq_lookup(&mut out, "ce_singles", "cs", &singles);
+
+    // Contractions: per first-codepoint list of (suffix, CEs), longest suffix
+    // first for greedy matching. Arrays are inlined and promoted to statics.
+    let mut codes = vec![0u32; NUM_CODEPOINTS];
+    let mut render = vec!["None".to_string()];
+    for (cp, mut entries) in contractions {
+        entries.sort_by_key(|e| core::cmp::Reverse(e.0.len()));
+        let rows: Vec<String> = entries
+            .iter()
+            .map(|(suf, ces)| {
+                let chars: Vec<String> =
+                    suf.iter().map(|&c| format!("'\\u{{{c:x}}}'")).collect();
+                let cestr: Vec<String> = ces.iter().map(|c| format!("0x{c:x}u64")).collect();
+                format!("(&[{}], &[{}])", chars.join(", "), cestr.join(", "))
+            })
+            .collect();
+        let i = render.len();
+        render.push(format!("Some(&[{}])", rows.join(", ")));
+        codes[cp as usize] = i as u32;
+    }
+    emit_lookup(
+        &mut out,
+        "contractions",
+        "cn",
+        "Option<&'static [(&'static [char], &'static [u64])]>",
+        &codes,
+        0,
+        &render,
+    );
+
+    emit_bool_lookup(&mut out, "unified_ideograph", "ui", &unified);
+
+    write_module(out_dir, modules, "collation", &out);
 }
 
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.

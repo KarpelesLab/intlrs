@@ -100,6 +100,28 @@ jobs:
           git diff --exit-code -- src/unicode/generated \
             || { echo "::error::src/unicode/generated is stale; run 'cargo run --manifest-path codegen/Cargo.toml'"; exit 1; }
 
+  conformance:
+    name: UCA collation conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      # The ~40 MB CollationTest files are not committed; fetch them here so the
+      # collation conformance test runs against the full official suite.
+      - name: Fetch UCA CollationTest
+        run: |
+          curl -fsSL -o /tmp/ct.zip https://www.unicode.org/Public/17.0.0/uca/CollationTest.zip
+          unzip -o /tmp/ct.zip -d data/uca/17.0.0/
+
+      - name: Collation + normalization conformance (release)
+        run: cargo test --release --all-features --test collation_conformance --test normalization_conformance
+
   docs:
     name: Docs build (warnings denied)
     runs-on: ubuntu-latest

@@ -3,7 +3,7 @@ name = "intl"
 version = "0.1.2"
 edition = "2021"
 rust-version = "1.70"
-description = "Pure-Rust, no_std internationalization primitives (a pure-Rust ICU analog). The `unicode` module provides General_Category, character predicates, scripts, East Asian Width, numeric values, case mapping/folding, and UAX #15 normalization (NFC/NFD/NFKC/NFKD) — property tables compiled into const-fn match lookups, with feature-selectable codepoint ranges."
+description = "Pure-Rust, no_std internationalization primitives (a pure-Rust ICU analog). The `unicode` module provides General_Category, character predicates, scripts, East Asian Width, numeric values, case mapping/folding, UAX #15 normalization (NFC/NFD/NFKC/NFKD), and UTS #10 collation — property tables compiled into const-fn match lookups, with feature-selectable codepoint ranges."
 repository = "https://github.com/KarpelesLab/intlrs"
 license = "MIT"
 readme = "README.md"
@@ -21,6 +21,11 @@ ascii = []              # U+0000..=U+007F
 latin1 = ["ascii"]      # U+0080..=U+00FF
 bmp = ["latin1"]        # U+0100..=U+FFFF (rest of the Basic Multilingual Plane)
 full = ["bmp"]          # U+10000..=U+10FFFF (supplementary planes)
+
+# Opt-in allocation. Still `no_std`; enables APIs that need `alloc`, currently
+# the `unicode::collate` module (Unicode Collation Algorithm). Implies `full`
+# because collation operates over the whole codepoint space.
+alloc = ["full"]
 
 # This crate is intentionally NOT a cargo workspace. The `codegen/` directory is
 # a standalone, packaging-time tool (its own independent package) that

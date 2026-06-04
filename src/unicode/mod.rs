@@ -33,6 +33,8 @@
 
 pub mod case;
 pub mod category;
+#[cfg(feature = "alloc")]
+pub mod collate;
 mod generated;
 pub mod normalize;
 pub mod numeric;
@@ -42,6 +44,8 @@ pub mod width;
 
 pub use case::{case_fold, to_lowercase, to_titlecase, to_uppercase, CaseMapIter};
 pub use category::{GeneralCategory, Group};
+#[cfg(feature = "alloc")]
+pub use collate::{compare, sort_key, AlternateHandling, Collator};
 pub use generated::general_category::UNICODE_VERSION;
 pub use normalize::{
     canonical_combining_class, canonical_combining_class_u32, is_nfc, is_nfd, is_nfkc, is_nfkd,
