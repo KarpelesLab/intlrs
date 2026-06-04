@@ -186,8 +186,11 @@ codepoint would.
   quotation/East-Asian-Width edge cases remain).
 - **Collation** (UTS #10) — DUCET root collation via `collate::compare` /
   `collate::Collator` (and `sort_key`), with non-ignorable or shifted variable
-  handling. Validated against the full official `CollationTest` suite (both
-  modes). Requires the `alloc` feature.
+  handling, **strength levels** (`with_strength`: accent-/case-insensitive),
+  **numeric ordering** (`with_numeric`: `file2 < file10`), and **locale
+  tailoring** (`Tailoring::parse("&z < å < ä < ö")` / `Tailoring::for_locale("sv")`
+  for primary reordering). Validated against the full official `CollationTest`
+  suite (both modes). Requires the `alloc` feature.
 - **Normalization** (UAX #15) — `nfd`, `nfc`, `nfkd`, `nfkc` as streaming,
   allocation-free iterator adaptors over `Iterator<Item = char>`; quick-check
   helpers `is_nfc`/`is_nfd`/`is_nfkc`/`is_nfkd` (and tri-state
