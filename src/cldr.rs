@@ -138,6 +138,12 @@ const DISPLAY_TERR: &[u8] = include_bytes!("cldr/display_territories.bin");
 const UNITS: &[u8] = include_bytes!("cldr/units.bin");
 const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
 const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
+const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
+
+/// The maximized locale for a likelySubtags key (e.g. `"en"` → `"en-Latn-US"`).
+pub(crate) fn likely_subtags(key: &str) -> Option<&'static str> {
+    find(LIKELY, key).map(|mut c| c.str())
+}
 
 /// Number of curated units (must match codegen's `UNITS` and the `Unit` enum).
 pub(crate) const UNIT_COUNT: usize = 28;

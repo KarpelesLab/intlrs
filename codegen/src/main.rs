@@ -276,6 +276,7 @@ fn main() {
         &cldr.join("skeletons.json"),
         "locales",
     );
+    emit_likely(&cldr_dir, &cldr.join("likely.json"));
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1653,6 +1654,21 @@ fn emit_units(cldr_dir: &Path, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "units", &records);
+}
+
+/// Write `cldr/likely.bin`: the likelySubtags table (locale key -> maximized
+/// locale). Keys are kept verbatim (canonical case).
+fn emit_likely(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read likely.json");
+    let json = json_parse(&text);
+    let map = json.get("map").expect("map");
+    let mut records = Vec::new();
+    for (key, val) in map.entries() {
+        let mut p = Vec::new();
+        enc_str(&mut p, val.as_str().unwrap_or(""));
+        records.push((key.clone(), p));
+    }
+    write_blob(cldr_dir, "likely", &records);
 }
 
 /// Write a nested blob `<blob>.bin`: outer key (lowercased) -> a `[u16 count]`

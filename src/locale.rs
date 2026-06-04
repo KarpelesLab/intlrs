@@ -94,6 +94,76 @@ impl Locale {
         }
         Ok(loc)
     }
+
+    /// Add the likely script and region for this locale (CLDR `likelySubtags` /
+    /// UTS #35 "Add Likely Subtags"). For example `en` → `en-Latn-US`,
+    /// `zh` → `zh-Hans-CN`. Subtags already present are kept.
+    #[must_use]
+    pub fn maximize(&self) -> Locale {
+        let lang = if self.language.is_empty() {
+            "und"
+        } else {
+            &self.language
+        };
+        // Candidate keys, most specific first.
+        let mut candidates: Vec<String> = Vec::new();
+        if let (Some(s), Some(r)) = (&self.script, &self.region) {
+            candidates.push(alloc::format!("{lang}-{s}-{r}"));
+        }
+        if let Some(r) = &self.region {
+            candidates.push(alloc::format!("{lang}-{r}"));
+        }
+        if let Some(s) = &self.script {
+            candidates.push(alloc::format!("{lang}-{s}"));
+        }
+        candidates.push(String::from(lang));
+
+        for key in &candidates {
+            if let Some(v) = crate::cldr::likely_subtags(key) {
+                if let Ok(m) = Locale::parse(v) {
+                    return Locale {
+                        language: if self.language.is_empty() {
+                            m.language
+                        } else {
+                            self.language.clone()
+                        },
+                        script: self.script.clone().or(m.script),
+                        region: self.region.clone().or(m.region),
+                        variants: self.variants.clone(),
+                    };
+                }
+            }
+        }
+        self.clone()
+    }
+
+    /// Remove the script and region subtags that are implied by
+    /// [`maximize`](Self::maximize), producing the shortest equivalent locale.
+    /// For example `en-Latn-US` → `en`, `zh-Hans-CN` → `zh`.
+    #[must_use]
+    pub fn minimize(&self) -> Locale {
+        let max = self.maximize();
+        let lang_only = Locale {
+            language: self.language.clone(),
+            ..Locale::default()
+        };
+        let lang_region = Locale {
+            language: self.language.clone(),
+            region: self.region.clone(),
+            ..Locale::default()
+        };
+        let lang_script = Locale {
+            language: self.language.clone(),
+            script: self.script.clone(),
+            ..Locale::default()
+        };
+        for trial in [lang_only, lang_region, lang_script] {
+            if trial.maximize() == max {
+                return trial;
+            }
+        }
+        max
+    }
 }
 
 /// Renders the canonical string form, e.g. `"zh-Hant-HK"`; the undetermined

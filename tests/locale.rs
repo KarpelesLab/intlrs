@@ -27,3 +27,40 @@ fn rejects_garbage() {
     assert!(Locale::parse("1").is_err());
     assert!(Locale::parse("toolonglang").is_err());
 }
+
+#[test]
+fn maximize_minimize() {
+    use intl::locale::Locale;
+    assert_eq!(
+        Locale::parse("en").unwrap().maximize().to_string(),
+        "en-Latn-US"
+    );
+    assert_eq!(
+        Locale::parse("zh").unwrap().maximize().to_string(),
+        "zh-Hans-CN"
+    );
+    assert_eq!(
+        Locale::parse("ja").unwrap().maximize().to_string(),
+        "ja-Jpan-JP"
+    );
+    assert_eq!(
+        Locale::parse("de-DE").unwrap().maximize().to_string(),
+        "de-Latn-DE"
+    );
+    // minimize is the inverse.
+    assert_eq!(
+        Locale::parse("en-Latn-US").unwrap().minimize().to_string(),
+        "en"
+    );
+    assert_eq!(
+        Locale::parse("zh-Hans-CN").unwrap().minimize().to_string(),
+        "zh"
+    );
+    assert_eq!(Locale::parse("en-US").unwrap().minimize().to_string(), "en");
+    // pt-BR reduces to pt (BR is Portuguese's likely region); pt-PT does not.
+    assert_eq!(Locale::parse("pt-BR").unwrap().minimize().to_string(), "pt");
+    assert_eq!(
+        Locale::parse("pt-PT").unwrap().minimize().to_string(),
+        "pt-PT"
+    );
+}
