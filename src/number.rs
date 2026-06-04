@@ -108,6 +108,105 @@ pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
     out
 }
 
+/// Format `value` in compact (short) form in `lang`, e.g.
+/// `format_compact("en", 1500.0)` → `"1.5K"`, `format_compact("en", 2_300_000.0)`
+/// → `"2.3M"`. Values below 1000 (or magnitudes the locale does not abbreviate)
+/// fall back to [`format_decimal`].
+///
+/// ```
+/// use intl::number::format_compact;
+/// assert_eq!(format_compact("en", 1500.0), "1.5K");
+/// assert_eq!(format_compact("en", 2_300_000.0), "2.3M");
+/// assert_eq!(format_compact("en", 999.0), "999");
+/// ```
+#[must_use]
+pub fn format_compact(lang: &str, value: f64) -> String {
+    let abs = if value < 0.0 { -value } else { value };
+    if abs < 1000.0 {
+        return format_decimal(lang, value);
+    }
+    let s = spec(lang);
+    // Resolve the compact pattern table through the locale fallback chain.
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut end = norm.len();
+    let table = loop {
+        if let Some(t) = crate::cldr::compact_patterns(&norm[..end]) {
+            break t;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => break crate::cldr::compact_patterns("en").expect("root compact present"),
+        }
+    };
+
+    // Magnitude exponent (3..=14) without `std::f64::log10`.
+    let mut exp = 0usize;
+    let mut t = abs;
+    while t >= 10.0 && exp < 14 {
+        t /= 10.0;
+        exp += 1;
+    }
+    let pattern = table[(exp - 3).min(11)];
+    let zeros = pattern.chars().filter(|&c| c == '0').count();
+    // A pattern of only `0`s (no magnitude suffix) means "do not abbreviate".
+    let has_suffix = pattern
+        .chars()
+        .any(|c| c != '0' && c != '\'' && !c.is_whitespace());
+    if zeros == 0 || !has_suffix {
+        return format_decimal(lang, value);
+    }
+    let mut divisor = 1.0f64; // 10^(exp + 1 - zeros), without std::f64::powi
+    for _ in 0..(exp + 1 - zeros) {
+        divisor *= 10.0;
+    }
+    let mantissa = value / divisor;
+    // One fraction digit, trailing zero trimmed.
+    let m = alloc::format!("{mantissa:.1}");
+    let (mi, mf) = m.split_once('.').unwrap_or((&m, ""));
+    let mf = mf.trim_end_matches('0');
+
+    // Render the pattern: replace the `0`-run with the number; `'…'` is literal.
+    let mut out = String::new();
+    let mut wrote_num = false;
+    let mut chars = pattern.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '0' => {
+                while chars.peek() == Some(&'0') {
+                    chars.next();
+                }
+                if !wrote_num {
+                    out.push_str(mi);
+                    if !mf.is_empty() {
+                        out.push_str(s.decimal);
+                        out.push_str(mf);
+                    }
+                    wrote_num = true;
+                }
+            }
+            '\'' => {
+                for q in chars.by_ref() {
+                    if q == '\'' {
+                        break;
+                    }
+                    out.push(q);
+                }
+            }
+            other => out.push(other),
+        }
+    }
+    out
+}
+
 /// Parse a number written in `lang`'s conventions back to an `f64` — the inverse
 /// of [`format_decimal`]: grouping separators are removed and the locale decimal
 /// separator is accepted. A leading minus sign (ASCII `-` or the locale's) is

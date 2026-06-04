@@ -76,3 +76,16 @@ fn scientific() {
     assert_eq!(sci("en", 0.0, 6), "0");
     assert_eq!(sci("en", 6.022e23, 6), "6.022E23");
 }
+
+#[test]
+fn compact() {
+    use intl::number::format_compact as k;
+    assert_eq!(k("en", 999.0), "999");
+    assert_eq!(k("en", 1500.0), "1.5K");
+    assert_eq!(k("en", 15000.0), "15K");
+    assert_eq!(k("en", 150000.0), "150K");
+    assert_eq!(k("en", 2_300_000.0), "2.3M");
+    assert_eq!(k("en", 1_000_000_000.0), "1B");
+    assert_eq!(k("de", 1500.0), "1.500"); // German doesn't abbreviate thousands
+    assert_eq!(k("fr", 1500.0), "1,5\u{a0}k"); // French: NBSP + lowercase k
+}

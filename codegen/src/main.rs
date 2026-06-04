@@ -279,6 +279,7 @@ fn main() {
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
+    emit_compact(&cldr_dir, &cldr.join("compact.json"));
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic.json"));
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian.json"));
 
@@ -1681,6 +1682,22 @@ fn emit_alt_calendar(cldr_dir: &Path, name: &str, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, name, &records);
+}
+
+/// Write `cldr/compact.bin`: per-locale compact (short) decimal patterns for
+/// magnitudes 10³…10¹⁴ (12 patterns, `count-other`).
+fn emit_compact(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read compact.json");
+    let json = json_parse(&text);
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let mut p = Vec::new();
+        for v in loc.array() {
+            enc_str(&mut p, v.as_str().unwrap_or("0"));
+        }
+        records.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "compact", &records);
 }
 
 /// Write `cldr/rbnf.bin`: per-locale RBNF spell-out rule sets. Payload is

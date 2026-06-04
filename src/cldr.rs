@@ -141,6 +141,14 @@ const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
 const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
 const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
 const RBNF: &[u8] = include_bytes!("cldr/rbnf.bin");
+const COMPACT: &[u8] = include_bytes!("cldr/compact.bin");
+
+/// Compact (short) decimal patterns for magnitudes 10³…10¹⁴ in an exact
+/// (lowercased) locale key.
+pub(crate) fn compact_patterns(lang: &str) -> Option<[&'static str; 12]> {
+    let mut c = find(COMPACT, lang)?;
+    Some(core::array::from_fn(|_| c.str()))
+}
 
 /// The raw RBNF payload bytes for an exact (lowercased) locale key (parsed by
 /// the `spellout` module).
