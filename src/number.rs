@@ -108,6 +108,68 @@ pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
     out
 }
 
+/// Transliterate the ASCII digits `0`–`9` in `s` to the glyphs of the named
+/// numbering `system` (e.g. `"arab"`, `"deva"`). Non-digit characters and
+/// unknown systems are left unchanged.
+///
+/// ```
+/// use intl::number::to_numbering_system;
+/// assert_eq!(to_numbering_system("2024", "arab"), "٢٠٢٤");
+/// assert_eq!(to_numbering_system("3.14", "deva"), "३.१४");
+/// ```
+#[must_use]
+pub fn to_numbering_system(s: &str, system: &str) -> String {
+    let Some(glyphs) = crate::cldr::numbering_digits(system) else {
+        return String::from(s);
+    };
+    let table: alloc::vec::Vec<char> = glyphs.chars().collect();
+    if table.len() != 10 {
+        return String::from(s);
+    }
+    s.chars()
+        .map(|c| {
+            if c.is_ascii_digit() {
+                table[(c as u8 - b'0') as usize]
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
+/// Format `value` as a decimal in `lang`, using the locale's default numbering
+/// system (so e.g. Persian renders with Extended Arabic-Indic digits). Most
+/// locales default to Latin digits, where this matches [`format_decimal`].
+#[must_use]
+pub fn format_decimal_native(lang: &str, value: f64) -> String {
+    let formatted = format_decimal(lang, value);
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut end = norm.len();
+    let system = loop {
+        if let Some(s) = crate::cldr::default_numbering(&norm[..end]) {
+            break s;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => break "latn",
+        }
+    };
+    if system == "latn" {
+        formatted
+    } else {
+        to_numbering_system(&formatted, system)
+    }
+}
+
 /// Format `value` in compact (short) form in `lang`, e.g.
 /// `format_compact("en", 1500.0)` → `"1.5K"`, `format_compact("en", 2_300_000.0)`
 /// → `"2.3M"`. Values below 1000 (or magnitudes the locale does not abbreviate)

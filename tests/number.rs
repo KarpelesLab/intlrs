@@ -89,3 +89,19 @@ fn compact() {
     assert_eq!(k("de", 1500.0), "1.500"); // German doesn't abbreviate thousands
     assert_eq!(k("fr", 1500.0), "1,5\u{a0}k"); // French: NBSP + lowercase k
 }
+
+#[test]
+fn native_digits() {
+    use intl::number::{format_decimal_native as fdn, to_numbering_system as tns};
+    assert_eq!(tns("2024", "arab"), "٢٠٢٤");
+    assert_eq!(tns("3.14", "deva"), "३.१४");
+    assert_eq!(tns("123", "latn"), "123");
+    assert_eq!(tns("123", "unknown"), "123");
+    // Persian defaults to Extended Arabic-Indic digits.
+    assert_eq!(
+        fdn("fa", 1234.0),
+        tns(&intl::number::format_decimal("fa", 1234.0), "arabext")
+    );
+    // English stays Latin.
+    assert_eq!(fdn("en", 1234.5), "1,234.5");
+}

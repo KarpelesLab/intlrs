@@ -280,6 +280,7 @@ fn main() {
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
     emit_compact(&cldr_dir, &cldr.join("compact.json"));
+    emit_numsys(&cldr_dir, &cldr.join("numsys.json"));
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic.json"));
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian.json"));
 
@@ -1682,6 +1683,28 @@ fn emit_alt_calendar(cldr_dir: &Path, name: &str, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, name, &records);
+}
+
+/// Write `cldr/numsys_digits.bin` (numbering system → 10 digit glyphs) and
+/// `cldr/numsys_default.bin` (locale → default numbering system).
+fn emit_numsys(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read numsys.json");
+    let json = json_parse(&text);
+    let mut digits = Vec::new();
+    for (sys, glyphs) in json.get("digits").expect("digits").entries() {
+        let mut p = Vec::new();
+        enc_str(&mut p, glyphs.as_str().unwrap_or(""));
+        digits.push((sys.clone(), p));
+    }
+    write_blob(cldr_dir, "numsys_digits", &digits);
+
+    let mut defaults = Vec::new();
+    for (lang, sys) in json.get("defaults").expect("defaults").entries() {
+        let mut p = Vec::new();
+        enc_str(&mut p, sys.as_str().unwrap_or("latn"));
+        defaults.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "numsys_default", &defaults);
 }
 
 /// Write `cldr/compact.bin`: per-locale compact (short) decimal patterns for

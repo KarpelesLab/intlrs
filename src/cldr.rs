@@ -142,6 +142,18 @@ const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
 const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
 const RBNF: &[u8] = include_bytes!("cldr/rbnf.bin");
 const COMPACT: &[u8] = include_bytes!("cldr/compact.bin");
+const NUMSYS_DIGITS: &[u8] = include_bytes!("cldr/numsys_digits.bin");
+const NUMSYS_DEFAULT: &[u8] = include_bytes!("cldr/numsys_default.bin");
+
+/// The 10 digit glyphs of a numbering system (e.g. `"arab"` → `"٠١٢٣٤٥٦٧٨٩"`).
+pub(crate) fn numbering_digits(system: &str) -> Option<&'static str> {
+    find(NUMSYS_DIGITS, system).map(|mut c| c.str())
+}
+
+/// The default numbering system for an exact (lowercased) locale key.
+pub(crate) fn default_numbering(lang: &str) -> Option<&'static str> {
+    find(NUMSYS_DEFAULT, lang).map(|mut c| c.str())
+}
 
 /// Compact (short) decimal patterns for magnitudes 10³…10¹⁴ in an exact
 /// (lowercased) locale key.
