@@ -38,10 +38,10 @@ Infra: offline `codegen` (packaging-time), CI drift guard, deterministic output,
 Self-contained, driven by data we already vendor or can add; each has an official
 conformance corpus. Highest value, lowest risk — do these next.
 
-- ⬜🔬 **Line breaking (UAX #14)** — `line_breaks(&str)` yielding break
-  opportunities (mandatory vs optional). Data: `LineBreak.txt` (+ EastAsianWidth,
-  already vendored). Conformance: `LineBreakTest.txt`. *Natural companion to
-  segmentation; same iterator/codegen shape.*
+- 🟡🔬 **Line breaking (UAX #14)** — `line_breaks(&str)` yielding break
+  opportunities (mandatory vs allowed). ~99.98% conformant against
+  `LineBreakTest`; remaining gap is the LB19 CJK-quotation / East_Asian_Width
+  sub-rules. *Done apart from those edge cases.*
 - ⬜🔬 **Bidirectional algorithm (UAX #9)** — resolve embedding levels and
   reorder. Data: `Bidi_Class` (UnicodeData field 4), `BidiBrackets.txt`,
   `BidiMirroring.txt`. Conformance: `BidiTest.txt`, `BidiCharacterTest.txt`.

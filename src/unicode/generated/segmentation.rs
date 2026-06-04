@@ -4,7 +4,7 @@
 #![allow(unreachable_patterns)]
 #![allow(dead_code)]
 
-use crate::unicode::segment::{Gcb, Incb, Sb, Wb};
+use crate::unicode::segment::{Gcb, Incb, Lb, Sb, Wb};
 
 #[inline]
 pub(crate) const fn grapheme_break(cp: u32) -> Gcb {
@@ -11356,5 +11356,4918 @@ const fn sb_pe01(b: u8) -> Sb {
     match b {
         0x00..=0xef => Sb::Extend,
         _ => Sb::Other,
+    }
+}
+
+#[inline]
+pub(crate) const fn line_break(cp: u32) -> Lb {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => lb_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => lb_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => lb_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => lb_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => lb_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => lb_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x007 => lb_p7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x008 => lb_p8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => lb_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => lb_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => lb_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => lb_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => lb_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => lb_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => lb_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => lb_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x011 => lb_p11(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => lb_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x014 => lb_p14(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x016 => lb_p16(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x017 => lb_p17(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x018 => lb_p18(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x019 => lb_p19(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01a => lb_p1a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => lb_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => lb_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => lb_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => lb_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => lb_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => lb_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x022 => lb_p22(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x023 => lb_p23(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x026 => lb_p26(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x027 => lb_p27(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x028 => lb_p28(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x029 => lb_p29(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => lb_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => lb_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02e => lb_p2e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02f => lb_p2f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => lb_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x031 => lb_p31(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x032 => lb_p32(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x033 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x034 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x035 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x036 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x037 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x038 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x039 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x03a => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x03b => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x03c => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x03d => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x03e => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x03f => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x040 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x041 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x042 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x043 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x044 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x045 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x046 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x047 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x048 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x049 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x04a => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x04b => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x04c => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x04d => lb_p4d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x04e => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x04f => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x050 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x051 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x052 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x053 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x054 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x055 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x056 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x057 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x058 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x059 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x05a => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x05b => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x05c => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x05d => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x05e => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x05f => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x060 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x061 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x062 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x063 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x064 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x065 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x066 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x067 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x068 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x069 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x06a => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x06b => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x06c => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x06d => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x06e => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x06f => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x070 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x071 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x072 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x073 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x074 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x075 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x076 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x077 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x078 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x079 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x07a => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x07b => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x07c => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x07d => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x07e => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x07f => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x080 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x081 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x082 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x083 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x084 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x085 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x086 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x087 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x088 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x089 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x08a => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x08b => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x08c => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x08d => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x08e => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x08f => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x090 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x091 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x092 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x093 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x094 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x095 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x096 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x097 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x098 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x099 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x09a => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x09b => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x09c => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x09d => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x09e => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x09f => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x0a0 => lb_pa0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a1 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x0a2 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x0a3 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x0a4 => lb_pa4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a6 => lb_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a8 => lb_pa8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a9 => lb_pa9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0aa => lb_paa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => lb_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ac => lb_pac(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ad => lb_pad(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ae => lb_pae(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0af => lb_paf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b0 => lb_pb0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b1 => lb_pb1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b2 => lb_pb2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b3 => lb_pb3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b4 => lb_pb4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b5 => lb_pb5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b6 => lb_pb6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b7 => lb_pb7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b8 => lb_pb8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0b9 => lb_pb9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ba => lb_pba(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0bb => lb_pbb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0bc => lb_pbc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0bd => lb_pbd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0be => lb_pbe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0bf => lb_pbf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c0 => lb_pc0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c1 => lb_pc1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c2 => lb_pc2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c3 => lb_pc3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c4 => lb_pc4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c5 => lb_pc5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c6 => lb_pc6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c7 => lb_pc7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c8 => lb_pc8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0c9 => lb_pc9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ca => lb_pca(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0cb => lb_pcb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0cc => lb_pcc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0cd => lb_pcd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ce => lb_pce(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0cf => lb_pcf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0d0 => lb_pd0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0d1 => lb_pd1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0d2 => lb_pd2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0d3 => lb_pd3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0d4 => lb_pd4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0d5 => lb_pd5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0d6 => lb_pd6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0d7 => lb_pd7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0f9 => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x0fa => Lb::ID,
+        #[cfg(feature = "bmp")]
+        0x0fb => lb_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fd => lb_pfd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => lb_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => lb_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x101 => lb_p101(cp as u8),
+        #[cfg(feature = "full")]
+        0x102 => lb_p102(cp as u8),
+        #[cfg(feature = "full")]
+        0x103 => lb_p103(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => lb_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x108 => lb_p108(cp as u8),
+        #[cfg(feature = "full")]
+        0x109 => lb_p109(cp as u8),
+        #[cfg(feature = "full")]
+        0x10a => lb_p10a(cp as u8),
+        #[cfg(feature = "full")]
+        0x10b => lb_p10b(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => lb_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x10e => lb_p10e(cp as u8),
+        #[cfg(feature = "full")]
+        0x10f => lb_p10f(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => lb_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => lb_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x112 => lb_p112(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => lb_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => lb_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => lb_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x116 => lb_p116(cp as u8),
+        #[cfg(feature = "full")]
+        0x117 => lb_p117(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => lb_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => lb_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x11a => lb_p11a(cp as u8),
+        #[cfg(feature = "full")]
+        0x11b => lb_p11b(cp as u8),
+        #[cfg(feature = "full")]
+        0x11c => lb_p11c(cp as u8),
+        #[cfg(feature = "full")]
+        0x11d => lb_p11d(cp as u8),
+        #[cfg(feature = "full")]
+        0x11e => lb_p11e(cp as u8),
+        #[cfg(feature = "full")]
+        0x11f => lb_p11f(cp as u8),
+        #[cfg(feature = "full")]
+        0x124 => lb_p124(cp as u8),
+        #[cfg(feature = "full")]
+        0x132 => lb_p132(cp as u8),
+        #[cfg(feature = "full")]
+        0x133 => lb_p133(cp as u8),
+        #[cfg(feature = "full")]
+        0x134 => lb_p134(cp as u8),
+        #[cfg(feature = "full")]
+        0x145 => lb_p145(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => lb_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x16a => lb_p16a(cp as u8),
+        #[cfg(feature = "full")]
+        0x16b => lb_p16b(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => lb_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => lb_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x16f => lb_p16f(cp as u8),
+        #[cfg(feature = "full")]
+        0x170 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x171 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x172 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x173 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x174 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x175 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x176 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x177 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x178 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x179 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x17a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x17b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x17c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x17d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x17e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x17f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x180 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x181 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x182 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x183 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x184 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x185 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x186 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x187 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x188 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x189 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x18a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x18d => lb_p18d(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x1b1 => lb_p1b1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b2 => lb_p1b2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1bc => lb_p1bc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cc => lb_p1cc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cf => lb_p1cf(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => lb_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d2 => lb_p1d2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d7 => lb_p1d7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1da => lb_p1da(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => lb_p1e0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e1 => lb_p1e1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e2 => lb_p1e2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e4 => lb_p1e4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e5 => lb_p1e5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e6 => lb_p1e6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e8 => lb_p1e8(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => lb_p1e9(cp as u8),
+        #[cfg(feature = "full")]
+        0x1ec => lb_p1ec(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x1f1 => lb_p1f1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x1f3 => lb_p1f3(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f4 => lb_p1f4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f5 => lb_p1f5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f6 => lb_p1f6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f7 => lb_p1f7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f9 => lb_p1f9(cp as u8),
+        #[cfg(feature = "full")]
+        0x1fa => lb_p1fa(cp as u8),
+        #[cfg(feature = "full")]
+        0x1fb => lb_p1fb(cp as u8),
+        #[cfg(feature = "full")]
+        0x1fc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x1fd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x1fe => Lb::ID,
+        #[cfg(feature = "full")]
+        0x1ff => lb_p1ff(cp as u8),
+        #[cfg(feature = "full")]
+        0x200 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x201 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x202 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x203 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x204 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x205 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x206 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x207 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x208 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x209 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x20a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x20b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x20c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x20d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x20e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x20f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x210 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x211 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x212 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x213 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x214 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x215 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x216 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x217 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x218 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x219 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x21a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x21b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x21c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x21d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x21e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x21f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x220 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x221 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x222 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x223 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x224 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x225 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x226 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x227 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x228 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x229 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x22a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x22b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x22c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x22d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x22e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x22f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x230 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x231 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x232 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x233 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x234 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x235 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x236 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x237 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x238 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x239 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x23a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x23b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x23c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x23d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x23e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x23f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x240 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x241 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x242 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x243 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x244 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x245 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x246 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x247 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x248 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x249 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x24a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x24b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x24c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x24d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x24e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x24f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x250 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x251 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x252 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x253 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x254 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x255 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x256 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x257 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x258 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x259 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x25a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x25b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x25c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x25d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x25e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x25f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x260 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x261 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x262 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x263 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x264 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x265 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x266 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x267 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x268 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x269 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x26a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x26b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x26c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x26d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x26e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x26f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x270 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x271 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x272 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x273 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x274 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x275 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x276 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x277 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x278 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x279 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x27a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x27b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x27c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x27d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x27e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x27f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x280 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x281 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x282 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x283 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x284 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x285 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x286 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x287 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x288 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x289 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x28a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x28b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x28c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x28d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x28e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x28f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x290 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x291 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x292 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x293 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x294 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x295 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x296 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x297 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x298 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x299 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x29a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x29b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x29c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x29d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x29e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x29f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2a9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2aa => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ab => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ac => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ad => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ae => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2af => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2b9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ba => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2bb => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2bc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2bd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2be => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2bf => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2c9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ca => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2cb => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2cc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2cd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ce => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2cf => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2d9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2da => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2db => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2dc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2dd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2de => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2df => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2e9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ea => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2eb => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ec => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ed => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ee => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ef => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2f9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2fa => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2fb => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2fc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2fd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2fe => Lb::ID,
+        #[cfg(feature = "full")]
+        0x2ff => lb_p2ff(cp as u8),
+        #[cfg(feature = "full")]
+        0x300 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x301 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x302 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x303 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x304 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x305 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x306 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x307 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x308 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x309 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x30a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x30b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x30c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x30d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x30e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x30f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x310 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x311 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x312 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x313 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x314 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x315 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x316 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x317 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x318 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x319 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x31a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x31b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x31c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x31d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x31e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x31f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x320 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x321 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x322 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x323 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x324 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x325 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x326 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x327 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x328 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x329 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x32a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x32b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x32c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x32d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x32e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x32f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x330 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x331 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x332 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x333 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x334 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x335 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x336 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x337 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x338 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x339 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x33a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x33b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x33c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x33d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x33e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x33f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x340 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x341 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x342 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x343 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x344 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x345 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x346 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x347 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x348 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x349 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x34a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x34b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x34c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x34d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x34e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x34f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x350 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x351 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x352 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x353 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x354 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x355 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x356 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x357 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x358 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x359 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x35a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x35b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x35c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x35d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x35e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x35f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x360 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x361 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x362 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x363 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x364 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x365 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x366 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x367 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x368 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x369 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x36a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x36b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x36c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x36d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x36e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x36f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x370 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x371 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x372 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x373 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x374 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x375 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x376 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x377 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x378 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x379 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x37a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x37b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x37c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x37d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x37e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x37f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x380 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x381 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x382 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x383 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x384 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x385 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x386 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x387 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x388 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x389 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x38a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x38b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x38c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x38d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x38e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x38f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x390 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x391 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x392 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x393 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x394 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x395 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x396 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x397 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x398 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x399 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x39a => Lb::ID,
+        #[cfg(feature = "full")]
+        0x39b => Lb::ID,
+        #[cfg(feature = "full")]
+        0x39c => Lb::ID,
+        #[cfg(feature = "full")]
+        0x39d => Lb::ID,
+        #[cfg(feature = "full")]
+        0x39e => Lb::ID,
+        #[cfg(feature = "full")]
+        0x39f => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3a9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3aa => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ab => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ac => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ad => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ae => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3af => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3b9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ba => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3bb => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3bc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3bd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3be => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3bf => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3c9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ca => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3cb => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3cc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3cd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ce => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3cf => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3d9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3da => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3db => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3dc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3dd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3de => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3df => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3e9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ea => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3eb => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ec => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ed => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ee => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ef => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f0 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f1 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f2 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f3 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f4 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f5 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f6 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f7 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f8 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3f9 => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3fa => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3fb => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3fc => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3fd => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3fe => Lb::ID,
+        #[cfg(feature = "full")]
+        0x3ff => lb_p3ff(cp as u8),
+        #[cfg(feature = "full")]
+        0xe00 => lb_pe00(cp as u8),
+        #[cfg(feature = "full")]
+        0xe01 => lb_pe01(cp as u8),
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn lb_p0(b: u8) -> Lb {
+    match b {
+        0x00..=0x08 => Lb::CM,
+        0x09 => Lb::BA,
+        0x0a => Lb::LF,
+        0x0b..=0x0c => Lb::BK,
+        0x0d => Lb::CR,
+        0x0e..=0x1f => Lb::CM,
+        0x20 => Lb::SP,
+        0x21 => Lb::EX,
+        0x22 => Lb::QU,
+        0x24 => Lb::PR,
+        0x25 => Lb::PO,
+        0x27 => Lb::QU,
+        0x28 => Lb::OP,
+        0x29 => Lb::CP,
+        0x2b => Lb::PR,
+        0x2c => Lb::IS,
+        0x2d => Lb::HY,
+        0x2e => Lb::IS,
+        0x2f => Lb::SY,
+        0x30..=0x39 => Lb::NU,
+        0x3a..=0x3b => Lb::IS,
+        0x3f => Lb::EX,
+        0x5b => Lb::OP,
+        0x5c => Lb::PR,
+        0x5d => Lb::CP,
+        0x7b => Lb::OP,
+        0x7c => Lb::BA,
+        0x7d => Lb::CL,
+        0x7f => Lb::CM,
+        #[cfg(feature = "latin1")]
+        0x80..=0x84 => Lb::CM,
+        #[cfg(feature = "latin1")]
+        0x85 => Lb::NL,
+        #[cfg(feature = "latin1")]
+        0x86..=0x9f => Lb::CM,
+        #[cfg(feature = "latin1")]
+        0xa0 => Lb::GL,
+        #[cfg(feature = "latin1")]
+        0xa1 => Lb::OP,
+        #[cfg(feature = "latin1")]
+        0xa2 => Lb::PO,
+        #[cfg(feature = "latin1")]
+        0xa3..=0xa5 => Lb::PR,
+        #[cfg(feature = "latin1")]
+        0xab => Lb::QU,
+        #[cfg(feature = "latin1")]
+        0xad => Lb::BA,
+        #[cfg(feature = "latin1")]
+        0xb0 => Lb::PO,
+        #[cfg(feature = "latin1")]
+        0xb1 => Lb::PR,
+        #[cfg(feature = "latin1")]
+        0xb4 => Lb::BB,
+        #[cfg(feature = "latin1")]
+        0xbb => Lb::QU,
+        #[cfg(feature = "latin1")]
+        0xbf => Lb::OP,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p2(b: u8) -> Lb {
+    match b {
+        0xc8 => Lb::BB,
+        0xcc => Lb::BB,
+        0xdf => Lb::BB,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p3(b: u8) -> Lb {
+    match b {
+        0x00..=0x5b => Lb::CM,
+        0x5c..=0x62 => Lb::GL,
+        0x63..=0x6f => Lb::CM,
+        0x7e => Lb::IS,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p4(b: u8) -> Lb {
+    match b {
+        0x83..=0x89 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p5(b: u8) -> Lb {
+    match b {
+        0x89 => Lb::IS,
+        0x8a => Lb::HH,
+        0x8f => Lb::PR,
+        0x91..=0xbd => Lb::CM,
+        0xbe => Lb::HH,
+        0xbf => Lb::CM,
+        0xc1..=0xc2 => Lb::CM,
+        0xc4..=0xc5 => Lb::CM,
+        0xc6 => Lb::EX,
+        0xc7 => Lb::CM,
+        0xd0..=0xea => Lb::HL,
+        0xef..=0xf2 => Lb::HL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p6(b: u8) -> Lb {
+    match b {
+        0x00..=0x05 => Lb::NU,
+        0x09..=0x0b => Lb::PO,
+        0x0c..=0x0d => Lb::IS,
+        0x10..=0x1a => Lb::CM,
+        0x1b => Lb::EX,
+        0x1c => Lb::CM,
+        0x1d..=0x1f => Lb::EX,
+        0x4b..=0x5f => Lb::CM,
+        0x60..=0x69 => Lb::NU,
+        0x6a => Lb::PO,
+        0x6b..=0x6c => Lb::NU,
+        0x70 => Lb::CM,
+        0xd4 => Lb::EX,
+        0xd6..=0xdc => Lb::CM,
+        0xdd => Lb::NU,
+        0xdf..=0xe4 => Lb::CM,
+        0xe7..=0xe8 => Lb::CM,
+        0xea..=0xed => Lb::CM,
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p7(b: u8) -> Lb {
+    match b {
+        0x11 => Lb::CM,
+        0x30..=0x4a => Lb::CM,
+        0xa6..=0xb0 => Lb::CM,
+        0xc0..=0xc9 => Lb::NU,
+        0xeb..=0xf3 => Lb::CM,
+        0xf8 => Lb::IS,
+        0xf9 => Lb::EX,
+        0xfd => Lb::CM,
+        0xfe..=0xff => Lb::PR,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p8(b: u8) -> Lb {
+    match b {
+        0x16..=0x19 => Lb::CM,
+        0x1b..=0x23 => Lb::CM,
+        0x25..=0x27 => Lb::CM,
+        0x29..=0x2d => Lb::CM,
+        0x59..=0x5b => Lb::CM,
+        0x90..=0x91 => Lb::NU,
+        0x97..=0x9f => Lb::CM,
+        0xca..=0xe1 => Lb::CM,
+        0xe2 => Lb::NU,
+        0xe3..=0xff => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p9(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::CM,
+        0x3a..=0x3c => Lb::CM,
+        0x3e..=0x4f => Lb::CM,
+        0x51..=0x57 => Lb::CM,
+        0x62..=0x63 => Lb::CM,
+        0x64..=0x65 => Lb::BA,
+        0x66..=0x6f => Lb::NU,
+        0x81..=0x83 => Lb::CM,
+        0xbc => Lb::CM,
+        0xbe..=0xc4 => Lb::CM,
+        0xc7..=0xc8 => Lb::CM,
+        0xcb..=0xcd => Lb::CM,
+        0xd7 => Lb::CM,
+        0xe2..=0xe3 => Lb::CM,
+        0xe6..=0xef => Lb::NU,
+        0xf2..=0xf3 => Lb::PO,
+        0xf9 => Lb::PO,
+        0xfb => Lb::PR,
+        0xfe => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pa(b: u8) -> Lb {
+    match b {
+        0x01..=0x03 => Lb::CM,
+        0x3c => Lb::CM,
+        0x3e..=0x42 => Lb::CM,
+        0x47..=0x48 => Lb::CM,
+        0x4b..=0x4d => Lb::CM,
+        0x51 => Lb::CM,
+        0x66..=0x6f => Lb::NU,
+        0x70..=0x71 => Lb::CM,
+        0x75 => Lb::CM,
+        0x81..=0x83 => Lb::CM,
+        0xbc => Lb::CM,
+        0xbe..=0xc5 => Lb::CM,
+        0xc7..=0xc9 => Lb::CM,
+        0xcb..=0xcd => Lb::CM,
+        0xe2..=0xe3 => Lb::CM,
+        0xe6..=0xef => Lb::NU,
+        0xf1 => Lb::PR,
+        0xfa..=0xff => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb(b: u8) -> Lb {
+    match b {
+        0x01..=0x03 => Lb::CM,
+        0x3c => Lb::CM,
+        0x3e..=0x44 => Lb::CM,
+        0x47..=0x48 => Lb::CM,
+        0x4b..=0x4d => Lb::CM,
+        0x55..=0x57 => Lb::CM,
+        0x62..=0x63 => Lb::CM,
+        0x66..=0x6f => Lb::NU,
+        0x82 => Lb::CM,
+        0xbe..=0xc2 => Lb::CM,
+        0xc6..=0xc8 => Lb::CM,
+        0xca..=0xcd => Lb::CM,
+        0xd7 => Lb::CM,
+        0xe6..=0xef => Lb::NU,
+        0xf9 => Lb::PR,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc(b: u8) -> Lb {
+    match b {
+        0x00..=0x04 => Lb::CM,
+        0x3c => Lb::CM,
+        0x3e..=0x44 => Lb::CM,
+        0x46..=0x48 => Lb::CM,
+        0x4a..=0x4d => Lb::CM,
+        0x55..=0x56 => Lb::CM,
+        0x62..=0x63 => Lb::CM,
+        0x66..=0x6f => Lb::NU,
+        0x77 => Lb::BB,
+        0x81..=0x83 => Lb::CM,
+        0x84 => Lb::BB,
+        0xbc => Lb::CM,
+        0xbe..=0xc4 => Lb::CM,
+        0xc6..=0xc8 => Lb::CM,
+        0xca..=0xcd => Lb::CM,
+        0xd5..=0xd6 => Lb::CM,
+        0xe2..=0xe3 => Lb::CM,
+        0xe6..=0xef => Lb::NU,
+        0xf3 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::CM,
+        0x3b..=0x3c => Lb::CM,
+        0x3e..=0x44 => Lb::CM,
+        0x46..=0x48 => Lb::CM,
+        0x4a..=0x4d => Lb::CM,
+        0x57 => Lb::CM,
+        0x62..=0x63 => Lb::CM,
+        0x66..=0x6f => Lb::NU,
+        0x79 => Lb::PO,
+        0x81..=0x83 => Lb::CM,
+        0xca => Lb::CM,
+        0xcf..=0xd4 => Lb::CM,
+        0xd6 => Lb::CM,
+        0xd8..=0xdf => Lb::CM,
+        0xe6..=0xef => Lb::NU,
+        0xf2..=0xf3 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pe(b: u8) -> Lb {
+    match b {
+        0x31 => Lb::CM,
+        0x34..=0x3a => Lb::CM,
+        0x3f => Lb::PR,
+        0x47..=0x4e => Lb::CM,
+        0x50..=0x59 => Lb::NU,
+        0x5a..=0x5b => Lb::BA,
+        0xb1 => Lb::CM,
+        0xb4..=0xbc => Lb::CM,
+        0xc8..=0xce => Lb::CM,
+        0xd0..=0xd9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pf(b: u8) -> Lb {
+    match b {
+        0x01..=0x04 => Lb::BB,
+        0x06..=0x07 => Lb::BB,
+        0x08 => Lb::GL,
+        0x09..=0x0a => Lb::BB,
+        0x0b => Lb::BA,
+        0x0c => Lb::GL,
+        0x0d..=0x11 => Lb::EX,
+        0x12 => Lb::GL,
+        0x14 => Lb::EX,
+        0x18..=0x19 => Lb::CM,
+        0x20..=0x29 => Lb::NU,
+        0x34 => Lb::BA,
+        0x35 => Lb::CM,
+        0x37 => Lb::CM,
+        0x39 => Lb::CM,
+        0x3a => Lb::OP,
+        0x3b => Lb::CL,
+        0x3c => Lb::OP,
+        0x3d => Lb::CL,
+        0x3e..=0x3f => Lb::CM,
+        0x71..=0x7e => Lb::CM,
+        0x7f => Lb::BA,
+        0x80..=0x84 => Lb::CM,
+        0x85 => Lb::BA,
+        0x86..=0x87 => Lb::CM,
+        0x8d..=0x97 => Lb::CM,
+        0x99..=0xbc => Lb::CM,
+        0xbe..=0xbf => Lb::BA,
+        0xc6 => Lb::CM,
+        0xd0..=0xd1 => Lb::BB,
+        0xd2 => Lb::BA,
+        0xd3 => Lb::BB,
+        0xd9..=0xda => Lb::GL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p10(b: u8) -> Lb {
+    match b {
+        0x2b..=0x3e => Lb::CM,
+        0x40..=0x49 => Lb::NU,
+        0x4a..=0x4b => Lb::BA,
+        0x56..=0x59 => Lb::CM,
+        0x5e..=0x60 => Lb::CM,
+        0x62..=0x64 => Lb::CM,
+        0x67..=0x6d => Lb::CM,
+        0x71..=0x74 => Lb::CM,
+        0x82..=0x8d => Lb::CM,
+        0x8f => Lb::CM,
+        0x90..=0x99 => Lb::NU,
+        0x9a..=0x9d => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p11(b: u8) -> Lb {
+    match b {
+        0x00..=0x5f => Lb::JL,
+        0x60..=0xa7 => Lb::JV,
+        0xa8..=0xff => Lb::JT,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p13(b: u8) -> Lb {
+    match b {
+        0x5d..=0x5f => Lb::CM,
+        0x61 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p14(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::HH,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p16(b: u8) -> Lb {
+    match b {
+        0x80 => Lb::BA,
+        0x9b => Lb::OP,
+        0x9c => Lb::CL,
+        0xeb..=0xed => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p17(b: u8) -> Lb {
+    match b {
+        0x12..=0x15 => Lb::CM,
+        0x32..=0x34 => Lb::CM,
+        0x35..=0x36 => Lb::BA,
+        0x52..=0x53 => Lb::CM,
+        0x72..=0x73 => Lb::CM,
+        0xb4..=0xd3 => Lb::CM,
+        0xd4..=0xd5 => Lb::BA,
+        0xd6 => Lb::NS,
+        0xd8 => Lb::BA,
+        0xda => Lb::BA,
+        0xdb => Lb::PR,
+        0xdd => Lb::CM,
+        0xe0..=0xe9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p18(b: u8) -> Lb {
+    match b {
+        0x02..=0x03 => Lb::EX,
+        0x04..=0x05 => Lb::BA,
+        0x06 => Lb::BB,
+        0x08..=0x09 => Lb::EX,
+        0x0b..=0x0d => Lb::CM,
+        0x0e => Lb::GL,
+        0x0f => Lb::CM,
+        0x10..=0x19 => Lb::NU,
+        0x85..=0x86 => Lb::CM,
+        0xa9 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p19(b: u8) -> Lb {
+    match b {
+        0x20..=0x2b => Lb::CM,
+        0x30..=0x3b => Lb::CM,
+        0x44..=0x45 => Lb::EX,
+        0x46..=0x4f => Lb::NU,
+        0xd0..=0xda => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p1a(b: u8) -> Lb {
+    match b {
+        0x17..=0x1b => Lb::CM,
+        0x55..=0x5e => Lb::CM,
+        0x60..=0x7c => Lb::CM,
+        0x7f => Lb::CM,
+        0x80..=0x89 => Lb::NU,
+        0x90..=0x99 => Lb::NU,
+        0xb0..=0xdd => Lb::CM,
+        0xe0..=0xea => Lb::CM,
+        0xeb => Lb::GL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p1b(b: u8) -> Lb {
+    match b {
+        0x00..=0x04 => Lb::CM,
+        0x05..=0x33 => Lb::AK,
+        0x34..=0x43 => Lb::CM,
+        0x44 => Lb::VI,
+        0x45..=0x4c => Lb::AK,
+        0x4e..=0x4f => Lb::BA,
+        0x50..=0x59 => Lb::AS,
+        0x5a..=0x5b => Lb::BA,
+        0x5c => Lb::ID,
+        0x5d..=0x60 => Lb::BA,
+        0x61..=0x6a => Lb::ID,
+        0x6b..=0x73 => Lb::CM,
+        0x74..=0x7c => Lb::ID,
+        0x7d..=0x7f => Lb::BA,
+        0x80..=0x82 => Lb::CM,
+        0xa1..=0xad => Lb::CM,
+        0xb0..=0xb9 => Lb::NU,
+        0xc0..=0xe5 => Lb::AS,
+        0xe6..=0xf1 => Lb::CM,
+        0xf2..=0xf3 => Lb::VF,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p1c(b: u8) -> Lb {
+    match b {
+        0x24..=0x37 => Lb::CM,
+        0x3b..=0x3f => Lb::BA,
+        0x40..=0x49 => Lb::NU,
+        0x50..=0x59 => Lb::NU,
+        0x7e..=0x7f => Lb::BA,
+        0xd0..=0xd2 => Lb::CM,
+        0xd4..=0xe8 => Lb::CM,
+        0xed => Lb::CM,
+        0xf4 => Lb::CM,
+        0xf7..=0xf9 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p1d(b: u8) -> Lb {
+    match b {
+        0xc0..=0xcc => Lb::CM,
+        0xcd => Lb::GL,
+        0xce..=0xfb => Lb::CM,
+        0xfc => Lb::GL,
+        0xfd..=0xff => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p1f(b: u8) -> Lb {
+    match b {
+        0xfd => Lb::BB,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p20(b: u8) -> Lb {
+    match b {
+        0x00..=0x06 => Lb::BA,
+        0x07 => Lb::GL,
+        0x08..=0x0a => Lb::BA,
+        0x0b => Lb::ZW,
+        0x0c => Lb::CM,
+        0x0d => Lb::ZWJ,
+        0x0e..=0x0f => Lb::CM,
+        0x10 => Lb::HH,
+        0x11 => Lb::GL,
+        0x12..=0x13 => Lb::HH,
+        0x14 => Lb::B2,
+        0x18..=0x19 => Lb::QU,
+        0x1a => Lb::OP,
+        0x1b..=0x1d => Lb::QU,
+        0x1e => Lb::OP,
+        0x1f => Lb::QU,
+        0x24..=0x26 => Lb::IN,
+        0x27 => Lb::BA,
+        0x28..=0x29 => Lb::BK,
+        0x2a..=0x2e => Lb::CM,
+        0x2f => Lb::GL,
+        0x30..=0x37 => Lb::PO,
+        0x39..=0x3a => Lb::QU,
+        0x3c..=0x3d => Lb::NS,
+        0x44 => Lb::IS,
+        0x45 => Lb::OP,
+        0x46 => Lb::CL,
+        0x47..=0x49 => Lb::NS,
+        0x56 => Lb::BA,
+        0x57 => Lb::PO,
+        0x58..=0x5b => Lb::BA,
+        0x5d..=0x5f => Lb::BA,
+        0x60 => Lb::WJ,
+        0x66..=0x6f => Lb::CM,
+        0x7d => Lb::OP,
+        0x7e => Lb::CL,
+        0x8d => Lb::OP,
+        0x8e => Lb::CL,
+        0xa0..=0xa6 => Lb::PR,
+        0xa7 => Lb::PO,
+        0xa8..=0xb5 => Lb::PR,
+        0xb6 => Lb::PO,
+        0xb7..=0xba => Lb::PR,
+        0xbb => Lb::PO,
+        0xbc..=0xbd => Lb::PR,
+        0xbe => Lb::PO,
+        0xbf => Lb::PR,
+        0xc0 => Lb::PO,
+        0xc1..=0xcf => Lb::PR,
+        0xd0..=0xf0 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p21(b: u8) -> Lb {
+    match b {
+        0x03 => Lb::PO,
+        0x09 => Lb::PO,
+        0x16 => Lb::PR,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p22(b: u8) -> Lb {
+    match b {
+        0x12..=0x13 => Lb::PR,
+        0xef => Lb::IN,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p23(b: u8) -> Lb {
+    match b {
+        0x08 => Lb::OP,
+        0x09 => Lb::CL,
+        0x0a => Lb::OP,
+        0x0b => Lb::CL,
+        0x1a..=0x1b => Lb::ID,
+        0x29 => Lb::OP,
+        0x2a => Lb::CL,
+        0xf0..=0xf3 => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p26(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::ID,
+        0x14..=0x15 => Lb::ID,
+        0x18 => Lb::ID,
+        0x1a..=0x1c => Lb::ID,
+        0x1d => Lb::EB,
+        0x1e..=0x1f => Lb::ID,
+        0x39..=0x3b => Lb::ID,
+        0x68 => Lb::ID,
+        0x7f => Lb::ID,
+        0xbd..=0xc8 => Lb::ID,
+        0xcd => Lb::ID,
+        0xcf..=0xd1 => Lb::ID,
+        0xd3..=0xd4 => Lb::ID,
+        0xd8..=0xd9 => Lb::ID,
+        0xdc => Lb::ID,
+        0xdf..=0xe1 => Lb::ID,
+        0xea => Lb::ID,
+        0xf1..=0xf5 => Lb::ID,
+        0xf7..=0xf8 => Lb::ID,
+        0xf9 => Lb::EB,
+        0xfa => Lb::ID,
+        0xfd..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p27(b: u8) -> Lb {
+    match b {
+        0x00..=0x04 => Lb::ID,
+        0x08..=0x09 => Lb::ID,
+        0x0a..=0x0d => Lb::EB,
+        0x5b..=0x60 => Lb::QU,
+        0x62..=0x63 => Lb::EX,
+        0x64 => Lb::ID,
+        0x68 => Lb::OP,
+        0x69 => Lb::CL,
+        0x6a => Lb::OP,
+        0x6b => Lb::CL,
+        0x6c => Lb::OP,
+        0x6d => Lb::CL,
+        0x6e => Lb::OP,
+        0x6f => Lb::CL,
+        0x70 => Lb::OP,
+        0x71 => Lb::CL,
+        0x72 => Lb::OP,
+        0x73 => Lb::CL,
+        0x74 => Lb::OP,
+        0x75 => Lb::CL,
+        0xc5 => Lb::OP,
+        0xc6 => Lb::CL,
+        0xe6 => Lb::OP,
+        0xe7 => Lb::CL,
+        0xe8 => Lb::OP,
+        0xe9 => Lb::CL,
+        0xea => Lb::OP,
+        0xeb => Lb::CL,
+        0xec => Lb::OP,
+        0xed => Lb::CL,
+        0xee => Lb::OP,
+        0xef => Lb::CL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p28(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p29(b: u8) -> Lb {
+    match b {
+        0x83 => Lb::OP,
+        0x84 => Lb::CL,
+        0x85 => Lb::OP,
+        0x86 => Lb::CL,
+        0x87 => Lb::OP,
+        0x88 => Lb::CL,
+        0x89 => Lb::OP,
+        0x8a => Lb::CL,
+        0x8b => Lb::OP,
+        0x8c => Lb::CL,
+        0x8d => Lb::OP,
+        0x8e => Lb::CL,
+        0x8f => Lb::OP,
+        0x90 => Lb::CL,
+        0x91 => Lb::OP,
+        0x92 => Lb::CL,
+        0x93 => Lb::OP,
+        0x94 => Lb::CL,
+        0x95 => Lb::OP,
+        0x96 => Lb::CL,
+        0x97 => Lb::OP,
+        0x98 => Lb::CL,
+        0xd8 => Lb::OP,
+        0xd9 => Lb::CL,
+        0xda => Lb::OP,
+        0xdb => Lb::CL,
+        0xfc => Lb::OP,
+        0xfd => Lb::CL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p2c(b: u8) -> Lb {
+    match b {
+        0xef..=0xf1 => Lb::CM,
+        0xf9 => Lb::EX,
+        0xfa..=0xfc => Lb::BA,
+        0xfe => Lb::EX,
+        0xff => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p2d(b: u8) -> Lb {
+    match b {
+        0x70 => Lb::BA,
+        0x7f => Lb::CM,
+        0xe0..=0xff => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p2e(b: u8) -> Lb {
+    match b {
+        0x00..=0x0d => Lb::QU,
+        0x0e..=0x15 => Lb::BA,
+        0x17 => Lb::HH,
+        0x18 => Lb::OP,
+        0x19 => Lb::BA,
+        0x1c..=0x1d => Lb::QU,
+        0x20..=0x21 => Lb::QU,
+        0x22 => Lb::OP,
+        0x23 => Lb::CL,
+        0x24 => Lb::OP,
+        0x25 => Lb::CL,
+        0x26 => Lb::OP,
+        0x27 => Lb::CL,
+        0x28 => Lb::OP,
+        0x29 => Lb::CL,
+        0x2a..=0x2d => Lb::BA,
+        0x2e => Lb::EX,
+        0x30..=0x31 => Lb::BA,
+        0x33..=0x34 => Lb::BA,
+        0x3a..=0x3b => Lb::B2,
+        0x3c..=0x3e => Lb::BA,
+        0x40 => Lb::HH,
+        0x41 => Lb::BA,
+        0x42 => Lb::OP,
+        0x43..=0x4a => Lb::BA,
+        0x4c => Lb::BA,
+        0x4e..=0x4f => Lb::BA,
+        0x53..=0x54 => Lb::EX,
+        0x55 => Lb::OP,
+        0x56 => Lb::CP,
+        0x57 => Lb::OP,
+        0x58 => Lb::CP,
+        0x59 => Lb::OP,
+        0x5a => Lb::CP,
+        0x5b => Lb::OP,
+        0x5c => Lb::CP,
+        0x5d => Lb::HH,
+        0x80..=0x99 => Lb::ID,
+        0x9b..=0xf3 => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p2f(b: u8) -> Lb {
+    match b {
+        0x00..=0xd5 => Lb::ID,
+        0xf0..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p30(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::BA,
+        0x01..=0x02 => Lb::CL,
+        0x03..=0x04 => Lb::ID,
+        0x05 => Lb::NS,
+        0x06..=0x07 => Lb::ID,
+        0x08 => Lb::OP,
+        0x09 => Lb::CL,
+        0x0a => Lb::OP,
+        0x0b => Lb::CL,
+        0x0c => Lb::OP,
+        0x0d => Lb::CL,
+        0x0e => Lb::OP,
+        0x0f => Lb::CL,
+        0x10 => Lb::OP,
+        0x11 => Lb::CL,
+        0x12..=0x13 => Lb::ID,
+        0x14 => Lb::OP,
+        0x15 => Lb::CL,
+        0x16 => Lb::OP,
+        0x17 => Lb::CL,
+        0x18 => Lb::OP,
+        0x19 => Lb::CL,
+        0x1a => Lb::OP,
+        0x1b => Lb::CL,
+        0x1c => Lb::NS,
+        0x1d => Lb::OP,
+        0x1e..=0x1f => Lb::CL,
+        0x20..=0x29 => Lb::ID,
+        0x2a..=0x2f => Lb::CM,
+        0x30..=0x34 => Lb::ID,
+        0x35 => Lb::CM,
+        0x36..=0x3a => Lb::ID,
+        0x3b..=0x3c => Lb::NS,
+        0x3d..=0x3f => Lb::ID,
+        0x41 => Lb::NS,
+        0x42 => Lb::ID,
+        0x43 => Lb::NS,
+        0x44 => Lb::ID,
+        0x45 => Lb::NS,
+        0x46 => Lb::ID,
+        0x47 => Lb::NS,
+        0x48 => Lb::ID,
+        0x49 => Lb::NS,
+        0x4a..=0x62 => Lb::ID,
+        0x63 => Lb::NS,
+        0x64..=0x82 => Lb::ID,
+        0x83 => Lb::NS,
+        0x84 => Lb::ID,
+        0x85 => Lb::NS,
+        0x86 => Lb::ID,
+        0x87 => Lb::NS,
+        0x88..=0x8d => Lb::ID,
+        0x8e => Lb::NS,
+        0x8f..=0x94 => Lb::ID,
+        0x95..=0x96 => Lb::NS,
+        0x99..=0x9a => Lb::CM,
+        0x9b..=0x9e => Lb::NS,
+        0x9f => Lb::ID,
+        0xa0..=0xa1 => Lb::NS,
+        0xa2 => Lb::ID,
+        0xa3 => Lb::NS,
+        0xa4 => Lb::ID,
+        0xa5 => Lb::NS,
+        0xa6 => Lb::ID,
+        0xa7 => Lb::NS,
+        0xa8 => Lb::ID,
+        0xa9 => Lb::NS,
+        0xaa..=0xc2 => Lb::ID,
+        0xc3 => Lb::NS,
+        0xc4..=0xe2 => Lb::ID,
+        0xe3 => Lb::NS,
+        0xe4 => Lb::ID,
+        0xe5 => Lb::NS,
+        0xe6 => Lb::ID,
+        0xe7 => Lb::NS,
+        0xe8..=0xed => Lb::ID,
+        0xee => Lb::NS,
+        0xef..=0xf4 => Lb::ID,
+        0xf5..=0xf6 => Lb::NS,
+        0xf7..=0xfa => Lb::ID,
+        0xfb..=0xfe => Lb::NS,
+        0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p31(b: u8) -> Lb {
+    match b {
+        0x05..=0x2f => Lb::ID,
+        0x31..=0x8e => Lb::ID,
+        0x90..=0xe5 => Lb::ID,
+        0xef => Lb::ID,
+        0xf0..=0xff => Lb::NS,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p32(b: u8) -> Lb {
+    match b {
+        0x00..=0x1e => Lb::ID,
+        0x20..=0x47 => Lb::ID,
+        0x50..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_p4d(b: u8) -> Lb {
+    match b {
+        0x00..=0xbf => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pa0(b: u8) -> Lb {
+    match b {
+        0x00..=0x14 => Lb::ID,
+        0x15 => Lb::NS,
+        0x16..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pa4(b: u8) -> Lb {
+    match b {
+        0x00..=0x8c => Lb::ID,
+        0x90..=0xc6 => Lb::ID,
+        0xfe..=0xff => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pa6(b: u8) -> Lb {
+    match b {
+        0x0d => Lb::BA,
+        0x0e => Lb::EX,
+        0x0f => Lb::BA,
+        0x20..=0x29 => Lb::NU,
+        0x6f..=0x72 => Lb::CM,
+        0x74..=0x7d => Lb::CM,
+        0x9e..=0x9f => Lb::CM,
+        0xf0..=0xf1 => Lb::CM,
+        0xf3..=0xf7 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pa8(b: u8) -> Lb {
+    match b {
+        0x02 => Lb::CM,
+        0x06 => Lb::CM,
+        0x0b => Lb::CM,
+        0x23..=0x27 => Lb::CM,
+        0x2c => Lb::CM,
+        0x38 => Lb::PO,
+        0x74..=0x75 => Lb::BB,
+        0x76..=0x77 => Lb::EX,
+        0x80..=0x81 => Lb::CM,
+        0xb4..=0xc5 => Lb::CM,
+        0xce..=0xcf => Lb::BA,
+        0xd0..=0xd9 => Lb::NU,
+        0xe0..=0xf1 => Lb::CM,
+        0xfc => Lb::BB,
+        0xff => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pa9(b: u8) -> Lb {
+    match b {
+        0x00..=0x09 => Lb::NU,
+        0x26..=0x2d => Lb::CM,
+        0x2e..=0x2f => Lb::BA,
+        0x47..=0x53 => Lb::CM,
+        0x60..=0x7c => Lb::JL,
+        0x80..=0x83 => Lb::CM,
+        0x84..=0xb2 => Lb::AK,
+        0xb3..=0xbf => Lb::CM,
+        0xc0 => Lb::VI,
+        0xc1..=0xc6 => Lb::ID,
+        0xc7..=0xc9 => Lb::BA,
+        0xca..=0xcd => Lb::ID,
+        0xcf => Lb::BA,
+        0xd0..=0xd9 => Lb::AS,
+        0xde..=0xdf => Lb::ID,
+        0xe5 => Lb::CM,
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_paa(b: u8) -> Lb {
+    match b {
+        0x00..=0x28 => Lb::AS,
+        0x29..=0x36 => Lb::CM,
+        0x40..=0x42 => Lb::BA,
+        0x43 => Lb::CM,
+        0x44..=0x4b => Lb::BA,
+        0x4c..=0x4d => Lb::CM,
+        0x50..=0x59 => Lb::AS,
+        0x5c => Lb::ID,
+        0x5d..=0x5f => Lb::BA,
+        0x7b..=0x7d => Lb::CM,
+        0xb0 => Lb::CM,
+        0xb2..=0xb4 => Lb::CM,
+        0xb7..=0xb8 => Lb::CM,
+        0xbe..=0xbf => Lb::CM,
+        0xc1 => Lb::CM,
+        0xeb..=0xef => Lb::CM,
+        0xf0..=0xf1 => Lb::BA,
+        0xf5..=0xf6 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pab(b: u8) -> Lb {
+    match b {
+        0xe3..=0xea => Lb::CM,
+        0xeb => Lb::BA,
+        0xec..=0xed => Lb::CM,
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pac(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::H2,
+        0x01..=0x1b => Lb::H3,
+        0x1c => Lb::H2,
+        0x1d..=0x37 => Lb::H3,
+        0x38 => Lb::H2,
+        0x39..=0x53 => Lb::H3,
+        0x54 => Lb::H2,
+        0x55..=0x6f => Lb::H3,
+        0x70 => Lb::H2,
+        0x71..=0x8b => Lb::H3,
+        0x8c => Lb::H2,
+        0x8d..=0xa7 => Lb::H3,
+        0xa8 => Lb::H2,
+        0xa9..=0xc3 => Lb::H3,
+        0xc4 => Lb::H2,
+        0xc5..=0xdf => Lb::H3,
+        0xe0 => Lb::H2,
+        0xe1..=0xfb => Lb::H3,
+        0xfc => Lb::H2,
+        0xfd..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pad(b: u8) -> Lb {
+    match b {
+        0x00..=0x17 => Lb::H3,
+        0x18 => Lb::H2,
+        0x19..=0x33 => Lb::H3,
+        0x34 => Lb::H2,
+        0x35..=0x4f => Lb::H3,
+        0x50 => Lb::H2,
+        0x51..=0x6b => Lb::H3,
+        0x6c => Lb::H2,
+        0x6d..=0x87 => Lb::H3,
+        0x88 => Lb::H2,
+        0x89..=0xa3 => Lb::H3,
+        0xa4 => Lb::H2,
+        0xa5..=0xbf => Lb::H3,
+        0xc0 => Lb::H2,
+        0xc1..=0xdb => Lb::H3,
+        0xdc => Lb::H2,
+        0xdd..=0xf7 => Lb::H3,
+        0xf8 => Lb::H2,
+        0xf9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pae(b: u8) -> Lb {
+    match b {
+        0x00..=0x13 => Lb::H3,
+        0x14 => Lb::H2,
+        0x15..=0x2f => Lb::H3,
+        0x30 => Lb::H2,
+        0x31..=0x4b => Lb::H3,
+        0x4c => Lb::H2,
+        0x4d..=0x67 => Lb::H3,
+        0x68 => Lb::H2,
+        0x69..=0x83 => Lb::H3,
+        0x84 => Lb::H2,
+        0x85..=0x9f => Lb::H3,
+        0xa0 => Lb::H2,
+        0xa1..=0xbb => Lb::H3,
+        0xbc => Lb::H2,
+        0xbd..=0xd7 => Lb::H3,
+        0xd8 => Lb::H2,
+        0xd9..=0xf3 => Lb::H3,
+        0xf4 => Lb::H2,
+        0xf5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_paf(b: u8) -> Lb {
+    match b {
+        0x00..=0x0f => Lb::H3,
+        0x10 => Lb::H2,
+        0x11..=0x2b => Lb::H3,
+        0x2c => Lb::H2,
+        0x2d..=0x47 => Lb::H3,
+        0x48 => Lb::H2,
+        0x49..=0x63 => Lb::H3,
+        0x64 => Lb::H2,
+        0x65..=0x7f => Lb::H3,
+        0x80 => Lb::H2,
+        0x81..=0x9b => Lb::H3,
+        0x9c => Lb::H2,
+        0x9d..=0xb7 => Lb::H3,
+        0xb8 => Lb::H2,
+        0xb9..=0xd3 => Lb::H3,
+        0xd4 => Lb::H2,
+        0xd5..=0xef => Lb::H3,
+        0xf0 => Lb::H2,
+        0xf1..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb0(b: u8) -> Lb {
+    match b {
+        0x00..=0x0b => Lb::H3,
+        0x0c => Lb::H2,
+        0x0d..=0x27 => Lb::H3,
+        0x28 => Lb::H2,
+        0x29..=0x43 => Lb::H3,
+        0x44 => Lb::H2,
+        0x45..=0x5f => Lb::H3,
+        0x60 => Lb::H2,
+        0x61..=0x7b => Lb::H3,
+        0x7c => Lb::H2,
+        0x7d..=0x97 => Lb::H3,
+        0x98 => Lb::H2,
+        0x99..=0xb3 => Lb::H3,
+        0xb4 => Lb::H2,
+        0xb5..=0xcf => Lb::H3,
+        0xd0 => Lb::H2,
+        0xd1..=0xeb => Lb::H3,
+        0xec => Lb::H2,
+        0xed..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb1(b: u8) -> Lb {
+    match b {
+        0x00..=0x07 => Lb::H3,
+        0x08 => Lb::H2,
+        0x09..=0x23 => Lb::H3,
+        0x24 => Lb::H2,
+        0x25..=0x3f => Lb::H3,
+        0x40 => Lb::H2,
+        0x41..=0x5b => Lb::H3,
+        0x5c => Lb::H2,
+        0x5d..=0x77 => Lb::H3,
+        0x78 => Lb::H2,
+        0x79..=0x93 => Lb::H3,
+        0x94 => Lb::H2,
+        0x95..=0xaf => Lb::H3,
+        0xb0 => Lb::H2,
+        0xb1..=0xcb => Lb::H3,
+        0xcc => Lb::H2,
+        0xcd..=0xe7 => Lb::H3,
+        0xe8 => Lb::H2,
+        0xe9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb2(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::H3,
+        0x04 => Lb::H2,
+        0x05..=0x1f => Lb::H3,
+        0x20 => Lb::H2,
+        0x21..=0x3b => Lb::H3,
+        0x3c => Lb::H2,
+        0x3d..=0x57 => Lb::H3,
+        0x58 => Lb::H2,
+        0x59..=0x73 => Lb::H3,
+        0x74 => Lb::H2,
+        0x75..=0x8f => Lb::H3,
+        0x90 => Lb::H2,
+        0x91..=0xab => Lb::H3,
+        0xac => Lb::H2,
+        0xad..=0xc7 => Lb::H3,
+        0xc8 => Lb::H2,
+        0xc9..=0xe3 => Lb::H3,
+        0xe4 => Lb::H2,
+        0xe5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb3(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::H2,
+        0x01..=0x1b => Lb::H3,
+        0x1c => Lb::H2,
+        0x1d..=0x37 => Lb::H3,
+        0x38 => Lb::H2,
+        0x39..=0x53 => Lb::H3,
+        0x54 => Lb::H2,
+        0x55..=0x6f => Lb::H3,
+        0x70 => Lb::H2,
+        0x71..=0x8b => Lb::H3,
+        0x8c => Lb::H2,
+        0x8d..=0xa7 => Lb::H3,
+        0xa8 => Lb::H2,
+        0xa9..=0xc3 => Lb::H3,
+        0xc4 => Lb::H2,
+        0xc5..=0xdf => Lb::H3,
+        0xe0 => Lb::H2,
+        0xe1..=0xfb => Lb::H3,
+        0xfc => Lb::H2,
+        0xfd..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb4(b: u8) -> Lb {
+    match b {
+        0x00..=0x17 => Lb::H3,
+        0x18 => Lb::H2,
+        0x19..=0x33 => Lb::H3,
+        0x34 => Lb::H2,
+        0x35..=0x4f => Lb::H3,
+        0x50 => Lb::H2,
+        0x51..=0x6b => Lb::H3,
+        0x6c => Lb::H2,
+        0x6d..=0x87 => Lb::H3,
+        0x88 => Lb::H2,
+        0x89..=0xa3 => Lb::H3,
+        0xa4 => Lb::H2,
+        0xa5..=0xbf => Lb::H3,
+        0xc0 => Lb::H2,
+        0xc1..=0xdb => Lb::H3,
+        0xdc => Lb::H2,
+        0xdd..=0xf7 => Lb::H3,
+        0xf8 => Lb::H2,
+        0xf9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb5(b: u8) -> Lb {
+    match b {
+        0x00..=0x13 => Lb::H3,
+        0x14 => Lb::H2,
+        0x15..=0x2f => Lb::H3,
+        0x30 => Lb::H2,
+        0x31..=0x4b => Lb::H3,
+        0x4c => Lb::H2,
+        0x4d..=0x67 => Lb::H3,
+        0x68 => Lb::H2,
+        0x69..=0x83 => Lb::H3,
+        0x84 => Lb::H2,
+        0x85..=0x9f => Lb::H3,
+        0xa0 => Lb::H2,
+        0xa1..=0xbb => Lb::H3,
+        0xbc => Lb::H2,
+        0xbd..=0xd7 => Lb::H3,
+        0xd8 => Lb::H2,
+        0xd9..=0xf3 => Lb::H3,
+        0xf4 => Lb::H2,
+        0xf5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb6(b: u8) -> Lb {
+    match b {
+        0x00..=0x0f => Lb::H3,
+        0x10 => Lb::H2,
+        0x11..=0x2b => Lb::H3,
+        0x2c => Lb::H2,
+        0x2d..=0x47 => Lb::H3,
+        0x48 => Lb::H2,
+        0x49..=0x63 => Lb::H3,
+        0x64 => Lb::H2,
+        0x65..=0x7f => Lb::H3,
+        0x80 => Lb::H2,
+        0x81..=0x9b => Lb::H3,
+        0x9c => Lb::H2,
+        0x9d..=0xb7 => Lb::H3,
+        0xb8 => Lb::H2,
+        0xb9..=0xd3 => Lb::H3,
+        0xd4 => Lb::H2,
+        0xd5..=0xef => Lb::H3,
+        0xf0 => Lb::H2,
+        0xf1..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb7(b: u8) -> Lb {
+    match b {
+        0x00..=0x0b => Lb::H3,
+        0x0c => Lb::H2,
+        0x0d..=0x27 => Lb::H3,
+        0x28 => Lb::H2,
+        0x29..=0x43 => Lb::H3,
+        0x44 => Lb::H2,
+        0x45..=0x5f => Lb::H3,
+        0x60 => Lb::H2,
+        0x61..=0x7b => Lb::H3,
+        0x7c => Lb::H2,
+        0x7d..=0x97 => Lb::H3,
+        0x98 => Lb::H2,
+        0x99..=0xb3 => Lb::H3,
+        0xb4 => Lb::H2,
+        0xb5..=0xcf => Lb::H3,
+        0xd0 => Lb::H2,
+        0xd1..=0xeb => Lb::H3,
+        0xec => Lb::H2,
+        0xed..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb8(b: u8) -> Lb {
+    match b {
+        0x00..=0x07 => Lb::H3,
+        0x08 => Lb::H2,
+        0x09..=0x23 => Lb::H3,
+        0x24 => Lb::H2,
+        0x25..=0x3f => Lb::H3,
+        0x40 => Lb::H2,
+        0x41..=0x5b => Lb::H3,
+        0x5c => Lb::H2,
+        0x5d..=0x77 => Lb::H3,
+        0x78 => Lb::H2,
+        0x79..=0x93 => Lb::H3,
+        0x94 => Lb::H2,
+        0x95..=0xaf => Lb::H3,
+        0xb0 => Lb::H2,
+        0xb1..=0xcb => Lb::H3,
+        0xcc => Lb::H2,
+        0xcd..=0xe7 => Lb::H3,
+        0xe8 => Lb::H2,
+        0xe9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pb9(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::H3,
+        0x04 => Lb::H2,
+        0x05..=0x1f => Lb::H3,
+        0x20 => Lb::H2,
+        0x21..=0x3b => Lb::H3,
+        0x3c => Lb::H2,
+        0x3d..=0x57 => Lb::H3,
+        0x58 => Lb::H2,
+        0x59..=0x73 => Lb::H3,
+        0x74 => Lb::H2,
+        0x75..=0x8f => Lb::H3,
+        0x90 => Lb::H2,
+        0x91..=0xab => Lb::H3,
+        0xac => Lb::H2,
+        0xad..=0xc7 => Lb::H3,
+        0xc8 => Lb::H2,
+        0xc9..=0xe3 => Lb::H3,
+        0xe4 => Lb::H2,
+        0xe5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pba(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::H2,
+        0x01..=0x1b => Lb::H3,
+        0x1c => Lb::H2,
+        0x1d..=0x37 => Lb::H3,
+        0x38 => Lb::H2,
+        0x39..=0x53 => Lb::H3,
+        0x54 => Lb::H2,
+        0x55..=0x6f => Lb::H3,
+        0x70 => Lb::H2,
+        0x71..=0x8b => Lb::H3,
+        0x8c => Lb::H2,
+        0x8d..=0xa7 => Lb::H3,
+        0xa8 => Lb::H2,
+        0xa9..=0xc3 => Lb::H3,
+        0xc4 => Lb::H2,
+        0xc5..=0xdf => Lb::H3,
+        0xe0 => Lb::H2,
+        0xe1..=0xfb => Lb::H3,
+        0xfc => Lb::H2,
+        0xfd..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pbb(b: u8) -> Lb {
+    match b {
+        0x00..=0x17 => Lb::H3,
+        0x18 => Lb::H2,
+        0x19..=0x33 => Lb::H3,
+        0x34 => Lb::H2,
+        0x35..=0x4f => Lb::H3,
+        0x50 => Lb::H2,
+        0x51..=0x6b => Lb::H3,
+        0x6c => Lb::H2,
+        0x6d..=0x87 => Lb::H3,
+        0x88 => Lb::H2,
+        0x89..=0xa3 => Lb::H3,
+        0xa4 => Lb::H2,
+        0xa5..=0xbf => Lb::H3,
+        0xc0 => Lb::H2,
+        0xc1..=0xdb => Lb::H3,
+        0xdc => Lb::H2,
+        0xdd..=0xf7 => Lb::H3,
+        0xf8 => Lb::H2,
+        0xf9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pbc(b: u8) -> Lb {
+    match b {
+        0x00..=0x13 => Lb::H3,
+        0x14 => Lb::H2,
+        0x15..=0x2f => Lb::H3,
+        0x30 => Lb::H2,
+        0x31..=0x4b => Lb::H3,
+        0x4c => Lb::H2,
+        0x4d..=0x67 => Lb::H3,
+        0x68 => Lb::H2,
+        0x69..=0x83 => Lb::H3,
+        0x84 => Lb::H2,
+        0x85..=0x9f => Lb::H3,
+        0xa0 => Lb::H2,
+        0xa1..=0xbb => Lb::H3,
+        0xbc => Lb::H2,
+        0xbd..=0xd7 => Lb::H3,
+        0xd8 => Lb::H2,
+        0xd9..=0xf3 => Lb::H3,
+        0xf4 => Lb::H2,
+        0xf5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pbd(b: u8) -> Lb {
+    match b {
+        0x00..=0x0f => Lb::H3,
+        0x10 => Lb::H2,
+        0x11..=0x2b => Lb::H3,
+        0x2c => Lb::H2,
+        0x2d..=0x47 => Lb::H3,
+        0x48 => Lb::H2,
+        0x49..=0x63 => Lb::H3,
+        0x64 => Lb::H2,
+        0x65..=0x7f => Lb::H3,
+        0x80 => Lb::H2,
+        0x81..=0x9b => Lb::H3,
+        0x9c => Lb::H2,
+        0x9d..=0xb7 => Lb::H3,
+        0xb8 => Lb::H2,
+        0xb9..=0xd3 => Lb::H3,
+        0xd4 => Lb::H2,
+        0xd5..=0xef => Lb::H3,
+        0xf0 => Lb::H2,
+        0xf1..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pbe(b: u8) -> Lb {
+    match b {
+        0x00..=0x0b => Lb::H3,
+        0x0c => Lb::H2,
+        0x0d..=0x27 => Lb::H3,
+        0x28 => Lb::H2,
+        0x29..=0x43 => Lb::H3,
+        0x44 => Lb::H2,
+        0x45..=0x5f => Lb::H3,
+        0x60 => Lb::H2,
+        0x61..=0x7b => Lb::H3,
+        0x7c => Lb::H2,
+        0x7d..=0x97 => Lb::H3,
+        0x98 => Lb::H2,
+        0x99..=0xb3 => Lb::H3,
+        0xb4 => Lb::H2,
+        0xb5..=0xcf => Lb::H3,
+        0xd0 => Lb::H2,
+        0xd1..=0xeb => Lb::H3,
+        0xec => Lb::H2,
+        0xed..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pbf(b: u8) -> Lb {
+    match b {
+        0x00..=0x07 => Lb::H3,
+        0x08 => Lb::H2,
+        0x09..=0x23 => Lb::H3,
+        0x24 => Lb::H2,
+        0x25..=0x3f => Lb::H3,
+        0x40 => Lb::H2,
+        0x41..=0x5b => Lb::H3,
+        0x5c => Lb::H2,
+        0x5d..=0x77 => Lb::H3,
+        0x78 => Lb::H2,
+        0x79..=0x93 => Lb::H3,
+        0x94 => Lb::H2,
+        0x95..=0xaf => Lb::H3,
+        0xb0 => Lb::H2,
+        0xb1..=0xcb => Lb::H3,
+        0xcc => Lb::H2,
+        0xcd..=0xe7 => Lb::H3,
+        0xe8 => Lb::H2,
+        0xe9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc0(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::H3,
+        0x04 => Lb::H2,
+        0x05..=0x1f => Lb::H3,
+        0x20 => Lb::H2,
+        0x21..=0x3b => Lb::H3,
+        0x3c => Lb::H2,
+        0x3d..=0x57 => Lb::H3,
+        0x58 => Lb::H2,
+        0x59..=0x73 => Lb::H3,
+        0x74 => Lb::H2,
+        0x75..=0x8f => Lb::H3,
+        0x90 => Lb::H2,
+        0x91..=0xab => Lb::H3,
+        0xac => Lb::H2,
+        0xad..=0xc7 => Lb::H3,
+        0xc8 => Lb::H2,
+        0xc9..=0xe3 => Lb::H3,
+        0xe4 => Lb::H2,
+        0xe5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc1(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::H2,
+        0x01..=0x1b => Lb::H3,
+        0x1c => Lb::H2,
+        0x1d..=0x37 => Lb::H3,
+        0x38 => Lb::H2,
+        0x39..=0x53 => Lb::H3,
+        0x54 => Lb::H2,
+        0x55..=0x6f => Lb::H3,
+        0x70 => Lb::H2,
+        0x71..=0x8b => Lb::H3,
+        0x8c => Lb::H2,
+        0x8d..=0xa7 => Lb::H3,
+        0xa8 => Lb::H2,
+        0xa9..=0xc3 => Lb::H3,
+        0xc4 => Lb::H2,
+        0xc5..=0xdf => Lb::H3,
+        0xe0 => Lb::H2,
+        0xe1..=0xfb => Lb::H3,
+        0xfc => Lb::H2,
+        0xfd..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc2(b: u8) -> Lb {
+    match b {
+        0x00..=0x17 => Lb::H3,
+        0x18 => Lb::H2,
+        0x19..=0x33 => Lb::H3,
+        0x34 => Lb::H2,
+        0x35..=0x4f => Lb::H3,
+        0x50 => Lb::H2,
+        0x51..=0x6b => Lb::H3,
+        0x6c => Lb::H2,
+        0x6d..=0x87 => Lb::H3,
+        0x88 => Lb::H2,
+        0x89..=0xa3 => Lb::H3,
+        0xa4 => Lb::H2,
+        0xa5..=0xbf => Lb::H3,
+        0xc0 => Lb::H2,
+        0xc1..=0xdb => Lb::H3,
+        0xdc => Lb::H2,
+        0xdd..=0xf7 => Lb::H3,
+        0xf8 => Lb::H2,
+        0xf9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc3(b: u8) -> Lb {
+    match b {
+        0x00..=0x13 => Lb::H3,
+        0x14 => Lb::H2,
+        0x15..=0x2f => Lb::H3,
+        0x30 => Lb::H2,
+        0x31..=0x4b => Lb::H3,
+        0x4c => Lb::H2,
+        0x4d..=0x67 => Lb::H3,
+        0x68 => Lb::H2,
+        0x69..=0x83 => Lb::H3,
+        0x84 => Lb::H2,
+        0x85..=0x9f => Lb::H3,
+        0xa0 => Lb::H2,
+        0xa1..=0xbb => Lb::H3,
+        0xbc => Lb::H2,
+        0xbd..=0xd7 => Lb::H3,
+        0xd8 => Lb::H2,
+        0xd9..=0xf3 => Lb::H3,
+        0xf4 => Lb::H2,
+        0xf5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc4(b: u8) -> Lb {
+    match b {
+        0x00..=0x0f => Lb::H3,
+        0x10 => Lb::H2,
+        0x11..=0x2b => Lb::H3,
+        0x2c => Lb::H2,
+        0x2d..=0x47 => Lb::H3,
+        0x48 => Lb::H2,
+        0x49..=0x63 => Lb::H3,
+        0x64 => Lb::H2,
+        0x65..=0x7f => Lb::H3,
+        0x80 => Lb::H2,
+        0x81..=0x9b => Lb::H3,
+        0x9c => Lb::H2,
+        0x9d..=0xb7 => Lb::H3,
+        0xb8 => Lb::H2,
+        0xb9..=0xd3 => Lb::H3,
+        0xd4 => Lb::H2,
+        0xd5..=0xef => Lb::H3,
+        0xf0 => Lb::H2,
+        0xf1..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc5(b: u8) -> Lb {
+    match b {
+        0x00..=0x0b => Lb::H3,
+        0x0c => Lb::H2,
+        0x0d..=0x27 => Lb::H3,
+        0x28 => Lb::H2,
+        0x29..=0x43 => Lb::H3,
+        0x44 => Lb::H2,
+        0x45..=0x5f => Lb::H3,
+        0x60 => Lb::H2,
+        0x61..=0x7b => Lb::H3,
+        0x7c => Lb::H2,
+        0x7d..=0x97 => Lb::H3,
+        0x98 => Lb::H2,
+        0x99..=0xb3 => Lb::H3,
+        0xb4 => Lb::H2,
+        0xb5..=0xcf => Lb::H3,
+        0xd0 => Lb::H2,
+        0xd1..=0xeb => Lb::H3,
+        0xec => Lb::H2,
+        0xed..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc6(b: u8) -> Lb {
+    match b {
+        0x00..=0x07 => Lb::H3,
+        0x08 => Lb::H2,
+        0x09..=0x23 => Lb::H3,
+        0x24 => Lb::H2,
+        0x25..=0x3f => Lb::H3,
+        0x40 => Lb::H2,
+        0x41..=0x5b => Lb::H3,
+        0x5c => Lb::H2,
+        0x5d..=0x77 => Lb::H3,
+        0x78 => Lb::H2,
+        0x79..=0x93 => Lb::H3,
+        0x94 => Lb::H2,
+        0x95..=0xaf => Lb::H3,
+        0xb0 => Lb::H2,
+        0xb1..=0xcb => Lb::H3,
+        0xcc => Lb::H2,
+        0xcd..=0xe7 => Lb::H3,
+        0xe8 => Lb::H2,
+        0xe9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc7(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::H3,
+        0x04 => Lb::H2,
+        0x05..=0x1f => Lb::H3,
+        0x20 => Lb::H2,
+        0x21..=0x3b => Lb::H3,
+        0x3c => Lb::H2,
+        0x3d..=0x57 => Lb::H3,
+        0x58 => Lb::H2,
+        0x59..=0x73 => Lb::H3,
+        0x74 => Lb::H2,
+        0x75..=0x8f => Lb::H3,
+        0x90 => Lb::H2,
+        0x91..=0xab => Lb::H3,
+        0xac => Lb::H2,
+        0xad..=0xc7 => Lb::H3,
+        0xc8 => Lb::H2,
+        0xc9..=0xe3 => Lb::H3,
+        0xe4 => Lb::H2,
+        0xe5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc8(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::H2,
+        0x01..=0x1b => Lb::H3,
+        0x1c => Lb::H2,
+        0x1d..=0x37 => Lb::H3,
+        0x38 => Lb::H2,
+        0x39..=0x53 => Lb::H3,
+        0x54 => Lb::H2,
+        0x55..=0x6f => Lb::H3,
+        0x70 => Lb::H2,
+        0x71..=0x8b => Lb::H3,
+        0x8c => Lb::H2,
+        0x8d..=0xa7 => Lb::H3,
+        0xa8 => Lb::H2,
+        0xa9..=0xc3 => Lb::H3,
+        0xc4 => Lb::H2,
+        0xc5..=0xdf => Lb::H3,
+        0xe0 => Lb::H2,
+        0xe1..=0xfb => Lb::H3,
+        0xfc => Lb::H2,
+        0xfd..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pc9(b: u8) -> Lb {
+    match b {
+        0x00..=0x17 => Lb::H3,
+        0x18 => Lb::H2,
+        0x19..=0x33 => Lb::H3,
+        0x34 => Lb::H2,
+        0x35..=0x4f => Lb::H3,
+        0x50 => Lb::H2,
+        0x51..=0x6b => Lb::H3,
+        0x6c => Lb::H2,
+        0x6d..=0x87 => Lb::H3,
+        0x88 => Lb::H2,
+        0x89..=0xa3 => Lb::H3,
+        0xa4 => Lb::H2,
+        0xa5..=0xbf => Lb::H3,
+        0xc0 => Lb::H2,
+        0xc1..=0xdb => Lb::H3,
+        0xdc => Lb::H2,
+        0xdd..=0xf7 => Lb::H3,
+        0xf8 => Lb::H2,
+        0xf9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pca(b: u8) -> Lb {
+    match b {
+        0x00..=0x13 => Lb::H3,
+        0x14 => Lb::H2,
+        0x15..=0x2f => Lb::H3,
+        0x30 => Lb::H2,
+        0x31..=0x4b => Lb::H3,
+        0x4c => Lb::H2,
+        0x4d..=0x67 => Lb::H3,
+        0x68 => Lb::H2,
+        0x69..=0x83 => Lb::H3,
+        0x84 => Lb::H2,
+        0x85..=0x9f => Lb::H3,
+        0xa0 => Lb::H2,
+        0xa1..=0xbb => Lb::H3,
+        0xbc => Lb::H2,
+        0xbd..=0xd7 => Lb::H3,
+        0xd8 => Lb::H2,
+        0xd9..=0xf3 => Lb::H3,
+        0xf4 => Lb::H2,
+        0xf5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pcb(b: u8) -> Lb {
+    match b {
+        0x00..=0x0f => Lb::H3,
+        0x10 => Lb::H2,
+        0x11..=0x2b => Lb::H3,
+        0x2c => Lb::H2,
+        0x2d..=0x47 => Lb::H3,
+        0x48 => Lb::H2,
+        0x49..=0x63 => Lb::H3,
+        0x64 => Lb::H2,
+        0x65..=0x7f => Lb::H3,
+        0x80 => Lb::H2,
+        0x81..=0x9b => Lb::H3,
+        0x9c => Lb::H2,
+        0x9d..=0xb7 => Lb::H3,
+        0xb8 => Lb::H2,
+        0xb9..=0xd3 => Lb::H3,
+        0xd4 => Lb::H2,
+        0xd5..=0xef => Lb::H3,
+        0xf0 => Lb::H2,
+        0xf1..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pcc(b: u8) -> Lb {
+    match b {
+        0x00..=0x0b => Lb::H3,
+        0x0c => Lb::H2,
+        0x0d..=0x27 => Lb::H3,
+        0x28 => Lb::H2,
+        0x29..=0x43 => Lb::H3,
+        0x44 => Lb::H2,
+        0x45..=0x5f => Lb::H3,
+        0x60 => Lb::H2,
+        0x61..=0x7b => Lb::H3,
+        0x7c => Lb::H2,
+        0x7d..=0x97 => Lb::H3,
+        0x98 => Lb::H2,
+        0x99..=0xb3 => Lb::H3,
+        0xb4 => Lb::H2,
+        0xb5..=0xcf => Lb::H3,
+        0xd0 => Lb::H2,
+        0xd1..=0xeb => Lb::H3,
+        0xec => Lb::H2,
+        0xed..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pcd(b: u8) -> Lb {
+    match b {
+        0x00..=0x07 => Lb::H3,
+        0x08 => Lb::H2,
+        0x09..=0x23 => Lb::H3,
+        0x24 => Lb::H2,
+        0x25..=0x3f => Lb::H3,
+        0x40 => Lb::H2,
+        0x41..=0x5b => Lb::H3,
+        0x5c => Lb::H2,
+        0x5d..=0x77 => Lb::H3,
+        0x78 => Lb::H2,
+        0x79..=0x93 => Lb::H3,
+        0x94 => Lb::H2,
+        0x95..=0xaf => Lb::H3,
+        0xb0 => Lb::H2,
+        0xb1..=0xcb => Lb::H3,
+        0xcc => Lb::H2,
+        0xcd..=0xe7 => Lb::H3,
+        0xe8 => Lb::H2,
+        0xe9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pce(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::H3,
+        0x04 => Lb::H2,
+        0x05..=0x1f => Lb::H3,
+        0x20 => Lb::H2,
+        0x21..=0x3b => Lb::H3,
+        0x3c => Lb::H2,
+        0x3d..=0x57 => Lb::H3,
+        0x58 => Lb::H2,
+        0x59..=0x73 => Lb::H3,
+        0x74 => Lb::H2,
+        0x75..=0x8f => Lb::H3,
+        0x90 => Lb::H2,
+        0x91..=0xab => Lb::H3,
+        0xac => Lb::H2,
+        0xad..=0xc7 => Lb::H3,
+        0xc8 => Lb::H2,
+        0xc9..=0xe3 => Lb::H3,
+        0xe4 => Lb::H2,
+        0xe5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pcf(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::H2,
+        0x01..=0x1b => Lb::H3,
+        0x1c => Lb::H2,
+        0x1d..=0x37 => Lb::H3,
+        0x38 => Lb::H2,
+        0x39..=0x53 => Lb::H3,
+        0x54 => Lb::H2,
+        0x55..=0x6f => Lb::H3,
+        0x70 => Lb::H2,
+        0x71..=0x8b => Lb::H3,
+        0x8c => Lb::H2,
+        0x8d..=0xa7 => Lb::H3,
+        0xa8 => Lb::H2,
+        0xa9..=0xc3 => Lb::H3,
+        0xc4 => Lb::H2,
+        0xc5..=0xdf => Lb::H3,
+        0xe0 => Lb::H2,
+        0xe1..=0xfb => Lb::H3,
+        0xfc => Lb::H2,
+        0xfd..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd0(b: u8) -> Lb {
+    match b {
+        0x00..=0x17 => Lb::H3,
+        0x18 => Lb::H2,
+        0x19..=0x33 => Lb::H3,
+        0x34 => Lb::H2,
+        0x35..=0x4f => Lb::H3,
+        0x50 => Lb::H2,
+        0x51..=0x6b => Lb::H3,
+        0x6c => Lb::H2,
+        0x6d..=0x87 => Lb::H3,
+        0x88 => Lb::H2,
+        0x89..=0xa3 => Lb::H3,
+        0xa4 => Lb::H2,
+        0xa5..=0xbf => Lb::H3,
+        0xc0 => Lb::H2,
+        0xc1..=0xdb => Lb::H3,
+        0xdc => Lb::H2,
+        0xdd..=0xf7 => Lb::H3,
+        0xf8 => Lb::H2,
+        0xf9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd1(b: u8) -> Lb {
+    match b {
+        0x00..=0x13 => Lb::H3,
+        0x14 => Lb::H2,
+        0x15..=0x2f => Lb::H3,
+        0x30 => Lb::H2,
+        0x31..=0x4b => Lb::H3,
+        0x4c => Lb::H2,
+        0x4d..=0x67 => Lb::H3,
+        0x68 => Lb::H2,
+        0x69..=0x83 => Lb::H3,
+        0x84 => Lb::H2,
+        0x85..=0x9f => Lb::H3,
+        0xa0 => Lb::H2,
+        0xa1..=0xbb => Lb::H3,
+        0xbc => Lb::H2,
+        0xbd..=0xd7 => Lb::H3,
+        0xd8 => Lb::H2,
+        0xd9..=0xf3 => Lb::H3,
+        0xf4 => Lb::H2,
+        0xf5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd2(b: u8) -> Lb {
+    match b {
+        0x00..=0x0f => Lb::H3,
+        0x10 => Lb::H2,
+        0x11..=0x2b => Lb::H3,
+        0x2c => Lb::H2,
+        0x2d..=0x47 => Lb::H3,
+        0x48 => Lb::H2,
+        0x49..=0x63 => Lb::H3,
+        0x64 => Lb::H2,
+        0x65..=0x7f => Lb::H3,
+        0x80 => Lb::H2,
+        0x81..=0x9b => Lb::H3,
+        0x9c => Lb::H2,
+        0x9d..=0xb7 => Lb::H3,
+        0xb8 => Lb::H2,
+        0xb9..=0xd3 => Lb::H3,
+        0xd4 => Lb::H2,
+        0xd5..=0xef => Lb::H3,
+        0xf0 => Lb::H2,
+        0xf1..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd3(b: u8) -> Lb {
+    match b {
+        0x00..=0x0b => Lb::H3,
+        0x0c => Lb::H2,
+        0x0d..=0x27 => Lb::H3,
+        0x28 => Lb::H2,
+        0x29..=0x43 => Lb::H3,
+        0x44 => Lb::H2,
+        0x45..=0x5f => Lb::H3,
+        0x60 => Lb::H2,
+        0x61..=0x7b => Lb::H3,
+        0x7c => Lb::H2,
+        0x7d..=0x97 => Lb::H3,
+        0x98 => Lb::H2,
+        0x99..=0xb3 => Lb::H3,
+        0xb4 => Lb::H2,
+        0xb5..=0xcf => Lb::H3,
+        0xd0 => Lb::H2,
+        0xd1..=0xeb => Lb::H3,
+        0xec => Lb::H2,
+        0xed..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd4(b: u8) -> Lb {
+    match b {
+        0x00..=0x07 => Lb::H3,
+        0x08 => Lb::H2,
+        0x09..=0x23 => Lb::H3,
+        0x24 => Lb::H2,
+        0x25..=0x3f => Lb::H3,
+        0x40 => Lb::H2,
+        0x41..=0x5b => Lb::H3,
+        0x5c => Lb::H2,
+        0x5d..=0x77 => Lb::H3,
+        0x78 => Lb::H2,
+        0x79..=0x93 => Lb::H3,
+        0x94 => Lb::H2,
+        0x95..=0xaf => Lb::H3,
+        0xb0 => Lb::H2,
+        0xb1..=0xcb => Lb::H3,
+        0xcc => Lb::H2,
+        0xcd..=0xe7 => Lb::H3,
+        0xe8 => Lb::H2,
+        0xe9..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd5(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::H3,
+        0x04 => Lb::H2,
+        0x05..=0x1f => Lb::H3,
+        0x20 => Lb::H2,
+        0x21..=0x3b => Lb::H3,
+        0x3c => Lb::H2,
+        0x3d..=0x57 => Lb::H3,
+        0x58 => Lb::H2,
+        0x59..=0x73 => Lb::H3,
+        0x74 => Lb::H2,
+        0x75..=0x8f => Lb::H3,
+        0x90 => Lb::H2,
+        0x91..=0xab => Lb::H3,
+        0xac => Lb::H2,
+        0xad..=0xc7 => Lb::H3,
+        0xc8 => Lb::H2,
+        0xc9..=0xe3 => Lb::H3,
+        0xe4 => Lb::H2,
+        0xe5..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd6(b: u8) -> Lb {
+    match b {
+        0x00 => Lb::H2,
+        0x01..=0x1b => Lb::H3,
+        0x1c => Lb::H2,
+        0x1d..=0x37 => Lb::H3,
+        0x38 => Lb::H2,
+        0x39..=0x53 => Lb::H3,
+        0x54 => Lb::H2,
+        0x55..=0x6f => Lb::H3,
+        0x70 => Lb::H2,
+        0x71..=0x8b => Lb::H3,
+        0x8c => Lb::H2,
+        0x8d..=0xa7 => Lb::H3,
+        0xa8 => Lb::H2,
+        0xa9..=0xc3 => Lb::H3,
+        0xc4 => Lb::H2,
+        0xc5..=0xdf => Lb::H3,
+        0xe0 => Lb::H2,
+        0xe1..=0xfb => Lb::H3,
+        0xfc => Lb::H2,
+        0xfd..=0xff => Lb::H3,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pd7(b: u8) -> Lb {
+    match b {
+        0x00..=0x17 => Lb::H3,
+        0x18 => Lb::H2,
+        0x19..=0x33 => Lb::H3,
+        0x34 => Lb::H2,
+        0x35..=0x4f => Lb::H3,
+        0x50 => Lb::H2,
+        0x51..=0x6b => Lb::H3,
+        0x6c => Lb::H2,
+        0x6d..=0x87 => Lb::H3,
+        0x88 => Lb::H2,
+        0x89..=0xa3 => Lb::H3,
+        0xb0..=0xc6 => Lb::JV,
+        0xcb..=0xfb => Lb::JT,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pfb(b: u8) -> Lb {
+    match b {
+        0x1d => Lb::HL,
+        0x1e => Lb::CM,
+        0x1f..=0x28 => Lb::HL,
+        0x2a..=0x36 => Lb::HL,
+        0x38..=0x3c => Lb::HL,
+        0x3e => Lb::HL,
+        0x40..=0x41 => Lb::HL,
+        0x43..=0x44 => Lb::HL,
+        0x46..=0x4f => Lb::HL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pfd(b: u8) -> Lb {
+    match b {
+        0x3e => Lb::CL,
+        0x3f => Lb::OP,
+        0xfc => Lb::PO,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pfe(b: u8) -> Lb {
+    match b {
+        0x00..=0x0f => Lb::CM,
+        0x10..=0x12 => Lb::CL,
+        0x13..=0x14 => Lb::NS,
+        0x15..=0x16 => Lb::EX,
+        0x17 => Lb::OP,
+        0x18 => Lb::CL,
+        0x19 => Lb::IN,
+        0x20 => Lb::GL,
+        0x21 => Lb::CM,
+        0x22 => Lb::GL,
+        0x23 => Lb::CM,
+        0x24 => Lb::GL,
+        0x25 => Lb::CM,
+        0x26..=0x27 => Lb::GL,
+        0x28 => Lb::CM,
+        0x29 => Lb::GL,
+        0x2a => Lb::CM,
+        0x2b => Lb::GL,
+        0x2c => Lb::CM,
+        0x2d..=0x2e => Lb::GL,
+        0x2f => Lb::CM,
+        0x30..=0x34 => Lb::ID,
+        0x35 => Lb::OP,
+        0x36 => Lb::CL,
+        0x37 => Lb::OP,
+        0x38 => Lb::CL,
+        0x39 => Lb::OP,
+        0x3a => Lb::CL,
+        0x3b => Lb::OP,
+        0x3c => Lb::CL,
+        0x3d => Lb::OP,
+        0x3e => Lb::CL,
+        0x3f => Lb::OP,
+        0x40 => Lb::CL,
+        0x41 => Lb::OP,
+        0x42 => Lb::CL,
+        0x43 => Lb::OP,
+        0x44 => Lb::CL,
+        0x45..=0x46 => Lb::ID,
+        0x47 => Lb::OP,
+        0x48 => Lb::CL,
+        0x49..=0x4f => Lb::ID,
+        0x50 => Lb::CL,
+        0x51 => Lb::ID,
+        0x52 => Lb::CL,
+        0x54..=0x55 => Lb::NS,
+        0x56..=0x57 => Lb::EX,
+        0x58 => Lb::ID,
+        0x59 => Lb::OP,
+        0x5a => Lb::CL,
+        0x5b => Lb::OP,
+        0x5c => Lb::CL,
+        0x5d => Lb::OP,
+        0x5e => Lb::CL,
+        0x5f..=0x66 => Lb::ID,
+        0x68 => Lb::ID,
+        0x69 => Lb::PR,
+        0x6a => Lb::PO,
+        0x6b => Lb::ID,
+        0xff => Lb::WJ,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn lb_pff(b: u8) -> Lb {
+    match b {
+        0x01 => Lb::EX,
+        0x02..=0x03 => Lb::ID,
+        0x04 => Lb::PR,
+        0x05 => Lb::PO,
+        0x06..=0x07 => Lb::ID,
+        0x08 => Lb::OP,
+        0x09 => Lb::CL,
+        0x0a..=0x0b => Lb::ID,
+        0x0c => Lb::CL,
+        0x0d => Lb::ID,
+        0x0e => Lb::CL,
+        0x0f..=0x19 => Lb::ID,
+        0x1a..=0x1b => Lb::NS,
+        0x1c..=0x1e => Lb::ID,
+        0x1f => Lb::EX,
+        0x20..=0x3a => Lb::ID,
+        0x3b => Lb::OP,
+        0x3c => Lb::ID,
+        0x3d => Lb::CL,
+        0x3e..=0x5a => Lb::ID,
+        0x5b => Lb::OP,
+        0x5c => Lb::ID,
+        0x5d => Lb::CL,
+        0x5e => Lb::ID,
+        0x5f => Lb::OP,
+        0x60..=0x61 => Lb::CL,
+        0x62 => Lb::OP,
+        0x63..=0x64 => Lb::CL,
+        0x65 => Lb::NS,
+        0x66 => Lb::ID,
+        0x67..=0x70 => Lb::NS,
+        0x71..=0x9d => Lb::ID,
+        0x9e..=0x9f => Lb::NS,
+        0xa0..=0xbe => Lb::ID,
+        0xc2..=0xc7 => Lb::ID,
+        0xca..=0xcf => Lb::ID,
+        0xd2..=0xd7 => Lb::ID,
+        0xda..=0xdc => Lb::ID,
+        0xe0 => Lb::PO,
+        0xe1 => Lb::PR,
+        0xe2..=0xe4 => Lb::ID,
+        0xe5..=0xe6 => Lb::PR,
+        0xf9..=0xfb => Lb::CM,
+        0xfc => Lb::CB,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p101(b: u8) -> Lb {
+    match b {
+        0x00..=0x02 => Lb::BA,
+        0xfd => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p102(b: u8) -> Lb {
+    match b {
+        0xe0 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p103(b: u8) -> Lb {
+    match b {
+        0x76..=0x7a => Lb::CM,
+        0x9f => Lb::BA,
+        0xd0 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p104(b: u8) -> Lb {
+    match b {
+        0xa0..=0xa9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p108(b: u8) -> Lb {
+    match b {
+        0x57 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p109(b: u8) -> Lb {
+    match b {
+        0x1f => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p10a(b: u8) -> Lb {
+    match b {
+        0x01..=0x03 => Lb::CM,
+        0x05..=0x06 => Lb::CM,
+        0x0c..=0x0f => Lb::CM,
+        0x38..=0x3a => Lb::CM,
+        0x3f => Lb::CM,
+        0x50..=0x57 => Lb::BA,
+        0xe5..=0xe6 => Lb::CM,
+        0xf0..=0xf5 => Lb::BA,
+        0xf6 => Lb::IN,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p10b(b: u8) -> Lb {
+    match b {
+        0x39..=0x3f => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p10d(b: u8) -> Lb {
+    match b {
+        0x24..=0x27 => Lb::CM,
+        0x30..=0x39 => Lb::NU,
+        0x40..=0x49 => Lb::NU,
+        0x69..=0x6d => Lb::CM,
+        0x6e => Lb::HH,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p10e(b: u8) -> Lb {
+    match b {
+        0xab..=0xac => Lb::CM,
+        0xad => Lb::HH,
+        0xd0 => Lb::BA,
+        0xfa..=0xff => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p10f(b: u8) -> Lb {
+    match b {
+        0x46..=0x50 => Lb::CM,
+        0x82..=0x85 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p110(b: u8) -> Lb {
+    match b {
+        0x00..=0x02 => Lb::CM,
+        0x03..=0x04 => Lb::AP,
+        0x05..=0x37 => Lb::AK,
+        0x38..=0x45 => Lb::CM,
+        0x46 => Lb::VI,
+        0x47..=0x48 => Lb::BA,
+        0x49..=0x4d => Lb::ID,
+        0x52..=0x65 => Lb::ID,
+        0x66..=0x6f => Lb::AS,
+        0x70 => Lb::CM,
+        0x71..=0x72 => Lb::AK,
+        0x73..=0x74 => Lb::CM,
+        0x75 => Lb::AK,
+        0x7f => Lb::GL,
+        0x80..=0x82 => Lb::CM,
+        0xb0..=0xba => Lb::CM,
+        0xbd => Lb::NU,
+        0xbe..=0xc1 => Lb::BA,
+        0xc2 => Lb::CM,
+        0xcd => Lb::NU,
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p111(b: u8) -> Lb {
+    match b {
+        0x00..=0x02 => Lb::CM,
+        0x27..=0x34 => Lb::CM,
+        0x36..=0x3f => Lb::NU,
+        0x40..=0x43 => Lb::BA,
+        0x45..=0x46 => Lb::CM,
+        0x73 => Lb::CM,
+        0x75 => Lb::BB,
+        0x80..=0x82 => Lb::CM,
+        0xb3..=0xc0 => Lb::CM,
+        0xc5..=0xc6 => Lb::BA,
+        0xc8 => Lb::BA,
+        0xc9..=0xcc => Lb::CM,
+        0xce..=0xcf => Lb::CM,
+        0xd0..=0xd9 => Lb::NU,
+        0xdb => Lb::BB,
+        0xdd..=0xdf => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p112(b: u8) -> Lb {
+    match b {
+        0x2c..=0x37 => Lb::CM,
+        0x38..=0x39 => Lb::BA,
+        0x3b..=0x3c => Lb::BA,
+        0x3e => Lb::CM,
+        0x41 => Lb::CM,
+        0xa9 => Lb::BA,
+        0xdf..=0xea => Lb::CM,
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p113(b: u8) -> Lb {
+    match b {
+        0x00..=0x03 => Lb::CM,
+        0x05..=0x0c => Lb::AK,
+        0x0f..=0x10 => Lb::AK,
+        0x13..=0x28 => Lb::AK,
+        0x2a..=0x30 => Lb::AK,
+        0x32..=0x33 => Lb::AK,
+        0x35..=0x39 => Lb::AK,
+        0x3b..=0x3c => Lb::CM,
+        0x3d => Lb::BA,
+        0x3e..=0x44 => Lb::CM,
+        0x47..=0x48 => Lb::CM,
+        0x4b..=0x4c => Lb::CM,
+        0x4d => Lb::VI,
+        0x50 => Lb::AS,
+        0x57 => Lb::CM,
+        0x5d => Lb::BA,
+        0x5e..=0x5f => Lb::AS,
+        0x60..=0x61 => Lb::AK,
+        0x62..=0x63 => Lb::CM,
+        0x66..=0x6c => Lb::CM,
+        0x70..=0x74 => Lb::CM,
+        0x80..=0x89 => Lb::AS,
+        0x8b => Lb::AS,
+        0x8e => Lb::AS,
+        0x90..=0x91 => Lb::AS,
+        0x92..=0xb5 => Lb::AK,
+        0xb7 => Lb::ID,
+        0xb8..=0xc0 => Lb::CM,
+        0xc2 => Lb::CM,
+        0xc5 => Lb::CM,
+        0xc7..=0xca => Lb::CM,
+        0xcc..=0xcf => Lb::CM,
+        0xd0 => Lb::VI,
+        0xd1 => Lb::AP,
+        0xd2 => Lb::CM,
+        0xd3..=0xd5 => Lb::ID,
+        0xd7..=0xd8 => Lb::ID,
+        0xe1..=0xe2 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p114(b: u8) -> Lb {
+    match b {
+        0x35..=0x46 => Lb::CM,
+        0x4b..=0x4e => Lb::BA,
+        0x50..=0x59 => Lb::NU,
+        0x5a..=0x5b => Lb::BA,
+        0x5e => Lb::CM,
+        0xb0..=0xc3 => Lb::CM,
+        0xd0..=0xd9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p115(b: u8) -> Lb {
+    match b {
+        0xaf..=0xb5 => Lb::CM,
+        0xb8..=0xc0 => Lb::CM,
+        0xc1 => Lb::BB,
+        0xc2..=0xc3 => Lb::BA,
+        0xc4..=0xc5 => Lb::EX,
+        0xc9..=0xd7 => Lb::BA,
+        0xdc..=0xdd => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p116(b: u8) -> Lb {
+    match b {
+        0x30..=0x40 => Lb::CM,
+        0x41..=0x42 => Lb::BA,
+        0x50..=0x59 => Lb::NU,
+        0x60..=0x6c => Lb::BB,
+        0xab..=0xb7 => Lb::CM,
+        0xc0..=0xc9 => Lb::NU,
+        0xd0..=0xe3 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p117(b: u8) -> Lb {
+    match b {
+        0x1d..=0x2b => Lb::CM,
+        0x30..=0x39 => Lb::NU,
+        0x3c..=0x3e => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p118(b: u8) -> Lb {
+    match b {
+        0x2c..=0x3a => Lb::CM,
+        0xe0..=0xe9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p119(b: u8) -> Lb {
+    match b {
+        0x00..=0x06 => Lb::AK,
+        0x09 => Lb::AK,
+        0x0c..=0x13 => Lb::AK,
+        0x15..=0x16 => Lb::AK,
+        0x18..=0x2f => Lb::AK,
+        0x30..=0x35 => Lb::CM,
+        0x37..=0x38 => Lb::CM,
+        0x3b..=0x3d => Lb::CM,
+        0x3e => Lb::VI,
+        0x3f => Lb::AP,
+        0x40 => Lb::CM,
+        0x41 => Lb::AP,
+        0x42..=0x43 => Lb::CM,
+        0x44..=0x46 => Lb::BA,
+        0x50..=0x59 => Lb::AS,
+        0xd1..=0xd7 => Lb::CM,
+        0xda..=0xe0 => Lb::CM,
+        0xe2 => Lb::BB,
+        0xe4 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p11a(b: u8) -> Lb {
+    match b {
+        0x01..=0x0a => Lb::CM,
+        0x33..=0x39 => Lb::CM,
+        0x3b..=0x3e => Lb::CM,
+        0x3f => Lb::BB,
+        0x41..=0x44 => Lb::BA,
+        0x45 => Lb::BB,
+        0x47 => Lb::CM,
+        0x51..=0x5b => Lb::CM,
+        0x8a..=0x99 => Lb::CM,
+        0x9a..=0x9c => Lb::BA,
+        0x9e..=0xa0 => Lb::BB,
+        0xa1..=0xa2 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p11b(b: u8) -> Lb {
+    match b {
+        0x00..=0x09 => Lb::BB,
+        0x60..=0x67 => Lb::CM,
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p11c(b: u8) -> Lb {
+    match b {
+        0x2f..=0x36 => Lb::CM,
+        0x38..=0x3f => Lb::CM,
+        0x41..=0x45 => Lb::BA,
+        0x50..=0x59 => Lb::NU,
+        0x70 => Lb::BB,
+        0x71 => Lb::EX,
+        0x92..=0xa7 => Lb::CM,
+        0xa9..=0xb6 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p11d(b: u8) -> Lb {
+    match b {
+        0x31..=0x36 => Lb::CM,
+        0x3a => Lb::CM,
+        0x3c..=0x3d => Lb::CM,
+        0x3f..=0x45 => Lb::CM,
+        0x47 => Lb::CM,
+        0x50..=0x59 => Lb::NU,
+        0x8a..=0x8e => Lb::CM,
+        0x90..=0x91 => Lb::CM,
+        0x93..=0x97 => Lb::CM,
+        0xa0..=0xa9 => Lb::NU,
+        0xe0..=0xe9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p11e(b: u8) -> Lb {
+    match b {
+        0xe0..=0xf1 => Lb::AS,
+        0xf2 => Lb::BA,
+        0xf3..=0xf6 => Lb::CM,
+        0xf7..=0xf8 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p11f(b: u8) -> Lb {
+    match b {
+        0x00..=0x01 => Lb::CM,
+        0x02 => Lb::AP,
+        0x03 => Lb::CM,
+        0x04..=0x10 => Lb::AK,
+        0x12..=0x33 => Lb::AK,
+        0x34..=0x3a => Lb::CM,
+        0x3e..=0x41 => Lb::CM,
+        0x42 => Lb::VI,
+        0x43..=0x44 => Lb::BA,
+        0x45..=0x4f => Lb::ID,
+        0x50..=0x59 => Lb::AS,
+        0x5a => Lb::CM,
+        0xdd..=0xe0 => Lb::PO,
+        0xff => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p124(b: u8) -> Lb {
+    match b {
+        0x70..=0x74 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p132(b: u8) -> Lb {
+    match b {
+        0x58..=0x5a => Lb::OP,
+        0x5b..=0x5d => Lb::CL,
+        0x82 => Lb::CL,
+        0x86 => Lb::OP,
+        0x87 => Lb::CL,
+        0x88 => Lb::OP,
+        0x89 => Lb::CL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p133(b: u8) -> Lb {
+    match b {
+        0x79 => Lb::OP,
+        0x7a..=0x7b => Lb::CL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p134(b: u8) -> Lb {
+    match b {
+        0x2f => Lb::OP,
+        0x30..=0x36 => Lb::GL,
+        0x37 => Lb::OP,
+        0x38 => Lb::CL,
+        0x39..=0x3b => Lb::GL,
+        0x3c => Lb::OP,
+        0x3d => Lb::CL,
+        0x3e => Lb::OP,
+        0x3f => Lb::CL,
+        0x40 => Lb::CM,
+        0x47..=0x55 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p145(b: u8) -> Lb {
+    match b {
+        0xce => Lb::OP,
+        0xcf => Lb::CL,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p161(b: u8) -> Lb {
+    match b {
+        0x00..=0x1d => Lb::AS,
+        0x1e..=0x2f => Lb::CM,
+        0x30..=0x39 => Lb::AS,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p16a(b: u8) -> Lb {
+    match b {
+        0x60..=0x69 => Lb::NU,
+        0x6e..=0x6f => Lb::BA,
+        0xc0..=0xc9 => Lb::NU,
+        0xf0..=0xf4 => Lb::CM,
+        0xf5 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p16b(b: u8) -> Lb {
+    match b {
+        0x30..=0x36 => Lb::CM,
+        0x37..=0x39 => Lb::BA,
+        0x44 => Lb::BA,
+        0x50..=0x59 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p16d(b: u8) -> Lb {
+    match b {
+        0x6e..=0x6f => Lb::BA,
+        0x70..=0x79 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p16e(b: u8) -> Lb {
+    match b {
+        0x97..=0x98 => Lb::BA,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p16f(b: u8) -> Lb {
+    match b {
+        0x4f => Lb::CM,
+        0x51..=0x87 => Lb::CM,
+        0x8f..=0x92 => Lb::CM,
+        0xe0..=0xe3 => Lb::NS,
+        0xe4 => Lb::GL,
+        0xf0..=0xf1 => Lb::CM,
+        0xf2..=0xf3 => Lb::NS,
+        0xf4..=0xf6 => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p18d(b: u8) -> Lb {
+    match b {
+        0x00..=0x1e => Lb::ID,
+        0x80..=0xf2 => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1b1(b: u8) -> Lb {
+    match b {
+        0x00..=0x22 => Lb::ID,
+        0x32 => Lb::NS,
+        0x50..=0x52 => Lb::NS,
+        0x55 => Lb::NS,
+        0x64..=0x67 => Lb::NS,
+        0x70..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1b2(b: u8) -> Lb {
+    match b {
+        0x00..=0xfb => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1bc(b: u8) -> Lb {
+    match b {
+        0x9d..=0x9e => Lb::CM,
+        0x9f => Lb::BA,
+        0xa0..=0xa3 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1cc(b: u8) -> Lb {
+    match b {
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1cf(b: u8) -> Lb {
+    match b {
+        0x00..=0x2d => Lb::CM,
+        0x30..=0x46 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1d1(b: u8) -> Lb {
+    match b {
+        0x65..=0x69 => Lb::CM,
+        0x6d..=0x82 => Lb::CM,
+        0x85..=0x8b => Lb::CM,
+        0xaa..=0xad => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1d2(b: u8) -> Lb {
+    match b {
+        0x42..=0x44 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1d7(b: u8) -> Lb {
+    match b {
+        0xce..=0xff => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1da(b: u8) -> Lb {
+    match b {
+        0x00..=0x36 => Lb::CM,
+        0x3b..=0x6c => Lb::CM,
+        0x75 => Lb::CM,
+        0x84 => Lb::CM,
+        0x87..=0x8a => Lb::BA,
+        0x9b..=0x9f => Lb::CM,
+        0xa1..=0xaf => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1e0(b: u8) -> Lb {
+    match b {
+        0x00..=0x06 => Lb::CM,
+        0x08..=0x18 => Lb::CM,
+        0x1b..=0x21 => Lb::CM,
+        0x23..=0x24 => Lb::CM,
+        0x26..=0x2a => Lb::CM,
+        0x8f => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1e1(b: u8) -> Lb {
+    match b {
+        0x30..=0x36 => Lb::CM,
+        0x40..=0x49 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1e2(b: u8) -> Lb {
+    match b {
+        0xae => Lb::CM,
+        0xec..=0xef => Lb::CM,
+        0xf0..=0xf9 => Lb::NU,
+        0xff => Lb::PR,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1e4(b: u8) -> Lb {
+    match b {
+        0xec..=0xef => Lb::CM,
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1e5(b: u8) -> Lb {
+    match b {
+        0xee..=0xef => Lb::CM,
+        0xf1..=0xfa => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1e6(b: u8) -> Lb {
+    match b {
+        0xe3 => Lb::CM,
+        0xe6 => Lb::CM,
+        0xee..=0xef => Lb::CM,
+        0xf5 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1e8(b: u8) -> Lb {
+    match b {
+        0xd0..=0xd6 => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1e9(b: u8) -> Lb {
+    match b {
+        0x44..=0x4a => Lb::CM,
+        0x50..=0x59 => Lb::NU,
+        0x5e..=0x5f => Lb::OP,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1ec(b: u8) -> Lb {
+    match b {
+        0xac => Lb::PO,
+        0xb0 => Lb::PO,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1f1(b: u8) -> Lb {
+    match b {
+        0xae..=0xe5 => Lb::ID,
+        0xe6..=0xff => Lb::RI,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1f3(b: u8) -> Lb {
+    match b {
+        0x00..=0x84 => Lb::ID,
+        0x85 => Lb::EB,
+        0x86..=0x9b => Lb::ID,
+        0x9e..=0xb4 => Lb::ID,
+        0xb7..=0xbb => Lb::ID,
+        0xbd..=0xc1 => Lb::ID,
+        0xc2..=0xc4 => Lb::EB,
+        0xc5..=0xc6 => Lb::ID,
+        0xc7 => Lb::EB,
+        0xc8..=0xc9 => Lb::ID,
+        0xca..=0xcc => Lb::EB,
+        0xcd..=0xfa => Lb::ID,
+        0xfb..=0xff => Lb::EM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1f4(b: u8) -> Lb {
+    match b {
+        0x00..=0x41 => Lb::ID,
+        0x42..=0x43 => Lb::EB,
+        0x44..=0x45 => Lb::ID,
+        0x46..=0x50 => Lb::EB,
+        0x51..=0x65 => Lb::ID,
+        0x66..=0x78 => Lb::EB,
+        0x79..=0x7b => Lb::ID,
+        0x7c => Lb::EB,
+        0x7d..=0x80 => Lb::ID,
+        0x81..=0x83 => Lb::EB,
+        0x84 => Lb::ID,
+        0x85..=0x87 => Lb::EB,
+        0x88..=0x8e => Lb::ID,
+        0x8f => Lb::EB,
+        0x90 => Lb::ID,
+        0x91 => Lb::EB,
+        0x92..=0x9f => Lb::ID,
+        0xa1 => Lb::ID,
+        0xa3 => Lb::ID,
+        0xa5..=0xa9 => Lb::ID,
+        0xaa => Lb::EB,
+        0xab..=0xae => Lb::ID,
+        0xb0 => Lb::ID,
+        0xb3..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1f5(b: u8) -> Lb {
+    match b {
+        0x07..=0x16 => Lb::ID,
+        0x25..=0x31 => Lb::ID,
+        0x4a..=0x73 => Lb::ID,
+        0x74..=0x75 => Lb::EB,
+        0x76..=0x79 => Lb::ID,
+        0x7a => Lb::EB,
+        0x7b..=0x8f => Lb::ID,
+        0x90 => Lb::EB,
+        0x91..=0x94 => Lb::ID,
+        0x95..=0x96 => Lb::EB,
+        0x97..=0xd3 => Lb::ID,
+        0xdc..=0xf3 => Lb::ID,
+        0xfa..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1f6(b: u8) -> Lb {
+    match b {
+        0x00..=0x44 => Lb::ID,
+        0x45..=0x47 => Lb::EB,
+        0x48..=0x4a => Lb::ID,
+        0x4b..=0x4f => Lb::EB,
+        0x76..=0x78 => Lb::QU,
+        0x79..=0x7b => Lb::NS,
+        0x80..=0xa2 => Lb::ID,
+        0xa3 => Lb::EB,
+        0xa4..=0xb3 => Lb::ID,
+        0xb4..=0xb6 => Lb::EB,
+        0xb7..=0xbf => Lb::ID,
+        0xc0 => Lb::EB,
+        0xc1..=0xcb => Lb::ID,
+        0xcc => Lb::EB,
+        0xcd..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1f7(b: u8) -> Lb {
+    match b {
+        0x74..=0x76 => Lb::ID,
+        0x7b..=0x7f => Lb::ID,
+        0xd5..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1f9(b: u8) -> Lb {
+    match b {
+        0x0c => Lb::EB,
+        0x0d..=0x0e => Lb::ID,
+        0x0f => Lb::EB,
+        0x10..=0x17 => Lb::ID,
+        0x18..=0x1f => Lb::EB,
+        0x20..=0x25 => Lb::ID,
+        0x26 => Lb::EB,
+        0x27..=0x2f => Lb::ID,
+        0x30..=0x39 => Lb::EB,
+        0x3a..=0x3b => Lb::ID,
+        0x3c..=0x3e => Lb::EB,
+        0x3f..=0x76 => Lb::ID,
+        0x77 => Lb::EB,
+        0x78..=0xb4 => Lb::ID,
+        0xb5..=0xb6 => Lb::EB,
+        0xb7 => Lb::ID,
+        0xb8..=0xb9 => Lb::EB,
+        0xba => Lb::ID,
+        0xbb => Lb::EB,
+        0xbc..=0xcc => Lb::ID,
+        0xcd..=0xcf => Lb::EB,
+        0xd0 => Lb::ID,
+        0xd1..=0xdd => Lb::EB,
+        0xde..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1fa(b: u8) -> Lb {
+    match b {
+        0x58..=0xc2 => Lb::ID,
+        0xc3..=0xc5 => Lb::EB,
+        0xc6..=0xef => Lb::ID,
+        0xf0..=0xf8 => Lb::EB,
+        0xf9..=0xff => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1fb(b: u8) -> Lb {
+    match b {
+        0xf0..=0xf9 => Lb::NU,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p1ff(b: u8) -> Lb {
+    match b {
+        0x00..=0xfd => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p2ff(b: u8) -> Lb {
+    match b {
+        0x00..=0xfd => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_p3ff(b: u8) -> Lb {
+    match b {
+        0x00..=0xfd => Lb::ID,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_pe00(b: u8) -> Lb {
+    match b {
+        0x01 => Lb::CM,
+        0x20..=0x7f => Lb::CM,
+        _ => Lb::AL,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn lb_pe01(b: u8) -> Lb {
+    match b {
+        0x00..=0xef => Lb::CM,
+        _ => Lb::AL,
     }
 }

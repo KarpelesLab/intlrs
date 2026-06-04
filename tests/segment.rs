@@ -1,10 +1,23 @@
 //! Readable grapheme segmentation checks. The exhaustive UAX #29 run lives in
 //! `grapheme_conformance.rs`.
 
-use intl::unicode::{graphemes, sentences, words};
+use intl::unicode::{graphemes, line_breaks, sentences, words};
 
 fn g(s: &str) -> Vec<&str> {
     graphemes(s).collect()
+}
+
+#[test]
+fn line_break_opportunities() {
+    // Spaces and hyphens are break opportunities; "can't" stays whole.
+    let parts: Vec<&str> = line_breaks("a big-ish can't").map(|b| b.text).collect();
+    assert_eq!(parts, ["a ", "big-", "ish ", "can't"]);
+
+    // A newline is a mandatory break.
+    let mut it = line_breaks("a\nb");
+    let first = it.next().unwrap();
+    assert_eq!(first.text, "a\n");
+    assert!(first.mandatory);
 }
 
 #[test]

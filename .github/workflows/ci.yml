@@ -119,8 +119,13 @@ jobs:
           curl -fsSL -o /tmp/ct.zip https://www.unicode.org/Public/17.0.0/uca/CollationTest.zip
           unzip -o /tmp/ct.zip -d data/uca/17.0.0/
 
-      - name: Collation + normalization conformance (release)
-        run: cargo test --release --all-features --test collation_conformance --test normalization_conformance
+      - name: Fetch LineBreakTest
+        run: |
+          curl -fsSL -o data/ucd/17.0.0/auxiliary/LineBreakTest.txt \
+            https://www.unicode.org/Public/17.0.0/ucd/auxiliary/LineBreakTest.txt
+
+      - name: Conformance (collation, normalization, line break)
+        run: cargo test --release --all-features --test collation_conformance --test normalization_conformance --test line_conformance
 
   docs:
     name: Docs build (warnings denied)

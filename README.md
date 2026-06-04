@@ -104,6 +104,9 @@ codepoint would.
   sequences; word and sentence breaking implement the full WB / SB rule sets.
   All three validated against the official `GraphemeBreakTest` / `WordBreakTest`
   / `SentenceBreakTest` suites.
+- **Line breaking** (UAX #14) — `line_breaks(&str)` yielding break opportunities
+  (mandatory vs allowed). ~99.98% conformant against `LineBreakTest` (a few CJK
+  quotation/East-Asian-Width edge cases remain).
 - **Collation** (UTS #10) — DUCET root collation via `collate::compare` /
   `collate::Collator` (and `sort_key`), with non-ignorable or shifted variable
   handling. Validated against the full official `CollationTest` suite (both

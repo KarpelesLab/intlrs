@@ -881,7 +881,7 @@ fn emit_collation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path, uca: &P
 fn emit_segmentation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     let mut out = String::new();
     write_header(&mut out);
-    out.push_str("use crate::unicode::segment::{Gcb, Incb, Sb, Wb};\n\n");
+    out.push_str("use crate::unicode::segment::{Gcb, Incb, Lb, Sb, Wb};\n\n");
 
     let gcb_map: BTreeMap<&str, u32> = [
         ("CR", 1),
@@ -1012,6 +1012,54 @@ fn emit_segmentation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     let mut sb_render = vec!["Sb::Other".to_string()];
     sb_render.extend(sb_names.iter().map(|n| format!("Sb::{}", pascal_case(n))));
     emit_lookup(&mut out, "sentence_break", "sb", "Sb", &sb, 0, &sb_render);
+
+    // Line_Break (UAX #14), with LB1 resolution baked in.
+    let lb_names = [
+        "AI", "AK", "AL", "AP", "AS", "B2", "BA", "BB", "BK", "CB", "CJ", "CL", "CM", "CP", "CR",
+        "EB", "EM", "EX", "GL", "H2", "H3", "HH", "HL", "HY", "ID", "IN", "IS", "JL", "JT", "JV",
+        "LF", "NL", "NS", "NU", "OP", "PO", "PR", "QU", "RI", "SA", "SG", "SP", "SY", "VF", "VI",
+        "WJ", "XX", "ZW", "ZWJ",
+    ];
+    let code = |n: &str| lb_names.iter().position(|&x| x == n).unwrap() as u32;
+    let lb_map: BTreeMap<&str, u32> = lb_names
+        .iter()
+        .enumerate()
+        .map(|(i, &n)| (n, i as u32))
+        .collect();
+    let al = code("AL");
+    let raw = parse_ranged(&ucd.join("LineBreak.txt"), &lb_map, code("XX"));
+    let gc = parse_unicode_data(&ucd.join("UnicodeData.txt")); // for SA resolution
+    let (ai, sg, xx, cj, sa, ns, cm) = (
+        code("AI"),
+        code("SG"),
+        code("XX"),
+        code("CJ"),
+        code("SA"),
+        code("NS"),
+        code("CM"),
+    );
+    let lb: Vec<u32> = raw
+        .iter()
+        .enumerate()
+        .map(|(cp, &c)| {
+            if c == ai || c == sg || c == xx {
+                al
+            } else if c == cj {
+                ns
+            } else if c == sa {
+                // SA: Mn (5) / Mc (6) -> CM, else AL.
+                if matches!(gc[cp], 5 | 6) {
+                    cm
+                } else {
+                    al
+                }
+            } else {
+                c
+            }
+        })
+        .collect();
+    let lb_render: Vec<String> = lb_names.iter().map(|n| format!("Lb::{n}")).collect();
+    emit_lookup(&mut out, "line_break", "lb", "Lb", &lb, al, &lb_render);
 
     write_module(out_dir, modules, "segmentation", &out);
 }

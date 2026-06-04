@@ -2,6 +2,7 @@ target/
 Cargo.lock
 **/*.rs.bk
 
-# Large UCA conformance data (~40 MB): fetched on demand for the collation
-# conformance test, not committed. See the `conformance` CI job.
+# Large conformance data, fetched on demand by the `conformance` CI job
+# (not committed): UCA collation (~40 MB) and the UAX #14 line-break test (~3 MB).
 data/uca/*/CollationTest/
+data/ucd/*/auxiliary/LineBreakTest.txt
