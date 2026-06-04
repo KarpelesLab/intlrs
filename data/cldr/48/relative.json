@@ -1,0 +1,2365 @@
+{
+"_comment": "Curated CLDR cldr-dates-full (v48) relative time fields for 7 units.",
+"locales": {
+"en": {
+"year": {
+"prev": "last year",
+"cur": "this year",
+"next": "next year",
+"past": {
+"one": "{0} year ago",
+"other": "{0} years ago"
+},
+"future": {
+"one": "in {0} year",
+"other": "in {0} years"
+}
+},
+"month": {
+"prev": "last month",
+"cur": "this month",
+"next": "next month",
+"past": {
+"one": "{0} month ago",
+"other": "{0} months ago"
+},
+"future": {
+"one": "in {0} month",
+"other": "in {0} months"
+}
+},
+"week": {
+"prev": "last week",
+"cur": "this week",
+"next": "next week",
+"past": {
+"one": "{0} week ago",
+"other": "{0} weeks ago"
+},
+"future": {
+"one": "in {0} week",
+"other": "in {0} weeks"
+}
+},
+"day": {
+"prev": "yesterday",
+"cur": "today",
+"next": "tomorrow",
+"past": {
+"one": "{0} day ago",
+"other": "{0} days ago"
+},
+"future": {
+"one": "in {0} day",
+"other": "in {0} days"
+}
+},
+"hour": {
+"cur": "this hour",
+"past": {
+"one": "{0} hour ago",
+"other": "{0} hours ago"
+},
+"future": {
+"one": "in {0} hour",
+"other": "in {0} hours"
+}
+},
+"minute": {
+"cur": "this minute",
+"past": {
+"one": "{0} minute ago",
+"other": "{0} minutes ago"
+},
+"future": {
+"one": "in {0} minute",
+"other": "in {0} minutes"
+}
+},
+"second": {
+"cur": "now",
+"past": {
+"one": "{0} second ago",
+"other": "{0} seconds ago"
+},
+"future": {
+"one": "in {0} second",
+"other": "in {0} seconds"
+}
+}
+},
+"de": {
+"year": {
+"prev": "letztes Jahr",
+"cur": "dieses Jahr",
+"next": "nächstes Jahr",
+"past": {
+"one": "vor {0} Jahr",
+"other": "vor {0} Jahren"
+},
+"future": {
+"one": "in {0} Jahr",
+"other": "in {0} Jahren"
+}
+},
+"month": {
+"prev": "letzten Monat",
+"cur": "diesen Monat",
+"next": "nächsten Monat",
+"past": {
+"one": "vor {0} Monat",
+"other": "vor {0} Monaten"
+},
+"future": {
+"one": "in {0} Monat",
+"other": "in {0} Monaten"
+}
+},
+"week": {
+"prev": "letzte Woche",
+"cur": "diese Woche",
+"next": "nächste Woche",
+"past": {
+"one": "vor {0} Woche",
+"other": "vor {0} Wochen"
+},
+"future": {
+"one": "in {0} Woche",
+"other": "in {0} Wochen"
+}
+},
+"day": {
+"prev": "gestern",
+"cur": "heute",
+"next": "morgen",
+"past": {
+"one": "vor {0} Tag",
+"other": "vor {0} Tagen"
+},
+"future": {
+"one": "in {0} Tag",
+"other": "in {0} Tagen"
+}
+},
+"hour": {
+"cur": "in dieser Stunde",
+"past": {
+"one": "vor {0} Stunde",
+"other": "vor {0} Stunden"
+},
+"future": {
+"one": "in {0} Stunde",
+"other": "in {0} Stunden"
+}
+},
+"minute": {
+"cur": "in dieser Minute",
+"past": {
+"one": "vor {0} Minute",
+"other": "vor {0} Minuten"
+},
+"future": {
+"one": "in {0} Minute",
+"other": "in {0} Minuten"
+}
+},
+"second": {
+"cur": "jetzt",
+"past": {
+"one": "vor {0} Sekunde",
+"other": "vor {0} Sekunden"
+},
+"future": {
+"one": "in {0} Sekunde",
+"other": "in {0} Sekunden"
+}
+}
+},
+"fr": {
+"year": {
+"prev": "l’année dernière",
+"cur": "cette année",
+"next": "l’année prochaine",
+"past": {
+"one": "il y a {0} an",
+"other": "il y a {0} ans"
+},
+"future": {
+"one": "dans {0} an",
+"other": "dans {0} ans"
+}
+},
+"month": {
+"prev": "le mois dernier",
+"cur": "ce mois-ci",
+"next": "le mois prochain",
+"past": {
+"one": "il y a {0} mois",
+"other": "il y a {0} mois"
+},
+"future": {
+"one": "dans {0} mois",
+"other": "dans {0} mois"
+}
+},
+"week": {
+"prev": "la semaine dernière",
+"cur": "cette semaine",
+"next": "la semaine prochaine",
+"past": {
+"one": "il y a {0} semaine",
+"other": "il y a {0} semaines"
+},
+"future": {
+"one": "dans {0} semaine",
+"other": "dans {0} semaines"
+}
+},
+"day": {
+"prev": "hier",
+"cur": "aujourd’hui",
+"next": "demain",
+"past": {
+"one": "il y a {0} jour",
+"other": "il y a {0} jours"
+},
+"future": {
+"one": "dans {0} jour",
+"other": "dans {0} jours"
+}
+},
+"hour": {
+"cur": "cette heure-ci",
+"past": {
+"one": "il y a {0} heure",
+"other": "il y a {0} heures"
+},
+"future": {
+"one": "dans {0} heure",
+"other": "dans {0} heures"
+}
+},
+"minute": {
+"cur": "cette minute-ci",
+"past": {
+"one": "il y a {0} minute",
+"other": "il y a {0} minutes"
+},
+"future": {
+"one": "dans {0} minute",
+"other": "dans {0} minutes"
+}
+},
+"second": {
+"cur": "maintenant",
+"past": {
+"one": "il y a {0} seconde",
+"other": "il y a {0} secondes"
+},
+"future": {
+"one": "dans {0} seconde",
+"other": "dans {0} secondes"
+}
+}
+},
+"es": {
+"year": {
+"prev": "el año pasado",
+"cur": "este año",
+"next": "el próximo año",
+"past": {
+"one": "hace {0} año",
+"other": "hace {0} años"
+},
+"future": {
+"one": "dentro de {0} año",
+"other": "dentro de {0} años"
+}
+},
+"month": {
+"prev": "el mes pasado",
+"cur": "este mes",
+"next": "el próximo mes",
+"past": {
+"one": "hace {0} mes",
+"other": "hace {0} meses"
+},
+"future": {
+"one": "dentro de {0} mes",
+"other": "dentro de {0} meses"
+}
+},
+"week": {
+"prev": "la semana pasada",
+"cur": "esta semana",
+"next": "la próxima semana",
+"past": {
+"one": "hace {0} semana",
+"other": "hace {0} semanas"
+},
+"future": {
+"one": "dentro de {0} semana",
+"other": "dentro de {0} semanas"
+}
+},
+"day": {
+"prev": "ayer",
+"cur": "hoy",
+"next": "mañana",
+"past": {
+"one": "hace {0} día",
+"other": "hace {0} días"
+},
+"future": {
+"one": "dentro de {0} día",
+"other": "dentro de {0} días"
+}
+},
+"hour": {
+"cur": "esta hora",
+"past": {
+"one": "hace {0} hora",
+"other": "hace {0} horas"
+},
+"future": {
+"one": "dentro de {0} hora",
+"other": "dentro de {0} horas"
+}
+},
+"minute": {
+"cur": "este minuto",
+"past": {
+"one": "hace {0} minuto",
+"other": "hace {0} minutos"
+},
+"future": {
+"one": "dentro de {0} minuto",
+"other": "dentro de {0} minutos"
+}
+},
+"second": {
+"cur": "ahora",
+"past": {
+"one": "hace {0} segundo",
+"other": "hace {0} segundos"
+},
+"future": {
+"one": "dentro de {0} segundo",
+"other": "dentro de {0} segundos"
+}
+}
+},
+"it": {
+"year": {
+"prev": "anno scorso",
+"cur": "quest’anno",
+"next": "anno prossimo",
+"past": {
+"one": "{0} anno fa",
+"other": "{0} anni fa"
+},
+"future": {
+"one": "tra {0} anno",
+"other": "tra {0} anni"
+}
+},
+"month": {
+"prev": "mese scorso",
+"cur": "questo mese",
+"next": "mese prossimo",
+"past": {
+"one": "{0} mese fa",
+"other": "{0} mesi fa"
+},
+"future": {
+"one": "tra {0} mese",
+"other": "tra {0} mesi"
+}
+},
+"week": {
+"prev": "settimana scorsa",
+"cur": "questa settimana",
+"next": "settimana prossima",
+"past": {
+"one": "{0} settimana fa",
+"other": "{0} settimane fa"
+},
+"future": {
+"one": "tra {0} settimana",
+"other": "tra {0} settimane"
+}
+},
+"day": {
+"prev": "ieri",
+"cur": "oggi",
+"next": "domani",
+"past": {
+"one": "{0} giorno fa",
+"other": "{0} giorni fa"
+},
+"future": {
+"one": "tra {0} giorno",
+"other": "tra {0} giorni"
+}
+},
+"hour": {
+"cur": "quest’ora",
+"past": {
+"one": "{0} ora fa",
+"other": "{0} ore fa"
+},
+"future": {
+"one": "tra {0} ora",
+"other": "tra {0} ore"
+}
+},
+"minute": {
+"cur": "questo minuto",
+"past": {
+"one": "{0} minuto fa",
+"other": "{0} minuti fa"
+},
+"future": {
+"one": "tra {0} minuto",
+"other": "tra {0} minuti"
+}
+},
+"second": {
+"cur": "ora",
+"past": {
+"one": "{0} secondo fa",
+"other": "{0} secondi fa"
+},
+"future": {
+"one": "tra {0} secondo",
+"other": "tra {0} secondi"
+}
+}
+},
+"nl": {
+"year": {
+"prev": "vorig jaar",
+"cur": "dit jaar",
+"next": "volgend jaar",
+"past": {
+"one": "{0} jaar geleden",
+"other": "{0} jaar geleden"
+},
+"future": {
+"one": "over {0} jaar",
+"other": "over {0} jaar"
+}
+},
+"month": {
+"prev": "vorige maand",
+"cur": "deze maand",
+"next": "volgende maand",
+"past": {
+"one": "{0} maand geleden",
+"other": "{0} maanden geleden"
+},
+"future": {
+"one": "over {0} maand",
+"other": "over {0} maanden"
+}
+},
+"week": {
+"prev": "vorige week",
+"cur": "deze week",
+"next": "volgende week",
+"past": {
+"one": "{0} week geleden",
+"other": "{0} weken geleden"
+},
+"future": {
+"one": "over {0} week",
+"other": "over {0} weken"
+}
+},
+"day": {
+"prev": "gisteren",
+"cur": "vandaag",
+"next": "morgen",
+"past": {
+"one": "{0} dag geleden",
+"other": "{0} dagen geleden"
+},
+"future": {
+"one": "over {0} dag",
+"other": "over {0} dagen"
+}
+},
+"hour": {
+"cur": "binnen een uur",
+"past": {
+"one": "{0} uur geleden",
+"other": "{0} uur geleden"
+},
+"future": {
+"one": "over {0} uur",
+"other": "over {0} uur"
+}
+},
+"minute": {
+"cur": "binnen een minuut",
+"past": {
+"one": "{0} minuut geleden",
+"other": "{0} minuten geleden"
+},
+"future": {
+"one": "over {0} minuut",
+"other": "over {0} minuten"
+}
+},
+"second": {
+"cur": "nu",
+"past": {
+"one": "{0} seconde geleden",
+"other": "{0} seconden geleden"
+},
+"future": {
+"one": "over {0} seconde",
+"other": "over {0} seconden"
+}
+}
+},
+"pt": {
+"year": {
+"prev": "ano passado",
+"cur": "este ano",
+"next": "próximo ano",
+"past": {
+"one": "há {0} ano",
+"other": "há {0} anos"
+},
+"future": {
+"one": "em {0} ano",
+"other": "em {0} anos"
+}
+},
+"month": {
+"prev": "mês passado",
+"cur": "este mês",
+"next": "próximo mês",
+"past": {
+"one": "há {0} mês",
+"other": "há {0} meses"
+},
+"future": {
+"one": "em {0} mês",
+"other": "em {0} meses"
+}
+},
+"week": {
+"prev": "semana passada",
+"cur": "esta semana",
+"next": "próxima semana",
+"past": {
+"one": "há {0} semana",
+"other": "há {0} semanas"
+},
+"future": {
+"one": "em {0} semana",
+"other": "em {0} semanas"
+}
+},
+"day": {
+"prev": "ontem",
+"cur": "hoje",
+"next": "amanhã",
+"past": {
+"one": "há {0} dia",
+"other": "há {0} dias"
+},
+"future": {
+"one": "em {0} dia",
+"other": "em {0} dias"
+}
+},
+"hour": {
+"cur": "esta hora",
+"past": {
+"one": "há {0} hora",
+"other": "há {0} horas"
+},
+"future": {
+"one": "em {0} hora",
+"other": "em {0} horas"
+}
+},
+"minute": {
+"cur": "este minuto",
+"past": {
+"one": "há {0} minuto",
+"other": "há {0} minutos"
+},
+"future": {
+"one": "em {0} minuto",
+"other": "em {0} minutos"
+}
+},
+"second": {
+"cur": "agora",
+"past": {
+"one": "há {0} segundo",
+"other": "há {0} segundos"
+},
+"future": {
+"one": "em {0} segundo",
+"other": "em {0} segundos"
+}
+}
+},
+"sv": {
+"year": {
+"prev": "förra året",
+"cur": "i år",
+"next": "nästa år",
+"past": {
+"one": "för {0} år sedan",
+"other": "för {0} år sedan"
+},
+"future": {
+"one": "om {0} år",
+"other": "om {0} år"
+}
+},
+"month": {
+"prev": "förra månaden",
+"cur": "den här månaden",
+"next": "nästa månad",
+"past": {
+"one": "för {0} månad sedan",
+"other": "för {0} månader sedan"
+},
+"future": {
+"one": "om {0} månad",
+"other": "om {0} månader"
+}
+},
+"week": {
+"prev": "förra veckan",
+"cur": "denna vecka",
+"next": "nästa vecka",
+"past": {
+"one": "för {0} vecka sedan",
+"other": "för {0} veckor sedan"
+},
+"future": {
+"one": "om {0} vecka",
+"other": "om {0} veckor"
+}
+},
+"day": {
+"prev": "i går",
+"cur": "i dag",
+"next": "i morgon",
+"past": {
+"one": "för {0} dag sedan",
+"other": "för {0} dagar sedan"
+},
+"future": {
+"one": "om {0} dag",
+"other": "om {0} dagar"
+}
+},
+"hour": {
+"cur": "denna timme",
+"past": {
+"one": "för {0} timme sedan",
+"other": "för {0} timmar sedan"
+},
+"future": {
+"one": "om {0} timme",
+"other": "om {0} timmar"
+}
+},
+"minute": {
+"cur": "denna minut",
+"past": {
+"one": "för {0} minut sedan",
+"other": "för {0} minuter sedan"
+},
+"future": {
+"one": "om {0} minut",
+"other": "om {0} minuter"
+}
+},
+"second": {
+"cur": "nu",
+"past": {
+"one": "för {0} sekund sedan",
+"other": "för {0} sekunder sedan"
+},
+"future": {
+"one": "om {0} sekund",
+"other": "om {0} sekunder"
+}
+}
+},
+"da": {
+"year": {
+"prev": "sidste år",
+"cur": "i år",
+"next": "næste år",
+"past": {
+"one": "for {0} år siden",
+"other": "for {0} år siden"
+},
+"future": {
+"one": "om {0} år",
+"other": "om {0} år"
+}
+},
+"month": {
+"prev": "sidste måned",
+"cur": "denne måned",
+"next": "næste måned",
+"past": {
+"one": "for {0} måned siden",
+"other": "for {0} måneder siden"
+},
+"future": {
+"one": "om {0} måned",
+"other": "om {0} måneder"
+}
+},
+"week": {
+"prev": "sidste uge",
+"cur": "denne uge",
+"next": "næste uge",
+"past": {
+"one": "for {0} uge siden",
+"other": "for {0} uger siden"
+},
+"future": {
+"one": "om {0} uge",
+"other": "om {0} uger"
+}
+},
+"day": {
+"prev": "i går",
+"cur": "i dag",
+"next": "i morgen",
+"past": {
+"one": "for {0} dag siden",
+"other": "for {0} dage siden"
+},
+"future": {
+"one": "om {0} dag",
+"other": "om {0} dage"
+}
+},
+"hour": {
+"cur": "denne time",
+"past": {
+"one": "for {0} time siden",
+"other": "for {0} timer siden"
+},
+"future": {
+"one": "om {0} time",
+"other": "om {0} timer"
+}
+},
+"minute": {
+"cur": "dette minut",
+"past": {
+"one": "for {0} minut siden",
+"other": "for {0} minutter siden"
+},
+"future": {
+"one": "om {0} minut",
+"other": "om {0} minutter"
+}
+},
+"second": {
+"cur": "nu",
+"past": {
+"one": "for {0} sekund siden",
+"other": "for {0} sekunder siden"
+},
+"future": {
+"one": "om {0} sekund",
+"other": "om {0} sekunder"
+}
+}
+},
+"fi": {
+"year": {
+"prev": "viime vuonna",
+"cur": "tänä vuonna",
+"next": "ensi vuonna",
+"past": {
+"one": "{0} vuosi sitten",
+"other": "{0} vuotta sitten"
+},
+"future": {
+"one": "{0} vuoden päästä",
+"other": "{0} vuoden päästä"
+}
+},
+"month": {
+"prev": "viime kuussa",
+"cur": "tässä kuussa",
+"next": "ensi kuussa",
+"past": {
+"one": "{0} kuukausi sitten",
+"other": "{0} kuukautta sitten"
+},
+"future": {
+"one": "{0} kuukauden päästä",
+"other": "{0} kuukauden päästä"
+}
+},
+"week": {
+"prev": "viime viikolla",
+"cur": "tällä viikolla",
+"next": "ensi viikolla",
+"past": {
+"one": "{0} viikko sitten",
+"other": "{0} viikkoa sitten"
+},
+"future": {
+"one": "{0} viikon päästä",
+"other": "{0} viikon päästä"
+}
+},
+"day": {
+"prev": "eilen",
+"cur": "tänään",
+"next": "huomenna",
+"past": {
+"one": "{0} päivä sitten",
+"other": "{0} päivää sitten"
+},
+"future": {
+"one": "{0} päivän päästä",
+"other": "{0} päivän päästä"
+}
+},
+"hour": {
+"cur": "tämän tunnin aikana",
+"past": {
+"one": "{0} tunti sitten",
+"other": "{0} tuntia sitten"
+},
+"future": {
+"one": "{0} tunnin päästä",
+"other": "{0} tunnin päästä"
+}
+},
+"minute": {
+"cur": "tämän minuutin aikana",
+"past": {
+"one": "{0} minuutti sitten",
+"other": "{0} minuuttia sitten"
+},
+"future": {
+"one": "{0} minuutin päästä",
+"other": "{0} minuutin päästä"
+}
+},
+"second": {
+"cur": "nyt",
+"past": {
+"one": "{0} sekunti sitten",
+"other": "{0} sekuntia sitten"
+},
+"future": {
+"one": "{0} sekunnin päästä",
+"other": "{0} sekunnin päästä"
+}
+}
+},
+"cs": {
+"year": {
+"prev": "minulý rok",
+"cur": "tento rok",
+"next": "příští rok",
+"past": {
+"one": "před {0} rokem",
+"few": "před {0} lety",
+"many": "před {0} roku",
+"other": "před {0} lety"
+},
+"future": {
+"one": "za {0} rok",
+"few": "za {0} roky",
+"many": "za {0} roku",
+"other": "za {0} let"
+}
+},
+"month": {
+"prev": "minulý měsíc",
+"cur": "tento měsíc",
+"next": "příští měsíc",
+"past": {
+"one": "před {0} měsícem",
+"few": "před {0} měsíci",
+"many": "před {0} měsíce",
+"other": "před {0} měsíci"
+},
+"future": {
+"one": "za {0} měsíc",
+"few": "za {0} měsíce",
+"many": "za {0} měsíce",
+"other": "za {0} měsíců"
+}
+},
+"week": {
+"prev": "minulý týden",
+"cur": "tento týden",
+"next": "příští týden",
+"past": {
+"one": "před {0} týdnem",
+"few": "před {0} týdny",
+"many": "před {0} týdne",
+"other": "před {0} týdny"
+},
+"future": {
+"one": "za {0} týden",
+"few": "za {0} týdny",
+"many": "za {0} týdne",
+"other": "za {0} týdnů"
+}
+},
+"day": {
+"prev": "včera",
+"cur": "dnes",
+"next": "zítra",
+"past": {
+"one": "před {0} dnem",
+"few": "před {0} dny",
+"many": "před {0} dne",
+"other": "před {0} dny"
+},
+"future": {
+"one": "za {0} den",
+"few": "za {0} dny",
+"many": "za {0} dne",
+"other": "za {0} dní"
+}
+},
+"hour": {
+"cur": "tuto hodinu",
+"past": {
+"one": "před {0} hodinou",
+"few": "před {0} hodinami",
+"many": "před {0} hodiny",
+"other": "před {0} hodinami"
+},
+"future": {
+"one": "za {0} hodinu",
+"few": "za {0} hodiny",
+"many": "za {0} hodiny",
+"other": "za {0} hodin"
+}
+},
+"minute": {
+"cur": "tuto minutu",
+"past": {
+"one": "před {0} minutou",
+"few": "před {0} minutami",
+"many": "před {0} minuty",
+"other": "před {0} minutami"
+},
+"future": {
+"one": "za {0} minutu",
+"few": "za {0} minuty",
+"many": "za {0} minuty",
+"other": "za {0} minut"
+}
+},
+"second": {
+"cur": "nyní",
+"past": {
+"one": "před {0} sekundou",
+"few": "před {0} sekundami",
+"many": "před {0} sekundy",
+"other": "před {0} sekundami"
+},
+"future": {
+"one": "za {0} sekundu",
+"few": "za {0} sekundy",
+"many": "za {0} sekundy",
+"other": "za {0} sekund"
+}
+}
+},
+"pl": {
+"year": {
+"prev": "w zeszłym roku",
+"cur": "w tym roku",
+"next": "w przyszłym roku",
+"past": {
+"one": "{0} rok temu",
+"few": "{0} lata temu",
+"many": "{0} lat temu",
+"other": "{0} roku temu"
+},
+"future": {
+"one": "za {0} rok",
+"few": "za {0} lata",
+"many": "za {0} lat",
+"other": "za {0} roku"
+}
+},
+"month": {
+"prev": "w zeszłym miesiącu",
+"cur": "w tym miesiącu",
+"next": "w przyszłym miesiącu",
+"past": {
+"one": "{0} miesiąc temu",
+"few": "{0} miesiące temu",
+"many": "{0} miesięcy temu",
+"other": "{0} miesiąca temu"
+},
+"future": {
+"one": "za {0} miesiąc",
+"few": "za {0} miesiące",
+"many": "za {0} miesięcy",
+"other": "za {0} miesiąca"
+}
+},
+"week": {
+"prev": "w zeszłym tygodniu",
+"cur": "w tym tygodniu",
+"next": "w przyszłym tygodniu",
+"past": {
+"one": "{0} tydzień temu",
+"few": "{0} tygodnie temu",
+"many": "{0} tygodni temu",
+"other": "{0} tygodnia temu"
+},
+"future": {
+"one": "za {0} tydzień",
+"few": "za {0} tygodnie",
+"many": "za {0} tygodni",
+"other": "za {0} tygodnia"
+}
+},
+"day": {
+"prev": "wczoraj",
+"cur": "dzisiaj",
+"next": "jutro",
+"past": {
+"one": "{0} dzień temu",
+"few": "{0} dni temu",
+"many": "{0} dni temu",
+"other": "{0} dnia temu"
+},
+"future": {
+"one": "za {0} dzień",
+"few": "za {0} dni",
+"many": "za {0} dni",
+"other": "za {0} dnia"
+}
+},
+"hour": {
+"cur": "ta godzina",
+"past": {
+"one": "{0} godzinę temu",
+"few": "{0} godziny temu",
+"many": "{0} godzin temu",
+"other": "{0} godziny temu"
+},
+"future": {
+"one": "za {0} godzinę",
+"few": "za {0} godziny",
+"many": "za {0} godzin",
+"other": "za {0} godziny"
+}
+},
+"minute": {
+"cur": "ta minuta",
+"past": {
+"one": "{0} minutę temu",
+"few": "{0} minuty temu",
+"many": "{0} minut temu",
+"other": "{0} minuty temu"
+},
+"future": {
+"one": "za {0} minutę",
+"few": "za {0} minuty",
+"many": "za {0} minut",
+"other": "za {0} minuty"
+}
+},
+"second": {
+"cur": "teraz",
+"past": {
+"one": "{0} sekundę temu",
+"few": "{0} sekundy temu",
+"many": "{0} sekund temu",
+"other": "{0} sekundy temu"
+},
+"future": {
+"one": "za {0} sekundę",
+"few": "za {0} sekundy",
+"many": "za {0} sekund",
+"other": "za {0} sekundy"
+}
+}
+},
+"ru": {
+"year": {
+"prev": "в прошлом году",
+"cur": "в этом году",
+"next": "в следующем году",
+"past": {
+"one": "{0} год назад",
+"few": "{0} года назад",
+"many": "{0} лет назад",
+"other": "{0} года назад"
+},
+"future": {
+"one": "через {0} год",
+"few": "через {0} года",
+"many": "через {0} лет",
+"other": "через {0} года"
+}
+},
+"month": {
+"prev": "в прошлом месяце",
+"cur": "в этом месяце",
+"next": "в следующем месяце",
+"past": {
+"one": "{0} месяц назад",
+"few": "{0} месяца назад",
+"many": "{0} месяцев назад",
+"other": "{0} месяца назад"
+},
+"future": {
+"one": "через {0} месяц",
+"few": "через {0} месяца",
+"many": "через {0} месяцев",
+"other": "через {0} месяца"
+}
+},
+"week": {
+"prev": "на прошлой неделе",
+"cur": "на этой неделе",
+"next": "на следующей неделе",
+"past": {
+"one": "{0} неделю назад",
+"few": "{0} недели назад",
+"many": "{0} недель назад",
+"other": "{0} недели назад"
+},
+"future": {
+"one": "через {0} неделю",
+"few": "через {0} недели",
+"many": "через {0} недель",
+"other": "через {0} недели"
+}
+},
+"day": {
+"prev": "вчера",
+"cur": "сегодня",
+"next": "завтра",
+"past": {
+"one": "{0} день назад",
+"few": "{0} дня назад",
+"many": "{0} дней назад",
+"other": "{0} дня назад"
+},
+"future": {
+"one": "через {0} день",
+"few": "через {0} дня",
+"many": "через {0} дней",
+"other": "через {0} дня"
+}
+},
+"hour": {
+"cur": "в этот час",
+"past": {
+"one": "{0} час назад",
+"few": "{0} часа назад",
+"many": "{0} часов назад",
+"other": "{0} часа назад"
+},
+"future": {
+"one": "через {0} час",
+"few": "через {0} часа",
+"many": "через {0} часов",
+"other": "через {0} часа"
+}
+},
+"minute": {
+"cur": "в эту минуту",
+"past": {
+"one": "{0} минуту назад",
+"few": "{0} минуты назад",
+"many": "{0} минут назад",
+"other": "{0} минуты назад"
+},
+"future": {
+"one": "через {0} минуту",
+"few": "через {0} минуты",
+"many": "через {0} минут",
+"other": "через {0} минуты"
+}
+},
+"second": {
+"cur": "сейчас",
+"past": {
+"one": "{0} секунду назад",
+"few": "{0} секунды назад",
+"many": "{0} секунд назад",
+"other": "{0} секунды назад"
+},
+"future": {
+"one": "через {0} секунду",
+"few": "через {0} секунды",
+"many": "через {0} секунд",
+"other": "через {0} секунды"
+}
+}
+},
+"uk": {
+"year": {
+"prev": "минулого року",
+"cur": "цього року",
+"next": "наступного року",
+"past": {
+"one": "{0} рік тому",
+"few": "{0} роки тому",
+"many": "{0} років тому",
+"other": "{0} року тому"
+},
+"future": {
+"one": "через {0} рік",
+"few": "через {0} роки",
+"many": "через {0} років",
+"other": "через {0} року"
+}
+},
+"month": {
+"prev": "минулого місяця",
+"cur": "цього місяця",
+"next": "наступного місяця",
+"past": {
+"one": "{0} місяць тому",
+"few": "{0} місяці тому",
+"many": "{0} місяців тому",
+"other": "{0} місяця тому"
+},
+"future": {
+"one": "через {0} місяць",
+"few": "через {0} місяці",
+"many": "через {0} місяців",
+"other": "через {0} місяця"
+}
+},
+"week": {
+"prev": "минулого тижня",
+"cur": "цього тижня",
+"next": "наступного тижня",
+"past": {
+"one": "{0} тиждень тому",
+"few": "{0} тижні тому",
+"many": "{0} тижнів тому",
+"other": "{0} тижня тому"
+},
+"future": {
+"one": "через {0} тиждень",
+"few": "через {0} тижні",
+"many": "через {0} тижнів",
+"other": "через {0} тижня"
+}
+},
+"day": {
+"prev": "учора",
+"cur": "сьогодні",
+"next": "завтра",
+"past": {
+"one": "{0} день тому",
+"few": "{0} дні тому",
+"many": "{0} днів тому",
+"other": "{0} дня тому"
+},
+"future": {
+"one": "через {0} день",
+"few": "через {0} дні",
+"many": "через {0} днів",
+"other": "через {0} дня"
+}
+},
+"hour": {
+"cur": "цієї години",
+"past": {
+"one": "{0} годину тому",
+"few": "{0} години тому",
+"many": "{0} годин тому",
+"other": "{0} години тому"
+},
+"future": {
+"one": "через {0} годину",
+"few": "через {0} години",
+"many": "через {0} годин",
+"other": "через {0} години"
+}
+},
+"minute": {
+"cur": "цієї хвилини",
+"past": {
+"one": "{0} хвилину тому",
+"few": "{0} хвилини тому",
+"many": "{0} хвилин тому",
+"other": "{0} хвилини тому"
+},
+"future": {
+"one": "через {0} хвилину",
+"few": "через {0} хвилини",
+"many": "через {0} хвилин",
+"other": "через {0} хвилини"
+}
+},
+"second": {
+"cur": "зараз",
+"past": {
+"one": "{0} секунду тому",
+"few": "{0} секунди тому",
+"many": "{0} секунд тому",
+"other": "{0} секунди тому"
+},
+"future": {
+"one": "через {0} секунду",
+"few": "через {0} секунди",
+"many": "через {0} секунд",
+"other": "через {0} секунди"
+}
+}
+},
+"tr": {
+"year": {
+"prev": "geçen yıl",
+"cur": "bu yıl",
+"next": "gelecek yıl",
+"past": {
+"one": "{0} yıl önce",
+"other": "{0} yıl önce"
+},
+"future": {
+"one": "{0} yıl sonra",
+"other": "{0} yıl sonra"
+}
+},
+"month": {
+"prev": "geçen ay",
+"cur": "bu ay",
+"next": "gelecek ay",
+"past": {
+"one": "{0} ay önce",
+"other": "{0} ay önce"
+},
+"future": {
+"one": "{0} ay sonra",
+"other": "{0} ay sonra"
+}
+},
+"week": {
+"prev": "geçen hafta",
+"cur": "bu hafta",
+"next": "gelecek hafta",
+"past": {
+"one": "{0} hafta önce",
+"other": "{0} hafta önce"
+},
+"future": {
+"one": "{0} hafta sonra",
+"other": "{0} hafta sonra"
+}
+},
+"day": {
+"prev": "dün",
+"cur": "bugün",
+"next": "yarın",
+"past": {
+"one": "{0} gün önce",
+"other": "{0} gün önce"
+},
+"future": {
+"one": "{0} gün sonra",
+"other": "{0} gün sonra"
+}
+},
+"hour": {
+"cur": "bu saat",
+"past": {
+"one": "{0} saat önce",
+"other": "{0} saat önce"
+},
+"future": {
+"one": "{0} saat sonra",
+"other": "{0} saat sonra"
+}
+},
+"minute": {
+"cur": "bu dakika",
+"past": {
+"one": "{0} dakika önce",
+"other": "{0} dakika önce"
+},
+"future": {
+"one": "{0} dakika sonra",
+"other": "{0} dakika sonra"
+}
+},
+"second": {
+"cur": "şimdi",
+"past": {
+"one": "{0} saniye önce",
+"other": "{0} saniye önce"
+},
+"future": {
+"one": "{0} saniye sonra",
+"other": "{0} saniye sonra"
+}
+}
+},
+"el": {
+"year": {
+"prev": "πέρσι",
+"cur": "φέτος",
+"next": "επόμενο έτος",
+"past": {
+"one": "πριν από {0} έτος",
+"other": "πριν από {0} έτη"
+},
+"future": {
+"one": "σε {0} έτος",
+"other": "σε {0} έτη"
+}
+},
+"month": {
+"prev": "προηγούμενος μήνας",
+"cur": "τρέχων μήνας",
+"next": "επόμενος μήνας",
+"past": {
+"one": "πριν από {0} μήνα",
+"other": "πριν από {0} μήνες"
+},
+"future": {
+"one": "σε {0} μήνα",
+"other": "σε {0} μήνες"
+}
+},
+"week": {
+"prev": "προηγούμενη εβδομάδα",
+"cur": "τρέχουσα εβδομάδα",
+"next": "επόμενη εβδομάδα",
+"past": {
+"one": "πριν από {0} εβδομάδα",
+"other": "πριν από {0} εβδομάδες"
+},
+"future": {
+"one": "σε {0} εβδομάδα",
+"other": "σε {0} εβδομάδες"
+}
+},
+"day": {
+"prev": "χθες",
+"cur": "σήμερα",
+"next": "αύριο",
+"past": {
+"one": "πριν από {0} ημέρα",
+"other": "πριν από {0} ημέρες"
+},
+"future": {
+"one": "σε {0} ημέρα",
+"other": "σε {0} ημέρες"
+}
+},
+"hour": {
+"cur": "τρέχουσα ώρα",
+"past": {
+"one": "πριν από {0} ώρα",
+"other": "πριν από {0} ώρες"
+},
+"future": {
+"one": "σε {0} ώρα",
+"other": "σε {0} ώρες"
+}
+},
+"minute": {
+"cur": "τρέχον λεπτό",
+"past": {
+"one": "πριν από {0} λεπτό",
+"other": "πριν από {0} λεπτά"
+},
+"future": {
+"one": "σε {0} λεπτό",
+"other": "σε {0} λεπτά"
+}
+},
+"second": {
+"cur": "τώρα",
+"past": {
+"one": "πριν από {0} δευτερόλεπτο",
+"other": "πριν από {0} δευτερόλεπτα"
+},
+"future": {
+"one": "σε {0} δευτερόλεπτο",
+"other": "σε {0} δευτερόλεπτα"
+}
+}
+},
+"ja": {
+"year": {
+"prev": "昨年",
+"cur": "今年",
+"next": "来年",
+"past": {
+"other": "{0} 年前"
+},
+"future": {
+"other": "{0} 年後"
+}
+},
+"month": {
+"prev": "先月",
+"cur": "今月",
+"next": "来月",
+"past": {
+"other": "{0} か月前"
+},
+"future": {
+"other": "{0} か月後"
+}
+},
+"week": {
+"prev": "先週",
+"cur": "今週",
+"next": "来週",
+"past": {
+"other": "{0} 週間前"
+},
+"future": {
+"other": "{0} 週間後"
+}
+},
+"day": {
+"prev": "昨日",
+"cur": "今日",
+"next": "明日",
+"past": {
+"other": "{0} 日前"
+},
+"future": {
+"other": "{0} 日後"
+}
+},
+"hour": {
+"cur": "1 時間以内",
+"past": {
+"other": "{0} 時間前"
+},
+"future": {
+"other": "{0} 時間後"
+}
+},
+"minute": {
+"cur": "1 分以内",
+"past": {
+"other": "{0} 分前"
+},
+"future": {
+"other": "{0} 分後"
+}
+},
+"second": {
+"cur": "今",
+"past": {
+"other": "{0} 秒前"
+},
+"future": {
+"other": "{0} 秒後"
+}
+}
+},
+"ko": {
+"year": {
+"prev": "작년",
+"cur": "올해",
+"next": "내년",
+"past": {
+"other": "{0}년 전"
+},
+"future": {
+"other": "{0}년 후"
+}
+},
+"month": {
+"prev": "지난달",
+"cur": "이번 달",
+"next": "다음 달",
+"past": {
+"other": "{0}개월 전"
+},
+"future": {
+"other": "{0}개월 후"
+}
+},
+"week": {
+"prev": "지난주",
+"cur": "이번 주",
+"next": "다음 주",
+"past": {
+"other": "{0}주 전"
+},
+"future": {
+"other": "{0}주 후"
+}
+},
+"day": {
+"prev": "어제",
+"cur": "오늘",
+"next": "내일",
+"past": {
+"other": "{0}일 전"
+},
+"future": {
+"other": "{0}일 후"
+}
+},
+"hour": {
+"cur": "현재 시간",
+"past": {
+"other": "{0}시간 전"
+},
+"future": {
+"other": "{0}시간 후"
+}
+},
+"minute": {
+"cur": "현재 분",
+"past": {
+"other": "{0}분 전"
+},
+"future": {
+"other": "{0}분 후"
+}
+},
+"second": {
+"cur": "지금",
+"past": {
+"other": "{0}초 전"
+},
+"future": {
+"other": "{0}초 후"
+}
+}
+},
+"zh": {
+"year": {
+"prev": "去年",
+"cur": "今年",
+"next": "明年",
+"past": {
+"other": "{0}年前"
+},
+"future": {
+"other": "{0}年后"
+}
+},
+"month": {
+"prev": "上个月",
+"cur": "本月",
+"next": "下个月",
+"past": {
+"other": "{0}个月前"
+},
+"future": {
+"other": "{0}个月后"
+}
+},
+"week": {
+"prev": "上周",
+"cur": "本周",
+"next": "下周",
+"past": {
+"other": "{0}周前"
+},
+"future": {
+"other": "{0}周后"
+}
+},
+"day": {
+"prev": "昨天",
+"cur": "今天",
+"next": "明天",
+"past": {
+"other": "{0}天前"
+},
+"future": {
+"other": "{0}天后"
+}
+},
+"hour": {
+"cur": "这一时间 / 此时",
+"past": {
+"other": "{0}小时前"
+},
+"future": {
+"other": "{0}小时后"
+}
+},
+"minute": {
+"cur": "此刻",
+"past": {
+"other": "{0}分钟前"
+},
+"future": {
+"other": "{0}分钟后"
+}
+},
+"second": {
+"cur": "现在",
+"past": {
+"other": "{0}秒钟前"
+},
+"future": {
+"other": "{0}秒钟后"
+}
+}
+},
+"th": {
+"year": {
+"prev": "ปีที่แล้ว",
+"cur": "ปีนี้",
+"next": "ปีหน้า",
+"past": {
+"other": "{0} ปีที่แล้ว"
+},
+"future": {
+"other": "ในอีก {0} ปี"
+}
+},
+"month": {
+"prev": "เดือนที่แล้ว",
+"cur": "เดือนนี้",
+"next": "เดือนหน้า",
+"past": {
+"other": "{0} เดือนที่ผ่านมา"
+},
+"future": {
+"other": "ในอีก {0} เดือน"
+}
+},
+"week": {
+"prev": "สัปดาห์ที่แล้ว",
+"cur": "สัปดาห์นี้",
+"next": "สัปดาห์หน้า",
+"past": {
+"other": "{0} สัปดาห์ที่ผ่านมา"
+},
+"future": {
+"other": "ในอีก {0} สัปดาห์"
+}
+},
+"day": {
+"prev": "เมื่อวาน",
+"cur": "วันนี้",
+"next": "พรุ่งนี้",
+"past": {
+"other": "{0} วันที่ผ่านมา"
+},
+"future": {
+"other": "ในอีก {0} วัน"
+}
+},
+"hour": {
+"cur": "ชั่วโมงนี้",
+"past": {
+"other": "{0} ชั่วโมงที่ผ่านมา"
+},
+"future": {
+"other": "ในอีก {0} ชั่วโมง"
+}
+},
+"minute": {
+"cur": "นาทีนี้",
+"past": {
+"other": "{0} นาทีที่ผ่านมา"
+},
+"future": {
+"other": "ในอีก {0} นาที"
+}
+},
+"second": {
+"cur": "ขณะนี้",
+"past": {
+"other": "{0} วินาทีที่ผ่านมา"
+},
+"future": {
+"other": "ในอีก {0} วินาที"
+}
+}
+},
+"hi": {
+"year": {
+"prev": "पिछला वर्ष",
+"cur": "इस वर्ष",
+"next": "अगला वर्ष",
+"past": {
+"one": "{0} वर्ष पहले",
+"other": "{0} वर्ष पहले"
+},
+"future": {
+"one": "{0} वर्ष में",
+"other": "{0} वर्ष में"
+}
+},
+"month": {
+"prev": "पिछला माह",
+"cur": "इस माह",
+"next": "अगला माह",
+"past": {
+"one": "{0} माह पहले",
+"other": "{0} माह पहले"
+},
+"future": {
+"one": "{0} माह में",
+"other": "{0} माह में"
+}
+},
+"week": {
+"prev": "पिछला सप्ताह",
+"cur": "इस सप्ताह",
+"next": "अगला सप्ताह",
+"past": {
+"one": "{0} सप्ताह पहले",
+"other": "{0} सप्ताह पहले"
+},
+"future": {
+"one": "{0} सप्ताह में",
+"other": "{0} सप्ताह में"
+}
+},
+"day": {
+"prev": "कल",
+"cur": "आज",
+"next": "कल",
+"past": {
+"one": "{0} दिन पहले",
+"other": "{0} दिन पहले"
+},
+"future": {
+"one": "{0} दिन में",
+"other": "{0} दिन में"
+}
+},
+"hour": {
+"cur": "यह घंटा",
+"past": {
+"one": "{0} घंटे पहले",
+"other": "{0} घंटे पहले"
+},
+"future": {
+"one": "{0} घंटे में",
+"other": "{0} घंटे में"
+}
+},
+"minute": {
+"cur": "यह मिनट",
+"past": {
+"one": "{0} मिनट पहले",
+"other": "{0} मिनट पहले"
+},
+"future": {
+"one": "{0} मिनट में",
+"other": "{0} मिनट में"
+}
+},
+"second": {
+"cur": "अब",
+"past": {
+"one": "{0} सेकंड पहले",
+"other": "{0} सेकंड पहले"
+},
+"future": {
+"one": "{0} सेकंड में",
+"other": "{0} सेकंड में"
+}
+}
+},
+"ar": {
+"year": {
+"prev": "السنة الماضية",
+"cur": "السنة الحالية",
+"next": "السنة القادمة",
+"past": {
+"zero": "قبل {0} سنة",
+"one": "قبل سنة واحدة",
+"two": "قبل سنتين",
+"few": "قبل {0} سنوات",
+"many": "قبل {0} سنة",
+"other": "قبل {0} سنة"
+},
+"future": {
+"zero": "خلال {0} سنة",
+"one": "خلال سنة واحدة",
+"two": "خلال سنتين",
+"few": "خلال {0} سنوات",
+"many": "خلال {0} سنة",
+"other": "خلال {0} سنة"
+}
+},
+"month": {
+"prev": "الشهر الماضي",
+"cur": "هذا الشهر",
+"next": "الشهر القادم",
+"past": {
+"zero": "قبل {0} شهر",
+"one": "قبل شهر واحد",
+"two": "قبل شهرين",
+"few": "قبل {0} أشهر",
+"many": "قبل {0} شهرًا",
+"other": "قبل {0} شهر"
+},
+"future": {
+"zero": "خلال {0} شهر",
+"one": "خلال شهر واحد",
+"two": "خلال شهرين",
+"few": "خلال {0} أشهر",
+"many": "خلال {0} شهرًا",
+"other": "خلال {0} شهر"
+}
+},
+"week": {
+"prev": "الأسبوع الماضي",
+"cur": "هذا الأسبوع",
+"next": "الأسبوع القادم",
+"past": {
+"zero": "قبل {0} أسبوع",
+"one": "قبل أسبوع واحد",
+"two": "قبل أسبوعين",
+"few": "قبل {0} أسابيع",
+"many": "قبل {0} أسبوعًا",
+"other": "قبل {0} أسبوع"
+},
+"future": {
+"zero": "خلال {0} أسبوع",
+"one": "خلال أسبوع واحد",
+"two": "خلال أسبوعين",
+"few": "خلال {0} أسابيع",
+"many": "خلال {0} أسبوعًا",
+"other": "خلال {0} أسبوع"
+}
+},
+"day": {
+"prev": "أمس",
+"cur": "اليوم",
+"next": "غدًا",
+"past": {
+"zero": "قبل {0} يوم",
+"one": "قبل يوم واحد",
+"two": "قبل يومين",
+"few": "قبل {0} أيام",
+"many": "قبل {0} يومًا",
+"other": "قبل {0} يوم"
+},
+"future": {
+"zero": "خلال {0} يوم",
+"one": "خلال يوم واحد",
+"two": "خلال يومين",
+"few": "خلال {0} أيام",
+"many": "خلال {0} يومًا",
+"other": "خلال {0} يوم"
+}
+},
+"hour": {
+"cur": "الساعة الحالية",
+"past": {
+"zero": "قبل {0} ساعة",
+"one": "قبل ساعة واحدة",
+"two": "قبل ساعتين",
+"few": "قبل {0} ساعات",
+"many": "قبل {0} ساعة",
+"other": "قبل {0} ساعة"
+},
+"future": {
+"zero": "خلال {0} ساعة",
+"one": "خلال ساعة واحدة",
+"two": "خلال ساعتين",
+"few": "خلال {0} ساعات",
+"many": "خلال {0} ساعة",
+"other": "خلال {0} ساعة"
+}
+},
+"minute": {
+"cur": "هذه الدقيقة",
+"past": {
+"zero": "قبل {0} دقيقة",
+"one": "قبل دقيقة واحدة",
+"two": "قبل دقيقتين",
+"few": "قبل {0} دقائق",
+"many": "قبل {0} دقيقة",
+"other": "قبل {0} دقيقة"
+},
+"future": {
+"zero": "خلال {0} دقيقة",
+"one": "خلال دقيقة واحدة",
+"two": "خلال دقيقتين",
+"few": "خلال {0} دقائق",
+"many": "خلال {0} دقيقة",
+"other": "خلال {0} دقيقة"
+}
+},
+"second": {
+"cur": "الآن",
+"past": {
+"zero": "قبل {0} ثانية",
+"one": "قبل ثانية واحدة",
+"two": "قبل ثانيتين",
+"few": "قبل {0} ثوانِ",
+"many": "قبل {0} ثانية",
+"other": "قبل {0} ثانية"
+},
+"future": {
+"zero": "خلال {0} ثانية",
+"one": "خلال ثانية واحدة",
+"two": "خلال ثانيتين",
+"few": "خلال {0} ثوانٍ",
+"many": "خلال {0} ثانية",
+"other": "خلال {0} ثانية"
+}
+}
+},
+"fa": {
+"year": {
+"prev": "سال گذشته",
+"cur": "امسال",
+"next": "سال آینده",
+"past": {
+"one": "{0} سال پیش",
+"other": "{0} سال پیش"
+},
+"future": {
+"one": "{0} سال بعد",
+"other": "{0} سال بعد"
+}
+},
+"month": {
+"prev": "ماه گذشته",
+"cur": "این ماه",
+"next": "ماه آینده",
+"past": {
+"one": "{0} ماه پیش",
+"other": "{0} ماه پیش"
+},
+"future": {
+"one": "{0} ماه بعد",
+"other": "{0} ماه بعد"
+}
+},
+"week": {
+"prev": "هفتهٔ گذشته",
+"cur": "این هفته",
+"next": "هفتهٔ آینده",
+"past": {
+"one": "{0} هفته پیش",
+"other": "{0} هفته پیش"
+},
+"future": {
+"one": "{0} هفته بعد",
+"other": "{0} هفته بعد"
+}
+},
+"day": {
+"prev": "دیروز",
+"cur": "امروز",
+"next": "فردا",
+"past": {
+"one": "{0} روز پیش",
+"other": "{0} روز پیش"
+},
+"future": {
+"one": "{0} روز دیگر",
+"other": "{0} روز دیگر"
+}
+},
+"hour": {
+"cur": "همین ساعت",
+"past": {
+"one": "{0} ساعت پیش",
+"other": "{0} ساعت پیش"
+},
+"future": {
+"one": "{0} ساعت بعد",
+"other": "{0} ساعت بعد"
+}
+},
+"minute": {
+"cur": "همین دقیقه",
+"past": {
+"one": "{0} دقیقه پیش",
+"other": "{0} دقیقه پیش"
+},
+"future": {
+"one": "{0} دقیقه بعد",
+"other": "{0} دقیقه بعد"
+}
+},
+"second": {
+"cur": "اکنون",
+"past": {
+"one": "{0} ثانیه پیش",
+"other": "{0} ثانیه پیش"
+},
+"future": {
+"one": "{0} ثانیه بعد",
+"other": "{0} ثانیه بعد"
+}
+}
+},
+"he": {
+"year": {
+"prev": "השנה שעברה",
+"cur": "השנה",
+"next": "השנה הבאה",
+"past": {
+"one": "לפני שנה",
+"two": "לפני שנתיים",
+"other": "לפני {0} שנים"
+},
+"future": {
+"one": "בעוד שנה",
+"two": "בעוד שנתיים",
+"other": "בעוד {0} שנים"
+}
+},
+"month": {
+"prev": "החודש שעבר",
+"cur": "החודש",
+"next": "החודש הבא",
+"past": {
+"one": "לפני חודש ({0})",
+"two": "לפני חודשיים ({0})",
+"other": "לפני {0} חודשים"
+},
+"future": {
+"one": "בעוד חודש ({0})",
+"two": "בעוד חודשיים ({0})",
+"other": "בעוד {0} חודשים"
+}
+},
+"week": {
+"prev": "השבוע שעבר",
+"cur": "השבוע",
+"next": "השבוע הבא",
+"past": {
+"one": "לפני שבוע ({0})",
+"two": "לפני שבועיים ({0})",
+"other": "לפני {0} שבועות"
+},
+"future": {
+"one": "בעוד שבוע ({0})",
+"two": "בעוד שבועיים ({0})",
+"other": "בעוד {0} שבועות"
+}
+},
+"day": {
+"prev": "אתמול",
+"cur": "היום",
+"next": "מחר",
+"past": {
+"one": "לפני יום אחד ({0})",
+"two": "לפני יומיים ({0})",
+"other": "לפני {0} ימים"
+},
+"future": {
+"one": "בעוד יום ({0})",
+"two": "בעוד יומיים ({0})",
+"other": "בעוד {0} ימים"
+}
+},
+"hour": {
+"cur": "בשעה זו",
+"past": {
+"one": "לפני שעה ({0})",
+"two": "לפני שעתיים ({0})",
+"other": "לפני {0} שעות"
+},
+"future": {
+"one": "בעוד שעה ({0})",
+"two": "בעוד שעתיים ({0})",
+"other": "בעוד {0} שעות"
+}
+},
+"minute": {
+"cur": "בדקה זו",
+"past": {
+"one": "לפני דקה ({0})",
+"two": "לפני {0} דקות",
+"other": "לפני {0} דקות"
+},
+"future": {
+"one": "בעוד דקה ({0})",
+"two": "בעוד {0} דקות",
+"other": "בעוד {0} דקות"
+}
+},
+"second": {
+"cur": "עכשיו",
+"past": {
+"one": "לפני שנייה",
+"two": "לפני שתי שניות",
+"other": "לפני {0} שניות"
+},
+"future": {
+"one": "בעוד שנייה ({0})",
+"two": "בעוד שתי שניות",
+"other": "בעוד {0} שניות"
+}
+}
+},
+"id": {
+"year": {
+"prev": "tahun lalu",
+"cur": "tahun ini",
+"next": "tahun depan",
+"past": {
+"other": "{0} tahun yang lalu"
+},
+"future": {
+"other": "dalam {0} tahun"
+}
+},
+"month": {
+"prev": "bulan lalu",
+"cur": "bulan ini",
+"next": "bulan depan",
+"past": {
+"other": "{0} bulan yang lalu"
+},
+"future": {
+"other": "dalam {0} bulan"
+}
+},
+"week": {
+"prev": "minggu lalu",
+"cur": "minggu ini",
+"next": "minggu depan",
+"past": {
+"other": "{0} minggu yang lalu"
+},
+"future": {
+"other": "dalam {0} minggu"
+}
+},
+"day": {
+"prev": "kemarin",
+"cur": "hari ini",
+"next": "besok",
+"past": {
+"other": "{0} hari yang lalu"
+},
+"future": {
+"other": "dalam {0} hari"
+}
+},
+"hour": {
+"cur": "jam ini",
+"past": {
+"other": "{0} jam yang lalu"
+},
+"future": {
+"other": "dalam {0} jam"
+}
+},
+"minute": {
+"cur": "menit ini",
+"past": {
+"other": "{0} menit yang lalu"
+},
+"future": {
+"other": "dalam {0} menit"
+}
+},
+"second": {
+"cur": "sekarang",
+"past": {
+"other": "{0} detik yang lalu"
+},
+"future": {
+"other": "dalam {0} detik"
+}
+}
+},
+"vi": {
+"year": {
+"prev": "năm ngoái",
+"cur": "năm nay",
+"next": "năm sau",
+"past": {
+"other": "{0} năm trước"
+},
+"future": {
+"other": "sau {0} năm nữa"
+}
+},
+"month": {
+"prev": "tháng trước",
+"cur": "tháng này",
+"next": "tháng sau",
+"past": {
+"other": "{0} tháng trước"
+},
+"future": {
+"other": "sau {0} tháng nữa"
+}
+},
+"week": {
+"prev": "tuần trước",
+"cur": "tuần này",
+"next": "tuần sau",
+"past": {
+"other": "{0} tuần trước"
+},
+"future": {
+"other": "sau {0} tuần nữa"
+}
+},
+"day": {
+"prev": "Hôm qua",
+"cur": "Hôm nay",
+"next": "Ngày mai",
+"past": {
+"other": "{0} ngày trước"
+},
+"future": {
+"other": "sau {0} ngày nữa"
+}
+},
+"hour": {
+"cur": "giờ này",
+"past": {
+"other": "{0} giờ trước"
+},
+"future": {
+"other": "sau {0} giờ nữa"
+}
+},
+"minute": {
+"cur": "phút này",
+"past": {
+"other": "{0} phút trước"
+},
+"future": {
+"other": "sau {0} phút nữa"
+}
+},
+"second": {
+"cur": "bây giờ",
+"past": {
+"other": "{0} giây trước"
+},
+"future": {
+"other": "sau {0} giây nữa"
+}
+}
+}
+}
+}

@@ -26,4 +26,6 @@ pub mod locale;
 #[cfg(feature = "alloc")]
 pub mod number;
 pub mod plural;
+#[cfg(feature = "alloc")]
+pub mod relative;
 pub mod unicode;

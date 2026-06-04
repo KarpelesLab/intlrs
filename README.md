@@ -76,6 +76,10 @@ Beyond the `unicode` module:
 
 - `intl::list` (alloc) joins items with locale connectors —
   `format_list("en", &["a","b","c"], ListStyle::And)` → `"a, b, and c"`.
+- `intl::relative` (alloc) formats relative times —
+  `format_relative("en", -2, RelativeUnit::Hour)` → `"2 hours ago"`,
+  `format_relative("en", -1, RelativeUnit::Day)` → `"yesterday"` (plural- and
+  number-aware).
 
 These build out the CLDR/locale layer toward full ICU-style formatting.
 

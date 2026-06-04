@@ -274,11 +274,24 @@ fn main() {
         &root.join("data/cldr/48/lists.json"),
     );
 
+    // ---- CLDR relative-time formats (UTS #35) ----
+    emit_relative(
+        &out_dir,
+        &mut modules,
+        &root.join("data/cldr/48/relative.json"),
+    );
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
     write_header(&mut mod_out);
+    // These tables reference runtime types that only exist under `alloc`, so
+    // their generated modules must be gated to match.
+    let alloc_only = ["numbers", "lists", "relative"];
     for m in &modules {
+        if alloc_only.contains(&m.as_str()) {
+            mod_out.push_str("#[cfg(feature = \"alloc\")]\n");
+        }
         let _ = write!(mod_out, "pub(crate) mod {m};\n");
     }
     fs::write(out_dir.join("mod.rs"), &mod_out).expect("write generated/mod.rs");
@@ -1480,6 +1493,69 @@ fn emit_numbers(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
     }
     out.push_str("        _ => return None,\n    })\n}\n");
     write_module(out_dir, modules, "numbers", &out);
+}
+
+/// Emit `generated/relative.rs`: per-locale CLDR relative-time strings.
+fn emit_relative(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
+    let text = fs::read_to_string(path).expect("read relative.json");
+    let json = json_parse(&text);
+    let locales = json.get("locales").expect("locales");
+    let units = ["year", "month", "week", "day", "hour", "minute", "second"];
+    // Plural-count name -> PluralCategory index.
+    let cat_index = |name: &str| match name {
+        "zero" => 0,
+        "one" => 1,
+        "two" => 2,
+        "few" => 3,
+        "many" => 4,
+        _ => 5, // other
+    };
+    let opt = |v: Option<&str>| match v {
+        Some(s) => format!("Some({s:?})"),
+        None => "None".to_string(),
+    };
+    let tense_arr = |field: &Json, key: &str| {
+        let mut arr: [Option<String>; 6] = Default::default();
+        if let Some(obj) = field.get(key) {
+            for (count, pat) in obj.entries() {
+                if let Some(p) = pat.as_str() {
+                    arr[cat_index(count)] = Some(p.to_string());
+                }
+            }
+        }
+        let cells: Vec<String> = arr.iter().map(|c| opt(c.as_deref())).collect();
+        format!("[{}]", cells.join(", "))
+    };
+
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str(
+        "use crate::relative::{RelUnit, RelativeSpec};\n\n\
+         /// CLDR relative-time spec for an exact (lowercased) locale key, or `None`.\n\
+         pub(crate) fn relative_spec(lang: &str) -> Option<RelativeSpec> {\n    Some(match lang {\n",
+    );
+    for (lang, loc) in locales.entries() {
+        let mut unit_lits = Vec::new();
+        for u in units {
+            let f = loc.get(u).expect("unit");
+            let prev = opt(f.get("prev").and_then(Json::as_str));
+            let cur = opt(f.get("cur").and_then(Json::as_str));
+            let next = opt(f.get("next").and_then(Json::as_str));
+            unit_lits.push(format!(
+                "RelUnit {{ prev: {prev}, cur: {cur}, next: {next}, past: {}, future: {} }}",
+                tense_arr(f, "past"),
+                tense_arr(f, "future"),
+            ));
+        }
+        let _ = write!(
+            out,
+            "        {:?} => RelativeSpec {{ units: [{}] }},\n",
+            lang.to_ascii_lowercase(),
+            unit_lits.join(", "),
+        );
+    }
+    out.push_str("        _ => return None,\n    })\n}\n");
+    write_module(out_dir, modules, "relative", &out);
 }
 
 /// Emit `generated/lists.rs`: per-locale CLDR list connector patterns.
