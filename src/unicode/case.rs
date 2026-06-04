@@ -218,16 +218,6 @@ fn is_turkic(lang: &str) -> bool {
     lang_ok && boundary
 }
 
-/// Lower-case a string with `lang`'s locale rules: Turkic (`tr`/`az`) `I`→`ı`
-/// and `İ`→`i`; Lithuanian (`lt`) keeps the dot above on `i`/`j` under accents;
-/// otherwise it matches [`lowercase_str`] (incl. Greek Final_Sigma). Needs `alloc`.
-///
-/// ```
-/// use intl::unicode::lowercase_str_lang;
-/// assert_eq!(lowercase_str_lang("TITLE", "tr"), "tıtle"); // dotless ı
-/// assert_eq!(lowercase_str_lang("TITLE", "en"), "title");
-/// assert_eq!(lowercase_str_lang("İ", "tr"), "i");
-/// ```
 /// `true` if `lang` is Lithuanian (retained-dot casing rules).
 #[cfg(feature = "alloc")]
 fn is_lithuanian(lang: &str) -> bool {
@@ -273,6 +263,16 @@ fn lithuanian_lower(s: &str) -> alloc::string::String {
     out
 }
 
+/// Lower-case a string with `lang`'s locale rules: Turkic (`tr`/`az`) `I`→`ı`
+/// and `İ`→`i`; Lithuanian (`lt`) keeps the dot above on `i`/`j` under accents;
+/// otherwise it matches [`lowercase_str`] (incl. Greek Final_Sigma). Needs `alloc`.
+///
+/// ```
+/// use intl::unicode::lowercase_str_lang;
+/// assert_eq!(lowercase_str_lang("TITLE", "tr"), "tıtle"); // dotless ı
+/// assert_eq!(lowercase_str_lang("TITLE", "en"), "title");
+/// assert_eq!(lowercase_str_lang("İ", "tr"), "i");
+/// ```
 #[cfg(feature = "alloc")]
 #[must_use]
 pub fn lowercase_str_lang(s: &str, lang: &str) -> alloc::string::String {
