@@ -144,3 +144,11 @@ fn arithmetic() {
     // Round-trip.
     assert_eq!(DT.add_seconds(12345).add_seconds(-12345), DT);
 }
+
+#[test]
+fn persian_dates() {
+    use intl::datetime::{format_persian_date as fp, DateStyle::*};
+    assert_eq!(fp("en", 1404, 1, 1, Long), "Farvardin 1, 1404 AP");
+    assert_eq!(fp("en", 1403, 12, 30, Medium), "Esfand 30, 1403 AP");
+    assert!(fp("fr", 1404, 1, 1, Long).contains("1404"));
+}

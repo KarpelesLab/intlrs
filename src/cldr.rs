@@ -141,29 +141,40 @@ const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
 const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
 const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
 const ISLAMIC: &[u8] = include_bytes!("cldr/islamic.bin");
+const PERSIAN: &[u8] = include_bytes!("cldr/persian.bin");
 
-/// Islamic-calendar names and patterns for one locale.
+/// Month names + patterns for a non-Gregorian calendar (Islamic, Persian) in one
+/// locale. Calendars with at most 12 named months share this shape.
 #[derive(Debug, Clone, Copy)]
-pub struct IslamicSpec {
-    /// Wide month names (Muharram…), indexed by month−1.
+pub struct AltCalSpec {
+    /// Wide month names, indexed by month−1.
     pub months_wide: [&'static str; 12],
     /// Abbreviated month names.
     pub months_abbr: [&'static str; 12],
-    /// Era abbreviation (e.g. `"AH"`).
+    /// Era abbreviation (e.g. `"AH"`, `"AP"`).
     pub era: &'static str,
     /// Date patterns by style (full/long/medium/short).
     pub date: [&'static str; 4],
 }
 
-/// Islamic-calendar names + patterns for an exact (lowercased) locale key.
-pub(crate) fn islamic_spec(lang: &str) -> Option<IslamicSpec> {
-    let mut c = find(ISLAMIC, lang)?;
-    Some(IslamicSpec {
+fn alt_cal_spec(blob: &'static [u8], lang: &str) -> Option<AltCalSpec> {
+    let mut c = find(blob, lang)?;
+    Some(AltCalSpec {
         months_wide: core::array::from_fn(|_| c.str()),
         months_abbr: core::array::from_fn(|_| c.str()),
         era: c.str(),
         date: core::array::from_fn(|_| c.str()),
     })
+}
+
+/// Islamic-calendar names + patterns for an exact (lowercased) locale key.
+pub(crate) fn islamic_spec(lang: &str) -> Option<AltCalSpec> {
+    alt_cal_spec(ISLAMIC, lang)
+}
+
+/// Persian-calendar names + patterns for an exact (lowercased) locale key.
+pub(crate) fn persian_spec(lang: &str) -> Option<AltCalSpec> {
+    alt_cal_spec(PERSIAN, lang)
 }
 
 /// Localized GMT offset formats for one locale.

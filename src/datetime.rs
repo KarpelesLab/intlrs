@@ -349,26 +349,19 @@ pub fn format_skeleton(lang: &str, dt: &DateTime, skeleton: &str) -> String {
     render(pattern, dt, &s)
 }
 
-/// Format an Islamic (Hijri) date in `lang`, e.g.
-/// `format_islamic_date("en", 1445, 9, 1, DateStyle::Long)` →
-/// `"Ramadan 1, 1445 AH"`. Uses the localized Islamic month names and era; the
-/// weekday name (if the pattern has one) comes from the Gregorian day names.
-#[must_use]
-pub fn format_islamic_date(
-    lang: &str,
+/// Render a non-Gregorian date with a calendar's month names/era; the weekday
+/// name (if any) uses the Gregorian day names at the date's `jdn`.
+fn render_alt(
+    cal: &crate::cldr::AltCalSpec,
+    style: DateStyle,
     year: i64,
     month: i64,
     day: i64,
-    style: DateStyle,
+    jdn: i64,
+    greg: &CalendarSpec,
 ) -> String {
-    let isl = islamic_spec(lang);
-    let greg = spec(lang); // for weekday names
-    let jdn = crate::calendar::islamic_to_jdn(year, month, day);
-    // Gregorian day-name index (0 = Sunday).
-    let wd = ((jdn.rem_euclid(7) + 1) % 7) as usize;
-
-    let pattern = isl.date[style.idx()];
-    let c: Vec<char> = pattern.chars().collect();
+    let wd = ((jdn.rem_euclid(7) + 1) % 7) as usize; // 0 = Sunday
+    let c: Vec<char> = cal.date[style.idx()].chars().collect();
     let mut out = String::new();
     let mut i = 0;
     while i < c.len() {
@@ -390,15 +383,14 @@ pub fn format_islamic_date(
             while i < c.len() && c[i] == ch {
                 i += 1;
             }
-            let n = i - start;
-            let m = month as usize;
+            let (n, m) = (i - start, month as usize);
             match ch {
                 'y' | 'Y' => out.push_str(&year.to_string()),
                 'M' | 'L' => match n {
                     1 => out.push_str(&m.to_string()),
                     2 => out.push_str(&two(m as i64)),
-                    3 => out.push_str(isl.months_abbr[m - 1]),
-                    _ => out.push_str(isl.months_wide[m - 1]),
+                    3 => out.push_str(cal.months_abbr[m - 1]),
+                    _ => out.push_str(cal.months_wide[m - 1]),
                 },
                 'd' => out.push_str(&day.to_string()),
                 'E' | 'e' | 'c' => out.push_str(if n >= 4 {
@@ -406,7 +398,7 @@ pub fn format_islamic_date(
                 } else {
                     greg.days_abbr[wd]
                 }),
-                'G' => out.push_str(isl.era),
+                'G' => out.push_str(cal.era),
                 _ => {}
             }
         } else {
@@ -417,7 +409,7 @@ pub fn format_islamic_date(
     out
 }
 
-fn islamic_spec(lang: &str) -> crate::cldr::IslamicSpec {
+fn alt_spec(lang: &str, f: fn(&str) -> Option<crate::cldr::AltCalSpec>) -> crate::cldr::AltCalSpec {
     let norm: String = lang
         .chars()
         .map(|c| {
@@ -430,14 +422,46 @@ fn islamic_spec(lang: &str) -> crate::cldr::IslamicSpec {
         .collect();
     let mut end = norm.len();
     loop {
-        if let Some(s) = crate::cldr::islamic_spec(&norm[..end]) {
+        if let Some(s) = f(&norm[..end]) {
             return s;
         }
         match norm[..end].rfind('-') {
             Some(i) => end = i,
-            None => return crate::cldr::islamic_spec("en").expect("root islamic present"),
+            None => return f("en").expect("root calendar present"),
         }
     }
+}
+
+/// Format an Islamic (Hijri) date in `lang`, e.g.
+/// `format_islamic_date("en", 1445, 9, 1, DateStyle::Long)` →
+/// `"Ramadan 1, 1445 AH"` (localized month names + era).
+#[must_use]
+pub fn format_islamic_date(
+    lang: &str,
+    year: i64,
+    month: i64,
+    day: i64,
+    style: DateStyle,
+) -> String {
+    let cal = alt_spec(lang, crate::cldr::islamic_spec);
+    let jdn = crate::calendar::islamic_to_jdn(year, month, day);
+    render_alt(&cal, style, year, month, day, jdn, &spec(lang))
+}
+
+/// Format a Persian (Solar Hijri) date in `lang`, e.g.
+/// `format_persian_date("en", 1404, 1, 1, DateStyle::Long)` →
+/// `"Farvardin 1, 1404 AP"` (localized month names + era).
+#[must_use]
+pub fn format_persian_date(
+    lang: &str,
+    year: i64,
+    month: i64,
+    day: i64,
+    style: DateStyle,
+) -> String {
+    let cal = alt_spec(lang, crate::cldr::persian_spec);
+    let jdn = crate::calendar::persian_to_jdn(year, month, day);
+    render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
 
 /// Format a fixed UTC offset (in minutes) in the localized GMT form, e.g.

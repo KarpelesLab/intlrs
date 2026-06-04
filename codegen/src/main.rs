@@ -278,7 +278,8 @@ fn main() {
     );
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
-    emit_islamic(&cldr_dir, &cldr.join("islamic.json"));
+    emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic.json"));
+    emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian.json"));
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1658,10 +1659,11 @@ fn emit_units(cldr_dir: &Path, path: &Path) {
     write_blob(cldr_dir, "units", &records);
 }
 
-/// Write `cldr/islamic.bin`: per-locale Islamic month names (wide + abbr), the
-/// era abbreviation, and date patterns (full/long/medium/short).
-fn emit_islamic(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read islamic.json");
+/// Write `cldr/<name>.bin` for a non-Gregorian calendar: per-locale month names
+/// (wide + abbr), the era abbreviation, and date patterns (full/long/medium/
+/// short). Used for the Islamic and Persian calendars (same record shape).
+fn emit_alt_calendar(cldr_dir: &Path, name: &str, path: &Path) {
+    let text = fs::read_to_string(path).expect("read calendar json");
     let json = json_parse(&text);
     let mut records = Vec::new();
     for (lang, loc) in json.get("locales").expect("locales").entries() {
@@ -1673,14 +1675,11 @@ fn emit_islamic(cldr_dir: &Path, path: &Path) {
         };
         push_arr(&mut p, "months_wide");
         push_arr(&mut p, "months_abbr");
-        enc_str(
-            &mut p,
-            loc.get("era").and_then(Json::as_str).unwrap_or("AH"),
-        );
+        enc_str(&mut p, loc.get("era").and_then(Json::as_str).unwrap_or(""));
         push_arr(&mut p, "date");
         records.push((lang.to_ascii_lowercase(), p));
     }
-    write_blob(cldr_dir, "islamic", &records);
+    write_blob(cldr_dir, name, &records);
 }
 
 /// Write `cldr/timezone.bin`: per-locale localized GMT offset formats
