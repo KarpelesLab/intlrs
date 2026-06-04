@@ -3,6 +3,12 @@
 //! (U+0000..=U+2FFF: ASCII, Latin, IPA, Greek, Cyrillic, Armenian, Hebrew,
 //! Arabic, …). These ranges have not changed in many Unicode versions, so they
 //! match regardless of which Unicode version `std` was built against.
+//!
+//! Requires the `bmp` tier: the compared range reaches U+2FFF, so under a
+//! narrower tier those codepoints would (correctly) read their neutral default
+//! and not match `std`.
+#![cfg(feature = "bmp")]
+
 use intl::unicode::{
     is_alphabetic, is_control, is_lowercase, is_uppercase, to_lowercase, to_uppercase,
 };
