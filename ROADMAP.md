@@ -131,8 +131,9 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 - 🟡 **Number formatting** — `intl::number::format_decimal` / `format_percent`
   (CLDR symbols + grouping/fraction patterns; curated locale set). Still to add:
   currency, scientific, compact, parsing, native digit systems.
-- 🧱 **Rule-based number formatting (RBNF)** — spell-out, ordinals, numbering
-  systems beyond Latin.
+- 🟡 **Rule-based number formatting (RBNF)** — `intl::spellout` spells English
+  cardinals + ordinals. Still to add: the CLDR RBNF rule engine for other locales
+  and numbering systems.
 - 🧱 **Calendars** — Gregorian + non-Gregorian (Islamic, Hebrew, Japanese,
   Persian, Buddhist, Indian, Chinese, …) and date arithmetic.
 - 🧱 **Time zones (IANA tz)** — zone data, offsets, DST, zone display names.
