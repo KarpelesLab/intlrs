@@ -92,7 +92,9 @@ Beyond the `unicode` module:
 - `intl::datetime` (alloc) formats Gregorian dates/times —
   `format_date("en", &dt, DateStyle::Long)` → `"June 4, 2026"`,
   `format_date("de", &dt, DateStyle::Long)` → `"4. Juni 2026"` (CLDR patterns,
-  month/weekday names, am/pm; weekday derived via Sakamoto's algorithm).
+  month/weekday names, am/pm; weekday via Sakamoto's algorithm). Also
+  `format_skeleton("en", &dt, "yMMMd")` → `"Jun 4, 2026"` (flexible field-set
+  formatting).
 
 These build out the CLDR/locale layer toward full ICU-style formatting. The
 locale data is compiled by the offline codegen into flat binary blobs committed

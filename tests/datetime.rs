@@ -48,3 +48,14 @@ fn weekday_correct() {
     };
     assert!(fd("en", &y2k, Full).starts_with("Saturday"));
 }
+
+#[test]
+fn skeletons() {
+    use intl::datetime::format_skeleton as fs;
+    assert_eq!(fs("en", &DT, "yMMMd"), "Jun 4, 2026");
+    assert_eq!(fs("en", &DT, "MMMMd"), "June 4");
+    assert_eq!(fs("en", &DT, "Hm"), "14:30");
+    assert_eq!(fs("en", &DT, "yM"), "6/2026");
+    assert_eq!(fs("de", &DT, "yMMMd"), "4. Juni 2026");
+    assert_eq!(fs("fr", &DT, "MMMd"), "4 juin");
+}

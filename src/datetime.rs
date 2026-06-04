@@ -209,6 +209,45 @@ pub fn format_time(lang: &str, dt: &DateTime, style: DateStyle) -> String {
     render(s.time[style.idx()], dt, &s)
 }
 
+/// Format `dt` with a CLDR *skeleton* (e.g. `"yMMMd"`, `"Hm"`, `"MMMEd"`) — the
+/// modern, flexible date API: the skeleton names the fields you want and the
+/// locale supplies their order and punctuation. Falls back through the locale
+/// chain (and to English), then to the medium date pattern for an unknown
+/// skeleton.
+///
+/// ```
+/// use intl::datetime::{DateTime, format_skeleton};
+/// let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5 };
+/// assert_eq!(format_skeleton("en", &dt, "yMMMd"), "Jun 4, 2026");
+/// assert_eq!(format_skeleton("de", &dt, "yMMMd"), "4. Juni 2026");
+/// assert_eq!(format_skeleton("en", &dt, "Hm"), "14:30");
+/// ```
+#[must_use]
+pub fn format_skeleton(lang: &str, dt: &DateTime, skeleton: &str) -> String {
+    let s = spec(lang);
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut end = norm.len();
+    let pattern = loop {
+        if let Some(p) = crate::cldr::skeleton_pattern(&norm[..end], skeleton) {
+            break p;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => break crate::cldr::skeleton_pattern("en", skeleton).unwrap_or(s.date[2]),
+        }
+    };
+    render(pattern, dt, &s)
+}
+
 /// Format both date and time, combined with the locale's date+time pattern.
 #[must_use]
 pub fn format_datetime(

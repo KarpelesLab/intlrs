@@ -270,6 +270,12 @@ fn main() {
     emit_display(&cldr_dir, &cldr.join("display.json"));
     emit_units(&cldr_dir, &cldr.join("units.json"));
     emit_calendar(&cldr_dir, &cldr.join("calendar.json"));
+    emit_nested(
+        &cldr_dir,
+        "skeletons",
+        &cldr.join("skeletons.json"),
+        "locales",
+    );
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1647,6 +1653,26 @@ fn emit_units(cldr_dir: &Path, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "units", &records);
+}
+
+/// Write a nested blob `<blob>.bin`: outer key (lowercased) -> a `[u16 count]`
+/// inner table of `key -> value` (inner keys are kept verbatim, case-sensitive).
+fn emit_nested(cldr_dir: &Path, blob: &str, path: &Path, section: &str) {
+    let text = fs::read_to_string(path).expect("read nested json");
+    let json = json_parse(&text);
+    let table = json.get(section).expect("section");
+    let mut records = Vec::new();
+    for (outer, inner) in table.entries() {
+        let entries = inner.entries();
+        let mut payload = Vec::new();
+        payload.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+        for (k, v) in entries {
+            enc_str(&mut payload, k);
+            enc_str(&mut payload, v.as_str().unwrap_or(""));
+        }
+        records.push((outer.to_ascii_lowercase(), payload));
+    }
+    write_blob(cldr_dir, blob, &records);
 }
 
 /// Write `cldr/display_languages.bin` and `cldr/display_territories.bin`: for

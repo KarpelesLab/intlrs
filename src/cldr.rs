@@ -137,6 +137,7 @@ const DISPLAY_LANG: &[u8] = include_bytes!("cldr/display_languages.bin");
 const DISPLAY_TERR: &[u8] = include_bytes!("cldr/display_territories.bin");
 const UNITS: &[u8] = include_bytes!("cldr/units.bin");
 const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
+const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
 
 /// Number of curated units (must match codegen's `UNITS` and the `Unit` enum).
 pub(crate) const UNIT_COUNT: usize = 28;
@@ -306,6 +307,12 @@ fn display_name(blob: &'static [u8], display_locale: &str, code: &str) -> Option
 /// Display name of language `code` in `display_locale` (exact lowercased keys).
 pub(crate) fn language_name(display_locale: &str, code: &str) -> Option<&'static str> {
     display_name(DISPLAY_LANG, display_locale, code)
+}
+
+/// The date pattern for a CLDR `skeleton` (e.g. `"yMMMd"`) in an exact
+/// (lowercased) locale key; skeletons are matched case-sensitively.
+pub(crate) fn skeleton_pattern(lang: &str, skeleton: &str) -> Option<&'static str> {
+    display_name(SKELETONS, lang, skeleton)
 }
 
 /// Display name of region `code` in `display_locale`.
