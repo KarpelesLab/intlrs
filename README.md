@@ -59,10 +59,15 @@ use std::cmp::Ordering;
 assert_eq!(compare("café", "cafz"), Ordering::Less); // é (≈ e) sorts before z
 ```
 
+Beyond the `unicode` module, the `alloc`-gated `intl::locale` module parses and
+canonicalizes BCP-47 language tags (`Locale::parse("zh-hant-hk")` →
+`"zh-Hant-HK"`) — the start of the CLDR/locale layer.
+
 ## Features
 
 `default = ["bmp"]`. Range tiers are `ascii ⊂ latin1 ⊂ bmp ⊂ full` (below). The
-**`alloc`** feature (still `no_std`) enables the `unicode::collate` module; it
+**`alloc`** feature (still `no_std`) enables the allocating APIs
+(`unicode::collate`, `unicode::spoof`, `unicode::idna`, `intl::locale`, …); it
 implies `full`.
 
 ## Range tiers

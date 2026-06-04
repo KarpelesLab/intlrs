@@ -1,0 +1,131 @@
+//! BCP-47 / Unicode (UTS #35) locale identifiers.
+//!
+//! Parses the core `language[-script][-region][-variant]*` subtags of a language
+//! tag into a [`Locale`] and renders it back in canonical form (lowercase
+//! language, Titlecase script, UPPERCASE region). Extensions and the `u-`/`t-`
+//! Unicode extension subtags are not yet modelled. Requires the `alloc` feature.
+
+use alloc::string::String;
+use alloc::vec::Vec;
+
+/// A parsed locale identifier.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Locale {
+    /// The primary language subtag, lowercase (e.g. `"en"`). Empty for the
+    /// "undetermined" language (`und`).
+    pub language: String,
+    /// The script subtag in Titlecase (e.g. `"Latn"`), if present.
+    pub script: Option<String>,
+    /// The region subtag, uppercase (e.g. `"US"`, `"419"`), if present.
+    pub region: Option<String>,
+    /// Variant subtags, lowercased (e.g. `["fonipa"]`).
+    pub variants: Vec<String>,
+}
+
+/// An error parsing a locale identifier.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParseError {
+    /// The tag was empty or had an empty subtag.
+    Empty,
+    /// A subtag was malformed for its position.
+    InvalidSubtag,
+}
+
+fn is_alpha(s: &str) -> bool {
+    s.bytes().all(|b| b.is_ascii_alphabetic())
+}
+fn is_digit(s: &str) -> bool {
+    s.bytes().all(|b| b.is_ascii_digit())
+}
+fn is_alnum(s: &str) -> bool {
+    s.bytes().all(|b| b.is_ascii_alphanumeric())
+}
+
+impl Locale {
+    /// Parse a BCP-47 language tag (the `langtag` core: language, script,
+    /// region, variants). Subtags are case-normalized.
+    pub fn parse(tag: &str) -> Result<Locale, ParseError> {
+        if tag.is_empty() {
+            return Err(ParseError::Empty);
+        }
+        let mut parts = tag.split(['-', '_']).peekable();
+        let mut loc = Locale::default();
+
+        // Language: 2-3 or 5-8 ALPHA, or "und".
+        let lang = parts.next().ok_or(ParseError::Empty)?;
+        if lang.is_empty() || !((2..=8).contains(&lang.len()) && is_alpha(lang)) {
+            return Err(ParseError::InvalidSubtag);
+        }
+        loc.language = if lang.eq_ignore_ascii_case("und") {
+            String::new()
+        } else {
+            lang.to_ascii_lowercase()
+        };
+
+        // Script: 4 ALPHA.
+        if let Some(&s) = parts.peek() {
+            if s.len() == 4 && is_alpha(s) {
+                loc.script = Some(titlecase_subtag(s));
+                parts.next();
+            }
+        }
+        // Region: 2 ALPHA or 3 DIGIT.
+        if let Some(&s) = parts.peek() {
+            if (s.len() == 2 && is_alpha(s)) || (s.len() == 3 && is_digit(s)) {
+                loc.region = Some(s.to_ascii_uppercase());
+                parts.next();
+            }
+        }
+        // Variants: 5-8 ALNUM, or 4 chars starting with a digit.
+        while let Some(&s) = parts.peek() {
+            let is_variant = ((5..=8).contains(&s.len()) && is_alnum(s))
+                || (s.len() == 4 && s.as_bytes()[0].is_ascii_digit() && is_alnum(s));
+            if !is_variant {
+                break;
+            }
+            loc.variants.push(s.to_ascii_lowercase());
+            parts.next();
+        }
+
+        // Anything left (extensions, private use) is not modelled; reject so we
+        // don't silently drop it.
+        if parts.next().is_some() {
+            return Err(ParseError::InvalidSubtag);
+        }
+        Ok(loc)
+    }
+}
+
+/// Renders the canonical string form, e.g. `"zh-Hant-HK"`; the undetermined
+/// language renders as `"und"`. Use `.to_string()` (via `Display`).
+impl core::fmt::Display for Locale {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if self.language.is_empty() {
+            f.write_str("und")?;
+        } else {
+            f.write_str(&self.language)?;
+        }
+        if let Some(s) = &self.script {
+            write!(f, "-{s}")?;
+        }
+        if let Some(r) = &self.region {
+            write!(f, "-{r}")?;
+        }
+        for v in &self.variants {
+            write!(f, "-{v}")?;
+        }
+        Ok(())
+    }
+}
+
+fn titlecase_subtag(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for (i, b) in s.bytes().enumerate() {
+        out.push(if i == 0 {
+            b.to_ascii_uppercase() as char
+        } else {
+            b.to_ascii_lowercase() as char
+        });
+    }
+    out
+}

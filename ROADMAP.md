@@ -115,7 +115,7 @@ shaped data source than UCD. This phase is the gate for Phase 4.
   consume CLDR JSON, vendor a pinned CLDR version, generate compact per-locale
   tables. Decide locale-data packaging: baked-in (feature/locale-gated) vs
   loadable blobs. (ICU4X's `databake`/`provider` model is the reference design.)
-- 🧱 **Locale identifiers (BCP 47 / UTS #35)** — parse/canonicalize `Locale`,
+- 🟡 **Locale identifiers (BCP 47 / UTS #35)** — parse/canonicalize `Locale`,
   language/script/region/variant/extensions, likely-subtags
   (add/remove/maximize), locale fallback & negotiation/matching.
 - 🧱🔬 **Plural rules (CLDR)** — cardinal/ordinal `PluralCategory` selection.
