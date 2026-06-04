@@ -1,6 +1,6 @@
 [package]
 name = "intl"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.70"
 description = "Pure-Rust, no_std internationalization primitives. Provides a `unicode` module (General_Category + character predicates) with property tables compiled into const-fn match lookups and feature-selectable codepoint ranges."
