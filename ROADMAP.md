@@ -117,7 +117,7 @@ shaped data source than UCD. This phase is the gate for Phase 4.
   loadable blobs. (ICU4X's `databake`/`provider` model is the reference design.)
 - 🟡 **Locale identifiers (BCP 47 / UTS #35)** — parse/canonicalize `Locale`,
   language/script/region/variant/extensions. ✅ likely-subtags
-  (maximize/minimize). Still: locale negotiation/matching, full extensions.
+  (maximize/minimize). ✅ negotiation/matching. Still: full extension subtags (-u-/-t-).
 - 🟡🔬 **Plural rules (CLDR)** — cardinal `PluralCategory` selection via
   `intl::plural` (rules compiled to a match; 224 locales, validated against the
   CLDR sample data). Cardinal + ordinal. Still to add: the compact `c`/`e` operand.

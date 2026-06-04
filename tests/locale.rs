@@ -64,3 +64,20 @@ fn maximize_minimize() {
         "pt-PT"
     );
 }
+
+#[test]
+fn negotiation() {
+    use intl::locale::{negotiate, Locale};
+    let avail = [
+        Locale::parse("en").unwrap(),
+        Locale::parse("fr").unwrap(),
+        Locale::parse("de").unwrap(),
+        Locale::parse("zh-Hant").unwrap(),
+    ];
+    assert_eq!(negotiate(&["fr-CA"], &avail), Some(1)); // fr-CA -> fr
+    assert_eq!(negotiate(&["de-AT", "en"], &avail), Some(2)); // de-AT -> de
+    assert_eq!(negotiate(&["es", "en-GB"], &avail), Some(0)); // skip es, en-GB -> en
+    assert_eq!(negotiate(&["zh-TW"], &avail), Some(3)); // Traditional Chinese
+    assert_eq!(negotiate(&["ja"], &avail), None);
+    assert_eq!(negotiate(&[], &avail), None);
+}

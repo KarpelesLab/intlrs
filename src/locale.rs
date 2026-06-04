@@ -188,6 +188,47 @@ impl core::fmt::Display for Locale {
     }
 }
 
+/// Choose the best `available` locale for a user's `requested` preference list
+/// (BCP-47 tags, most-preferred first), returning its index in `available`.
+///
+/// For each requested locale in turn, matches are tried from most to least
+/// specific (after [`maximize`](Locale::maximize)): same language+script+region,
+/// then language+script, then language. Returns `None` if nothing matches.
+///
+/// ```
+/// use intl::locale::{negotiate, Locale};
+/// let avail = [
+///     Locale::parse("en").unwrap(),
+///     Locale::parse("fr").unwrap(),
+///     Locale::parse("pt-BR").unwrap(),
+/// ];
+/// assert_eq!(negotiate(&["fr-CA", "en"], &avail), Some(1)); // fr-CA -> fr
+/// assert_eq!(negotiate(&["pt-PT", "pt"], &avail), Some(2)); // pt -> pt-BR (only pt)
+/// assert_eq!(negotiate(&["ja"], &avail), None);
+/// ```
+#[must_use]
+pub fn negotiate(requested: &[&str], available: &[Locale]) -> Option<usize> {
+    let maxed: Vec<Locale> = available.iter().map(Locale::maximize).collect();
+    for req in requested {
+        let Ok(r) = Locale::parse(req) else { continue };
+        let r = r.maximize();
+        // Three passes from most to least specific.
+        for level in 0..3 {
+            for (i, a) in maxed.iter().enumerate() {
+                let hit = match level {
+                    0 => a.language == r.language && a.script == r.script && a.region == r.region,
+                    1 => a.language == r.language && a.script == r.script,
+                    _ => a.language == r.language,
+                };
+                if hit {
+                    return Some(i);
+                }
+            }
+        }
+    }
+    None
+}
+
 fn titlecase_subtag(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for (i, b) in s.bytes().enumerate() {

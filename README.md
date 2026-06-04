@@ -64,7 +64,8 @@ Beyond the `unicode` module:
 - `intl::locale` (alloc) parses and canonicalizes BCP-47 language tags
   (`Locale::parse("zh-hant-hk")` → `"zh-Hant-HK"`), and adds/removes likely
   subtags (`Locale::maximize`: `en` → `en-Latn-US`; `Locale::minimize`:
-  `zh-Hans-CN` → `zh`).
+  `zh-Hans-CN` → `zh`), and negotiates a best match between a user's requested
+  locales and what's available (`negotiate`).
 - `intl::plural` (`no_std`, no alloc) selects the CLDR `PluralCategory` for a
   number in a language — `plural_category` (cardinal) and `ordinal_category`
   ("1st"/"2nd"/"3rd"), rules compiled from CLDR into a `match`.
