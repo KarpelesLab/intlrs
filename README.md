@@ -1,5 +1,10 @@
 # intl
 
+[![crates.io](https://img.shields.io/crates/v/intl.svg)](https://crates.io/crates/intl)
+[![docs.rs](https://img.shields.io/docsrs/intl)](https://docs.rs/intl)
+[![CI](https://github.com/KarpelesLab/intlrs/actions/workflows/ci.yml/badge.svg)](https://github.com/KarpelesLab/intlrs/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Pure-Rust, `#![no_std]` internationalization primitives — a long-term, pure-Rust
 analog of ICU (collation, number formatting, normalization, transliteration, …).
 
