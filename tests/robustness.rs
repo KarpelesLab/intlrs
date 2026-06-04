@@ -136,6 +136,7 @@ fn fuzz_invariants() {
             "lowercase_str length matches char map: {s:?}"
         );
         let _ = intl::unicode::lowercase_str_lang(&s, "tr");
+        let _ = intl::unicode::lowercase_str_lang(&s, "lt");
         let _ = intl::unicode::uppercase_str_lang(&s, "az");
         let _ = intl::unicode::idna::to_ascii(&s);
         let _ = intl::unicode::idna::to_unicode(&s);

@@ -35,3 +35,19 @@ fn turkic() {
     // "tra"-style false prefixes are not Turkic.
     assert_eq!(lo("TITLE", "translit"), "title");
 }
+
+#[test]
+fn lithuanian() {
+    use intl::unicode::lowercase_str_lang as lo;
+    // I + combining acute (above) -> i + DOT ABOVE + acute (retained dot).
+    assert_eq!(lo("I\u{0301}", "lt"), "i\u{0307}\u{0301}");
+    assert_eq!(lo("J\u{0300}", "lt"), "j\u{0307}\u{0300}");
+    // No following above-accent -> plain lowercase, no extra dot.
+    assert_eq!(lo("I", "lt"), "i");
+    assert_eq!(lo("LIETUVA", "lt"), "lietuva");
+    // Precomposed Ì/Í/Ĩ expand with the retained dot.
+    assert_eq!(lo("Ì", "lt"), "i\u{0307}\u{0300}");
+    assert_eq!(lo("Ĩ", "lt"), "i\u{0307}\u{0303}");
+    // Non-Lithuanian: default lowercasing (no inserted dot).
+    assert_eq!(lo("I\u{0301}", "en"), "i\u{0301}");
+}

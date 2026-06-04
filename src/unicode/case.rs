@@ -218,9 +218,9 @@ fn is_turkic(lang: &str) -> bool {
     lang_ok && boundary
 }
 
-/// Lower-case a string with `lang`'s locale rules: for Turkic locales
-/// (`tr`/`az`) `I`→`ı` and `İ`→`i`; otherwise it matches [`lowercase_str`]
-/// (including the Greek Final_Sigma rule). Requires the `alloc` feature.
+/// Lower-case a string with `lang`'s locale rules: Turkic (`tr`/`az`) `I`→`ı`
+/// and `İ`→`i`; Lithuanian (`lt`) keeps the dot above on `i`/`j` under accents;
+/// otherwise it matches [`lowercase_str`] (incl. Greek Final_Sigma). Needs `alloc`.
 ///
 /// ```
 /// use intl::unicode::lowercase_str_lang;
@@ -228,9 +228,57 @@ fn is_turkic(lang: &str) -> bool {
 /// assert_eq!(lowercase_str_lang("TITLE", "en"), "title");
 /// assert_eq!(lowercase_str_lang("İ", "tr"), "i");
 /// ```
+/// `true` if `lang` is Lithuanian (retained-dot casing rules).
+#[cfg(feature = "alloc")]
+fn is_lithuanian(lang: &str) -> bool {
+    let l = lang.as_bytes();
+    l.len() >= 2
+        && (l[0] | 0x20) == b'l'
+        && (l[1] | 0x20) == b't'
+        && (l.len() == 2 || l[2] == b'-' || l[2] == b'_')
+}
+
+/// Lithuanian lowercasing: keep an explicit `U+0307` COMBINING DOT ABOVE on a
+/// lowercased `i`/`j`/`į` whenever an above-class accent follows (so the dot is
+/// visible under the accent), and expand the precomposed `Ì`/`Í`/`Ĩ` likewise.
+#[cfg(feature = "alloc")]
+fn lithuanian_lower(s: &str) -> alloc::string::String {
+    use super::normalize::canonical_combining_class;
+    let chars: alloc::vec::Vec<char> = s.chars().collect();
+    let mut out = alloc::string::String::new();
+    for (idx, &c) in chars.iter().enumerate() {
+        match c {
+            'I' | 'J' | '\u{012E}' => {
+                out.extend(to_lowercase(c));
+                // More_Above: a class-230 (Above) mark follows in the combining
+                // sequence (before any starter).
+                let more_above = chars[idx + 1..]
+                    .iter()
+                    .find_map(|&n| match canonical_combining_class(n) {
+                        0 => Some(false),
+                        230 => Some(true),
+                        _ => None,
+                    })
+                    .unwrap_or(false);
+                if more_above {
+                    out.push('\u{0307}');
+                }
+            }
+            '\u{00CC}' => out.push_str("i\u{0307}\u{0300}"), // Ì
+            '\u{00CD}' => out.push_str("i\u{0307}\u{0301}"), // Í
+            '\u{0128}' => out.push_str("i\u{0307}\u{0303}"), // Ĩ
+            _ => out.extend(to_lowercase(c)),
+        }
+    }
+    out
+}
+
 #[cfg(feature = "alloc")]
 #[must_use]
 pub fn lowercase_str_lang(s: &str, lang: &str) -> alloc::string::String {
+    if is_lithuanian(lang) {
+        return lithuanian_lower(s);
+    }
     if !is_turkic(lang) {
         return lowercase_str(s);
     }
