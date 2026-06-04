@@ -278,6 +278,7 @@ fn main() {
     );
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
+    emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic.json"));
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian.json"));
 
@@ -1680,6 +1681,36 @@ fn emit_alt_calendar(cldr_dir: &Path, name: &str, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, name, &records);
+}
+
+/// Write `cldr/rbnf.bin`: per-locale RBNF spell-out rule sets. Payload is
+/// `[start-name str][u8 ruleset_count]` then each ruleset
+/// `[name str][u16 rule_count]` of `[key str][text str]` pairs.
+fn emit_rbnf(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read rbnf.json");
+    let json = json_parse(&text);
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let start = loc.get("_start").and_then(Json::as_str).unwrap_or("");
+        let rulesets: Vec<&(String, Json)> = loc
+            .entries()
+            .iter()
+            .filter(|(k, _)| k != "_start")
+            .collect();
+        let mut p = Vec::new();
+        enc_str(&mut p, start);
+        p.push(rulesets.len() as u8);
+        for (name, rules) in rulesets {
+            enc_str(&mut p, name);
+            p.extend_from_slice(&(rules.entries().len() as u16).to_le_bytes());
+            for (key, txt) in rules.entries() {
+                enc_str(&mut p, key);
+                enc_str(&mut p, txt.as_str().unwrap_or(""));
+            }
+        }
+        records.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "rbnf", &records);
 }
 
 /// Write `cldr/timezone.bin`: per-locale localized GMT offset formats

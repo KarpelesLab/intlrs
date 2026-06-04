@@ -100,6 +100,9 @@ Beyond the `unicode` module:
   formatting), and renders **Islamic (Hijri)** and **Persian** dates with
   localized month names (`format_islamic_date("en", 1445, 9, 1, DateStyle::Long)`
   → `"Ramadan 1, 1445 AH"`; `format_persian_date` likewise).
+- `intl::spellout` spells integers out in words via the CLDR RBNF rules
+  (locale-driven) — `spell_cardinal("en", 1234)` → `"one thousand two hundred
+  thirty-four"`, `spell_cardinal("fr", 80)` → `"quatre-vingts"`. *(alloc)*
 - `intl::timezone` parses a POSIX `TZ` string (`"PST8PDT,M3.2.0,M11.1.0/2"`)
   and computes the UTC offset / DST state for any date — the current-rules part
   of time-zone support, without the full IANA historical database.

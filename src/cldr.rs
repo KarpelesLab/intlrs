@@ -140,6 +140,27 @@ const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
 const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
 const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
 const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
+const RBNF: &[u8] = include_bytes!("cldr/rbnf.bin");
+
+/// The raw RBNF payload bytes for an exact (lowercased) locale key (parsed by
+/// the `spellout` module).
+pub(crate) fn rbnf_payload(lang: &str) -> Option<&'static [u8]> {
+    let count = rd_u16(RBNF, 0);
+    let mut o = 2;
+    for _ in 0..count {
+        let klen = RBNF[o] as usize;
+        o += 1;
+        let k = &RBNF[o..o + klen];
+        o += klen;
+        let plen = rd_u16(RBNF, o);
+        o += 2;
+        if k == lang.as_bytes() {
+            return Some(&RBNF[o..o + plen]);
+        }
+        o += plen;
+    }
+    None
+}
 const ISLAMIC: &[u8] = include_bytes!("cldr/islamic.bin");
 const PERSIAN: &[u8] = include_bytes!("cldr/persian.bin");
 

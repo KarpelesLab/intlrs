@@ -131,9 +131,10 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 - 🟡 **Number formatting** — `intl::number::format_decimal` / `format_percent`
   (CLDR symbols + grouping/fraction patterns; curated locale set). Still to add:
   currency, scientific, compact, parsing, native digit systems.
-- ⬜🧱 **Rule-based number formatting (RBNF)** — spell-out, ordinals, numbering
-  systems. Needs the CLDR RBNF rule engine (locale-driven); an English-only
-  version was rejected as out of place in an i18n crate.
+- 🟡🧱 **Rule-based number formatting (RBNF)** — `intl::spellout::spell_cardinal`
+  is a locale-driven CLDR RBNF engine (rule selection, radix, substitution,
+  ruleset references); cardinal spell-out for a curated locale set. Still:
+  ordinals and fractional/year forms.
 - 🟡 **Calendars** — `intl::calendar`: Gregorian<->civil Islamic conversion
   (Julian Day Number pivot), ISO week dates, day-of-week. Persian (Solar Hijri) and
   Japanese (era/year) added too. Hebrew added. Islamic date rendering added
