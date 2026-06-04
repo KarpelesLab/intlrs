@@ -109,6 +109,8 @@ const LISTS: &[u8] = include_bytes!("cldr/lists.bin");
 const RELATIVE: &[u8] = include_bytes!("cldr/relative.bin");
 const CURRENCY: &[u8] = include_bytes!("cldr/currency.bin");
 const CURRENCY_DIGITS: &[u8] = include_bytes!("cldr/currency_digits.bin");
+const DISPLAY_LANG: &[u8] = include_bytes!("cldr/display_languages.bin");
+const DISPLAY_TERR: &[u8] = include_bytes!("cldr/display_territories.bin");
 
 fn rd_u16(b: &[u8], o: usize) -> usize {
     u16::from_le_bytes([b[o], b[o + 1]]) as usize
@@ -123,6 +125,11 @@ impl Cursor {
     fn u8(&mut self) -> u8 {
         let v = self.b[self.o];
         self.o += 1;
+        v
+    }
+    fn u16(&mut self) -> usize {
+        let v = rd_u16(self.b, self.o);
+        self.o += 2;
         v
     }
     fn str(&mut self) -> &'static str {
@@ -243,4 +250,28 @@ pub(crate) fn currency_digits(code: &str) -> u8 {
         Some(mut c) => c.u8(),
         None => 2,
     }
+}
+
+/// Look up `code`'s display name in `display_locale`'s nested code→name table.
+fn display_name(blob: &'static [u8], display_locale: &str, code: &str) -> Option<&'static str> {
+    let mut c = find(blob, display_locale)?;
+    let count = c.u16();
+    for _ in 0..count {
+        let cd = c.str();
+        let name = c.str();
+        if cd == code {
+            return Some(name);
+        }
+    }
+    None
+}
+
+/// Display name of language `code` in `display_locale` (exact lowercased keys).
+pub(crate) fn language_name(display_locale: &str, code: &str) -> Option<&'static str> {
+    display_name(DISPLAY_LANG, display_locale, code)
+}
+
+/// Display name of region `code` in `display_locale`.
+pub(crate) fn region_name(display_locale: &str, code: &str) -> Option<&'static str> {
+    display_name(DISPLAY_TERR, display_locale, code)
 }

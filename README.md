@@ -80,6 +80,9 @@ Beyond the `unicode` module:
   `format_relative("en", -2, RelativeUnit::Hour)` → `"2 hours ago"`,
   `format_relative("en", -1, RelativeUnit::Day)` → `"yesterday"` (plural- and
   number-aware).
+- `intl::display` (`no_std`, no alloc) gives locale display names —
+  `language_name("fr", "de")` → `Some("allemand")`, `region_name("en", "JP")`
+  → `Some("Japan")`.
 
 These build out the CLDR/locale layer toward full ICU-style formatting. The
 locale data is compiled by the offline codegen into flat binary blobs committed

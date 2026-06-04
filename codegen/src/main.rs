@@ -267,6 +267,7 @@ fn main() {
     emit_lists(&cldr_dir, &cldr.join("lists.json"));
     emit_relative(&cldr_dir, &cldr.join("relative.json"));
     emit_currency(&cldr_dir, &cldr.join("currency.json"));
+    emit_display(&cldr_dir, &cldr.join("display.json"));
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1550,6 +1551,31 @@ fn emit_currency(cldr_dir: &Path, path: &Path) {
         digit_records.push((code.clone(), vec![digit_value(&text, code)]));
     }
     write_blob(cldr_dir, "currency_digits", &digit_records);
+}
+
+/// Write `cldr/display_languages.bin` and `cldr/display_territories.bin`: for
+/// each display locale, a nested `[u16 count]` table of `code -> name`.
+fn emit_display(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read display.json");
+    let json = json_parse(&text);
+    for (section, blob) in [
+        ("languages", "display_languages"),
+        ("territories", "display_territories"),
+    ] {
+        let table = json.get(section).expect("section");
+        let mut records = Vec::new();
+        for (disp, codes) in table.entries() {
+            let entries = codes.entries();
+            let mut payload = Vec::new();
+            payload.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+            for (code, name) in entries {
+                enc_str(&mut payload, code);
+                enc_str(&mut payload, name.as_str().unwrap_or(""));
+            }
+            records.push((disp.to_ascii_lowercase(), payload));
+        }
+        write_blob(cldr_dir, blob, &records);
+    }
 }
 
 /// Pull the integer value of `"CODE":N` out of the digits object of the raw
