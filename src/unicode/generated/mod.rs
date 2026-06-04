@@ -2,7 +2,9 @@
 // Regenerate with `cargo run -p codegen` after updating data/ucd/.
 #![allow(clippy::all)]
 #![allow(unreachable_patterns)]
+#![allow(dead_code)]
 
 pub(crate) mod binary_props;
 pub(crate) mod east_asian_width;
 pub(crate) mod general_category;
+pub(crate) mod script;

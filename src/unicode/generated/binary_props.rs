@@ -2,6 +2,7 @@
 // Regenerate with `cargo run -p codegen` after updating data/ucd/.
 #![allow(clippy::all)]
 #![allow(unreachable_patterns)]
+#![allow(dead_code)]
 
 #[inline]
 pub(crate) const fn white_space(cp: u32) -> bool {

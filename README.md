@@ -69,6 +69,9 @@ codepoint would.
   category-derived `is_letter`, `is_mark`, `is_numeric`, `is_decimal_digit`,
   `is_punctuation`, `is_symbol`, `is_separator`, `is_control`, `is_format`,
   and `is_assigned`.
+- `Script` and `Script_Extensions` (UAX #24) via `script` / `script_u32` and
+  `script_extensions` / `script_extensions_u32` (`Script` enum with
+  `.long_name()`; `ScriptExtensions` with `.contains()` / `.iter()`).
 - `East_Asian_Width` (UAX #11) via `east_asian_width` / `east_asian_width_u32`
   (`EastAsianWidth` enum, with `.is_wide()`).
 - `UNICODE_VERSION` of the embedded tables.

@@ -11,7 +11,7 @@
 //! Run with `cargo run -p codegen`. Output is deterministic.
 #![allow(clippy::write_with_newline)]
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -154,6 +154,9 @@ fn main() {
     );
     write_module(&out_dir, &mut modules, "east_asian_width", &eaw_out);
 
+    // ---- Scripts + Script_Extensions ----
+    emit_scripts(&out_dir, &mut modules, &ucd);
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -165,6 +168,168 @@ fn main() {
     rustfmt(&out_dir.join("mod.rs"));
 
     eprintln!("codegen: wrote {} modules + mod.rs", modules.len());
+}
+
+/// Convert a UCD property-value name (`Old_Italic`, `Latin`) to a PascalCase
+/// Rust identifier (`OldItalic`, `Latin`).
+fn pascal_case(name: &str) -> String {
+    name.split('_')
+        .map(|part| {
+            let mut chars = part.chars();
+            match chars.next() {
+                Some(first) => first.to_ascii_uppercase().to_string() + chars.as_str(),
+                None => String::new(),
+            }
+        })
+        .collect()
+}
+
+/// Emit `generated/script.rs`: the `Script` enum (generated from the UCD script
+/// names), `script()`, and `script_extensions()`.
+fn emit_scripts(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
+    // ---- Script enum: distinct long names, sorted, plus Unknown (default). ----
+    let scripts_txt = fs::read_to_string(ucd.join("Scripts.txt")).expect("read Scripts.txt");
+    let mut names: BTreeSet<String> = BTreeSet::new();
+    for line in scripts_txt.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if let Some(value) = line.split(';').nth(1) {
+            let name = value.split('#').next().unwrap_or("").trim();
+            if !name.is_empty() {
+                names.insert(name.to_string());
+            }
+        }
+    }
+    let long_names: Vec<String> = names.into_iter().collect();
+    let unknown_code = long_names.len() as u32;
+    // name -> enum code, including Unknown.
+    let mut name_to_code: BTreeMap<&str, u32> = BTreeMap::new();
+    for (i, n) in long_names.iter().enumerate() {
+        name_to_code.insert(n.as_str(), i as u32);
+    }
+    name_to_code.insert("Unknown", unknown_code);
+    let variants: Vec<String> = long_names.iter().map(|n| pascal_case(n)).collect();
+
+    // ---- Per-codepoint Script code. ----
+    let script_codes = parse_ranged(&ucd.join("Scripts.txt"), &name_to_code, unknown_code);
+    let script_render: Vec<String> = variants
+        .iter()
+        .map(|v| format!("Script::{v}"))
+        .chain(std::iter::once("Script::Unknown".to_string()))
+        .collect();
+
+    // ---- Script_Extensions: short script code -> long name (from aliases). ----
+    let aliases = fs::read_to_string(ucd.join("PropertyValueAliases.txt")).expect("read aliases");
+    let mut short_to_long: BTreeMap<String, String> = BTreeMap::new();
+    for line in aliases.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if !line.starts_with("sc ") && !line.starts_with("sc;") {
+            continue;
+        }
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        if f.len() >= 3 && f[0] == "sc" {
+            short_to_long.insert(f[1].to_string(), f[2].to_string());
+        }
+    }
+
+    // Distinct extension sets (sorted Script codes) -> table index.
+    let scx_txt = fs::read_to_string(ucd.join("ScriptExtensions.txt")).expect("read scx");
+    let mut set_index: BTreeMap<Vec<u32>, usize> = BTreeMap::new();
+    let mut sets: Vec<Vec<u32>> = Vec::new();
+    let mut scx_codes = vec![0u32; NUM_CODEPOINTS]; // 0 == None (use Script(cp))
+    for line in scx_txt.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let mut parts = line.split(';');
+        let range = parts.next().unwrap().trim();
+        let rest = parts.next().unwrap_or("");
+        let shorts = rest.split('#').next().unwrap_or("").split_whitespace();
+        let mut codes: Vec<u32> = shorts
+            .filter_map(|s| short_to_long.get(s))
+            .filter_map(|long| name_to_code.get(long.as_str()).copied())
+            .collect();
+        codes.sort_unstable();
+        codes.dedup();
+        if codes.is_empty() {
+            continue;
+        }
+        let idx = *set_index.entry(codes.clone()).or_insert_with(|| {
+            sets.push(codes.clone());
+            sets.len() - 1
+        });
+        let (start, end) = parse_range(range);
+        for c in start..=end {
+            scx_codes[c as usize] = (idx + 1) as u32; // +1: 0 is reserved for None
+        }
+    }
+    // render[0] = None; render[i+1] = Some(&SCX_i)
+    let mut scx_render: Vec<String> = vec!["None".to_string()];
+    for i in 0..sets.len() {
+        scx_render.push(format!("Some(SCX_{i})"));
+    }
+
+    // ---- Assemble the file. ----
+    let mut out = String::new();
+    write_header(&mut out);
+    // enum
+    out.push_str(
+        "/// The Unicode `Script` property (UAX #24).\n\
+         ///\n\
+         /// Unassigned codepoints, and codepoints outside the compiled range tier,\n\
+         /// report [`Script::Unknown`].\n\
+         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]\n\
+         #[repr(u8)]\n\
+         pub enum Script {\n",
+    );
+    for v in &variants {
+        let _ = write!(out, "    {v},\n");
+    }
+    out.push_str("    /// `Zzzz` — Unknown (default).\n    Unknown,\n}\n\n");
+    // long_name()
+    out.push_str(
+        "impl Script {\n    /// The canonical Unicode long name, e.g. `\"Latin\"`.\n    \
+         #[must_use]\n    pub const fn long_name(self) -> &'static str {\n        match self {\n",
+    );
+    for (v, long) in variants.iter().zip(long_names.iter()) {
+        let _ = write!(out, "            Script::{v} => \"{long}\",\n");
+    }
+    out.push_str("            Script::Unknown => \"Unknown\",\n        }\n    }\n}\n\n");
+    // extension-set tables
+    for (i, set) in sets.iter().enumerate() {
+        let elems: Vec<String> = set
+            .iter()
+            .map(|&c| script_render[c as usize].clone())
+            .collect();
+        let _ = write!(out, "const SCX_{i}: &[Script] = &[{}];\n", elems.join(", "));
+    }
+    if !sets.is_empty() {
+        out.push('\n');
+    }
+    // lookups
+    emit_lookup(
+        &mut out,
+        "script",
+        "sc",
+        "Script",
+        &script_codes,
+        unknown_code,
+        &script_render,
+    );
+    emit_lookup(
+        &mut out,
+        "script_extensions",
+        "scx",
+        "Option<&'static [Script]>",
+        &scx_codes,
+        0,
+        &scx_render,
+    );
+
+    write_module(out_dir, modules, "script", &out);
 }
 
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.
@@ -194,7 +359,8 @@ fn write_header(out: &mut String) {
         "// @generated by codegen — DO NOT EDIT.\n\
          // Regenerate with `cargo run -p codegen` after updating data/ucd/.\n\
          #![allow(clippy::all)]\n\
-         #![allow(unreachable_patterns)]\n\n",
+         #![allow(unreachable_patterns)]\n\
+         #![allow(dead_code)]\n\n",
     );
 }
 
