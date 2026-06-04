@@ -136,7 +136,7 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 - 🧱 **Calendars** — Gregorian + non-Gregorian (Islamic, Hebrew, Japanese,
   Persian, Buddhist, Indian, Chinese, …) and date arithmetic.
 - 🧱 **Time zones (IANA tz)** — zone data, offsets, DST, zone display names.
-- 🧱 **Date/Time formatting & parsing** — skeleton/pattern based (UTS #35),
+- 🧱 🟡 **Date/Time formatting** (`intl::datetime`, Gregorian) — skeleton/pattern based (UTS #35),
   calendar- and zone-aware.
 - 🧱 **Relative date/time** ("3 days ago"), **duration**, ✅ unit/measurement formatting (`intl::unit`), ✅ list formatting (`intl::list`), ✅ display names (`intl::display`, language/region).
 - 🧱 ✅ MessageFormat (`intl::message`, subset) — ICU MessageFormat (and/or MessageFormat 2.0):

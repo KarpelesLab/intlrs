@@ -1,0 +1,226 @@
+//! Locale-aware date and time formatting (CLDR / UTS #35, Gregorian).
+//! Requires the `alloc` feature.
+//!
+//! A [`DateTime`] holds the broken-down fields (no calendar arithmetic or time
+//! zones); [`format_date`] / [`format_time`] / [`format_datetime`] render it with
+//! the locale's CLDR patterns, month/weekday names, and am/pm markers. The
+//! weekday is derived from the proleptic Gregorian date.
+//!
+//! ```
+//! use intl::datetime::{DateTime, format_date, format_time, DateStyle};
+//! let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5 };
+//! assert_eq!(format_date("en", &dt, DateStyle::Long), "June 4, 2026");
+//! assert_eq!(format_date("en", &dt, DateStyle::Medium), "Jun 4, 2026");
+//! assert_eq!(format_time("en", &dt, DateStyle::Short), "2:30\u{202f}PM");
+//! ```
+
+use crate::cldr::{calendar_spec, CalendarSpec};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+
+/// A broken-down Gregorian date and time. Fields are not validated.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DateTime {
+    /// Proleptic Gregorian year (e.g. 2026).
+    pub year: i32,
+    /// Month, 1–12.
+    pub month: u8,
+    /// Day of month, 1–31.
+    pub day: u8,
+    /// Hour, 0–23.
+    pub hour: u8,
+    /// Minute, 0–59.
+    pub minute: u8,
+    /// Second, 0–59.
+    pub second: u8,
+}
+
+/// One of the four CLDR length styles.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DateStyle {
+    /// Full ("Thursday, June 4, 2026").
+    Full,
+    /// Long ("June 4, 2026").
+    Long,
+    /// Medium ("Jun 4, 2026").
+    Medium,
+    /// Short ("6/4/26").
+    Short,
+}
+
+impl DateStyle {
+    fn idx(self) -> usize {
+        match self {
+            DateStyle::Full => 0,
+            DateStyle::Long => 1,
+            DateStyle::Medium => 2,
+            DateStyle::Short => 3,
+        }
+    }
+}
+
+/// Day of week for a proleptic Gregorian date: 0 = Sunday … 6 = Saturday
+/// (Sakamoto's algorithm).
+fn weekday(dt: &DateTime) -> usize {
+    let t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+    let m = dt.month as i32;
+    let d = dt.day as i32;
+    let y = if m < 3 { dt.year - 1 } else { dt.year };
+    (((y + y / 4 - y / 100 + y / 400 + t[(m - 1) as usize] + d) % 7 + 7) % 7) as usize
+}
+
+fn two(n: i64) -> String {
+    alloc::format!("{n:02}")
+}
+
+/// Render one date-field run (`field` repeated `n` times) of a CLDR pattern.
+fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
+    let m = dt.month as usize;
+    match field {
+        'y' | 'Y' => {
+            if n == 2 {
+                two((dt.year.rem_euclid(100)) as i64)
+            } else {
+                dt.year.to_string()
+            }
+        }
+        'M' | 'L' => match n {
+            1 => m.to_string(),
+            2 => two(m as i64),
+            3 => s.months_abbr[m - 1].to_string(),
+            _ => s.months_wide[m - 1].to_string(),
+        },
+        'd' => {
+            if n >= 2 {
+                two(dt.day as i64)
+            } else {
+                dt.day.to_string()
+            }
+        }
+        'E' | 'e' | 'c' => {
+            let w = weekday(dt);
+            if n >= 4 {
+                s.days_wide[w].to_string()
+            } else {
+                s.days_abbr[w].to_string()
+            }
+        }
+        'h' => {
+            let h = ((dt.hour + 11) % 12) + 1; // 12-hour clock
+            if n >= 2 {
+                two(h as i64)
+            } else {
+                h.to_string()
+            }
+        }
+        'H' => {
+            if n >= 2 {
+                two(dt.hour as i64)
+            } else {
+                dt.hour.to_string()
+            }
+        }
+        'm' => {
+            if n >= 2 {
+                two(dt.minute as i64)
+            } else {
+                dt.minute.to_string()
+            }
+        }
+        's' => {
+            if n >= 2 {
+                two(dt.second as i64)
+            } else {
+                dt.second.to_string()
+            }
+        }
+        'a' | 'b' => if dt.hour < 12 { s.am } else { s.pm }.to_string(),
+        _ => String::new(), // unsupported field (e.g. time zone) -> nothing
+    }
+}
+
+/// Interpret a CLDR date/time pattern, handling quoted literals.
+fn render(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> String {
+    let c: Vec<char> = pattern.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < c.len() {
+        let ch = c[i];
+        if ch == '\'' {
+            i += 1;
+            if i < c.len() && c[i] == '\'' {
+                out.push('\'');
+                i += 1;
+                continue;
+            }
+            while i < c.len() && c[i] != '\'' {
+                out.push(c[i]);
+                i += 1;
+            }
+            i += 1; // closing quote
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < c.len() && c[i] == ch {
+                i += 1;
+            }
+            out.push_str(&field(ch, i - start, dt, s));
+        } else {
+            out.push(ch);
+            i += 1;
+        }
+    }
+    out
+}
+
+fn spec(lang: &str) -> CalendarSpec {
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut end = norm.len();
+    loop {
+        if let Some(s) = calendar_spec(&norm[..end]) {
+            return s;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return calendar_spec("en").expect("root calendar present"),
+        }
+    }
+}
+
+/// Format the date part of `dt` in `lang` at the given `style`.
+#[must_use]
+pub fn format_date(lang: &str, dt: &DateTime, style: DateStyle) -> String {
+    let s = spec(lang);
+    render(s.date[style.idx()], dt, &s)
+}
+
+/// Format the time part of `dt` in `lang` at the given `style`.
+#[must_use]
+pub fn format_time(lang: &str, dt: &DateTime, style: DateStyle) -> String {
+    let s = spec(lang);
+    render(s.time[style.idx()], dt, &s)
+}
+
+/// Format both date and time, combined with the locale's date+time pattern.
+#[must_use]
+pub fn format_datetime(
+    lang: &str,
+    dt: &DateTime,
+    date_style: DateStyle,
+    time_style: DateStyle,
+) -> String {
+    let s = spec(lang);
+    let date = render(s.date[date_style.idx()], dt, &s);
+    let time = render(s.time[time_style.idx()], dt, &s);
+    s.datetime[date_style.idx()]
+        .replace("{1}", &date)
+        .replace("{0}", &time)
+}

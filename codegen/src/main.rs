@@ -269,6 +269,7 @@ fn main() {
     emit_currency(&cldr_dir, &cldr.join("currency.json"));
     emit_display(&cldr_dir, &cldr.join("display.json"));
     emit_units(&cldr_dir, &cldr.join("units.json"));
+    emit_calendar(&cldr_dir, &cldr.join("calendar.json"));
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1247,6 +1248,7 @@ fn emit_idna(out_dir: &Path, modules: &mut Vec<String>, idna: &Path) {
 
 enum Json {
     Obj(Vec<(String, Json)>),
+    Arr(Vec<Json>),
     Str(String),
     Other,
 }
@@ -1261,6 +1263,12 @@ impl Json {
     fn entries(&self) -> &[(String, Json)] {
         match self {
             Json::Obj(e) => e,
+            _ => &[],
+        }
+    }
+    fn array(&self) -> &[Json] {
+        match self {
+            Json::Arr(a) => a,
             _ => &[],
         }
     }
@@ -1319,19 +1327,20 @@ fn json_obj(c: &[char], i: &mut usize) -> Json {
 }
 fn json_arr(c: &[char], i: &mut usize) -> Json {
     *i += 1; // '['
+    let mut items = Vec::new();
     loop {
         json_ws(c, i);
         if c[*i] == ']' {
             *i += 1;
             break;
         }
-        let _ = json_value(c, i);
+        items.push(json_value(c, i));
         json_ws(c, i);
         if c[*i] == ',' {
             *i += 1;
         }
     }
-    Json::Other
+    Json::Arr(items)
 }
 fn json_str(c: &[char], i: &mut usize) -> String {
     *i += 1; // opening quote
@@ -1552,6 +1561,35 @@ fn emit_currency(cldr_dir: &Path, path: &Path) {
         digit_records.push((code.clone(), vec![digit_value(&text, code)]));
     }
     write_blob(cldr_dir, "currency_digits", &digit_records);
+}
+
+/// Write `cldr/calendar.bin`: per-locale Gregorian month/day names, am/pm, and
+/// date/time/combining patterns. Payload (all required strings): months_wide(12),
+/// months_abbr(12), days_wide(7), days_abbr(7), am, pm, date(4), time(4),
+/// datetime(4) — styles in full/long/medium/short order.
+fn emit_calendar(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read calendar.json");
+    let json = json_parse(&text);
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let mut p = Vec::new();
+        let push_arr = |p: &mut Vec<u8>, key: &str| {
+            for v in loc.get(key).map(Json::array).unwrap_or(&[]) {
+                enc_str(p, v.as_str().unwrap_or(""));
+            }
+        };
+        push_arr(&mut p, "months_wide");
+        push_arr(&mut p, "months_abbr");
+        push_arr(&mut p, "days_wide");
+        push_arr(&mut p, "days_abbr");
+        enc_str(&mut p, loc.get("am").and_then(Json::as_str).unwrap_or("AM"));
+        enc_str(&mut p, loc.get("pm").and_then(Json::as_str).unwrap_or("PM"));
+        push_arr(&mut p, "date");
+        push_arr(&mut p, "time");
+        push_arr(&mut p, "datetime");
+        records.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "calendar", &records);
 }
 
 /// The curated measurement units, in the order the runtime `Unit` enum expects.

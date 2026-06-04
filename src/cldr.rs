@@ -94,6 +94,30 @@ pub struct RelUnit {
     pub future: [Option<&'static str>; 6],
 }
 
+/// Gregorian calendar names and patterns for one locale (full/long/medium/short
+/// styles are indexed 0..4).
+#[derive(Debug, Clone, Copy)]
+pub struct CalendarSpec {
+    /// Wide month names (January…), indexed by month−1.
+    pub months_wide: [&'static str; 12],
+    /// Abbreviated month names (Jan…).
+    pub months_abbr: [&'static str; 12],
+    /// Wide weekday names (Sunday…), indexed Sun..Sat.
+    pub days_wide: [&'static str; 7],
+    /// Abbreviated weekday names (Sun…).
+    pub days_abbr: [&'static str; 7],
+    /// AM marker.
+    pub am: &'static str,
+    /// PM marker.
+    pub pm: &'static str,
+    /// Date patterns by style.
+    pub date: [&'static str; 4],
+    /// Time patterns by style.
+    pub time: [&'static str; 4],
+    /// Date+time combining patterns by style (`{1}` date, `{0}` time).
+    pub datetime: [&'static str; 4],
+}
+
 /// CLDR relative-time strings for all units of one locale.
 #[derive(Debug, Clone, Copy)]
 pub struct RelativeSpec {
@@ -112,6 +136,7 @@ const CURRENCY_DIGITS: &[u8] = include_bytes!("cldr/currency_digits.bin");
 const DISPLAY_LANG: &[u8] = include_bytes!("cldr/display_languages.bin");
 const DISPLAY_TERR: &[u8] = include_bytes!("cldr/display_territories.bin");
 const UNITS: &[u8] = include_bytes!("cldr/units.bin");
+const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
 
 /// Number of curated units (must match codegen's `UNITS` and the `Unit` enum).
 pub(crate) const UNIT_COUNT: usize = 28;
@@ -286,6 +311,22 @@ pub(crate) fn language_name(display_locale: &str, code: &str) -> Option<&'static
 /// Display name of region `code` in `display_locale`.
 pub(crate) fn region_name(display_locale: &str, code: &str) -> Option<&'static str> {
     display_name(DISPLAY_TERR, display_locale, code)
+}
+
+/// Gregorian calendar names + patterns for an exact (lowercased) locale key.
+pub(crate) fn calendar_spec(lang: &str) -> Option<CalendarSpec> {
+    let mut c = find(CALENDAR, lang)?;
+    Some(CalendarSpec {
+        months_wide: core::array::from_fn(|_| c.str()),
+        months_abbr: core::array::from_fn(|_| c.str()),
+        days_wide: core::array::from_fn(|_| c.str()),
+        days_abbr: core::array::from_fn(|_| c.str()),
+        am: c.str(),
+        pm: c.str(),
+        date: core::array::from_fn(|_| c.str()),
+        time: core::array::from_fn(|_| c.str()),
+        datetime: core::array::from_fn(|_| c.str()),
+    })
 }
 
 /// Unit pattern for `(width, unit, plural category)` in an exact locale key,

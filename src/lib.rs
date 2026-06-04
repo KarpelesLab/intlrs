@@ -23,6 +23,8 @@ extern crate alloc;
 // data layer never depends on `alloc`; the formatters that consume it are
 // `alloc`-gated.
 pub(crate) mod cldr;
+#[cfg(feature = "alloc")]
+pub mod datetime;
 pub mod display;
 #[cfg(feature = "alloc")]
 pub mod list;
