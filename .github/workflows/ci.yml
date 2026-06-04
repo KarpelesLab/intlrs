@@ -169,3 +169,27 @@ jobs:
 
       - name: cargo doc --no-deps --all-features
         run: cargo doc --no-deps --all-features
+
+  msrv:
+    name: MSRV (Rust 1.70)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # The crate declares rust-version = "1.70". Build it on exactly that
+      # toolchain so an accidental use of a newer-stable API fails CI rather than
+      # downstream. The `iana-tz` feature is excluded: its `timezone-data`
+      # dependency requires 1.86 (documented), so it is not part of the MSRV set.
+      - name: Install Rust 1.70
+        uses: dtolnay/rust-toolchain@1.70.0
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build across feature tiers
+        run: |
+          for feat in ascii latin1 bmp full alloc; do
+            echo "::group::features=$feat"
+            cargo build --no-default-features --features "$feat"
+            echo "::endgroup::"
+          done

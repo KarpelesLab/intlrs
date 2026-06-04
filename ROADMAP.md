@@ -102,7 +102,8 @@ all the conformance work as the surface grows.
   Conformance suites are the safety net for the rewrite.
 - 🟡 **`#![no_std]`/`no_alloc` CI matrix hardening** — CI builds on a bare-metal
   `thumbv7em-none-eabi` target (with and without `alloc`) to prove no `std`
-  leakage. Still to add: `cargo-public-api` API-surface guard, MSRV check.
+  leakage. ✅ MSRV check
+  (builds all tiers on Rust 1.70). Still to add: `cargo-public-api` API guard.
 - ⬜ **Binary-size tracking** — measure `.text`/`.rodata` per feature tier; the
   whole point of tiers is size, so regressions should be visible.
 

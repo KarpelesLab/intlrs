@@ -61,7 +61,7 @@ pub enum UnitWidth {
 
 fn operands(v: f64) -> PluralOperands {
     // `f64::fract` is std-only; `% 1.0` is a core operator.
-    if v % 1.0 == 0.0 && v.abs() < 1e15 {
+    if v % 1.0 == 0.0 && v > -1e15 && v < 1e15 {
         PluralOperands::from_int(v as i64)
     } else {
         // A plain (non-localized) decimal string for operand extraction.

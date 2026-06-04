@@ -50,7 +50,7 @@ fn cat_name(c: PluralCategory) -> &'static str {
 }
 
 fn operands(v: f64) -> PluralOperands {
-    if v % 1.0 == 0.0 && v.abs() < 1e15 {
+    if v % 1.0 == 0.0 && v > -1e15 && v < 1e15 {
         PluralOperands::from_int(v as i64)
     } else {
         PluralOperands::parse(&alloc::format!("{v}")).unwrap_or(PluralOperands::from_int(v as i64))
@@ -229,7 +229,7 @@ fn parse_select(
 
 /// Render an integer-valued `f64` without a trailing `.0` (for `=N` matching).
 fn trim_num(n: f64) -> String {
-    if n % 1.0 == 0.0 && n.abs() < 1e15 {
+    if n % 1.0 == 0.0 && n > -1e15 && n < 1e15 {
         (n as i64).to_string()
     } else {
         alloc::format!("{n}")
