@@ -165,9 +165,26 @@ fn collation_elements(mut cv: Vec<char>) -> Vec<u64> {
     cea
 }
 
+/// Collation strength — the most significant weight level that is compared.
+/// Lower strengths ignore finer distinctions: [`Primary`](Strength::Primary)
+/// ignores accents and case, [`Secondary`](Strength::Secondary) ignores case
+/// (but not accents), [`Tertiary`](Strength::Tertiary) (the default) compares
+/// everything.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Strength {
+    /// Level 1 only: base letters (`a` = `A` = `á`).
+    Primary,
+    /// Levels 1–2: accents matter, case does not (`a` = `A`, `á` ≠ `a`).
+    Secondary,
+    /// Levels 1–3 (default): accents and case both matter.
+    Tertiary,
+    /// Levels 1–4: also distinguishes shifted variable elements.
+    Quaternary,
+}
+
 /// Build the sort key (a sequence of 16-bit weights) for a collation element
-/// array under the given variable handling.
-fn build_sort_key(cea: &[u64], alternate: AlternateHandling) -> Vec<u16> {
+/// array under the given variable handling, truncated at `strength`.
+fn build_sort_key(cea: &[u64], alternate: AlternateHandling, strength: Strength) -> Vec<u16> {
     let mut key = Vec::new();
     match alternate {
         AlternateHandling::NonIgnorable => {
@@ -177,12 +194,18 @@ fn build_sort_key(cea: &[u64], alternate: AlternateHandling) -> Vec<u16> {
                     key.push(p);
                 }
             }
+            if strength == Strength::Primary {
+                return key;
+            }
             key.push(0);
             for &ce in cea {
                 let s = secondary(ce);
                 if s != 0 {
                     key.push(s);
                 }
+            }
+            if strength == Strength::Secondary {
+                return key;
             }
             key.push(0);
             for &ce in cea {
@@ -222,17 +245,26 @@ fn build_sort_key(cea: &[u64], alternate: AlternateHandling) -> Vec<u16> {
                     key.push(p);
                 }
             }
+            if strength == Strength::Primary {
+                return key;
+            }
             key.push(0);
             for &(_, s, ..) in &rows {
                 if s != 0 {
                     key.push(s);
                 }
             }
+            if strength == Strength::Secondary {
+                return key;
+            }
             key.push(0);
             for &(_, _, t, _) in &rows {
                 if t != 0 {
                     key.push(t);
                 }
+            }
+            if strength == Strength::Tertiary {
+                return key;
             }
             key.push(0);
             for &(.., q) in &rows {
@@ -249,21 +281,34 @@ fn build_sort_key(cea: &[u64], alternate: AlternateHandling) -> Vec<u16> {
 #[derive(Debug, Clone, Copy)]
 pub struct Collator {
     alternate: AlternateHandling,
+    strength: Strength,
 }
 
 impl Default for Collator {
     fn default() -> Self {
         Collator {
             alternate: AlternateHandling::Shifted,
+            strength: Strength::Tertiary,
         }
     }
 }
 
 impl Collator {
-    /// A collator with the given variable handling.
+    /// A collator with the given variable handling (and tertiary strength).
     #[must_use]
     pub fn new(alternate: AlternateHandling) -> Self {
-        Collator { alternate }
+        Collator {
+            alternate,
+            strength: Strength::Tertiary,
+        }
+    }
+
+    /// Set the comparison [`Strength`] (e.g. [`Strength::Primary`] for
+    /// accent- and case-insensitive comparison).
+    #[must_use]
+    pub fn with_strength(mut self, strength: Strength) -> Self {
+        self.strength = strength;
+        self
     }
 
     /// The DUCET sort key for `s`: comparing two sort keys lexicographically
@@ -271,7 +316,7 @@ impl Collator {
     #[must_use]
     pub fn sort_key(&self, s: &str) -> Vec<u16> {
         let cv: Vec<char> = nfd(s.chars()).collect();
-        build_sort_key(&collation_elements(cv), self.alternate)
+        build_sort_key(&collation_elements(cv), self.alternate, self.strength)
     }
 
     /// Compare two strings in DUCET collation order.

@@ -165,7 +165,9 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   ✅ list formatting (`intl::list`), ✅ display names (`intl::display`).
 - 🧱 ✅ MessageFormat (`intl::message`, subset) — ICU MessageFormat (and/or MessageFormat 2.0):
   select/plural/gender, nested args.
-- 🧱 **Collation tailoring** — locale-tailored collators from CLDR (beyond DUCET
+- 🟡🧱 **Collation tailoring** — ✅ strength levels (`Collator::with_strength`:
+  primary/secondary/tertiary for accent-/case-insensitive comparison). Still:
+  locale-tailored collators from CLDR (beyond DUCET
   root), collation strength/options, **string search** (collation-based) and
   **alphabetic index**.
 
