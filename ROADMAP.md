@@ -79,8 +79,9 @@ all the conformance work as the surface grows.
 - 🟡 **Fuzzing** — in-process invariant fuzzing is live (`tests/robustness.rs`,
   20k deterministic random strings: no-panic + idempotence / round-trip /
   ordering invariants across normalization, segmentation, case, collation; runs
-  in CI). Still to add: a `cargo-fuzz` project and **differential** fuzzing vs
-  ICU4X / `unicode-*` / `std`, plus fuzzing the `codegen` parsers.
+  in CI). ✅ differential
+  testing vs `std` (`tests/differential.rs`: case mapping + predicates over the
+  stable ranges). Still to add: a `cargo-fuzz` project and `codegen`-parser fuzzing.
 - ✅ **Benchmarks (`criterion`)** — `benches/throughput.rs` over ASCII/Latin/CJK/
   mixed corpora (general_category, nfc, nfd, graphemes, words, sort_key); the
   throughput baseline. `cargo bench --features alloc`.
