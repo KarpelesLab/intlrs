@@ -93,6 +93,18 @@ jobs:
           echo "Per-blob:"
           du -b src/cldr/*.bin | sort -n
 
+      # Compiled footprint per tier: build the size-probe example (which links
+      # the core property tables) in release and report its section sizes. The
+      # `.text`/`.rodata` growth across tiers is the real binary-size signal.
+      - name: Compiled size per tier
+        run: |
+          printf '%-8s %8s %8s %8s\n' tier text data bss
+          for feat in ascii latin1 bmp full; do
+            cargo build --release --example sizeprobe --no-default-features --features "$feat" >/dev/null 2>&1
+            read -r text data bss _ < <(size target/release/examples/sizeprobe | tail -1)
+            printf '%-8s %8s %8s %8s\n' "$feat" "$text" "$data" "$bss"
+          done
+
   codegen:
     name: Generated tables are up to date
     runs-on: ubuntu-latest

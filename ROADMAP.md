@@ -105,8 +105,11 @@ all the conformance work as the surface grows.
   `thumbv7em-none-eabi` target (with and without `alloc`) to prove no `std`
   leakage. ✅ MSRV check
   (builds all tiers on Rust 1.70). Still to add: `cargo-public-api` API guard.
-- ⬜ **Binary-size tracking** — measure `.text`/`.rodata` per feature tier; the
-  whole point of tiers is size, so regressions should be visible.
+- ✅ **Binary-size tracking** — CI reports the embedded-data footprint
+  (generated tables + CLDR blobs) and the compiled `.text`/`.data` per feature
+  tier via a `sizeprobe` example built in release and measured with `size` (the
+  whole point of tiers is footprint, so tier-over-tier growth is visible in the
+  log).
 
 ---
 
