@@ -46,3 +46,30 @@ fn weekdays_and_iso_week() {
     // 2027-01-01 is a Friday, belonging to ISO week 53 of 2026.
     assert_eq!(iso_week(2027, 1, 1).0, 2026);
 }
+
+#[test]
+fn japanese() {
+    use intl::calendar::japanese_era;
+    assert_eq!(japanese_era(2026, 6, 4), ("Reiwa", 8));
+    assert_eq!(japanese_era(2019, 5, 1), ("Reiwa", 1));
+    assert_eq!(japanese_era(2019, 4, 30), ("Heisei", 31));
+    assert_eq!(japanese_era(1989, 1, 8), ("Heisei", 1));
+    assert_eq!(japanese_era(1989, 1, 7), ("Showa", 64));
+    assert_eq!(japanese_era(1868, 10, 23), ("Meiji", 1));
+    assert_eq!(japanese_era(1700, 1, 1), ("CE", 1700)); // pre-Meiji
+}
+
+#[test]
+fn persian() {
+    use intl::calendar::*;
+    // Nowruz 1404 = 20 March 2025 (vernal equinox).
+    assert_eq!(gregorian_to_persian(2025, 3, 20), (1404, 1, 1));
+    assert_eq!(persian_to_gregorian(1404, 1, 1), (2025, 3, 20));
+    assert_eq!(persian_to_jdn(1, 1, 1), 1948321); // epoch
+                                                  // Round-trips.
+    for &(y, m, d) in &[(2000, 1, 1), (1970, 1, 1), (2026, 6, 4), (2025, 12, 31)] {
+        let (py, pm, pd) = gregorian_to_persian(y, m, d);
+        assert!((1..=12).contains(&pm) && (1..=31).contains(&pd));
+        assert_eq!(persian_to_gregorian(py, pm, pd), (y, m, d));
+    }
+}

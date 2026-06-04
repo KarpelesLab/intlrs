@@ -69,6 +69,58 @@ pub fn jdn_to_islamic(jdn: i64) -> (i64, i64, i64) {
     (year, month, day)
 }
 
+/// JDN of 1 Farvardin 1 in the Persian (Solar Hijri) calendar.
+const PERSIAN_EPOCH: i64 = 1_948_321;
+
+/// The Julian Day Number of a Persian (Solar Hijri) date (arithmetic 2820-year
+/// cycle).
+#[must_use]
+pub fn persian_to_jdn(year: i64, month: i64, day: i64) -> i64 {
+    let epbase = if year >= 0 { year - 474 } else { year - 473 };
+    let epyear = 474 + epbase.rem_euclid(2820);
+    let month_days = if month <= 7 {
+        (month - 1) * 31
+    } else {
+        (month - 1) * 30 + 6
+    };
+    day + month_days
+        + (epyear * 682 - 110) / 2816
+        + (epyear - 1) * 365
+        + epbase.div_euclid(2820) * 1_029_983
+        + (PERSIAN_EPOCH - 1)
+}
+
+/// The Persian (Solar Hijri) `(year, month, day)` of a Julian Day Number.
+#[must_use]
+pub fn jdn_to_persian(jdn: i64) -> (i64, i64, i64) {
+    // The Persian year of a Gregorian date is roughly `gregorian - 621`.
+    let mut year = jdn_to_gregorian(jdn).0 - 621;
+    while persian_to_jdn(year, 1, 1) > jdn {
+        year -= 1;
+    }
+    while persian_to_jdn(year + 1, 1, 1) <= jdn {
+        year += 1;
+    }
+    let mut month = 1;
+    while month < 12 && persian_to_jdn(year, month + 1, 1) <= jdn {
+        month += 1;
+    }
+    let day = jdn - persian_to_jdn(year, month, 1) + 1;
+    (year, month, day)
+}
+
+/// Convert a Gregorian date to the Persian (Solar Hijri) calendar.
+#[must_use]
+pub fn gregorian_to_persian(year: i64, month: i64, day: i64) -> (i64, i64, i64) {
+    jdn_to_persian(gregorian_to_jdn(year, month, day))
+}
+
+/// Convert a Persian (Solar Hijri) date to the Gregorian calendar.
+#[must_use]
+pub fn persian_to_gregorian(year: i64, month: i64, day: i64) -> (i64, i64, i64) {
+    jdn_to_gregorian(persian_to_jdn(year, month, day))
+}
+
 /// Convert a Gregorian date to the civil Islamic calendar.
 #[must_use]
 pub fn gregorian_to_islamic(year: i64, month: i64, day: i64) -> (i64, i64, i64) {
@@ -79,6 +131,34 @@ pub fn gregorian_to_islamic(year: i64, month: i64, day: i64) -> (i64, i64, i64) 
 #[must_use]
 pub fn islamic_to_gregorian(year: i64, month: i64, day: i64) -> (i64, i64, i64) {
     jdn_to_gregorian(islamic_to_jdn(year, month, day))
+}
+
+/// The Japanese era and year-within-era for a Gregorian date, e.g.
+/// `(2026, 6, 4)` → `("Reiwa", 8)`. Dates before the Meiji era return
+/// `("CE", year)`.
+///
+/// ```
+/// use intl::calendar::japanese_era;
+/// assert_eq!(japanese_era(2026, 6, 4), ("Reiwa", 8));
+/// assert_eq!(japanese_era(2019, 4, 30), ("Heisei", 31)); // day before Reiwa
+/// assert_eq!(japanese_era(2019, 5, 1), ("Reiwa", 1));
+/// ```
+#[must_use]
+pub fn japanese_era(year: i64, month: i64, day: i64) -> (&'static str, i64) {
+    // Modern era boundaries (Gregorian start dates).
+    const ERAS: [(i64, i64, i64, &str); 5] = [
+        (1868, 10, 23, "Meiji"),
+        (1912, 7, 30, "Taisho"),
+        (1926, 12, 25, "Showa"),
+        (1989, 1, 8, "Heisei"),
+        (2019, 5, 1, "Reiwa"),
+    ];
+    for &(sy, sm, sd, name) in ERAS.iter().rev() {
+        if (year, month, day) >= (sy, sm, sd) {
+            return (name, year - sy + 1);
+        }
+    }
+    ("CE", year)
 }
 
 /// ISO-8601 weekday of a Gregorian date: 1 = Monday … 7 = Sunday.

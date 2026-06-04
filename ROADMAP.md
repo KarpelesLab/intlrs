@@ -135,8 +135,9 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   systems. Needs the CLDR RBNF rule engine (locale-driven); an English-only
   version was rejected as out of place in an i18n crate.
 - 🟡 **Calendars** — `intl::calendar`: Gregorian<->civil Islamic conversion
-  (Julian Day Number pivot), ISO week dates, day-of-week. Still: Hebrew/Persian/
-  Japanese/… and CLDR rendering of non-Gregorian dates.
+  (Julian Day Number pivot), ISO week dates, day-of-week. Persian (Solar Hijri) and
+  Japanese (era/year) added too. Still: Hebrew/Chinese, CLDR rendering of
+  non-Gregorian dates.
 - 🧱 **Time zones (IANA tz)** — zone data, offsets, DST, zone display names.
 - 🧱 🟡 **Date/Time formatting** (`intl::datetime`, Gregorian) — skeleton/pattern based (UTS #35),
   calendar- and zone-aware.

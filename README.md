@@ -98,9 +98,10 @@ Beyond the `unicode` module:
   month/weekday names, am/pm; weekday via Sakamoto's algorithm). Also
   `format_skeleton("en", &dt, "yMMMd")` → `"Jun 4, 2026"` (flexible field-set
   formatting).
-- `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian and
-  civil (tabular) Islamic calendars via the Julian Day Number, plus ISO-8601
-  week dates and day-of-week — pure integer arithmetic. `DateTime` also does
+- `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
+  civil (tabular) Islamic, and Persian (Solar Hijri) calendars via the Julian
+  Day Number, gives the Japanese era/year, plus ISO-8601 week dates and
+  day-of-week — pure integer arithmetic. `DateTime` also does
   ISO-8601 timestamp parse/format, and `format_gmt_offset` renders a localized
   UTC offset (`GMT+05:30`, `UTC−08:00`).
 
