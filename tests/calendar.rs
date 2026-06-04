@@ -87,3 +87,26 @@ fn hebrew() {
         assert_eq!(hebrew_to_gregorian(hy, hm, hd), (y, m, d));
     }
 }
+
+#[test]
+fn chinese() {
+    use intl::calendar::*;
+    // Chinese New Year anchors (lunar 1/1) -> Gregorian.
+    assert_eq!(chinese_to_gregorian(2024, 1, 1, false), Some((2024, 2, 10)));
+    assert_eq!(chinese_to_gregorian(2025, 1, 1, false), Some((2025, 1, 29)));
+    assert_eq!(chinese_to_gregorian(2000, 1, 1, false), Some((2000, 2, 5)));
+    // Gregorian -> Chinese.
+    assert_eq!(gregorian_to_chinese(2024, 2, 10), Some((2024, 1, 1, false)));
+    // A leap month: Chinese year 2023 had a leap 2nd month.
+    assert_eq!(gregorian_to_chinese(2023, 1, 22), Some((2023, 1, 1, false))); // CNY 2023
+    let (_, _, _, _) = gregorian_to_chinese(2023, 4, 1).unwrap();
+    // Round-trips across the supported range.
+    for &(y, m, d) in &[(1950, 6, 1), (2000, 1, 1), (2024, 2, 10), (2099, 12, 31)] {
+        let c = gregorian_to_chinese(y, m, d).unwrap();
+        assert_eq!(chinese_to_gregorian(c.0, c.1, c.2, c.3), Some((y, m, d)));
+    }
+    // Out of range -> None (no panic).
+    assert_eq!(gregorian_to_chinese(1800, 1, 1), None);
+    assert_eq!(gregorian_to_chinese(2200, 1, 1), None);
+    assert_eq!(chinese_to_jdn(3000, 1, 1, false), None);
+}

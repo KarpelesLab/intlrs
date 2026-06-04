@@ -140,12 +140,11 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   is a locale-driven CLDR RBNF engine (rule selection, radix, substitution,
   ruleset references); cardinal spell-out for a curated locale set. Still:
   ordinals and fractional/year forms.
-- 🟡 **Calendars** — `intl::calendar`: Gregorian, civil Islamic, Persian (Solar
-  Hijri), Hebrew, Japanese (era/year), and ISO week dates / day-of-week, all via
-  a Julian-Day-Number pivot. Islamic + Persian localized date *rendering*
-  (`datetime::format_islamic_date` / `format_persian_date`). Still: **Chinese
-  (lunisolar)** — needs a lunar table or astronomical computation, not derivable
-  from CLDR (which only has the month *names*).
+- ✅ **Calendars** — `intl::calendar`: Gregorian, civil Islamic, Persian (Solar
+  Hijri), Hebrew, **Chinese** (lunisolar, 1900–2099 via an embedded lunar table),
+  Japanese (era/year), and ISO week dates / day-of-week, all via a Julian-Day-
+  Number pivot. Islamic + Persian localized date *rendering*
+  (`datetime::format_islamic_date` / `format_persian_date`).
 - ✅ **Time zones** — `intl::timezone`: POSIX TZ rules (no_std), plus the full
   IANA tz database behind the `iana-tz` feature (via the embedded `timezone-data`
   crate): historical transitions, DST, abbreviations. Still: zone display names.

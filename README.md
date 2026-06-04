@@ -114,9 +114,10 @@ Beyond the `unicode` module:
   `abbrev_at` / `is_dst_at` / `to_local` for any instant, with historical
   transitions. (`iana-tz` raises the MSRV to 1.86; the rest of the crate is 1.70.)
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
-  civil (tabular) Islamic, Persian (Solar Hijri), and Hebrew calendars via the
-  Julian Day Number, gives the Japanese era/year, plus ISO-8601 week dates and
-  day-of-week — pure integer arithmetic. `DateTime` also does
+  civil (tabular) Islamic, Persian (Solar Hijri), Hebrew, and Chinese (lunisolar,
+  1900–2099 via an embedded lunar table) calendars through the Julian Day Number,
+  gives the Japanese era/year, plus ISO-8601 week dates and day-of-week — pure
+  integer arithmetic. `DateTime` also does
   ISO-8601 timestamp parse/format, date arithmetic (`add_seconds`/`add_days`/
   `weekday`, leap- and carry-aware), and `format_gmt_offset` renders a localized
   UTC offset (`GMT+05:30`, `UTC−08:00`).
