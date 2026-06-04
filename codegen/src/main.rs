@@ -1,7 +1,7 @@
 //! Code generator for the `unicode` crate.
 //!
 //! Reads the vendored UCD text files under `data/ucd/<version>/` and emits
-//! committed Rust source into `src/generated/`. The generated code is a
+//! committed Rust source into `src/unicode/generated/`. The generated code is a
 //! two-level "paged" `match` dispatch: an outer `match cp >> 8` selects a
 //! 256-codepoint page, and each page resolves the low byte. Pages (and, within
 //! page 0, individual arms) are `#[cfg]`-gated by the crate's range-tier
@@ -76,6 +76,9 @@ fn main() {
         ucd.display()
     );
 
+    // Names of the generated modules, collected as we emit them.
+    let mut modules: Vec<String> = Vec::new();
+
     // ---- General_Category ----
     let gc = parse_unicode_data(&ucd.join("UnicodeData.txt"));
     let render_gc: Vec<String> = GC_VARIANTS
@@ -96,42 +99,80 @@ fn main() {
         "gc",
         "GeneralCategory",
         &gc,
-        GC_UNASSIGNED,
+        u32::from(GC_UNASSIGNED),
         &render_gc,
     );
-    fs::write(out_dir.join("general_category.rs"), gc_out).expect("write general_category.rs");
+    write_module(&out_dir, &mut modules, "general_category", &gc_out);
 
     // ---- Binary properties ----
     let mut bp_out = String::new();
     write_header(&mut bp_out);
+    for (fn_name, prefix, file, prop) in [
+        ("white_space", "ws", "PropList.txt", "White_Space"),
+        (
+            "alphabetic",
+            "al",
+            "DerivedCoreProperties.txt",
+            "Alphabetic",
+        ),
+        ("uppercase", "up", "DerivedCoreProperties.txt", "Uppercase"),
+        ("lowercase", "lo", "DerivedCoreProperties.txt", "Lowercase"),
+    ] {
+        let codes = parse_binary_prop(&ucd.join(file), prop);
+        emit_bool_lookup(&mut bp_out, fn_name, prefix, &codes);
+    }
+    write_module(&out_dir, &mut modules, "binary_props", &bp_out);
 
-    let white_space = parse_binary_prop(&ucd.join("PropList.txt"), "White_Space");
-    emit_bool_lookup(&mut bp_out, "white_space", "ws", &white_space);
-
-    let alphabetic = parse_binary_prop(&ucd.join("DerivedCoreProperties.txt"), "Alphabetic");
-    emit_bool_lookup(&mut bp_out, "alphabetic", "al", &alphabetic);
-
-    let uppercase = parse_binary_prop(&ucd.join("DerivedCoreProperties.txt"), "Uppercase");
-    emit_bool_lookup(&mut bp_out, "uppercase", "up", &uppercase);
-
-    let lowercase = parse_binary_prop(&ucd.join("DerivedCoreProperties.txt"), "Lowercase");
-    emit_bool_lookup(&mut bp_out, "lowercase", "lo", &lowercase);
-
-    fs::write(out_dir.join("binary_props.rs"), bp_out).expect("write binary_props.rs");
+    // ---- East Asian Width ----
+    let eaw_map: BTreeMap<&str, u32> =
+        [("N", 0), ("A", 1), ("H", 2), ("W", 3), ("F", 4), ("Na", 5)]
+            .into_iter()
+            .collect();
+    let eaw = parse_ranged(&ucd.join("EastAsianWidth.txt"), &eaw_map, 0);
+    let eaw_render: Vec<String> = [
+        "Neutral",
+        "Ambiguous",
+        "Halfwidth",
+        "Wide",
+        "Fullwidth",
+        "Narrow",
+    ]
+    .iter()
+    .map(|v| format!("EastAsianWidth::{v}"))
+    .collect();
+    let mut eaw_out = String::new();
+    write_header(&mut eaw_out);
+    eaw_out.push_str("use crate::unicode::width::EastAsianWidth;\n\n");
+    emit_lookup(
+        &mut eaw_out,
+        "east_asian_width",
+        "eaw",
+        "EastAsianWidth",
+        &eaw,
+        0,
+        &eaw_render,
+    );
+    write_module(&out_dir, &mut modules, "east_asian_width", &eaw_out);
 
     // ---- generated/mod.rs ----
+    modules.sort();
     let mut mod_out = String::new();
     write_header(&mut mod_out);
-    mod_out.push_str("pub(crate) mod binary_props;\npub(crate) mod general_category;\n");
-    fs::write(out_dir.join("mod.rs"), mod_out).expect("write generated/mod.rs");
-
-    // Format the generated files with stable rustfmt so the committed output is
-    // fmt-clean and regeneration stays byte-for-byte deterministic.
-    for f in ["general_category.rs", "binary_props.rs", "mod.rs"] {
-        rustfmt(&out_dir.join(f));
+    for m in &modules {
+        let _ = write!(mod_out, "pub(crate) mod {m};\n");
     }
+    fs::write(out_dir.join("mod.rs"), &mod_out).expect("write generated/mod.rs");
+    rustfmt(&out_dir.join("mod.rs"));
 
-    eprintln!("codegen: wrote general_category.rs, binary_props.rs, mod.rs");
+    eprintln!("codegen: wrote {} modules + mod.rs", modules.len());
+}
+
+/// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.
+fn write_module(out_dir: &Path, modules: &mut Vec<String>, name: &str, content: &str) {
+    let path = out_dir.join(format!("{name}.rs"));
+    fs::write(&path, content).unwrap_or_else(|_| panic!("write {}", path.display()));
+    rustfmt(&path);
+    modules.push(name.to_string());
 }
 
 /// Run `rustfmt` over a generated file (best effort; warns if rustfmt is absent).
@@ -177,15 +218,15 @@ fn parse_version(readme: &Path) -> (u8, u8, u8) {
 }
 
 /// Parse `UnicodeData.txt` into a per-codepoint category-code table.
-fn parse_unicode_data(path: &Path) -> Vec<u8> {
-    let abbr_to_code: BTreeMap<&str, u8> = GC_ABBRS
+fn parse_unicode_data(path: &Path) -> Vec<u32> {
+    let abbr_to_code: BTreeMap<&str, u32> = GC_ABBRS
         .iter()
         .enumerate()
-        .map(|(i, &a)| (a, i as u8))
+        .map(|(i, &a)| (a, i as u32))
         .collect();
 
     let text = fs::read_to_string(path).expect("read UnicodeData.txt");
-    let mut codes = vec![GC_UNASSIGNED; NUM_CODEPOINTS];
+    let mut codes = vec![u32::from(GC_UNASSIGNED); NUM_CODEPOINTS];
 
     let mut range_start: Option<u32> = None;
     for line in text.lines() {
@@ -196,7 +237,9 @@ fn parse_unicode_data(path: &Path) -> Vec<u8> {
         let cp = u32::from_str_radix(fields.next().unwrap(), 16).expect("hex codepoint");
         let name = fields.next().unwrap_or("");
         let cat_abbr = fields.next().unwrap_or("Cn");
-        let cat = *abbr_to_code.get(cat_abbr).unwrap_or(&GC_UNASSIGNED);
+        let cat = *abbr_to_code
+            .get(cat_abbr)
+            .unwrap_or(&u32::from(GC_UNASSIGNED));
 
         if name.ends_with(", First>") {
             range_start = Some(cp);
@@ -216,9 +259,9 @@ fn parse_unicode_data(path: &Path) -> Vec<u8> {
 
 /// Parse a single named boolean property from a PropList-style file (ranges of
 /// the form `XXXX` or `XXXX..YYYY ; PropName # ...`).
-fn parse_binary_prop(path: &Path, prop: &str) -> Vec<u8> {
+fn parse_binary_prop(path: &Path, prop: &str) -> Vec<u32> {
     let text = fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
-    let mut codes = vec![0u8; NUM_CODEPOINTS];
+    let mut codes = vec![0u32; NUM_CODEPOINTS];
     for line in text.lines() {
         let line = line.split('#').next().unwrap_or("").trim();
         if line.is_empty() {
@@ -230,21 +273,55 @@ fn parse_binary_prop(path: &Path, prop: &str) -> Vec<u8> {
         if name != prop {
             continue;
         }
-        let (start, end) = match range.split_once("..") {
-            Some((a, b)) => (
-                u32::from_str_radix(a.trim(), 16).unwrap(),
-                u32::from_str_radix(b.trim(), 16).unwrap(),
-            ),
-            None => {
-                let v = u32::from_str_radix(range, 16).unwrap();
-                (v, v)
-            }
-        };
+        let (start, end) = parse_range(range);
         for c in start..=end {
             codes[c as usize] = 1;
         }
     }
     codes
+}
+
+/// Parse a `range ; VALUE # comment` file (e.g. Scripts.txt, EastAsianWidth.txt)
+/// into a per-codepoint code table, mapping each VALUE token through `val_code`.
+/// Lines whose value is not in `val_code` are ignored. `@missing` / comment lines
+/// are skipped.
+fn parse_ranged(path: &Path, val_code: &BTreeMap<&str, u32>, default: u32) -> Vec<u32> {
+    let text = fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
+    let mut codes = vec![default; NUM_CODEPOINTS];
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let mut parts = line.split(';');
+        let range = parts.next().unwrap().trim();
+        // Value is the first whitespace-delimited token after the ';', before '#'.
+        let rest = parts.next().unwrap_or("");
+        let value = rest.split('#').next().unwrap_or("").trim();
+        let value = value.split_whitespace().next().unwrap_or("");
+        let Some(&code) = val_code.get(value) else {
+            continue;
+        };
+        let (start, end) = parse_range(range);
+        for c in start..=end {
+            codes[c as usize] = code;
+        }
+    }
+    codes
+}
+
+/// Parse a `XXXX` or `XXXX..YYYY` hex range.
+fn parse_range(range: &str) -> (u32, u32) {
+    match range.split_once("..") {
+        Some((a, b)) => (
+            u32::from_str_radix(a.trim(), 16).unwrap(),
+            u32::from_str_radix(b.trim(), 16).unwrap(),
+        ),
+        None => {
+            let v = u32::from_str_radix(range.trim(), 16).unwrap();
+            (v, v)
+        }
+    }
 }
 
 /// Tier feature gating a whole dispatcher page (page 0 is handled separately).
@@ -266,8 +343,8 @@ fn emit_lookup(
     fn_name: &str,
     prefix: &str,
     ret_ty: &str,
-    codes: &[u8],
-    default_code: u8,
+    codes: &[u32],
+    default_code: u32,
     render: &[String],
 ) {
     let default_expr = &render[default_code as usize];
@@ -345,7 +422,7 @@ fn emit_lookup(
 }
 
 /// Convenience wrapper for boolean properties.
-fn emit_bool_lookup(out: &mut String, fn_name: &str, prefix: &str, codes: &[u8]) {
+fn emit_bool_lookup(out: &mut String, fn_name: &str, prefix: &str, codes: &[u32]) {
     let render = [String::from("false"), String::from("true")];
     emit_lookup(out, fn_name, prefix, "bool", codes, 0, &render);
 }
@@ -355,9 +432,9 @@ fn emit_bool_lookup(out: &mut String, fn_name: &str, prefix: &str, codes: &[u8])
 /// prefixed with `arm_cfg` (e.g. a latin1 cfg, or empty).
 fn emit_arms(
     out: &mut String,
-    slice: &[u8],
+    slice: &[u32],
     base: usize,
-    default_code: u8,
+    default_code: u32,
     render: &[String],
     arm_cfg: &str,
 ) {

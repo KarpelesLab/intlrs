@@ -34,6 +34,7 @@
 pub mod category;
 mod generated;
 mod predicates;
+pub mod width;
 
 pub use category::{GeneralCategory, Group};
 pub use generated::general_category::UNICODE_VERSION;
@@ -42,3 +43,4 @@ pub use predicates::{
     is_decimal_digit, is_format, is_letter, is_lowercase, is_mark, is_numeric, is_punctuation,
     is_separator, is_symbol, is_uppercase, is_whitespace, CharExt,
 };
+pub use width::{east_asian_width, east_asian_width_u32, EastAsianWidth};
