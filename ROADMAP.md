@@ -128,9 +128,9 @@ shaped data source than UCD. This phase is the gate for Phase 4.
 
 Each needs Phase 3. These are where "ICU parity" mostly lives.
 
-- 🧱 **Number formatting** — decimal, grouping, currency, percent, scientific,
-  compact (1.2K); parsing too. Prereq: plural rules (currency display),
-  number symbols.
+- 🟡 **Number formatting** — `intl::number::format_decimal` / `format_percent`
+  (CLDR symbols + grouping/fraction patterns; curated locale set). Still to add:
+  currency, scientific, compact, parsing, native digit systems.
 - 🧱 **Rule-based number formatting (RBNF)** — spell-out, ordinals, numbering
   systems beyond Latin.
 - 🧱 **Calendars** — Gregorian + non-Gregorian (Islamic, Hebrew, Japanese,

@@ -69,7 +69,12 @@ Beyond the `unicode` module:
   `plural_category("pl", &PluralOperands::from_int(5))` → `Many`. Validated
   against the CLDR sample data (cardinal + ordinal).
 
-These start the CLDR/locale layer toward number/message formatting.
+- `intl::number` (alloc) formats numbers in a locale's conventions —
+  `format_decimal("de", 1234.5)` → `"1.234,5"`, `format_decimal("hi", 1234567.0)`
+  → `"12,34,567"` (Indian grouping), `format_percent("en", 0.5)` → `"50%"`.
+  Driven by CLDR symbols + patterns for a curated locale set.
+
+These build out the CLDR/locale layer toward full ICU-style formatting.
 
 ## Features
 

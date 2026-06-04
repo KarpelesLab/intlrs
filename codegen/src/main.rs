@@ -260,6 +260,13 @@ fn main() {
         &root.join("data/cldr/48/ordinals.json"),
     );
 
+    // ---- CLDR number formats (UTS #35) ----
+    emit_numbers(
+        &out_dir,
+        &mut modules,
+        &root.join("data/cldr/48/numbers.json"),
+    );
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -1436,6 +1443,76 @@ fn emit_plural_fn(out: &mut String, path: &Path, section: &str, fn_name: &str, k
         );
     }
     out.push_str("        _ => None,\n    }\n}\n\n");
+}
+
+/// Emit `generated/numbers.rs`: per-locale CLDR number symbols and the resolved
+/// standard decimal / percent patterns.
+fn emit_numbers(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
+    let text = fs::read_to_string(path).expect("read numbers.json");
+    let json = json_parse(&text);
+    let locales = json.get("locales").expect("locales");
+
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str(
+        "use crate::number::{NumberSpec, Pattern};\n\n\
+         /// CLDR number spec for an exact (lowercased) locale key, or `None`.\n\
+         pub(crate) fn number_spec(lang: &str) -> Option<NumberSpec> {\n    Some(match lang {\n",
+    );
+    for (lang, n) in locales.entries() {
+        let s = |k: &str| n.get(k).and_then(Json::as_str).unwrap_or("");
+        let (decimal, group) = (s("decimal"), s("group"));
+        let (minus, plus, percent) = (s("minus"), s("plus"), s("percent"));
+        let dec = parse_number_pattern(s("decimalPattern"), percent);
+        let pct = parse_number_pattern(s("percentPattern"), percent);
+        let _ = write!(
+            out,
+            "        {:?} => NumberSpec {{ decimal: {decimal:?}, group: {group:?}, minus: {minus:?}, plus: {plus:?}, percent: {percent:?}, dec: {dec}, pct: {pct} }},\n",
+            lang.to_ascii_lowercase()
+        );
+    }
+    out.push_str("        _ => return None,\n    })\n}\n");
+    write_module(out_dir, modules, "numbers", &out);
+}
+
+/// Parse a CLDR number pattern (e.g. `#,##0.###`, `#,##0 %`) into a Rust
+/// `Pattern { ... }` literal. `%` in the affixes is replaced by `percent_sym`.
+fn parse_number_pattern(pat: &str, percent_sym: &str) -> String {
+    let pat = pat.split(';').next().unwrap_or(pat); // positive subpattern only
+    let is_core = |c: char| matches!(c, '#' | '0' | '.' | ',');
+    let first = pat.find(is_core).unwrap_or(0);
+    let last = pat
+        .rfind(is_core)
+        .map_or(0, |i| i + pat[i..].chars().next().unwrap().len_utf8());
+    let prefix = pat[..first].replace('%', percent_sym);
+    let suffix = pat[last..].replace('%', percent_sym);
+    let core = &pat[first..last];
+
+    let (int_part, frac_part) = match core.split_once('.') {
+        Some((a, b)) => (a, b),
+        None => (core, ""),
+    };
+    let min_int = int_part.chars().filter(|&c| c == '0').count().max(1) as u8;
+    let groups: Vec<&str> = int_part.split(',').collect();
+    let (primary, secondary) = if groups.len() < 2 {
+        (0u8, 0u8)
+    } else {
+        let primary = groups[groups.len() - 1].chars().count() as u8;
+        let secondary = if groups.len() >= 3 {
+            groups[groups.len() - 2].chars().count() as u8
+        } else {
+            primary
+        };
+        (primary, secondary)
+    };
+    let min_frac = frac_part.chars().filter(|&c| c == '0').count() as u8;
+    let max_frac = frac_part
+        .chars()
+        .filter(|&c| matches!(c, '0' | '#'))
+        .count() as u8;
+    format!(
+        "Pattern {{ prefix: {prefix:?}, suffix: {suffix:?}, min_int: {min_int}, min_frac: {min_frac}, max_frac: {max_frac}, primary_group: {primary}, secondary_group: {secondary} }}"
+    )
 }
 
 /// Compile a CLDR plural-rule condition (e.g. `i = 1 and v = 0`) into a Rust
