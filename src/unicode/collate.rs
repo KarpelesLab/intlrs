@@ -431,7 +431,8 @@ impl Tailoring {
         let chars: Vec<char> = rules.chars().filter(|c| !c.is_whitespace()).collect();
         let mut entries: Vec<(Vec<char>, u64)> = Vec::new();
         let mut anchor_primary = 0u32;
-        let mut offset = 0u32;
+        // Running offsets within each level relative to the reset anchor.
+        let (mut p_off, mut s_off, mut t_off) = (0u32, 0u32, 0u32);
         let mut i = 0;
         while i < chars.len() {
             match chars[i] {
@@ -440,25 +441,31 @@ impl Tailoring {
                     let anchor = *chars.get(i)?;
                     anchor_primary =
                         primary(collation_elements(alloc::vec![anchor]).first().copied()?) as u32;
-                    offset = 0;
+                    (p_off, s_off, t_off) = (0, 0, 0);
                     i += 1;
                 }
                 '<' | '=' => {
-                    let primary_rel = chars[i] == '<';
-                    // Consume a run of the same operator (`<<`, `<<<` → one step).
+                    // The number of `<`s is the relation level: 1 = primary,
+                    // 2 = secondary, 3 = tertiary; `=` is identity (no change).
+                    let mut level = 0u32;
                     while i < chars.len() && (chars[i] == '<' || chars[i] == '=') {
+                        if chars[i] == '<' {
+                            level += 1;
+                        }
                         i += 1;
                     }
                     let target = *chars.get(i)?;
                     i += 1;
-                    if primary_rel {
-                        offset += 1;
-                    }
                     if anchor_primary == 0 {
                         return None; // relation before a reset
                     }
-                    let p = anchor_primary + offset;
-                    Self::push_letter(&mut entries, target, p);
+                    match level {
+                        0 => {}                                         // `=` identity
+                        1 => (p_off, s_off, t_off) = (p_off + 1, 0, 0), // primary
+                        2 => (s_off, t_off) = (s_off + 1, 0),           // secondary
+                        _ => t_off += 1,                                // tertiary
+                    }
+                    Self::push_letter(&mut entries, target, anchor_primary + p_off, s_off, t_off);
                 }
                 _ => i += 1, // ignore anything else (comments, options)
             }
@@ -472,12 +479,19 @@ impl Tailoring {
     }
 
     /// Add tailored entries for `target` (lower form) and its upper-case form,
-    /// each as its NFD sequence mapped to a primary-`p` collation element.
-    fn push_letter(entries: &mut Vec<(Vec<char>, u64)>, target: char, p: u32) {
-        for (ch, tert) in [(target, 0x0002u32), (upper(target), 0x0008)] {
+    /// mapping each NFD sequence to a collation element at primary `p`, with the
+    /// base secondary/tertiary bumped by `s_off`/`t_off` (and case in tertiary).
+    fn push_letter(
+        entries: &mut Vec<(Vec<char>, u64)>,
+        target: char,
+        p: u32,
+        s_off: u32,
+        t_off: u32,
+    ) {
+        for (ch, case_t) in [(target, 0x0002u32), (upper(target), 0x0008)] {
             let seq: Vec<char> = nfd(core::iter::once(ch)).collect();
             if !seq.is_empty() {
-                entries.push((seq, pack(p, 0x0020, tert)));
+                entries.push((seq, pack(p, 0x0020 + s_off, case_t + t_off)));
             }
         }
     }

@@ -66,3 +66,21 @@ fn locale_tailoring() {
     // In default DUCET, å sorts near a (before z) — tailoring changed that.
     assert_eq!(intl::unicode::collate::compare("å", "z"), Ordering::Less);
 }
+
+#[test]
+fn tailoring_levels() {
+    use intl::unicode::collate::{Strength, Tailoring};
+    // Secondary tailoring: ö sorts after o but only at the secondary level
+    // (so at primary strength they'd be equal). "&o << ö".
+    let t = Tailoring::parse("&o << ö").unwrap();
+    // Primary reordering still works (the earlier Swedish chain).
+    let sv = Tailoring::parse("&z < å < ä < ö").unwrap();
+    assert_eq!(sv.compare("z", "ä"), Ordering::Less);
+    // Secondary: o < ö, and both share a primary (ö just after o).
+    assert_eq!(t.compare("o", "ö"), Ordering::Less);
+    assert_eq!(t.compare("oa", "öa"), Ordering::Less);
+    // `=` identity: w sorts identical to v.
+    let id = Tailoring::parse("&v = w").unwrap();
+    let _ = Strength::Primary; // strength type is reachable
+    assert_eq!(id.compare("v", "w"), Ordering::Equal);
+}
