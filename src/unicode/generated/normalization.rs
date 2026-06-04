@@ -17414,3 +17414,3066 @@ const fn co_p16d(b: u8) -> Option<&'static [(char, char)]> {
         _ => None,
     }
 }
+
+#[inline]
+pub(crate) const fn nfc_qc(cp: u32) -> u8 {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => qc_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => qc_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => qc_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => qc_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => qc_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => qc_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => qc_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => qc_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => qc_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => qc_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x011 => qc_p11(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => qc_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => qc_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => qc_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => qc_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x023 => qc_p23(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02a => qc_p2a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => qc_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0f9 => 0,
+        #[cfg(feature = "bmp")]
+        0x0fa => qc_pfa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => qc_pfb(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => qc_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => qc_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => qc_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => qc_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => qc_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => qc_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => qc_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => qc_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => qc_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x2f8 => 0,
+        #[cfg(feature = "full")]
+        0x2f9 => 0,
+        #[cfg(feature = "full")]
+        0x2fa => qc_p2fa(cp as u8),
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn qc_p0(b: u8) -> u8 {
+    match b {
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p3(b: u8) -> u8 {
+    match b {
+        0x00..=0x04 => 1,
+        0x06..=0x0c => 1,
+        0x0f => 1,
+        0x11 => 1,
+        0x13..=0x14 => 1,
+        0x1b => 1,
+        0x23..=0x28 => 1,
+        0x2d..=0x2e => 1,
+        0x30..=0x31 => 1,
+        0x38 => 1,
+        0x40..=0x41 => 0,
+        0x42 => 1,
+        0x43..=0x44 => 0,
+        0x45 => 1,
+        0x74 => 0,
+        0x7e => 0,
+        0x87 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p6(b: u8) -> u8 {
+    match b {
+        0x53..=0x55 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p9(b: u8) -> u8 {
+    match b {
+        0x3c => 1,
+        0x58..=0x5f => 0,
+        0xbe => 1,
+        0xd7 => 1,
+        0xdc..=0xdd => 0,
+        0xdf => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_pa(b: u8) -> u8 {
+    match b {
+        0x33 => 0,
+        0x36 => 0,
+        0x59..=0x5b => 0,
+        0x5e => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_pb(b: u8) -> u8 {
+    match b {
+        0x3e => 1,
+        0x56..=0x57 => 1,
+        0x5c..=0x5d => 0,
+        0xbe => 1,
+        0xd7 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_pc(b: u8) -> u8 {
+    match b {
+        0x56 => 1,
+        0xc2 => 1,
+        0xd5..=0xd6 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_pd(b: u8) -> u8 {
+    match b {
+        0x3e => 1,
+        0x57 => 1,
+        0xca => 1,
+        0xcf => 1,
+        0xdf => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_pf(b: u8) -> u8 {
+    match b {
+        0x43 => 0,
+        0x4d => 0,
+        0x52 => 0,
+        0x57 => 0,
+        0x5c => 0,
+        0x69 => 0,
+        0x73 => 0,
+        0x75..=0x76 => 0,
+        0x78 => 0,
+        0x81 => 0,
+        0x93 => 0,
+        0x9d => 0,
+        0xa2 => 0,
+        0xa7 => 0,
+        0xac => 0,
+        0xb9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p10(b: u8) -> u8 {
+    match b {
+        0x2e => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p11(b: u8) -> u8 {
+    match b {
+        0x61..=0x75 => 1,
+        0xa8..=0xc2 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p1b(b: u8) -> u8 {
+    match b {
+        0x35 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p1f(b: u8) -> u8 {
+    match b {
+        0x71 => 0,
+        0x73 => 0,
+        0x75 => 0,
+        0x77 => 0,
+        0x79 => 0,
+        0x7b => 0,
+        0x7d => 0,
+        0xbb => 0,
+        0xbe => 0,
+        0xc9 => 0,
+        0xcb => 0,
+        0xd3 => 0,
+        0xdb => 0,
+        0xe3 => 0,
+        0xeb => 0,
+        0xee..=0xef => 0,
+        0xf9 => 0,
+        0xfb => 0,
+        0xfd => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p20(b: u8) -> u8 {
+    match b {
+        0x00..=0x01 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p21(b: u8) -> u8 {
+    match b {
+        0x26 => 0,
+        0x2a..=0x2b => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p23(b: u8) -> u8 {
+    match b {
+        0x29..=0x2a => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p2a(b: u8) -> u8 {
+    match b {
+        0xdc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_p30(b: u8) -> u8 {
+    match b {
+        0x99..=0x9a => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_pfa(b: u8) -> u8 {
+    match b {
+        0x00..=0x0d => 0,
+        0x10 => 0,
+        0x12 => 0,
+        0x15..=0x1e => 0,
+        0x20 => 0,
+        0x22 => 0,
+        0x25..=0x26 => 0,
+        0x2a..=0x6d => 0,
+        0x70..=0xd9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qc_pfb(b: u8) -> u8 {
+    match b {
+        0x1d => 0,
+        0x1f => 0,
+        0x2a..=0x36 => 0,
+        0x38..=0x3c => 0,
+        0x3e => 0,
+        0x40..=0x41 => 0,
+        0x43..=0x44 => 0,
+        0x46..=0x4e => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p110(b: u8) -> u8 {
+    match b {
+        0xba => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p111(b: u8) -> u8 {
+    match b {
+        0x27 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p113(b: u8) -> u8 {
+    match b {
+        0x3e => 1,
+        0x57 => 1,
+        0xb8 => 1,
+        0xbb => 1,
+        0xc2 => 1,
+        0xc5 => 1,
+        0xc7..=0xc9 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p114(b: u8) -> u8 {
+    match b {
+        0xb0 => 1,
+        0xba => 1,
+        0xbd => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p115(b: u8) -> u8 {
+    match b {
+        0xaf => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p119(b: u8) -> u8 {
+    match b {
+        0x30 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p161(b: u8) -> u8 {
+    match b {
+        0x1e..=0x29 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p16d(b: u8) -> u8 {
+    match b {
+        0x67..=0x68 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p1d1(b: u8) -> u8 {
+    match b {
+        0x5e..=0x64 => 0,
+        0xbb..=0xc0 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qc_p2fa(b: u8) -> u8 {
+    match b {
+        0x00..=0x1d => 0,
+        _ => 2,
+    }
+}
+
+#[inline]
+pub(crate) const fn nfd_qc(cp: u32) -> u8 {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => qd_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => qd_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => qd_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => qd_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => qd_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => qd_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => qd_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => qd_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => qd_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => qd_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => qd_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => qd_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => qd_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => qd_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => qd_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => qd_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => qd_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => qd_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x022 => qd_p22(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x023 => qd_p23(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02a => qd_p2a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => qd_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ac => 0,
+        #[cfg(feature = "bmp")]
+        0x0ad => 0,
+        #[cfg(feature = "bmp")]
+        0x0ae => 0,
+        #[cfg(feature = "bmp")]
+        0x0af => 0,
+        #[cfg(feature = "bmp")]
+        0x0b0 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b1 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b2 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b3 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b4 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b5 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b6 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b7 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b8 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b9 => 0,
+        #[cfg(feature = "bmp")]
+        0x0ba => 0,
+        #[cfg(feature = "bmp")]
+        0x0bb => 0,
+        #[cfg(feature = "bmp")]
+        0x0bc => 0,
+        #[cfg(feature = "bmp")]
+        0x0bd => 0,
+        #[cfg(feature = "bmp")]
+        0x0be => 0,
+        #[cfg(feature = "bmp")]
+        0x0bf => 0,
+        #[cfg(feature = "bmp")]
+        0x0c0 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c1 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c2 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c3 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c4 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c5 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c6 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c7 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c8 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c9 => 0,
+        #[cfg(feature = "bmp")]
+        0x0ca => 0,
+        #[cfg(feature = "bmp")]
+        0x0cb => 0,
+        #[cfg(feature = "bmp")]
+        0x0cc => 0,
+        #[cfg(feature = "bmp")]
+        0x0cd => 0,
+        #[cfg(feature = "bmp")]
+        0x0ce => 0,
+        #[cfg(feature = "bmp")]
+        0x0cf => 0,
+        #[cfg(feature = "bmp")]
+        0x0d0 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d1 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d2 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d3 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d4 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d5 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d6 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d7 => qd_pd7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0f9 => 0,
+        #[cfg(feature = "bmp")]
+        0x0fa => qd_pfa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => qd_pfb(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => qd_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => qd_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => qd_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => qd_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => qd_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => qd_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => qd_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => qd_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => qd_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => qd_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x2f8 => 0,
+        #[cfg(feature = "full")]
+        0x2f9 => 0,
+        #[cfg(feature = "full")]
+        0x2fa => qd_p2fa(cp as u8),
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn qd_p0(b: u8) -> u8 {
+    match b {
+        #[cfg(feature = "latin1")]
+        0xc0..=0xc5 => 0,
+        #[cfg(feature = "latin1")]
+        0xc7..=0xcf => 0,
+        #[cfg(feature = "latin1")]
+        0xd1..=0xd6 => 0,
+        #[cfg(feature = "latin1")]
+        0xd9..=0xdd => 0,
+        #[cfg(feature = "latin1")]
+        0xe0..=0xe5 => 0,
+        #[cfg(feature = "latin1")]
+        0xe7..=0xef => 0,
+        #[cfg(feature = "latin1")]
+        0xf1..=0xf6 => 0,
+        #[cfg(feature = "latin1")]
+        0xf9..=0xfd => 0,
+        #[cfg(feature = "latin1")]
+        0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p1(b: u8) -> u8 {
+    match b {
+        0x00..=0x0f => 0,
+        0x12..=0x25 => 0,
+        0x28..=0x30 => 0,
+        0x34..=0x37 => 0,
+        0x39..=0x3e => 0,
+        0x43..=0x48 => 0,
+        0x4c..=0x51 => 0,
+        0x54..=0x65 => 0,
+        0x68..=0x7e => 0,
+        0xa0..=0xa1 => 0,
+        0xaf..=0xb0 => 0,
+        0xcd..=0xdc => 0,
+        0xde..=0xe3 => 0,
+        0xe6..=0xf0 => 0,
+        0xf4..=0xf5 => 0,
+        0xf8..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p2(b: u8) -> u8 {
+    match b {
+        0x00..=0x1b => 0,
+        0x1e..=0x1f => 0,
+        0x26..=0x33 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p3(b: u8) -> u8 {
+    match b {
+        0x40..=0x41 => 0,
+        0x43..=0x44 => 0,
+        0x74 => 0,
+        0x7e => 0,
+        0x85..=0x8a => 0,
+        0x8c => 0,
+        0x8e..=0x90 => 0,
+        0xaa..=0xb0 => 0,
+        0xca..=0xce => 0,
+        0xd3..=0xd4 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p4(b: u8) -> u8 {
+    match b {
+        0x00..=0x01 => 0,
+        0x03 => 0,
+        0x07 => 0,
+        0x0c..=0x0e => 0,
+        0x19 => 0,
+        0x39 => 0,
+        0x50..=0x51 => 0,
+        0x53 => 0,
+        0x57 => 0,
+        0x5c..=0x5e => 0,
+        0x76..=0x77 => 0,
+        0xc1..=0xc2 => 0,
+        0xd0..=0xd3 => 0,
+        0xd6..=0xd7 => 0,
+        0xda..=0xdf => 0,
+        0xe2..=0xe7 => 0,
+        0xea..=0xf5 => 0,
+        0xf8..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p6(b: u8) -> u8 {
+    match b {
+        0x22..=0x26 => 0,
+        0xc0 => 0,
+        0xc2 => 0,
+        0xd3 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p9(b: u8) -> u8 {
+    match b {
+        0x29 => 0,
+        0x31 => 0,
+        0x34 => 0,
+        0x58..=0x5f => 0,
+        0xcb..=0xcc => 0,
+        0xdc..=0xdd => 0,
+        0xdf => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_pa(b: u8) -> u8 {
+    match b {
+        0x33 => 0,
+        0x36 => 0,
+        0x59..=0x5b => 0,
+        0x5e => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_pb(b: u8) -> u8 {
+    match b {
+        0x48 => 0,
+        0x4b..=0x4c => 0,
+        0x5c..=0x5d => 0,
+        0x94 => 0,
+        0xca..=0xcc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_pc(b: u8) -> u8 {
+    match b {
+        0x48 => 0,
+        0xc0 => 0,
+        0xc7..=0xc8 => 0,
+        0xca..=0xcb => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_pd(b: u8) -> u8 {
+    match b {
+        0x4a..=0x4c => 0,
+        0xda => 0,
+        0xdc..=0xde => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_pf(b: u8) -> u8 {
+    match b {
+        0x43 => 0,
+        0x4d => 0,
+        0x52 => 0,
+        0x57 => 0,
+        0x5c => 0,
+        0x69 => 0,
+        0x73 => 0,
+        0x75..=0x76 => 0,
+        0x78 => 0,
+        0x81 => 0,
+        0x93 => 0,
+        0x9d => 0,
+        0xa2 => 0,
+        0xa7 => 0,
+        0xac => 0,
+        0xb9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p10(b: u8) -> u8 {
+    match b {
+        0x26 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p1b(b: u8) -> u8 {
+    match b {
+        0x06 => 0,
+        0x08 => 0,
+        0x0a => 0,
+        0x0c => 0,
+        0x0e => 0,
+        0x12 => 0,
+        0x3b => 0,
+        0x3d => 0,
+        0x40..=0x41 => 0,
+        0x43 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p1e(b: u8) -> u8 {
+    match b {
+        0x00..=0x99 => 0,
+        0x9b => 0,
+        0xa0..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p1f(b: u8) -> u8 {
+    match b {
+        0x00..=0x15 => 0,
+        0x18..=0x1d => 0,
+        0x20..=0x45 => 0,
+        0x48..=0x4d => 0,
+        0x50..=0x57 => 0,
+        0x59 => 0,
+        0x5b => 0,
+        0x5d => 0,
+        0x5f..=0x7d => 0,
+        0x80..=0xb4 => 0,
+        0xb6..=0xbc => 0,
+        0xbe => 0,
+        0xc1..=0xc4 => 0,
+        0xc6..=0xd3 => 0,
+        0xd6..=0xdb => 0,
+        0xdd..=0xef => 0,
+        0xf2..=0xf4 => 0,
+        0xf6..=0xfd => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p20(b: u8) -> u8 {
+    match b {
+        0x00..=0x01 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p21(b: u8) -> u8 {
+    match b {
+        0x26 => 0,
+        0x2a..=0x2b => 0,
+        0x9a..=0x9b => 0,
+        0xae => 0,
+        0xcd..=0xcf => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p22(b: u8) -> u8 {
+    match b {
+        0x04 => 0,
+        0x09 => 0,
+        0x0c => 0,
+        0x24 => 0,
+        0x26 => 0,
+        0x41 => 0,
+        0x44 => 0,
+        0x47 => 0,
+        0x49 => 0,
+        0x60 => 0,
+        0x62 => 0,
+        0x6d..=0x71 => 0,
+        0x74..=0x75 => 0,
+        0x78..=0x79 => 0,
+        0x80..=0x81 => 0,
+        0x84..=0x85 => 0,
+        0x88..=0x89 => 0,
+        0xac..=0xaf => 0,
+        0xe0..=0xe3 => 0,
+        0xea..=0xed => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p23(b: u8) -> u8 {
+    match b {
+        0x29..=0x2a => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p2a(b: u8) -> u8 {
+    match b {
+        0xdc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_p30(b: u8) -> u8 {
+    match b {
+        0x4c => 0,
+        0x4e => 0,
+        0x50 => 0,
+        0x52 => 0,
+        0x54 => 0,
+        0x56 => 0,
+        0x58 => 0,
+        0x5a => 0,
+        0x5c => 0,
+        0x5e => 0,
+        0x60 => 0,
+        0x62 => 0,
+        0x65 => 0,
+        0x67 => 0,
+        0x69 => 0,
+        0x70..=0x71 => 0,
+        0x73..=0x74 => 0,
+        0x76..=0x77 => 0,
+        0x79..=0x7a => 0,
+        0x7c..=0x7d => 0,
+        0x94 => 0,
+        0x9e => 0,
+        0xac => 0,
+        0xae => 0,
+        0xb0 => 0,
+        0xb2 => 0,
+        0xb4 => 0,
+        0xb6 => 0,
+        0xb8 => 0,
+        0xba => 0,
+        0xbc => 0,
+        0xbe => 0,
+        0xc0 => 0,
+        0xc2 => 0,
+        0xc5 => 0,
+        0xc7 => 0,
+        0xc9 => 0,
+        0xd0..=0xd1 => 0,
+        0xd3..=0xd4 => 0,
+        0xd6..=0xd7 => 0,
+        0xd9..=0xda => 0,
+        0xdc..=0xdd => 0,
+        0xf4 => 0,
+        0xf7..=0xfa => 0,
+        0xfe => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_pd7(b: u8) -> u8 {
+    match b {
+        0x00..=0xa3 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_pfa(b: u8) -> u8 {
+    match b {
+        0x00..=0x0d => 0,
+        0x10 => 0,
+        0x12 => 0,
+        0x15..=0x1e => 0,
+        0x20 => 0,
+        0x22 => 0,
+        0x25..=0x26 => 0,
+        0x2a..=0x6d => 0,
+        0x70..=0xd9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qd_pfb(b: u8) -> u8 {
+    match b {
+        0x1d => 0,
+        0x1f => 0,
+        0x2a..=0x36 => 0,
+        0x38..=0x3c => 0,
+        0x3e => 0,
+        0x40..=0x41 => 0,
+        0x43..=0x44 => 0,
+        0x46..=0x4e => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p105(b: u8) -> u8 {
+    match b {
+        0xc9 => 0,
+        0xe4 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p110(b: u8) -> u8 {
+    match b {
+        0x9a => 0,
+        0x9c => 0,
+        0xab => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p111(b: u8) -> u8 {
+    match b {
+        0x2e..=0x2f => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p113(b: u8) -> u8 {
+    match b {
+        0x4b..=0x4c => 0,
+        0x83 => 0,
+        0x85 => 0,
+        0x8e => 0,
+        0x91 => 0,
+        0xc5 => 0,
+        0xc7..=0xc8 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p114(b: u8) -> u8 {
+    match b {
+        0xbb..=0xbc => 0,
+        0xbe => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p115(b: u8) -> u8 {
+    match b {
+        0xba..=0xbb => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p119(b: u8) -> u8 {
+    match b {
+        0x38 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p161(b: u8) -> u8 {
+    match b {
+        0x21..=0x28 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p16d(b: u8) -> u8 {
+    match b {
+        0x68..=0x6a => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p1d1(b: u8) -> u8 {
+    match b {
+        0x5e..=0x64 => 0,
+        0xbb..=0xc0 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qd_p2fa(b: u8) -> u8 {
+    match b {
+        0x00..=0x1d => 0,
+        _ => 2,
+    }
+}
+
+#[inline]
+pub(crate) const fn nfkc_qc(cp: u32) -> u8 {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => qe_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => qe_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => qe_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => qe_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => qe_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => qe_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => qe_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => qe_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => qe_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => qe_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => qe_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => qe_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => qe_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => qe_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x011 => qe_p11(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => qe_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => qe_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => qe_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => qe_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => qe_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => qe_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x022 => qe_p22(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x023 => qe_p23(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => qe_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02a => qe_p2a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => qe_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => qe_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02e => qe_p2e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02f => qe_p2f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => qe_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x031 => qe_p31(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x032 => qe_p32(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x033 => 0,
+        #[cfg(feature = "bmp")]
+        0x0a6 => qe_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => qe_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => qe_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0f9 => 0,
+        #[cfg(feature = "bmp")]
+        0x0fa => qe_pfa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => qe_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fc => 0,
+        #[cfg(feature = "bmp")]
+        0x0fd => qe_pfd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => qe_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => qe_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x107 => qe_p107(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => qe_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => qe_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => qe_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => qe_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => qe_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => qe_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => qe_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => qe_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cc => qe_p1cc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => qe_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d4 => qe_p1d4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d5 => qe_p1d5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d6 => qe_p1d6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d7 => qe_p1d7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => qe_p1e0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1ee => qe_p1ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f1 => qe_p1f1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f2 => qe_p1f2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1fb => qe_p1fb(cp as u8),
+        #[cfg(feature = "full")]
+        0x2f8 => 0,
+        #[cfg(feature = "full")]
+        0x2f9 => 0,
+        #[cfg(feature = "full")]
+        0x2fa => qe_p2fa(cp as u8),
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn qe_p0(b: u8) -> u8 {
+    match b {
+        #[cfg(feature = "latin1")]
+        0xa0 => 0,
+        #[cfg(feature = "latin1")]
+        0xa8 => 0,
+        #[cfg(feature = "latin1")]
+        0xaa => 0,
+        #[cfg(feature = "latin1")]
+        0xaf => 0,
+        #[cfg(feature = "latin1")]
+        0xb2..=0xb5 => 0,
+        #[cfg(feature = "latin1")]
+        0xb8..=0xba => 0,
+        #[cfg(feature = "latin1")]
+        0xbc..=0xbe => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p1(b: u8) -> u8 {
+    match b {
+        0x32..=0x33 => 0,
+        0x3f..=0x40 => 0,
+        0x49 => 0,
+        0x7f => 0,
+        0xc4..=0xcc => 0,
+        0xf1..=0xf3 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p2(b: u8) -> u8 {
+    match b {
+        0xb0..=0xb8 => 0,
+        0xd8..=0xdd => 0,
+        0xe0..=0xe4 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p3(b: u8) -> u8 {
+    match b {
+        0x00..=0x04 => 1,
+        0x06..=0x0c => 1,
+        0x0f => 1,
+        0x11 => 1,
+        0x13..=0x14 => 1,
+        0x1b => 1,
+        0x23..=0x28 => 1,
+        0x2d..=0x2e => 1,
+        0x30..=0x31 => 1,
+        0x38 => 1,
+        0x40..=0x41 => 0,
+        0x42 => 1,
+        0x43..=0x44 => 0,
+        0x45 => 1,
+        0x74 => 0,
+        0x7a => 0,
+        0x7e => 0,
+        0x84..=0x85 => 0,
+        0x87 => 0,
+        0xd0..=0xd6 => 0,
+        0xf0..=0xf2 => 0,
+        0xf4..=0xf5 => 0,
+        0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p5(b: u8) -> u8 {
+    match b {
+        0x87 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p6(b: u8) -> u8 {
+    match b {
+        0x53..=0x55 => 1,
+        0x75..=0x78 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p9(b: u8) -> u8 {
+    match b {
+        0x3c => 1,
+        0x58..=0x5f => 0,
+        0xbe => 1,
+        0xd7 => 1,
+        0xdc..=0xdd => 0,
+        0xdf => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pa(b: u8) -> u8 {
+    match b {
+        0x33 => 0,
+        0x36 => 0,
+        0x59..=0x5b => 0,
+        0x5e => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pb(b: u8) -> u8 {
+    match b {
+        0x3e => 1,
+        0x56..=0x57 => 1,
+        0x5c..=0x5d => 0,
+        0xbe => 1,
+        0xd7 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pc(b: u8) -> u8 {
+    match b {
+        0x56 => 1,
+        0xc2 => 1,
+        0xd5..=0xd6 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pd(b: u8) -> u8 {
+    match b {
+        0x3e => 1,
+        0x57 => 1,
+        0xca => 1,
+        0xcf => 1,
+        0xdf => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pe(b: u8) -> u8 {
+    match b {
+        0x33 => 0,
+        0xb3 => 0,
+        0xdc..=0xdd => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pf(b: u8) -> u8 {
+    match b {
+        0x0c => 0,
+        0x43 => 0,
+        0x4d => 0,
+        0x52 => 0,
+        0x57 => 0,
+        0x5c => 0,
+        0x69 => 0,
+        0x73 => 0,
+        0x75..=0x79 => 0,
+        0x81 => 0,
+        0x93 => 0,
+        0x9d => 0,
+        0xa2 => 0,
+        0xa7 => 0,
+        0xac => 0,
+        0xb9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p10(b: u8) -> u8 {
+    match b {
+        0x2e => 1,
+        0xfc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p11(b: u8) -> u8 {
+    match b {
+        0x61..=0x75 => 1,
+        0xa8..=0xc2 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p1b(b: u8) -> u8 {
+    match b {
+        0x35 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p1d(b: u8) -> u8 {
+    match b {
+        0x2c..=0x2e => 0,
+        0x30..=0x3a => 0,
+        0x3c..=0x4d => 0,
+        0x4f..=0x6a => 0,
+        0x78 => 0,
+        0x9b..=0xbf => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p1e(b: u8) -> u8 {
+    match b {
+        0x9a..=0x9b => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p1f(b: u8) -> u8 {
+    match b {
+        0x71 => 0,
+        0x73 => 0,
+        0x75 => 0,
+        0x77 => 0,
+        0x79 => 0,
+        0x7b => 0,
+        0x7d => 0,
+        0xbb => 0,
+        0xbd..=0xc1 => 0,
+        0xc9 => 0,
+        0xcb => 0,
+        0xcd..=0xcf => 0,
+        0xd3 => 0,
+        0xdb => 0,
+        0xdd..=0xdf => 0,
+        0xe3 => 0,
+        0xeb => 0,
+        0xed..=0xef => 0,
+        0xf9 => 0,
+        0xfb => 0,
+        0xfd..=0xfe => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p20(b: u8) -> u8 {
+    match b {
+        0x00..=0x0a => 0,
+        0x11 => 0,
+        0x17 => 0,
+        0x24..=0x26 => 0,
+        0x2f => 0,
+        0x33..=0x34 => 0,
+        0x36..=0x37 => 0,
+        0x3c => 0,
+        0x3e => 0,
+        0x47..=0x49 => 0,
+        0x57 => 0,
+        0x5f => 0,
+        0x70..=0x71 => 0,
+        0x74..=0x8e => 0,
+        0x90..=0x9c => 0,
+        0xa8 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p21(b: u8) -> u8 {
+    match b {
+        0x00..=0x03 => 0,
+        0x05..=0x07 => 0,
+        0x09..=0x13 => 0,
+        0x15..=0x16 => 0,
+        0x19..=0x1d => 0,
+        0x20..=0x22 => 0,
+        0x24 => 0,
+        0x26 => 0,
+        0x28 => 0,
+        0x2a..=0x2d => 0,
+        0x2f..=0x31 => 0,
+        0x33..=0x39 => 0,
+        0x3b..=0x40 => 0,
+        0x45..=0x49 => 0,
+        0x50..=0x7f => 0,
+        0x89 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p22(b: u8) -> u8 {
+    match b {
+        0x2c..=0x2d => 0,
+        0x2f..=0x30 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p23(b: u8) -> u8 {
+    match b {
+        0x29..=0x2a => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p24(b: u8) -> u8 {
+    match b {
+        0x60..=0xea => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p2a(b: u8) -> u8 {
+    match b {
+        0x0c => 0,
+        0x74..=0x76 => 0,
+        0xdc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p2c(b: u8) -> u8 {
+    match b {
+        0x7c..=0x7d => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p2d(b: u8) -> u8 {
+    match b {
+        0x6f => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p2e(b: u8) -> u8 {
+    match b {
+        0x9f => 0,
+        0xf3 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p2f(b: u8) -> u8 {
+    match b {
+        0x00..=0xd5 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p30(b: u8) -> u8 {
+    match b {
+        0x00 => 0,
+        0x36 => 0,
+        0x38..=0x3a => 0,
+        0x99..=0x9a => 1,
+        0x9b..=0x9c => 0,
+        0x9f => 0,
+        0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p31(b: u8) -> u8 {
+    match b {
+        0x31..=0x8e => 0,
+        0x92..=0x9f => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_p32(b: u8) -> u8 {
+    match b {
+        0x00..=0x1e => 0,
+        0x20..=0x47 => 0,
+        0x50..=0x7e => 0,
+        0x80..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pa6(b: u8) -> u8 {
+    match b {
+        0x9c..=0x9d => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pa7(b: u8) -> u8 {
+    match b {
+        0x70 => 0,
+        0xf1..=0xf4 => 0,
+        0xf8..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pab(b: u8) -> u8 {
+    match b {
+        0x5c..=0x5f => 0,
+        0x69 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pfa(b: u8) -> u8 {
+    match b {
+        0x00..=0x0d => 0,
+        0x10 => 0,
+        0x12 => 0,
+        0x15..=0x1e => 0,
+        0x20 => 0,
+        0x22 => 0,
+        0x25..=0x26 => 0,
+        0x2a..=0x6d => 0,
+        0x70..=0xd9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pfb(b: u8) -> u8 {
+    match b {
+        0x00..=0x06 => 0,
+        0x13..=0x17 => 0,
+        0x1d => 0,
+        0x1f..=0x36 => 0,
+        0x38..=0x3c => 0,
+        0x3e => 0,
+        0x40..=0x41 => 0,
+        0x43..=0x44 => 0,
+        0x46..=0xb1 => 0,
+        0xd3..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pfd(b: u8) -> u8 {
+    match b {
+        0x00..=0x3d => 0,
+        0x50..=0x8f => 0,
+        0x92..=0xc7 => 0,
+        0xf0..=0xfc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pfe(b: u8) -> u8 {
+    match b {
+        0x10..=0x19 => 0,
+        0x30..=0x44 => 0,
+        0x47..=0x52 => 0,
+        0x54..=0x66 => 0,
+        0x68..=0x6b => 0,
+        0x70..=0x72 => 0,
+        0x74 => 0,
+        0x76..=0xfc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qe_pff(b: u8) -> u8 {
+    match b {
+        0x01..=0xbe => 0,
+        0xc2..=0xc7 => 0,
+        0xca..=0xcf => 0,
+        0xd2..=0xd7 => 0,
+        0xda..=0xdc => 0,
+        0xe0..=0xe6 => 0,
+        0xe8..=0xee => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p107(b: u8) -> u8 {
+    match b {
+        0x81..=0x85 => 0,
+        0x87..=0xb0 => 0,
+        0xb2..=0xba => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p110(b: u8) -> u8 {
+    match b {
+        0xba => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p111(b: u8) -> u8 {
+    match b {
+        0x27 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p113(b: u8) -> u8 {
+    match b {
+        0x3e => 1,
+        0x57 => 1,
+        0xb8 => 1,
+        0xbb => 1,
+        0xc2 => 1,
+        0xc5 => 1,
+        0xc7..=0xc9 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p114(b: u8) -> u8 {
+    match b {
+        0xb0 => 1,
+        0xba => 1,
+        0xbd => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p115(b: u8) -> u8 {
+    match b {
+        0xaf => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p119(b: u8) -> u8 {
+    match b {
+        0x30 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p161(b: u8) -> u8 {
+    match b {
+        0x1e..=0x29 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p16d(b: u8) -> u8 {
+    match b {
+        0x67..=0x68 => 1,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1cc(b: u8) -> u8 {
+    match b {
+        0xd6..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1d1(b: u8) -> u8 {
+    match b {
+        0x5e..=0x64 => 0,
+        0xbb..=0xc0 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1d4(b: u8) -> u8 {
+    match b {
+        0x00..=0x54 => 0,
+        0x56..=0x9c => 0,
+        0x9e..=0x9f => 0,
+        0xa2 => 0,
+        0xa5..=0xa6 => 0,
+        0xa9..=0xac => 0,
+        0xae..=0xb9 => 0,
+        0xbb => 0,
+        0xbd..=0xc3 => 0,
+        0xc5..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1d5(b: u8) -> u8 {
+    match b {
+        0x00..=0x05 => 0,
+        0x07..=0x0a => 0,
+        0x0d..=0x14 => 0,
+        0x16..=0x1c => 0,
+        0x1e..=0x39 => 0,
+        0x3b..=0x3e => 0,
+        0x40..=0x44 => 0,
+        0x46 => 0,
+        0x4a..=0x50 => 0,
+        0x52..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1d6(b: u8) -> u8 {
+    match b {
+        0x00..=0xa5 => 0,
+        0xa8..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1d7(b: u8) -> u8 {
+    match b {
+        0x00..=0xcb => 0,
+        0xce..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1e0(b: u8) -> u8 {
+    match b {
+        0x30..=0x6d => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1ee(b: u8) -> u8 {
+    match b {
+        0x00..=0x03 => 0,
+        0x05..=0x1f => 0,
+        0x21..=0x22 => 0,
+        0x24 => 0,
+        0x27 => 0,
+        0x29..=0x32 => 0,
+        0x34..=0x37 => 0,
+        0x39 => 0,
+        0x3b => 0,
+        0x42 => 0,
+        0x47 => 0,
+        0x49 => 0,
+        0x4b => 0,
+        0x4d..=0x4f => 0,
+        0x51..=0x52 => 0,
+        0x54 => 0,
+        0x57 => 0,
+        0x59 => 0,
+        0x5b => 0,
+        0x5d => 0,
+        0x5f => 0,
+        0x61..=0x62 => 0,
+        0x64 => 0,
+        0x67..=0x6a => 0,
+        0x6c..=0x72 => 0,
+        0x74..=0x77 => 0,
+        0x79..=0x7c => 0,
+        0x7e => 0,
+        0x80..=0x89 => 0,
+        0x8b..=0x9b => 0,
+        0xa1..=0xa3 => 0,
+        0xa5..=0xa9 => 0,
+        0xab..=0xbb => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1f1(b: u8) -> u8 {
+    match b {
+        0x00..=0x0a => 0,
+        0x10..=0x2e => 0,
+        0x30..=0x4f => 0,
+        0x6a..=0x6c => 0,
+        0x90 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1f2(b: u8) -> u8 {
+    match b {
+        0x00..=0x02 => 0,
+        0x10..=0x3b => 0,
+        0x40..=0x48 => 0,
+        0x50..=0x51 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p1fb(b: u8) -> u8 {
+    match b {
+        0xf0..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qe_p2fa(b: u8) -> u8 {
+    match b {
+        0x00..=0x1d => 0,
+        _ => 2,
+    }
+}
+
+#[inline]
+pub(crate) const fn nfkd_qc(cp: u32) -> u8 {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => qf_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => qf_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => qf_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => qf_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => qf_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => qf_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => qf_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => qf_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => qf_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => qf_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => qf_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => qf_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => qf_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => qf_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => qf_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => qf_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => qf_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => qf_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => qf_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => qf_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => qf_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x022 => qf_p22(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x023 => qf_p23(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => qf_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02a => qf_p2a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => qf_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => qf_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02e => qf_p2e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02f => qf_p2f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => qf_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x031 => qf_p31(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x032 => qf_p32(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x033 => 0,
+        #[cfg(feature = "bmp")]
+        0x0a6 => qf_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => qf_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => qf_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ac => 0,
+        #[cfg(feature = "bmp")]
+        0x0ad => 0,
+        #[cfg(feature = "bmp")]
+        0x0ae => 0,
+        #[cfg(feature = "bmp")]
+        0x0af => 0,
+        #[cfg(feature = "bmp")]
+        0x0b0 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b1 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b2 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b3 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b4 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b5 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b6 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b7 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b8 => 0,
+        #[cfg(feature = "bmp")]
+        0x0b9 => 0,
+        #[cfg(feature = "bmp")]
+        0x0ba => 0,
+        #[cfg(feature = "bmp")]
+        0x0bb => 0,
+        #[cfg(feature = "bmp")]
+        0x0bc => 0,
+        #[cfg(feature = "bmp")]
+        0x0bd => 0,
+        #[cfg(feature = "bmp")]
+        0x0be => 0,
+        #[cfg(feature = "bmp")]
+        0x0bf => 0,
+        #[cfg(feature = "bmp")]
+        0x0c0 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c1 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c2 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c3 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c4 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c5 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c6 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c7 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c8 => 0,
+        #[cfg(feature = "bmp")]
+        0x0c9 => 0,
+        #[cfg(feature = "bmp")]
+        0x0ca => 0,
+        #[cfg(feature = "bmp")]
+        0x0cb => 0,
+        #[cfg(feature = "bmp")]
+        0x0cc => 0,
+        #[cfg(feature = "bmp")]
+        0x0cd => 0,
+        #[cfg(feature = "bmp")]
+        0x0ce => 0,
+        #[cfg(feature = "bmp")]
+        0x0cf => 0,
+        #[cfg(feature = "bmp")]
+        0x0d0 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d1 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d2 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d3 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d4 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d5 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d6 => 0,
+        #[cfg(feature = "bmp")]
+        0x0d7 => qf_pd7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0f9 => 0,
+        #[cfg(feature = "bmp")]
+        0x0fa => qf_pfa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => qf_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fc => 0,
+        #[cfg(feature = "bmp")]
+        0x0fd => qf_pfd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => qf_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => qf_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => qf_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x107 => qf_p107(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => qf_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => qf_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => qf_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => qf_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => qf_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => qf_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => qf_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => qf_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cc => qf_p1cc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => qf_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d4 => qf_p1d4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d5 => qf_p1d5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d6 => qf_p1d6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d7 => qf_p1d7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => qf_p1e0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1ee => qf_p1ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f1 => qf_p1f1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f2 => qf_p1f2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1fb => qf_p1fb(cp as u8),
+        #[cfg(feature = "full")]
+        0x2f8 => 0,
+        #[cfg(feature = "full")]
+        0x2f9 => 0,
+        #[cfg(feature = "full")]
+        0x2fa => qf_p2fa(cp as u8),
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn qf_p0(b: u8) -> u8 {
+    match b {
+        #[cfg(feature = "latin1")]
+        0xa0 => 0,
+        #[cfg(feature = "latin1")]
+        0xa8 => 0,
+        #[cfg(feature = "latin1")]
+        0xaa => 0,
+        #[cfg(feature = "latin1")]
+        0xaf => 0,
+        #[cfg(feature = "latin1")]
+        0xb2..=0xb5 => 0,
+        #[cfg(feature = "latin1")]
+        0xb8..=0xba => 0,
+        #[cfg(feature = "latin1")]
+        0xbc..=0xbe => 0,
+        #[cfg(feature = "latin1")]
+        0xc0..=0xc5 => 0,
+        #[cfg(feature = "latin1")]
+        0xc7..=0xcf => 0,
+        #[cfg(feature = "latin1")]
+        0xd1..=0xd6 => 0,
+        #[cfg(feature = "latin1")]
+        0xd9..=0xdd => 0,
+        #[cfg(feature = "latin1")]
+        0xe0..=0xe5 => 0,
+        #[cfg(feature = "latin1")]
+        0xe7..=0xef => 0,
+        #[cfg(feature = "latin1")]
+        0xf1..=0xf6 => 0,
+        #[cfg(feature = "latin1")]
+        0xf9..=0xfd => 0,
+        #[cfg(feature = "latin1")]
+        0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p1(b: u8) -> u8 {
+    match b {
+        0x00..=0x0f => 0,
+        0x12..=0x25 => 0,
+        0x28..=0x30 => 0,
+        0x32..=0x37 => 0,
+        0x39..=0x40 => 0,
+        0x43..=0x49 => 0,
+        0x4c..=0x51 => 0,
+        0x54..=0x65 => 0,
+        0x68..=0x7f => 0,
+        0xa0..=0xa1 => 0,
+        0xaf..=0xb0 => 0,
+        0xc4..=0xdc => 0,
+        0xde..=0xe3 => 0,
+        0xe6..=0xf5 => 0,
+        0xf8..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p2(b: u8) -> u8 {
+    match b {
+        0x00..=0x1b => 0,
+        0x1e..=0x1f => 0,
+        0x26..=0x33 => 0,
+        0xb0..=0xb8 => 0,
+        0xd8..=0xdd => 0,
+        0xe0..=0xe4 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p3(b: u8) -> u8 {
+    match b {
+        0x40..=0x41 => 0,
+        0x43..=0x44 => 0,
+        0x74 => 0,
+        0x7a => 0,
+        0x7e => 0,
+        0x84..=0x8a => 0,
+        0x8c => 0,
+        0x8e..=0x90 => 0,
+        0xaa..=0xb0 => 0,
+        0xca..=0xce => 0,
+        0xd0..=0xd6 => 0,
+        0xf0..=0xf2 => 0,
+        0xf4..=0xf5 => 0,
+        0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p4(b: u8) -> u8 {
+    match b {
+        0x00..=0x01 => 0,
+        0x03 => 0,
+        0x07 => 0,
+        0x0c..=0x0e => 0,
+        0x19 => 0,
+        0x39 => 0,
+        0x50..=0x51 => 0,
+        0x53 => 0,
+        0x57 => 0,
+        0x5c..=0x5e => 0,
+        0x76..=0x77 => 0,
+        0xc1..=0xc2 => 0,
+        0xd0..=0xd3 => 0,
+        0xd6..=0xd7 => 0,
+        0xda..=0xdf => 0,
+        0xe2..=0xe7 => 0,
+        0xea..=0xf5 => 0,
+        0xf8..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p5(b: u8) -> u8 {
+    match b {
+        0x87 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p6(b: u8) -> u8 {
+    match b {
+        0x22..=0x26 => 0,
+        0x75..=0x78 => 0,
+        0xc0 => 0,
+        0xc2 => 0,
+        0xd3 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p9(b: u8) -> u8 {
+    match b {
+        0x29 => 0,
+        0x31 => 0,
+        0x34 => 0,
+        0x58..=0x5f => 0,
+        0xcb..=0xcc => 0,
+        0xdc..=0xdd => 0,
+        0xdf => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pa(b: u8) -> u8 {
+    match b {
+        0x33 => 0,
+        0x36 => 0,
+        0x59..=0x5b => 0,
+        0x5e => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pb(b: u8) -> u8 {
+    match b {
+        0x48 => 0,
+        0x4b..=0x4c => 0,
+        0x5c..=0x5d => 0,
+        0x94 => 0,
+        0xca..=0xcc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pc(b: u8) -> u8 {
+    match b {
+        0x48 => 0,
+        0xc0 => 0,
+        0xc7..=0xc8 => 0,
+        0xca..=0xcb => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pd(b: u8) -> u8 {
+    match b {
+        0x4a..=0x4c => 0,
+        0xda => 0,
+        0xdc..=0xde => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pe(b: u8) -> u8 {
+    match b {
+        0x33 => 0,
+        0xb3 => 0,
+        0xdc..=0xdd => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pf(b: u8) -> u8 {
+    match b {
+        0x0c => 0,
+        0x43 => 0,
+        0x4d => 0,
+        0x52 => 0,
+        0x57 => 0,
+        0x5c => 0,
+        0x69 => 0,
+        0x73 => 0,
+        0x75..=0x79 => 0,
+        0x81 => 0,
+        0x93 => 0,
+        0x9d => 0,
+        0xa2 => 0,
+        0xa7 => 0,
+        0xac => 0,
+        0xb9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p10(b: u8) -> u8 {
+    match b {
+        0x26 => 0,
+        0xfc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p1b(b: u8) -> u8 {
+    match b {
+        0x06 => 0,
+        0x08 => 0,
+        0x0a => 0,
+        0x0c => 0,
+        0x0e => 0,
+        0x12 => 0,
+        0x3b => 0,
+        0x3d => 0,
+        0x40..=0x41 => 0,
+        0x43 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p1d(b: u8) -> u8 {
+    match b {
+        0x2c..=0x2e => 0,
+        0x30..=0x3a => 0,
+        0x3c..=0x4d => 0,
+        0x4f..=0x6a => 0,
+        0x78 => 0,
+        0x9b..=0xbf => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p1e(b: u8) -> u8 {
+    match b {
+        0x00..=0x9b => 0,
+        0xa0..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p1f(b: u8) -> u8 {
+    match b {
+        0x00..=0x15 => 0,
+        0x18..=0x1d => 0,
+        0x20..=0x45 => 0,
+        0x48..=0x4d => 0,
+        0x50..=0x57 => 0,
+        0x59 => 0,
+        0x5b => 0,
+        0x5d => 0,
+        0x5f..=0x7d => 0,
+        0x80..=0xb4 => 0,
+        0xb6..=0xc4 => 0,
+        0xc6..=0xd3 => 0,
+        0xd6..=0xdb => 0,
+        0xdd..=0xef => 0,
+        0xf2..=0xf4 => 0,
+        0xf6..=0xfe => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p20(b: u8) -> u8 {
+    match b {
+        0x00..=0x0a => 0,
+        0x11 => 0,
+        0x17 => 0,
+        0x24..=0x26 => 0,
+        0x2f => 0,
+        0x33..=0x34 => 0,
+        0x36..=0x37 => 0,
+        0x3c => 0,
+        0x3e => 0,
+        0x47..=0x49 => 0,
+        0x57 => 0,
+        0x5f => 0,
+        0x70..=0x71 => 0,
+        0x74..=0x8e => 0,
+        0x90..=0x9c => 0,
+        0xa8 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p21(b: u8) -> u8 {
+    match b {
+        0x00..=0x03 => 0,
+        0x05..=0x07 => 0,
+        0x09..=0x13 => 0,
+        0x15..=0x16 => 0,
+        0x19..=0x1d => 0,
+        0x20..=0x22 => 0,
+        0x24 => 0,
+        0x26 => 0,
+        0x28 => 0,
+        0x2a..=0x2d => 0,
+        0x2f..=0x31 => 0,
+        0x33..=0x39 => 0,
+        0x3b..=0x40 => 0,
+        0x45..=0x49 => 0,
+        0x50..=0x7f => 0,
+        0x89 => 0,
+        0x9a..=0x9b => 0,
+        0xae => 0,
+        0xcd..=0xcf => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p22(b: u8) -> u8 {
+    match b {
+        0x04 => 0,
+        0x09 => 0,
+        0x0c => 0,
+        0x24 => 0,
+        0x26 => 0,
+        0x2c..=0x2d => 0,
+        0x2f..=0x30 => 0,
+        0x41 => 0,
+        0x44 => 0,
+        0x47 => 0,
+        0x49 => 0,
+        0x60 => 0,
+        0x62 => 0,
+        0x6d..=0x71 => 0,
+        0x74..=0x75 => 0,
+        0x78..=0x79 => 0,
+        0x80..=0x81 => 0,
+        0x84..=0x85 => 0,
+        0x88..=0x89 => 0,
+        0xac..=0xaf => 0,
+        0xe0..=0xe3 => 0,
+        0xea..=0xed => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p23(b: u8) -> u8 {
+    match b {
+        0x29..=0x2a => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p24(b: u8) -> u8 {
+    match b {
+        0x60..=0xea => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p2a(b: u8) -> u8 {
+    match b {
+        0x0c => 0,
+        0x74..=0x76 => 0,
+        0xdc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p2c(b: u8) -> u8 {
+    match b {
+        0x7c..=0x7d => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p2d(b: u8) -> u8 {
+    match b {
+        0x6f => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p2e(b: u8) -> u8 {
+    match b {
+        0x9f => 0,
+        0xf3 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p2f(b: u8) -> u8 {
+    match b {
+        0x00..=0xd5 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p30(b: u8) -> u8 {
+    match b {
+        0x00 => 0,
+        0x36 => 0,
+        0x38..=0x3a => 0,
+        0x4c => 0,
+        0x4e => 0,
+        0x50 => 0,
+        0x52 => 0,
+        0x54 => 0,
+        0x56 => 0,
+        0x58 => 0,
+        0x5a => 0,
+        0x5c => 0,
+        0x5e => 0,
+        0x60 => 0,
+        0x62 => 0,
+        0x65 => 0,
+        0x67 => 0,
+        0x69 => 0,
+        0x70..=0x71 => 0,
+        0x73..=0x74 => 0,
+        0x76..=0x77 => 0,
+        0x79..=0x7a => 0,
+        0x7c..=0x7d => 0,
+        0x94 => 0,
+        0x9b..=0x9c => 0,
+        0x9e..=0x9f => 0,
+        0xac => 0,
+        0xae => 0,
+        0xb0 => 0,
+        0xb2 => 0,
+        0xb4 => 0,
+        0xb6 => 0,
+        0xb8 => 0,
+        0xba => 0,
+        0xbc => 0,
+        0xbe => 0,
+        0xc0 => 0,
+        0xc2 => 0,
+        0xc5 => 0,
+        0xc7 => 0,
+        0xc9 => 0,
+        0xd0..=0xd1 => 0,
+        0xd3..=0xd4 => 0,
+        0xd6..=0xd7 => 0,
+        0xd9..=0xda => 0,
+        0xdc..=0xdd => 0,
+        0xf4 => 0,
+        0xf7..=0xfa => 0,
+        0xfe..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p31(b: u8) -> u8 {
+    match b {
+        0x31..=0x8e => 0,
+        0x92..=0x9f => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_p32(b: u8) -> u8 {
+    match b {
+        0x00..=0x1e => 0,
+        0x20..=0x47 => 0,
+        0x50..=0x7e => 0,
+        0x80..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pa6(b: u8) -> u8 {
+    match b {
+        0x9c..=0x9d => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pa7(b: u8) -> u8 {
+    match b {
+        0x70 => 0,
+        0xf1..=0xf4 => 0,
+        0xf8..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pab(b: u8) -> u8 {
+    match b {
+        0x5c..=0x5f => 0,
+        0x69 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pd7(b: u8) -> u8 {
+    match b {
+        0x00..=0xa3 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pfa(b: u8) -> u8 {
+    match b {
+        0x00..=0x0d => 0,
+        0x10 => 0,
+        0x12 => 0,
+        0x15..=0x1e => 0,
+        0x20 => 0,
+        0x22 => 0,
+        0x25..=0x26 => 0,
+        0x2a..=0x6d => 0,
+        0x70..=0xd9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pfb(b: u8) -> u8 {
+    match b {
+        0x00..=0x06 => 0,
+        0x13..=0x17 => 0,
+        0x1d => 0,
+        0x1f..=0x36 => 0,
+        0x38..=0x3c => 0,
+        0x3e => 0,
+        0x40..=0x41 => 0,
+        0x43..=0x44 => 0,
+        0x46..=0xb1 => 0,
+        0xd3..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pfd(b: u8) -> u8 {
+    match b {
+        0x00..=0x3d => 0,
+        0x50..=0x8f => 0,
+        0x92..=0xc7 => 0,
+        0xf0..=0xfc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pfe(b: u8) -> u8 {
+    match b {
+        0x10..=0x19 => 0,
+        0x30..=0x44 => 0,
+        0x47..=0x52 => 0,
+        0x54..=0x66 => 0,
+        0x68..=0x6b => 0,
+        0x70..=0x72 => 0,
+        0x74 => 0,
+        0x76..=0xfc => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn qf_pff(b: u8) -> u8 {
+    match b {
+        0x01..=0xbe => 0,
+        0xc2..=0xc7 => 0,
+        0xca..=0xcf => 0,
+        0xd2..=0xd7 => 0,
+        0xda..=0xdc => 0,
+        0xe0..=0xe6 => 0,
+        0xe8..=0xee => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p105(b: u8) -> u8 {
+    match b {
+        0xc9 => 0,
+        0xe4 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p107(b: u8) -> u8 {
+    match b {
+        0x81..=0x85 => 0,
+        0x87..=0xb0 => 0,
+        0xb2..=0xba => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p110(b: u8) -> u8 {
+    match b {
+        0x9a => 0,
+        0x9c => 0,
+        0xab => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p111(b: u8) -> u8 {
+    match b {
+        0x2e..=0x2f => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p113(b: u8) -> u8 {
+    match b {
+        0x4b..=0x4c => 0,
+        0x83 => 0,
+        0x85 => 0,
+        0x8e => 0,
+        0x91 => 0,
+        0xc5 => 0,
+        0xc7..=0xc8 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p114(b: u8) -> u8 {
+    match b {
+        0xbb..=0xbc => 0,
+        0xbe => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p115(b: u8) -> u8 {
+    match b {
+        0xba..=0xbb => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p119(b: u8) -> u8 {
+    match b {
+        0x38 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p161(b: u8) -> u8 {
+    match b {
+        0x21..=0x28 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p16d(b: u8) -> u8 {
+    match b {
+        0x68..=0x6a => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1cc(b: u8) -> u8 {
+    match b {
+        0xd6..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1d1(b: u8) -> u8 {
+    match b {
+        0x5e..=0x64 => 0,
+        0xbb..=0xc0 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1d4(b: u8) -> u8 {
+    match b {
+        0x00..=0x54 => 0,
+        0x56..=0x9c => 0,
+        0x9e..=0x9f => 0,
+        0xa2 => 0,
+        0xa5..=0xa6 => 0,
+        0xa9..=0xac => 0,
+        0xae..=0xb9 => 0,
+        0xbb => 0,
+        0xbd..=0xc3 => 0,
+        0xc5..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1d5(b: u8) -> u8 {
+    match b {
+        0x00..=0x05 => 0,
+        0x07..=0x0a => 0,
+        0x0d..=0x14 => 0,
+        0x16..=0x1c => 0,
+        0x1e..=0x39 => 0,
+        0x3b..=0x3e => 0,
+        0x40..=0x44 => 0,
+        0x46 => 0,
+        0x4a..=0x50 => 0,
+        0x52..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1d6(b: u8) -> u8 {
+    match b {
+        0x00..=0xa5 => 0,
+        0xa8..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1d7(b: u8) -> u8 {
+    match b {
+        0x00..=0xcb => 0,
+        0xce..=0xff => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1e0(b: u8) -> u8 {
+    match b {
+        0x30..=0x6d => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1ee(b: u8) -> u8 {
+    match b {
+        0x00..=0x03 => 0,
+        0x05..=0x1f => 0,
+        0x21..=0x22 => 0,
+        0x24 => 0,
+        0x27 => 0,
+        0x29..=0x32 => 0,
+        0x34..=0x37 => 0,
+        0x39 => 0,
+        0x3b => 0,
+        0x42 => 0,
+        0x47 => 0,
+        0x49 => 0,
+        0x4b => 0,
+        0x4d..=0x4f => 0,
+        0x51..=0x52 => 0,
+        0x54 => 0,
+        0x57 => 0,
+        0x59 => 0,
+        0x5b => 0,
+        0x5d => 0,
+        0x5f => 0,
+        0x61..=0x62 => 0,
+        0x64 => 0,
+        0x67..=0x6a => 0,
+        0x6c..=0x72 => 0,
+        0x74..=0x77 => 0,
+        0x79..=0x7c => 0,
+        0x7e => 0,
+        0x80..=0x89 => 0,
+        0x8b..=0x9b => 0,
+        0xa1..=0xa3 => 0,
+        0xa5..=0xa9 => 0,
+        0xab..=0xbb => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1f1(b: u8) -> u8 {
+    match b {
+        0x00..=0x0a => 0,
+        0x10..=0x2e => 0,
+        0x30..=0x4f => 0,
+        0x6a..=0x6c => 0,
+        0x90 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1f2(b: u8) -> u8 {
+    match b {
+        0x00..=0x02 => 0,
+        0x10..=0x3b => 0,
+        0x40..=0x48 => 0,
+        0x50..=0x51 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p1fb(b: u8) -> u8 {
+    match b {
+        0xf0..=0xf9 => 0,
+        _ => 2,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn qf_p2fa(b: u8) -> u8 {
+    match b {
+        0x00..=0x1d => 0,
+        _ => 2,
+    }
+}

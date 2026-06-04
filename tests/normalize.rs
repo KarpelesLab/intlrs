@@ -1,8 +1,11 @@
 //! Readable normalization spot-checks. The exhaustive UAX #15 conformance run
 //! lives in `normalization_conformance.rs` (full tier).
 
-use intl::unicode::{canonical_combining_class as ccc, nfc, nfd, nfkc, nfkd};
+use intl::unicode::canonical_combining_class as ccc;
+#[cfg(feature = "bmp")]
+use intl::unicode::{nfc, nfd, nfkc, nfkd};
 
+#[cfg(feature = "bmp")]
 fn s(it: impl Iterator<Item = char>) -> String {
     it.collect()
 }
@@ -45,6 +48,19 @@ fn hangul() {
     // 각 U+AC01 = ᄀ U+1100 + ᅡ U+1161 + ᆨ U+11A8
     assert_eq!(s(nfd("\u{AC01}".chars())), "\u{1100}\u{1161}\u{11A8}");
     assert_eq!(s(nfc("\u{1100}\u{1161}\u{11A8}".chars())), "\u{AC01}");
+}
+
+#[cfg(feature = "bmp")]
+#[test]
+fn quick_check() {
+    use intl::unicode::{is_nfc, is_nfd, quick_check_nfc, IsNormalized};
+    assert!(is_nfc("é".chars())); // precomposed
+    assert!(!is_nfc("e\u{0301}".chars())); // decomposed -> not NFC
+    assert!(is_nfd("e\u{0301}".chars()));
+    assert!(!is_nfd("é".chars()));
+    // A combining mark makes NFC inconclusive without a full check.
+    assert_eq!(quick_check_nfc("e\u{0301}".chars()), IsNormalized::Maybe);
+    assert_eq!(quick_check_nfc("abc".chars()), IsNormalized::Yes);
 }
 
 #[cfg(feature = "bmp")]

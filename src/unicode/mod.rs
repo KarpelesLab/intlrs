@@ -44,8 +44,9 @@ pub use case::{case_fold, to_lowercase, to_titlecase, to_uppercase, CaseMapIter}
 pub use category::{GeneralCategory, Group};
 pub use generated::general_category::UNICODE_VERSION;
 pub use normalize::{
-    canonical_combining_class, canonical_combining_class_u32, nfc, nfd, nfkc, nfkd, Decompositions,
-    Recompositions,
+    canonical_combining_class, canonical_combining_class_u32, is_nfc, is_nfd, is_nfkc, is_nfkd,
+    nfc, nfd, nfkc, nfkd, quick_check_nfc, quick_check_nfd, quick_check_nfkc, quick_check_nfkd,
+    Decompositions, IsNormalized, Recompositions,
 };
 pub use numeric::{numeric_type, numeric_value, numeric_value_u32, NumericType, NumericValue};
 pub use predicates::{

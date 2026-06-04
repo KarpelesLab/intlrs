@@ -721,6 +721,19 @@ fn emit_normalization(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
         &comp_render,
     );
 
+    // Quick-check properties (0 = No, 1 = Maybe, 2 = Yes).
+    let qc_render: Vec<String> = vec!["0".into(), "1".into(), "2".into()];
+    let dnp = ucd.join("DerivedNormalizationProps.txt");
+    for (fn_name, prefix, prop) in [
+        ("nfc_qc", "qc", "NFC_QC"),
+        ("nfd_qc", "qd", "NFD_QC"),
+        ("nfkc_qc", "qe", "NFKC_QC"),
+        ("nfkd_qc", "qf", "NFKD_QC"),
+    ] {
+        let codes = parse_qc(&dnp, prop);
+        emit_lookup(&mut out, fn_name, prefix, "u8", &codes, 2, &qc_render);
+    }
+
     write_module(out_dir, modules, "normalization", &out);
 }
 
@@ -861,6 +874,33 @@ fn parse_ranged(path: &Path, val_code: &BTreeMap<&str, u32>, default: u32) -> Ve
             continue;
         };
         let (start, end) = parse_range(range);
+        for c in start..=end {
+            codes[c as usize] = code;
+        }
+    }
+    codes
+}
+
+/// Parse a `*_QC` quick-check property from DerivedNormalizationProps.txt into
+/// per-codepoint codes: 0 = No, 1 = Maybe, 2 = Yes (the default).
+fn parse_qc(path: &Path, prop: &str) -> Vec<u32> {
+    let text = fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
+    let mut codes = vec![2u32; NUM_CODEPOINTS];
+    for line in text.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        if f.len() < 3 || f[1] != prop {
+            continue;
+        }
+        let code = match f[2] {
+            "N" => 0,
+            "M" => 1,
+            _ => 2,
+        };
+        let (start, end) = parse_range(f[0]);
         for c in start..=end {
             codes[c as usize] = code;
         }

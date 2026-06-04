@@ -389,3 +389,101 @@ pub fn nfc<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
 pub fn nfkc<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
     Recompositions::new(Decompositions::new(iter, true))
 }
+
+/// Result of a normalization quick check (UAX #15, §9).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IsNormalized {
+    /// The text is definitely in the normalization form.
+    Yes,
+    /// The text is definitely not in the normalization form.
+    No,
+    /// The quick check is inconclusive; a full normalization is required to
+    /// decide (only ever returned for the composed forms NFC/NFKC).
+    Maybe,
+}
+
+/// Run the quick-check algorithm using the per-codepoint QC value
+/// (0 = No, 1 = Maybe, 2 = Yes) returned by `qc`.
+fn quick_check<I: Iterator<Item = char>>(iter: I, qc: fn(u32) -> u8) -> IsNormalized {
+    let mut last_ccc = 0u8;
+    let mut result = IsNormalized::Yes;
+    for ch in iter {
+        let c = gen::canonical_combining_class(ch as u32);
+        if c != 0 && last_ccc > c {
+            return IsNormalized::No; // canonical ordering violated
+        }
+        match qc(ch as u32) {
+            0 => return IsNormalized::No,
+            1 => result = IsNormalized::Maybe,
+            _ => {}
+        }
+        last_ccc = c;
+    }
+    result
+}
+
+/// Quick-check whether a character stream is already in NFC.
+#[inline]
+pub fn quick_check_nfc<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
+    quick_check(iter, gen::nfc_qc)
+}
+
+/// Quick-check whether a character stream is already in NFD.
+#[inline]
+pub fn quick_check_nfd<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
+    quick_check(iter, gen::nfd_qc)
+}
+
+/// Quick-check whether a character stream is already in NFKC.
+#[inline]
+pub fn quick_check_nfkc<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
+    quick_check(iter, gen::nfkc_qc)
+}
+
+/// Quick-check whether a character stream is already in NFKD.
+#[inline]
+pub fn quick_check_nfkd<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
+    quick_check(iter, gen::nfkd_qc)
+}
+
+/// `true` if the stream is in NFC. A `Maybe` quick-check result is resolved by
+/// comparing against the fully normalized form, so the input iterator must be
+/// `Clone`.
+#[inline]
+pub fn is_nfc<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
+    match quick_check(iter.clone(), gen::nfc_qc) {
+        IsNormalized::Yes => true,
+        IsNormalized::No => false,
+        IsNormalized::Maybe => iter.clone().eq(nfc(iter)),
+    }
+}
+
+/// `true` if the stream is in NFD.
+#[inline]
+pub fn is_nfd<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
+    match quick_check(iter.clone(), gen::nfd_qc) {
+        IsNormalized::Yes => true,
+        IsNormalized::No => false,
+        IsNormalized::Maybe => iter.clone().eq(nfd(iter)),
+    }
+}
+
+/// `true` if the stream is in NFKC.
+#[inline]
+pub fn is_nfkc<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
+    match quick_check(iter.clone(), gen::nfkc_qc) {
+        IsNormalized::Yes => true,
+        IsNormalized::No => false,
+        IsNormalized::Maybe => iter.clone().eq(nfkc(iter)),
+    }
+}
+
+/// `true` if the stream is in NFKD.
+#[inline]
+pub fn is_nfkd<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
+    match quick_check(iter.clone(), gen::nfkd_qc) {
+        IsNormalized::Yes => true,
+        IsNormalized::No => false,
+        IsNormalized::Maybe => iter.clone().eq(nfkd(iter)),
+    }
+}

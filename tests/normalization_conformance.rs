@@ -3,7 +3,7 @@
 //! test data spans all planes); run with `--features full` or `--all-features`.
 #![cfg(feature = "full")]
 
-use intl::unicode::{nfc, nfd, nfkc, nfkd};
+use intl::unicode::{is_nfc, is_nfd, is_nfkc, is_nfkd, nfc, nfd, nfkc, nfkd};
 use std::fs;
 use std::path::PathBuf;
 
@@ -59,6 +59,14 @@ fn normalization_test_txt_conformance() {
         for x in [c1, c2, c3, c4, c5] {
             assert_eq!(&nfkd_s(x), c5, "NFKD mismatch at line {ln}");
         }
+
+        // Quick-check: each already-normalized column must report true for its
+        // own form.
+        assert!(is_nfc(c2.chars()), "is_nfc(NFC) false at line {ln}");
+        assert!(is_nfd(c3.chars()), "is_nfd(NFD) false at line {ln}");
+        assert!(is_nfkc(c4.chars()), "is_nfkc(NFKC) false at line {ln}");
+        assert!(is_nfkd(c5.chars()), "is_nfkd(NFKD) false at line {ln}");
+
         checked += 1;
     }
     assert!(checked > 10_000, "expected many test lines, got {checked}");

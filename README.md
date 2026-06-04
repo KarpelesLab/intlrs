@@ -73,9 +73,10 @@ codepoint would.
   `is_punctuation`, `is_symbol`, `is_separator`, `is_control`, `is_format`,
   and `is_assigned`.
 - **Normalization** (UAX #15) — `nfd`, `nfc`, `nfkd`, `nfkc` as streaming,
-  allocation-free iterator adaptors over `Iterator<Item = char>` (plus
-  `canonical_combining_class`). Validated against the full official
-  `NormalizationTest.txt` conformance suite.
+  allocation-free iterator adaptors over `Iterator<Item = char>`; quick-check
+  helpers `is_nfc`/`is_nfd`/`is_nfkc`/`is_nfkd` (and tri-state
+  `quick_check_*` → `IsNormalized`); plus `canonical_combining_class`.
+  Validated against the full official `NormalizationTest.txt` conformance suite.
 - Full, unconditional **case mapping** — `to_uppercase`, `to_lowercase`,
   `to_titlecase`, and `case_fold`, each returning a `CaseMapIter` (1–3 chars,
   e.g. `ß` → `SS`; no allocation).
