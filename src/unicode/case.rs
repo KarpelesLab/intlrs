@@ -204,6 +204,74 @@ pub fn lowercase_str(s: &str) -> alloc::string::String {
     out
 }
 
+/// `true` if `lang` is a Turkic locale (Turkish / Azerbaijani) using the
+/// dotted/dotless-i casing rules.
+#[cfg(feature = "alloc")]
+fn is_turkic(lang: &str) -> bool {
+    let l = lang.as_bytes();
+    if l.len() < 2 {
+        return false;
+    }
+    let prefix = [l[0] | 0x20, l[1] | 0x20];
+    let lang_ok = prefix == *b"tr" || prefix == *b"az";
+    let boundary = l.len() == 2 || l[2] == b'-' || l[2] == b'_';
+    lang_ok && boundary
+}
+
+/// Lower-case a string with `lang`'s locale rules: for Turkic locales
+/// (`tr`/`az`) `I`→`ı` and `İ`→`i`; otherwise it matches [`lowercase_str`]
+/// (including the Greek Final_Sigma rule). Requires the `alloc` feature.
+///
+/// ```
+/// use intl::unicode::lowercase_str_lang;
+/// assert_eq!(lowercase_str_lang("TITLE", "tr"), "tıtle"); // dotless ı
+/// assert_eq!(lowercase_str_lang("TITLE", "en"), "title");
+/// assert_eq!(lowercase_str_lang("İ", "tr"), "i");
+/// ```
+#[cfg(feature = "alloc")]
+#[must_use]
+pub fn lowercase_str_lang(s: &str, lang: &str) -> alloc::string::String {
+    if !is_turkic(lang) {
+        return lowercase_str(s);
+    }
+    let mut out = alloc::string::String::new();
+    for c in s.chars() {
+        match c {
+            'I' => out.push('\u{0131}'),        // I → ı (dotless)
+            '\u{0130}' => out.push('i'),        // İ → i
+            '\u{03A3}' => out.push('\u{03C3}'), // keep Σ handling simple in Turkic
+            _ => out.extend(to_lowercase(c)),
+        }
+    }
+    out
+}
+
+/// Upper-case a string with `lang`'s locale rules: for Turkic locales
+/// (`tr`/`az`) `i`→`İ` and `ı`→`I`; otherwise the default full uppercase.
+/// Requires the `alloc` feature.
+///
+/// ```
+/// use intl::unicode::uppercase_str_lang;
+/// assert_eq!(uppercase_str_lang("title", "tr"), "TİTLE"); // dotted İ
+/// assert_eq!(uppercase_str_lang("title", "en"), "TITLE");
+/// ```
+#[cfg(feature = "alloc")]
+#[must_use]
+pub fn uppercase_str_lang(s: &str, lang: &str) -> alloc::string::String {
+    if !is_turkic(lang) {
+        return uppercase(s.chars()).collect();
+    }
+    let mut out = alloc::string::String::new();
+    for c in s.chars() {
+        match c {
+            'i' => out.push('\u{0130}'), // i → İ (dotted)
+            '\u{0131}' => out.push('I'), // ı → I
+            _ => out.extend(to_uppercase(c)),
+        }
+    }
+    out
+}
+
 /// Title-case a string: the first cased character of each word (per UAX #29
 /// word segmentation) is title-cased and the rest are lower-cased
 /// (`"loud HOUSE" → "Loud House"`). Requires the `alloc` feature.

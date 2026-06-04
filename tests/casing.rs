@@ -20,3 +20,18 @@ fn final_sigma() {
     // Full word: ὈΔΥΣΣΕΎΣ -> medial σσ, final ς.
     assert_eq!(lowercase_str("ὈΔΥΣΣΕΎΣ"), "ὀδυσσεύς");
 }
+
+#[test]
+fn turkic() {
+    use intl::unicode::{lowercase_str_lang as lo, uppercase_str_lang as up};
+    // Turkish: dotless/dotted i.
+    assert_eq!(lo("TITLE", "tr"), "tıtle");
+    assert_eq!(lo("İSTANBUL", "tr"), "istanbul");
+    assert_eq!(up("title", "tr"), "TİTLE");
+    assert_eq!(up("ırmak", "az"), "IRMAK");
+    // Non-Turkic keeps default behavior.
+    assert_eq!(lo("TITLE", "en"), "title");
+    assert_eq!(up("title", "en"), "TITLE");
+    // "tra"-style false prefixes are not Turkic.
+    assert_eq!(lo("TITLE", "translit"), "title");
+}

@@ -55,7 +55,7 @@ pub use case::{
     CaseMapping,
 };
 #[cfg(feature = "alloc")]
-pub use case::{lowercase_str, titlecase};
+pub use case::{lowercase_str, lowercase_str_lang, titlecase, uppercase_str_lang};
 pub use category::{GeneralCategory, Group};
 #[cfg(feature = "alloc")]
 pub use collate::{compare, sort_key, AlternateHandling, Collator};

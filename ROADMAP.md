@@ -56,10 +56,10 @@ conformance corpus. Highest value, lowest risk — do these next.
 - 🟡🔬 **IDNA / UTS #46** — domain-name `to_ascii`/`to_unicode` (Punycode +
   mapping + validation). Data: `IdnaMappingTable.txt`. Conformance:
   `IdnaTestV2.txt`. Depends on normalization (have) + Punycode (RFC 3492, small).
-- 🟡 **Case completeness** — add: conditional/locale case (Turkic dotless-i,
-  Greek final sigma, Lithuanian) via `SpecialCasing.txt` conditions; proper
-  **titlecasing** (now unblocked by word segmentation); `Changes_When_*`
-  predicates.
+- 🟡 **Case completeness** — ✅ titlecasing (`titlecase`), ✅ Greek Final_Sigma
+  (`lowercase_str`), ✅ Turkic dotted/dotless-i (`lowercase_str_lang` /
+  `uppercase_str_lang` for tr/az). Still: Lithuanian retained-dot rules,
+  `Changes_When_*` predicates.
 - 🟡 **More properties** (incremental, cheap): ✅ `Age` (`DerivedAge.txt`),
   ✅ `Block` (`Blocks.txt`), ✅ `Joining_Type` (`DerivedJoiningType.txt`),
   ✅ `Indic_Syllabic_Category`, ✅ `Indic_Positional_Category`, ✅ Bidi_Class accessor (`bidi_class`),
