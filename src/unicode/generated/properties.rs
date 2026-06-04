@@ -12659,6 +12659,845 @@ const fn ipc_p16d(b: u8) -> IndicPositionalCategory {
     }
 }
 
+#[inline]
+pub(crate) const fn bidi_mirror(cp: u32) -> Option<char> {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => bm_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => bm_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x016 => bm_p16(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => bm_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x022 => bm_p22(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x023 => bm_p23(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x027 => bm_p27(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x029 => bm_p29(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02a => bm_p2a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02b => bm_p2b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02e => bm_p2e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => bm_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => bm_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => bm_pff(cp as u8),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn bm_p0(b: u8) -> Option<char> {
+    match b {
+        0x28 => Some('\u{29}'),
+        0x29 => Some('\u{28}'),
+        0x3c => Some('\u{3e}'),
+        0x3e => Some('\u{3c}'),
+        0x5b => Some('\u{5d}'),
+        0x5d => Some('\u{5b}'),
+        0x7b => Some('\u{7d}'),
+        0x7d => Some('\u{7b}'),
+        #[cfg(feature = "latin1")]
+        0xab => Some('\u{bb}'),
+        #[cfg(feature = "latin1")]
+        0xbb => Some('\u{ab}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_pf(b: u8) -> Option<char> {
+    match b {
+        0x3a => Some('\u{f3b}'),
+        0x3b => Some('\u{f3a}'),
+        0x3c => Some('\u{f3d}'),
+        0x3d => Some('\u{f3c}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p16(b: u8) -> Option<char> {
+    match b {
+        0x9b => Some('\u{169c}'),
+        0x9c => Some('\u{169b}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p20(b: u8) -> Option<char> {
+    match b {
+        0x39 => Some('\u{203a}'),
+        0x3a => Some('\u{2039}'),
+        0x45 => Some('\u{2046}'),
+        0x46 => Some('\u{2045}'),
+        0x7d => Some('\u{207e}'),
+        0x7e => Some('\u{207d}'),
+        0x8d => Some('\u{208e}'),
+        0x8e => Some('\u{208d}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p22(b: u8) -> Option<char> {
+    match b {
+        0x08 => Some('\u{220b}'),
+        0x09 => Some('\u{220c}'),
+        0x0a => Some('\u{220d}'),
+        0x0b => Some('\u{2208}'),
+        0x0c => Some('\u{2209}'),
+        0x0d => Some('\u{220a}'),
+        0x15 => Some('\u{29f5}'),
+        0x1f => Some('\u{2bfe}'),
+        0x20 => Some('\u{29a3}'),
+        0x21 => Some('\u{299b}'),
+        0x22 => Some('\u{29a0}'),
+        0x24 => Some('\u{2aee}'),
+        0x3c => Some('\u{223d}'),
+        0x3d => Some('\u{223c}'),
+        0x43 => Some('\u{22cd}'),
+        0x45 => Some('\u{224c}'),
+        0x4c => Some('\u{2245}'),
+        0x52 => Some('\u{2253}'),
+        0x53 => Some('\u{2252}'),
+        0x54 => Some('\u{2255}'),
+        0x55 => Some('\u{2254}'),
+        0x64 => Some('\u{2265}'),
+        0x65 => Some('\u{2264}'),
+        0x66 => Some('\u{2267}'),
+        0x67 => Some('\u{2266}'),
+        0x68 => Some('\u{2269}'),
+        0x69 => Some('\u{2268}'),
+        0x6a => Some('\u{226b}'),
+        0x6b => Some('\u{226a}'),
+        0x6e => Some('\u{226f}'),
+        0x6f => Some('\u{226e}'),
+        0x70 => Some('\u{2271}'),
+        0x71 => Some('\u{2270}'),
+        0x72 => Some('\u{2273}'),
+        0x73 => Some('\u{2272}'),
+        0x74 => Some('\u{2275}'),
+        0x75 => Some('\u{2274}'),
+        0x76 => Some('\u{2277}'),
+        0x77 => Some('\u{2276}'),
+        0x78 => Some('\u{2279}'),
+        0x79 => Some('\u{2278}'),
+        0x7a => Some('\u{227b}'),
+        0x7b => Some('\u{227a}'),
+        0x7c => Some('\u{227d}'),
+        0x7d => Some('\u{227c}'),
+        0x7e => Some('\u{227f}'),
+        0x7f => Some('\u{227e}'),
+        0x80 => Some('\u{2281}'),
+        0x81 => Some('\u{2280}'),
+        0x82 => Some('\u{2283}'),
+        0x83 => Some('\u{2282}'),
+        0x84 => Some('\u{2285}'),
+        0x85 => Some('\u{2284}'),
+        0x86 => Some('\u{2287}'),
+        0x87 => Some('\u{2286}'),
+        0x88 => Some('\u{2289}'),
+        0x89 => Some('\u{2288}'),
+        0x8a => Some('\u{228b}'),
+        0x8b => Some('\u{228a}'),
+        0x8f => Some('\u{2290}'),
+        0x90 => Some('\u{228f}'),
+        0x91 => Some('\u{2292}'),
+        0x92 => Some('\u{2291}'),
+        0x98 => Some('\u{29b8}'),
+        0xa2 => Some('\u{22a3}'),
+        0xa3 => Some('\u{22a2}'),
+        0xa6 => Some('\u{2ade}'),
+        0xa8 => Some('\u{2ae4}'),
+        0xa9 => Some('\u{2ae3}'),
+        0xab => Some('\u{2ae5}'),
+        0xb0 => Some('\u{22b1}'),
+        0xb1 => Some('\u{22b0}'),
+        0xb2 => Some('\u{22b3}'),
+        0xb3 => Some('\u{22b2}'),
+        0xb4 => Some('\u{22b5}'),
+        0xb5 => Some('\u{22b4}'),
+        0xb6 => Some('\u{22b7}'),
+        0xb7 => Some('\u{22b6}'),
+        0xb8 => Some('\u{27dc}'),
+        0xc9 => Some('\u{22ca}'),
+        0xca => Some('\u{22c9}'),
+        0xcb => Some('\u{22cc}'),
+        0xcc => Some('\u{22cb}'),
+        0xcd => Some('\u{2243}'),
+        0xd0 => Some('\u{22d1}'),
+        0xd1 => Some('\u{22d0}'),
+        0xd6 => Some('\u{22d7}'),
+        0xd7 => Some('\u{22d6}'),
+        0xd8 => Some('\u{22d9}'),
+        0xd9 => Some('\u{22d8}'),
+        0xda => Some('\u{22db}'),
+        0xdb => Some('\u{22da}'),
+        0xdc => Some('\u{22dd}'),
+        0xdd => Some('\u{22dc}'),
+        0xde => Some('\u{22df}'),
+        0xdf => Some('\u{22de}'),
+        0xe0 => Some('\u{22e1}'),
+        0xe1 => Some('\u{22e0}'),
+        0xe2 => Some('\u{22e3}'),
+        0xe3 => Some('\u{22e2}'),
+        0xe4 => Some('\u{22e5}'),
+        0xe5 => Some('\u{22e4}'),
+        0xe6 => Some('\u{22e7}'),
+        0xe7 => Some('\u{22e6}'),
+        0xe8 => Some('\u{22e9}'),
+        0xe9 => Some('\u{22e8}'),
+        0xea => Some('\u{22eb}'),
+        0xeb => Some('\u{22ea}'),
+        0xec => Some('\u{22ed}'),
+        0xed => Some('\u{22ec}'),
+        0xf0 => Some('\u{22f1}'),
+        0xf1 => Some('\u{22f0}'),
+        0xf2 => Some('\u{22fa}'),
+        0xf3 => Some('\u{22fb}'),
+        0xf4 => Some('\u{22fc}'),
+        0xf6 => Some('\u{22fd}'),
+        0xf7 => Some('\u{22fe}'),
+        0xfa => Some('\u{22f2}'),
+        0xfb => Some('\u{22f3}'),
+        0xfc => Some('\u{22f4}'),
+        0xfd => Some('\u{22f6}'),
+        0xfe => Some('\u{22f7}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p23(b: u8) -> Option<char> {
+    match b {
+        0x08 => Some('\u{2309}'),
+        0x09 => Some('\u{2308}'),
+        0x0a => Some('\u{230b}'),
+        0x0b => Some('\u{230a}'),
+        0x29 => Some('\u{232a}'),
+        0x2a => Some('\u{2329}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p27(b: u8) -> Option<char> {
+    match b {
+        0x68 => Some('\u{2769}'),
+        0x69 => Some('\u{2768}'),
+        0x6a => Some('\u{276b}'),
+        0x6b => Some('\u{276a}'),
+        0x6c => Some('\u{276d}'),
+        0x6d => Some('\u{276c}'),
+        0x6e => Some('\u{276f}'),
+        0x6f => Some('\u{276e}'),
+        0x70 => Some('\u{2771}'),
+        0x71 => Some('\u{2770}'),
+        0x72 => Some('\u{2773}'),
+        0x73 => Some('\u{2772}'),
+        0x74 => Some('\u{2775}'),
+        0x75 => Some('\u{2774}'),
+        0xc3 => Some('\u{27c4}'),
+        0xc4 => Some('\u{27c3}'),
+        0xc5 => Some('\u{27c6}'),
+        0xc6 => Some('\u{27c5}'),
+        0xc8 => Some('\u{27c9}'),
+        0xc9 => Some('\u{27c8}'),
+        0xcb => Some('\u{27cd}'),
+        0xcd => Some('\u{27cb}'),
+        0xd5 => Some('\u{27d6}'),
+        0xd6 => Some('\u{27d5}'),
+        0xdc => Some('\u{22b8}'),
+        0xdd => Some('\u{27de}'),
+        0xde => Some('\u{27dd}'),
+        0xe2 => Some('\u{27e3}'),
+        0xe3 => Some('\u{27e2}'),
+        0xe4 => Some('\u{27e5}'),
+        0xe5 => Some('\u{27e4}'),
+        0xe6 => Some('\u{27e7}'),
+        0xe7 => Some('\u{27e6}'),
+        0xe8 => Some('\u{27e9}'),
+        0xe9 => Some('\u{27e8}'),
+        0xea => Some('\u{27eb}'),
+        0xeb => Some('\u{27ea}'),
+        0xec => Some('\u{27ed}'),
+        0xed => Some('\u{27ec}'),
+        0xee => Some('\u{27ef}'),
+        0xef => Some('\u{27ee}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p29(b: u8) -> Option<char> {
+    match b {
+        0x83 => Some('\u{2984}'),
+        0x84 => Some('\u{2983}'),
+        0x85 => Some('\u{2986}'),
+        0x86 => Some('\u{2985}'),
+        0x87 => Some('\u{2988}'),
+        0x88 => Some('\u{2987}'),
+        0x89 => Some('\u{298a}'),
+        0x8a => Some('\u{2989}'),
+        0x8b => Some('\u{298c}'),
+        0x8c => Some('\u{298b}'),
+        0x8d => Some('\u{2990}'),
+        0x8e => Some('\u{298f}'),
+        0x8f => Some('\u{298e}'),
+        0x90 => Some('\u{298d}'),
+        0x91 => Some('\u{2992}'),
+        0x92 => Some('\u{2991}'),
+        0x93 => Some('\u{2994}'),
+        0x94 => Some('\u{2993}'),
+        0x95 => Some('\u{2996}'),
+        0x96 => Some('\u{2995}'),
+        0x97 => Some('\u{2998}'),
+        0x98 => Some('\u{2997}'),
+        0x9b => Some('\u{2221}'),
+        0xa0 => Some('\u{2222}'),
+        0xa3 => Some('\u{2220}'),
+        0xa4 => Some('\u{29a5}'),
+        0xa5 => Some('\u{29a4}'),
+        0xa8 => Some('\u{29a9}'),
+        0xa9 => Some('\u{29a8}'),
+        0xaa => Some('\u{29ab}'),
+        0xab => Some('\u{29aa}'),
+        0xac => Some('\u{29ad}'),
+        0xad => Some('\u{29ac}'),
+        0xae => Some('\u{29af}'),
+        0xaf => Some('\u{29ae}'),
+        0xb8 => Some('\u{2298}'),
+        0xc0 => Some('\u{29c1}'),
+        0xc1 => Some('\u{29c0}'),
+        0xc4 => Some('\u{29c5}'),
+        0xc5 => Some('\u{29c4}'),
+        0xcf => Some('\u{29d0}'),
+        0xd0 => Some('\u{29cf}'),
+        0xd1 => Some('\u{29d2}'),
+        0xd2 => Some('\u{29d1}'),
+        0xd4 => Some('\u{29d5}'),
+        0xd5 => Some('\u{29d4}'),
+        0xd8 => Some('\u{29d9}'),
+        0xd9 => Some('\u{29d8}'),
+        0xda => Some('\u{29db}'),
+        0xdb => Some('\u{29da}'),
+        0xe8 => Some('\u{29e9}'),
+        0xe9 => Some('\u{29e8}'),
+        0xf5 => Some('\u{2215}'),
+        0xf8 => Some('\u{29f9}'),
+        0xf9 => Some('\u{29f8}'),
+        0xfc => Some('\u{29fd}'),
+        0xfd => Some('\u{29fc}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p2a(b: u8) -> Option<char> {
+    match b {
+        0x2b => Some('\u{2a2c}'),
+        0x2c => Some('\u{2a2b}'),
+        0x2d => Some('\u{2a2e}'),
+        0x2e => Some('\u{2a2d}'),
+        0x34 => Some('\u{2a35}'),
+        0x35 => Some('\u{2a34}'),
+        0x3c => Some('\u{2a3d}'),
+        0x3d => Some('\u{2a3c}'),
+        0x64 => Some('\u{2a65}'),
+        0x65 => Some('\u{2a64}'),
+        0x79 => Some('\u{2a7a}'),
+        0x7a => Some('\u{2a79}'),
+        0x7b => Some('\u{2a7c}'),
+        0x7c => Some('\u{2a7b}'),
+        0x7d => Some('\u{2a7e}'),
+        0x7e => Some('\u{2a7d}'),
+        0x7f => Some('\u{2a80}'),
+        0x80 => Some('\u{2a7f}'),
+        0x81 => Some('\u{2a82}'),
+        0x82 => Some('\u{2a81}'),
+        0x83 => Some('\u{2a84}'),
+        0x84 => Some('\u{2a83}'),
+        0x85 => Some('\u{2a86}'),
+        0x86 => Some('\u{2a85}'),
+        0x87 => Some('\u{2a88}'),
+        0x88 => Some('\u{2a87}'),
+        0x89 => Some('\u{2a8a}'),
+        0x8a => Some('\u{2a89}'),
+        0x8b => Some('\u{2a8c}'),
+        0x8c => Some('\u{2a8b}'),
+        0x8d => Some('\u{2a8e}'),
+        0x8e => Some('\u{2a8d}'),
+        0x8f => Some('\u{2a90}'),
+        0x90 => Some('\u{2a8f}'),
+        0x91 => Some('\u{2a92}'),
+        0x92 => Some('\u{2a91}'),
+        0x93 => Some('\u{2a94}'),
+        0x94 => Some('\u{2a93}'),
+        0x95 => Some('\u{2a96}'),
+        0x96 => Some('\u{2a95}'),
+        0x97 => Some('\u{2a98}'),
+        0x98 => Some('\u{2a97}'),
+        0x99 => Some('\u{2a9a}'),
+        0x9a => Some('\u{2a99}'),
+        0x9b => Some('\u{2a9c}'),
+        0x9c => Some('\u{2a9b}'),
+        0x9d => Some('\u{2a9e}'),
+        0x9e => Some('\u{2a9d}'),
+        0x9f => Some('\u{2aa0}'),
+        0xa0 => Some('\u{2a9f}'),
+        0xa1 => Some('\u{2aa2}'),
+        0xa2 => Some('\u{2aa1}'),
+        0xa6 => Some('\u{2aa7}'),
+        0xa7 => Some('\u{2aa6}'),
+        0xa8 => Some('\u{2aa9}'),
+        0xa9 => Some('\u{2aa8}'),
+        0xaa => Some('\u{2aab}'),
+        0xab => Some('\u{2aaa}'),
+        0xac => Some('\u{2aad}'),
+        0xad => Some('\u{2aac}'),
+        0xaf => Some('\u{2ab0}'),
+        0xb0 => Some('\u{2aaf}'),
+        0xb1 => Some('\u{2ab2}'),
+        0xb2 => Some('\u{2ab1}'),
+        0xb3 => Some('\u{2ab4}'),
+        0xb4 => Some('\u{2ab3}'),
+        0xb5 => Some('\u{2ab6}'),
+        0xb6 => Some('\u{2ab5}'),
+        0xb7 => Some('\u{2ab8}'),
+        0xb8 => Some('\u{2ab7}'),
+        0xb9 => Some('\u{2aba}'),
+        0xba => Some('\u{2ab9}'),
+        0xbb => Some('\u{2abc}'),
+        0xbc => Some('\u{2abb}'),
+        0xbd => Some('\u{2abe}'),
+        0xbe => Some('\u{2abd}'),
+        0xbf => Some('\u{2ac0}'),
+        0xc0 => Some('\u{2abf}'),
+        0xc1 => Some('\u{2ac2}'),
+        0xc2 => Some('\u{2ac1}'),
+        0xc3 => Some('\u{2ac4}'),
+        0xc4 => Some('\u{2ac3}'),
+        0xc5 => Some('\u{2ac6}'),
+        0xc6 => Some('\u{2ac5}'),
+        0xc7 => Some('\u{2ac8}'),
+        0xc8 => Some('\u{2ac7}'),
+        0xc9 => Some('\u{2aca}'),
+        0xca => Some('\u{2ac9}'),
+        0xcb => Some('\u{2acc}'),
+        0xcc => Some('\u{2acb}'),
+        0xcd => Some('\u{2ace}'),
+        0xce => Some('\u{2acd}'),
+        0xcf => Some('\u{2ad0}'),
+        0xd0 => Some('\u{2acf}'),
+        0xd1 => Some('\u{2ad2}'),
+        0xd2 => Some('\u{2ad1}'),
+        0xd3 => Some('\u{2ad4}'),
+        0xd4 => Some('\u{2ad3}'),
+        0xd5 => Some('\u{2ad6}'),
+        0xd6 => Some('\u{2ad5}'),
+        0xde => Some('\u{22a6}'),
+        0xe3 => Some('\u{22a9}'),
+        0xe4 => Some('\u{22a8}'),
+        0xe5 => Some('\u{22ab}'),
+        0xec => Some('\u{2aed}'),
+        0xed => Some('\u{2aec}'),
+        0xee => Some('\u{2224}'),
+        0xf7 => Some('\u{2af8}'),
+        0xf8 => Some('\u{2af7}'),
+        0xf9 => Some('\u{2afa}'),
+        0xfa => Some('\u{2af9}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p2b(b: u8) -> Option<char> {
+    match b {
+        0xfe => Some('\u{221f}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p2e(b: u8) -> Option<char> {
+    match b {
+        0x02 => Some('\u{2e03}'),
+        0x03 => Some('\u{2e02}'),
+        0x04 => Some('\u{2e05}'),
+        0x05 => Some('\u{2e04}'),
+        0x09 => Some('\u{2e0a}'),
+        0x0a => Some('\u{2e09}'),
+        0x0c => Some('\u{2e0d}'),
+        0x0d => Some('\u{2e0c}'),
+        0x1c => Some('\u{2e1d}'),
+        0x1d => Some('\u{2e1c}'),
+        0x20 => Some('\u{2e21}'),
+        0x21 => Some('\u{2e20}'),
+        0x22 => Some('\u{2e23}'),
+        0x23 => Some('\u{2e22}'),
+        0x24 => Some('\u{2e25}'),
+        0x25 => Some('\u{2e24}'),
+        0x26 => Some('\u{2e27}'),
+        0x27 => Some('\u{2e26}'),
+        0x28 => Some('\u{2e29}'),
+        0x29 => Some('\u{2e28}'),
+        0x55 => Some('\u{2e56}'),
+        0x56 => Some('\u{2e55}'),
+        0x57 => Some('\u{2e58}'),
+        0x58 => Some('\u{2e57}'),
+        0x59 => Some('\u{2e5a}'),
+        0x5a => Some('\u{2e59}'),
+        0x5b => Some('\u{2e5c}'),
+        0x5c => Some('\u{2e5b}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_p30(b: u8) -> Option<char> {
+    match b {
+        0x08 => Some('\u{3009}'),
+        0x09 => Some('\u{3008}'),
+        0x0a => Some('\u{300b}'),
+        0x0b => Some('\u{300a}'),
+        0x0c => Some('\u{300d}'),
+        0x0d => Some('\u{300c}'),
+        0x0e => Some('\u{300f}'),
+        0x0f => Some('\u{300e}'),
+        0x10 => Some('\u{3011}'),
+        0x11 => Some('\u{3010}'),
+        0x14 => Some('\u{3015}'),
+        0x15 => Some('\u{3014}'),
+        0x16 => Some('\u{3017}'),
+        0x17 => Some('\u{3016}'),
+        0x18 => Some('\u{3019}'),
+        0x19 => Some('\u{3018}'),
+        0x1a => Some('\u{301b}'),
+        0x1b => Some('\u{301a}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_pfe(b: u8) -> Option<char> {
+    match b {
+        0x59 => Some('\u{fe5a}'),
+        0x5a => Some('\u{fe59}'),
+        0x5b => Some('\u{fe5c}'),
+        0x5c => Some('\u{fe5b}'),
+        0x5d => Some('\u{fe5e}'),
+        0x5e => Some('\u{fe5d}'),
+        0x64 => Some('\u{fe65}'),
+        0x65 => Some('\u{fe64}'),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bm_pff(b: u8) -> Option<char> {
+    match b {
+        0x08 => Some('\u{ff09}'),
+        0x09 => Some('\u{ff08}'),
+        0x1c => Some('\u{ff1e}'),
+        0x1e => Some('\u{ff1c}'),
+        0x3b => Some('\u{ff3d}'),
+        0x3d => Some('\u{ff3b}'),
+        0x5b => Some('\u{ff5d}'),
+        0x5d => Some('\u{ff5b}'),
+        0x5f => Some('\u{ff60}'),
+        0x60 => Some('\u{ff5f}'),
+        0x62 => Some('\u{ff63}'),
+        0x63 => Some('\u{ff62}'),
+        _ => None,
+    }
+}
+
+#[inline]
+pub(crate) const fn bidi_mirrored(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => bmir_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => bmir_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x016 => bmir_p16(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => bmir_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => bmir_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x022 => bmir_p22(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x023 => bmir_p23(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x027 => bmir_p27(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x029 => bmir_p29(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02a => bmir_p2a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02b => bmir_p2b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02e => bmir_p2e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => bmir_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => bmir_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => bmir_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d6 => bmir_p1d6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d7 => bmir_p1d7(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn bmir_p0(b: u8) -> bool {
+    match b {
+        0x28..=0x29 => true,
+        0x3c => true,
+        0x3e => true,
+        0x5b => true,
+        0x5d => true,
+        0x7b => true,
+        0x7d => true,
+        #[cfg(feature = "latin1")]
+        0xab => true,
+        #[cfg(feature = "latin1")]
+        0xbb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_pf(b: u8) -> bool {
+    match b {
+        0x3a..=0x3d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p16(b: u8) -> bool {
+    match b {
+        0x9b..=0x9c => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p20(b: u8) -> bool {
+    match b {
+        0x39..=0x3a => true,
+        0x45..=0x46 => true,
+        0x7d..=0x7e => true,
+        0x8d..=0x8e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p21(b: u8) -> bool {
+    match b {
+        0x40 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p22(b: u8) -> bool {
+    match b {
+        0x01..=0x04 => true,
+        0x08..=0x0d => true,
+        0x11 => true,
+        0x15..=0x16 => true,
+        0x1a..=0x1d => true,
+        0x1f..=0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x2b..=0x33 => true,
+        0x39 => true,
+        0x3b..=0x4c => true,
+        0x52..=0x55 => true,
+        0x5f..=0x60 => true,
+        0x62 => true,
+        0x64..=0x6b => true,
+        0x6d..=0x8c => true,
+        0x8f..=0x92 => true,
+        0x98 => true,
+        0xa2..=0xa3 => true,
+        0xa6..=0xb8 => true,
+        0xbe..=0xbf => true,
+        0xc9..=0xcd => true,
+        0xd0..=0xd1 => true,
+        0xd6..=0xed => true,
+        0xf0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p23(b: u8) -> bool {
+    match b {
+        0x08..=0x0b => true,
+        0x20..=0x21 => true,
+        0x29..=0x2a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p27(b: u8) -> bool {
+    match b {
+        0x68..=0x75 => true,
+        0xc0 => true,
+        0xc3..=0xc6 => true,
+        0xc8..=0xc9 => true,
+        0xcb..=0xcd => true,
+        0xd3..=0xd6 => true,
+        0xdc..=0xde => true,
+        0xe2..=0xef => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p29(b: u8) -> bool {
+    match b {
+        0x83..=0x98 => true,
+        0x9b..=0xa0 => true,
+        0xa2..=0xaf => true,
+        0xb8 => true,
+        0xc0..=0xc5 => true,
+        0xc9 => true,
+        0xce..=0xd2 => true,
+        0xd4..=0xd5 => true,
+        0xd8..=0xdc => true,
+        0xe1 => true,
+        0xe3..=0xe5 => true,
+        0xe8..=0xe9 => true,
+        0xf4..=0xf9 => true,
+        0xfc..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p2a(b: u8) -> bool {
+    match b {
+        0x0a..=0x1c => true,
+        0x1e..=0x21 => true,
+        0x24 => true,
+        0x26 => true,
+        0x29 => true,
+        0x2b..=0x2e => true,
+        0x34..=0x35 => true,
+        0x3c..=0x3e => true,
+        0x57..=0x58 => true,
+        0x64..=0x65 => true,
+        0x6a..=0x6d => true,
+        0x6f..=0x70 => true,
+        0x73..=0x74 => true,
+        0x79..=0xa3 => true,
+        0xa6..=0xad => true,
+        0xaf..=0xd6 => true,
+        0xdc => true,
+        0xde => true,
+        0xe2..=0xe6 => true,
+        0xec..=0xee => true,
+        0xf3 => true,
+        0xf7..=0xfb => true,
+        0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p2b(b: u8) -> bool {
+    match b {
+        0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p2e(b: u8) -> bool {
+    match b {
+        0x02..=0x05 => true,
+        0x09..=0x0a => true,
+        0x0c..=0x0d => true,
+        0x1c..=0x1d => true,
+        0x20..=0x29 => true,
+        0x55..=0x5c => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_p30(b: u8) -> bool {
+    match b {
+        0x08..=0x11 => true,
+        0x14..=0x1b => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_pfe(b: u8) -> bool {
+    match b {
+        0x59..=0x5e => true,
+        0x64..=0x65 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn bmir_pff(b: u8) -> bool {
+    match b {
+        0x08..=0x09 => true,
+        0x1c => true,
+        0x1e => true,
+        0x3b => true,
+        0x3d => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f..=0x60 => true,
+        0x62..=0x63 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn bmir_p1d6(b: u8) -> bool {
+    match b {
+        0xdb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn bmir_p1d7(b: u8) -> bool {
+    match b {
+        0x15 => true,
+        0x4f => true,
+        0x89 => true,
+        0xc3 => true,
+        _ => false,
+    }
+}
+
 /// The `Joining_Group` property (Arabic/Syriac letter shaping class, UAX #9).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JoiningGroup {

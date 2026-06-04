@@ -806,6 +806,63 @@ fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
          character is positioned relative to its base.",
     );
 
+    // ---- Bidi mirroring: codepoint -> mirrored glyph (BidiMirroring.txt). ----
+    let bm_txt = fs::read_to_string(ucd.join("BidiMirroring.txt")).expect("read BidiMirroring.txt");
+    let mut bm_render = vec!["None".to_string()];
+    let mut bm_to_code: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut bm_codes = vec![0u32; NUM_CODEPOINTS];
+    for line in bm_txt.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let mut parts = line.split(';');
+        let (Some(a), Some(b)) = (parts.next(), parts.next()) else {
+            continue;
+        };
+        let (Ok(cp), Ok(mir)) = (
+            u32::from_str_radix(a.trim(), 16),
+            u32::from_str_radix(b.trim(), 16),
+        ) else {
+            continue;
+        };
+        let code = *bm_to_code.entry(mir).or_insert_with(|| {
+            bm_render.push(format!("Some('\\u{{{mir:x}}}')"));
+            (bm_render.len() - 1) as u32
+        });
+        bm_codes[cp as usize] = code;
+    }
+    emit_lookup(
+        &mut out,
+        "bidi_mirror",
+        "bm",
+        "Option<char>",
+        &bm_codes,
+        0,
+        &bm_render,
+    );
+
+    // ---- Bidi_Mirrored property (UnicodeData.txt field 9 == "Y"). ----
+    let ud_bmir = fs::read_to_string(ucd.join("UnicodeData.txt")).expect("read UnicodeData.txt");
+    let mut bmir_codes = vec![0u32; NUM_CODEPOINTS];
+    for line in ud_bmir.lines() {
+        let f: Vec<&str> = line.split(';').collect();
+        if f.len() > 9 && f[9] == "Y" {
+            if let Ok(cp) = u32::from_str_radix(f[0], 16) {
+                bmir_codes[cp as usize] = 1;
+            }
+        }
+    }
+    emit_lookup(
+        &mut out,
+        "bidi_mirrored",
+        "bmir",
+        "bool",
+        &bmir_codes,
+        0,
+        &[String::from("false"), String::from("true")],
+    );
+
     // ---- Joining_Group (ArabicShaping.txt field 3). ----
     let as_txt = fs::read_to_string(ucd.join("ArabicShaping.txt")).expect("read ArabicShaping.txt");
     let mut jg_names: BTreeSet<String> = BTreeSet::new();

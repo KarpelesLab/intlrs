@@ -124,3 +124,15 @@ fn changes_when() {
     assert!(!changes_when_casemapped('1'));
     assert!(changes_when_casefolded('A'));
 }
+
+#[test]
+fn bidi_mirroring() {
+    use intl::unicode::{bidi_mirror, is_bidi_mirrored};
+    assert_eq!(bidi_mirror('('), Some(')'));
+    assert_eq!(bidi_mirror(')'), Some('('));
+    assert_eq!(bidi_mirror('<'), Some('>'));
+    assert_eq!(bidi_mirror('a'), None);
+    assert!(is_bidi_mirrored('('));
+    assert!(is_bidi_mirrored('['));
+    assert!(!is_bidi_mirrored('a'));
+}

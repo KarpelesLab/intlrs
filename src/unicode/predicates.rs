@@ -148,6 +148,31 @@ pub const fn is_default_ignorable(c: char) -> bool {
     binary_props::default_ignorable(c as u32)
 }
 
+/// The mirrored character to use for `c` when laying out right-to-left text
+/// (e.g. `(` ↔ `)`, `<` ↔ `>`), or `None` if `c` has no mirror glyph (UAX #9 /
+/// `BidiMirroring.txt`).
+///
+/// ```
+/// use intl::unicode::bidi_mirror;
+/// assert_eq!(bidi_mirror('('), Some(')'));
+/// assert_eq!(bidi_mirror('»'), Some('«'));
+/// assert_eq!(bidi_mirror('a'), None);
+/// ```
+#[inline]
+#[must_use]
+pub const fn bidi_mirror(c: char) -> Option<char> {
+    crate::unicode::generated::properties::bidi_mirror(c as u32)
+}
+
+/// The `Bidi_Mirrored` property: `true` if `c`'s glyph is mirrored when rendered
+/// in a right-to-left context (a superset of the characters that have an
+/// explicit [`bidi_mirror`] mapping).
+#[inline]
+#[must_use]
+pub const fn is_bidi_mirrored(c: char) -> bool {
+    crate::unicode::generated::properties::bidi_mirrored(c as u32)
+}
+
 /// `Changes_When_Lowercased`: `c` is altered by full lowercasing.
 #[inline]
 #[must_use]
