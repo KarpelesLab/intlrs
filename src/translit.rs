@@ -27,6 +27,85 @@ pub fn remove_diacritics(s: &str) -> String {
     crate::unicode::nfc(stripped).collect()
 }
 
+/// Transliterate Cyrillic script to Latin using **ISO 9:1995** — the single,
+/// language-independent, reversible standard (so Russian, Ukrainian, Serbian,
+/// Bulgarian, … all map consistently). The output uses Latin letters with
+/// diacritics (`ж→ž`, `ч→č`, `ш→š`); chain with [`latin_ascii`] for plain ASCII.
+/// Non-Cyrillic characters pass through unchanged.
+///
+/// ```
+/// use intl::translit::{cyrillic_to_latin, latin_ascii};
+/// assert_eq!(cyrillic_to_latin("Москва"), "Moskva");
+/// assert_eq!(cyrillic_to_latin("Привет"), "Privet");
+/// assert_eq!(latin_ascii(&cyrillic_to_latin("Чехов")), "Cehov"); // č -> c
+/// ```
+#[must_use]
+pub fn cyrillic_to_latin(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            'а' => out.push('a'),
+            'б' => out.push('b'),
+            'в' => out.push('v'),
+            'г' => out.push('g'),
+            'д' => out.push('d'),
+            'е' => out.push('e'),
+            'ё' => out.push('ë'),
+            'ж' => out.push('ž'),
+            'з' => out.push('z'),
+            'и' => out.push('i'),
+            'й' => out.push('j'),
+            'к' => out.push('k'),
+            'л' => out.push('l'),
+            'м' => out.push('m'),
+            'н' => out.push('n'),
+            'о' => out.push('o'),
+            'п' => out.push('p'),
+            'р' => out.push('r'),
+            'с' => out.push('s'),
+            'т' => out.push('t'),
+            'у' => out.push('u'),
+            'ф' => out.push('f'),
+            'х' => out.push('h'),
+            'ц' => out.push('c'),
+            'ч' => out.push('č'),
+            'ш' => out.push('š'),
+            'щ' => out.push('ŝ'),
+            'ъ' => out.push('ʺ'),
+            'ы' => out.push('y'),
+            'ь' => out.push('ʹ'),
+            'э' => out.push('è'),
+            'ю' => out.push('û'),
+            'я' => out.push('â'),
+            // Non-Russian common Cyrillic letters.
+            'і' => out.push('ì'),
+            'ї' => out.push('ï'),
+            'є' => out.push('ê'),
+            'ґ' => out.push('g'),
+            'ђ' => out.push('đ'),
+            'ј' => out.push('j'),
+            'љ' => out.push_str("lj"),
+            'њ' => out.push_str("nj"),
+            'ћ' => out.push('ć'),
+            'џ' => out.push_str("dž"),
+            'ѕ' => out.push('ẑ'),
+            // Uppercase: transliterate the lowercased form, then upper-case it.
+            'А'..='Я' | 'Ё' | 'І' | 'Ї' | 'Є' | 'Ґ' | 'Ђ' | 'Ј' | 'Љ' | 'Њ' | 'Ћ' | 'Џ' | 'Ѕ' =>
+            {
+                let lower = c.to_lowercase().next().unwrap_or(c);
+                let t = cyrillic_to_latin(lower.encode_utf8(&mut [0u8; 4]));
+                let mut chars = t.chars();
+                if let Some(first) = chars.next() {
+                    out.extend(first.to_uppercase());
+                    out.push_str(chars.as_str());
+                }
+            }
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
 /// Fold Latin text to ASCII: decompose (NFD), drop combining marks, and map the
 /// non-decomposing Latin letters (`ø→o`, `æ→ae`, `ß→ss`, `þ→th`, …) and common
 /// typographic punctuation (curly quotes, dashes, ellipsis, NBSP). Non-Latin

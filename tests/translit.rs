@@ -34,3 +34,17 @@ fn diacritics() {
     // Composed input.
     assert_eq!(d("é"), "e");
 }
+
+#[test]
+fn cyrillic() {
+    use intl::translit::{cyrillic_to_latin as c, latin_ascii};
+    assert_eq!(c("Москва"), "Moskva");
+    assert_eq!(c("Привет, мир"), "Privet, mir");
+    assert_eq!(c("Достоевский"), "Dostoevskij");
+    assert_eq!(c("ЖУК"), "ŽUK");
+    // Chained to ASCII.
+    assert_eq!(latin_ascii(&c("Чехов")), "Cehov");
+    assert_eq!(latin_ascii(&c("Шостакович")), "Sostakovic");
+    // Non-Cyrillic passes through.
+    assert_eq!(c("hello"), "hello");
+}
