@@ -62,11 +62,11 @@ conformance corpus. Highest value, lowest risk — do these next.
   predicates.
 - 🟡 **More properties** (incremental, cheap): ✅ `Age` (`DerivedAge.txt`),
   ✅ `Block` (`Blocks.txt`), ✅ `Joining_Type` (`DerivedJoiningType.txt`),
-  ✅ Bidi_Class accessor (`bidi_class`), ✅ `Default_Ignorable_Code_Point` /
-  `Math` / `Dash` / `Diacritic` / `Hex_Digit` / `White_Space` /
-  `Quotation_Mark` / `Join_Control`. Still: Joining_Group, Indic positional/
-  syllabic, character `Name` ↔ codepoint, Hangul syllable name. Optional `name`
-  lookup is large (perfect-hash or trie).
+  ✅ `Indic_Syllabic_Category`, ✅ Bidi_Class accessor (`bidi_class`),
+  ✅ `Default_Ignorable_Code_Point` / `Math` / `Dash` / `Diacritic` /
+  `Hex_Digit` / `White_Space` / `Quotation_Mark` / `Join_Control`. Still:
+  Joining_Group, Indic_Positional_Category, character `Name` ↔ codepoint, Hangul
+  syllable name. Optional `name` lookup is large (perfect-hash or trie).
 
 ---
 

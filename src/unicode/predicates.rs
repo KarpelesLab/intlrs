@@ -13,7 +13,7 @@
 use super::category::GeneralCategory;
 use super::generated::binary_props;
 use super::generated::general_category::general_category as gc_raw;
-pub use super::generated::properties::JoiningType;
+pub use super::generated::properties::{IndicSyllabicCategory, JoiningType};
 
 /// The [`GeneralCategory`] of `c`.
 #[inline]
@@ -189,6 +189,21 @@ pub const fn block(c: char) -> &'static str {
 #[must_use]
 pub const fn joining_type(c: char) -> JoiningType {
     crate::unicode::generated::properties::joining_type(c as u32)
+}
+
+/// The `Indic_Syllabic_Category` of `c` (UAX #44) — the structural role a
+/// character plays in Indic-style scripts; `Other` for everything else.
+///
+/// ```
+/// use intl::unicode::{indic_syllabic_category, IndicSyllabicCategory};
+/// assert_eq!(indic_syllabic_category('\u{0915}'), IndicSyllabicCategory::Consonant); // DEVANAGARI KA
+/// assert_eq!(indic_syllabic_category('\u{094D}'), IndicSyllabicCategory::Virama);    // DEVANAGARI VIRAMA
+/// assert_eq!(indic_syllabic_category('A'), IndicSyllabicCategory::Other);
+/// ```
+#[inline]
+#[must_use]
+pub const fn indic_syllabic_category(c: char) -> IndicSyllabicCategory {
+    crate::unicode::generated::properties::indic_syllabic_category(c as u32)
 }
 
 /// `Dash` property (dash punctuation and dash symbols).

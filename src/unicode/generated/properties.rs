@@ -10406,3 +10406,1226 @@ const fn jt_pe01(b: u8) -> JoiningType {
         _ => JoiningType::NonJoining,
     }
 }
+
+/// The `Indic_Syllabic_Category` property (UAX #44) for complex-script shaping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IndicSyllabicCategory {
+    Other,
+    Avagraha,
+    Bindu,
+    BrahmiJoiningNumber,
+    CantillationMark,
+    Consonant,
+    ConsonantDead,
+    ConsonantFinal,
+    ConsonantHeadLetter,
+    ConsonantInitialPostfixed,
+    ConsonantKiller,
+    ConsonantMedial,
+    ConsonantPlaceholder,
+    ConsonantPrecedingRepha,
+    ConsonantPrefixed,
+    ConsonantSubjoined,
+    ConsonantSucceedingRepha,
+    ConsonantWithStacker,
+    GeminationMark,
+    InvisibleStacker,
+    Joiner,
+    ModifyingLetter,
+    NonJoiner,
+    Nukta,
+    Number,
+    NumberJoiner,
+    PureKiller,
+    RegisterShifter,
+    ReorderingKiller,
+    SyllableModifier,
+    ToneLetter,
+    ToneMark,
+    Virama,
+    Visarga,
+    Vowel,
+    VowelDependent,
+    VowelIndependent,
+}
+
+#[inline]
+pub(crate) const fn indic_syllabic_category(cp: u32) -> IndicSyllabicCategory {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => isc_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => isc_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => isc_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => isc_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => isc_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => isc_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => isc_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => isc_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => isc_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x017 => isc_p17(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x019 => isc_p19(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01a => isc_p1a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => isc_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => isc_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => isc_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => isc_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x025 => isc_p25(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a8 => isc_pa8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a9 => isc_pa9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0aa => isc_paa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => isc_pab(cp as u8),
+        #[cfg(feature = "full")]
+        0x10a => isc_p10a(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => isc_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => isc_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x112 => isc_p112(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => isc_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => isc_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => isc_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x116 => isc_p116(cp as u8),
+        #[cfg(feature = "full")]
+        0x117 => isc_p117(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => isc_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => isc_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x11a => isc_p11a(cp as u8),
+        #[cfg(feature = "full")]
+        0x11b => isc_p11b(cp as u8),
+        #[cfg(feature = "full")]
+        0x11c => isc_p11c(cp as u8),
+        #[cfg(feature = "full")]
+        0x11d => isc_p11d(cp as u8),
+        #[cfg(feature = "full")]
+        0x11e => isc_p11e(cp as u8),
+        #[cfg(feature = "full")]
+        0x11f => isc_p11f(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => isc_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => isc_p16d(cp as u8),
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn isc_p0(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x2d => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x30..=0x39 => IndicSyllabicCategory::Number,
+        #[cfg(feature = "latin1")]
+        0xa0 => IndicSyllabicCategory::ConsonantPlaceholder,
+        #[cfg(feature = "latin1")]
+        0xb2..=0xb3 => IndicSyllabicCategory::SyllableModifier,
+        #[cfg(feature = "latin1")]
+        0xd7 => IndicSyllabicCategory::ConsonantPlaceholder,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p9(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x02 => IndicSyllabicCategory::Bindu,
+        0x03 => IndicSyllabicCategory::Visarga,
+        0x04..=0x14 => IndicSyllabicCategory::VowelIndependent,
+        0x15..=0x39 => IndicSyllabicCategory::Consonant,
+        0x3a..=0x3b => IndicSyllabicCategory::VowelDependent,
+        0x3c => IndicSyllabicCategory::Nukta,
+        0x3d => IndicSyllabicCategory::Avagraha,
+        0x3e..=0x4c => IndicSyllabicCategory::VowelDependent,
+        0x4d => IndicSyllabicCategory::Virama,
+        0x4e..=0x4f => IndicSyllabicCategory::VowelDependent,
+        0x51..=0x52 => IndicSyllabicCategory::CantillationMark,
+        0x55..=0x57 => IndicSyllabicCategory::VowelDependent,
+        0x58..=0x5f => IndicSyllabicCategory::Consonant,
+        0x60..=0x61 => IndicSyllabicCategory::VowelIndependent,
+        0x62..=0x63 => IndicSyllabicCategory::VowelDependent,
+        0x66..=0x6f => IndicSyllabicCategory::Number,
+        0x72..=0x77 => IndicSyllabicCategory::VowelIndependent,
+        0x78..=0x7f => IndicSyllabicCategory::Consonant,
+        0x80 => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x81..=0x82 => IndicSyllabicCategory::Bindu,
+        0x83 => IndicSyllabicCategory::Visarga,
+        0x85..=0x8c => IndicSyllabicCategory::VowelIndependent,
+        0x8f..=0x90 => IndicSyllabicCategory::VowelIndependent,
+        0x93..=0x94 => IndicSyllabicCategory::VowelIndependent,
+        0x95..=0xa8 => IndicSyllabicCategory::Consonant,
+        0xaa..=0xb0 => IndicSyllabicCategory::Consonant,
+        0xb2 => IndicSyllabicCategory::Consonant,
+        0xb6..=0xb9 => IndicSyllabicCategory::Consonant,
+        0xbc => IndicSyllabicCategory::Nukta,
+        0xbd => IndicSyllabicCategory::Avagraha,
+        0xbe..=0xc4 => IndicSyllabicCategory::VowelDependent,
+        0xc7..=0xc8 => IndicSyllabicCategory::VowelDependent,
+        0xcb..=0xcc => IndicSyllabicCategory::VowelDependent,
+        0xcd => IndicSyllabicCategory::Virama,
+        0xce => IndicSyllabicCategory::ConsonantDead,
+        0xd7 => IndicSyllabicCategory::VowelDependent,
+        0xdc..=0xdd => IndicSyllabicCategory::Consonant,
+        0xdf => IndicSyllabicCategory::Consonant,
+        0xe0..=0xe1 => IndicSyllabicCategory::VowelIndependent,
+        0xe2..=0xe3 => IndicSyllabicCategory::VowelDependent,
+        0xe6..=0xef => IndicSyllabicCategory::Number,
+        0xf0..=0xf1 => IndicSyllabicCategory::Consonant,
+        0xfc => IndicSyllabicCategory::Bindu,
+        0xfe => IndicSyllabicCategory::SyllableModifier,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pa(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x01..=0x02 => IndicSyllabicCategory::Bindu,
+        0x03 => IndicSyllabicCategory::Visarga,
+        0x05..=0x0a => IndicSyllabicCategory::VowelIndependent,
+        0x0f..=0x10 => IndicSyllabicCategory::VowelIndependent,
+        0x13..=0x14 => IndicSyllabicCategory::VowelIndependent,
+        0x15..=0x28 => IndicSyllabicCategory::Consonant,
+        0x2a..=0x30 => IndicSyllabicCategory::Consonant,
+        0x32..=0x33 => IndicSyllabicCategory::Consonant,
+        0x35..=0x36 => IndicSyllabicCategory::Consonant,
+        0x38..=0x39 => IndicSyllabicCategory::Consonant,
+        0x3c => IndicSyllabicCategory::Nukta,
+        0x3e..=0x42 => IndicSyllabicCategory::VowelDependent,
+        0x47..=0x48 => IndicSyllabicCategory::VowelDependent,
+        0x4b..=0x4c => IndicSyllabicCategory::VowelDependent,
+        0x4d => IndicSyllabicCategory::Virama,
+        0x51 => IndicSyllabicCategory::CantillationMark,
+        0x59..=0x5c => IndicSyllabicCategory::Consonant,
+        0x5e => IndicSyllabicCategory::Consonant,
+        0x66..=0x6f => IndicSyllabicCategory::Number,
+        0x70 => IndicSyllabicCategory::Bindu,
+        0x71 => IndicSyllabicCategory::GeminationMark,
+        0x72..=0x73 => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x75 => IndicSyllabicCategory::ConsonantMedial,
+        0x81..=0x82 => IndicSyllabicCategory::Bindu,
+        0x83 => IndicSyllabicCategory::Visarga,
+        0x85..=0x8d => IndicSyllabicCategory::VowelIndependent,
+        0x8f..=0x91 => IndicSyllabicCategory::VowelIndependent,
+        0x93..=0x94 => IndicSyllabicCategory::VowelIndependent,
+        0x95..=0xa8 => IndicSyllabicCategory::Consonant,
+        0xaa..=0xb0 => IndicSyllabicCategory::Consonant,
+        0xb2..=0xb3 => IndicSyllabicCategory::Consonant,
+        0xb5..=0xb9 => IndicSyllabicCategory::Consonant,
+        0xbc => IndicSyllabicCategory::Nukta,
+        0xbd => IndicSyllabicCategory::Avagraha,
+        0xbe..=0xc5 => IndicSyllabicCategory::VowelDependent,
+        0xc7..=0xc9 => IndicSyllabicCategory::VowelDependent,
+        0xcb..=0xcc => IndicSyllabicCategory::VowelDependent,
+        0xcd => IndicSyllabicCategory::Virama,
+        0xe0..=0xe1 => IndicSyllabicCategory::VowelIndependent,
+        0xe2..=0xe3 => IndicSyllabicCategory::VowelDependent,
+        0xe6..=0xef => IndicSyllabicCategory::Number,
+        0xf9 => IndicSyllabicCategory::Consonant,
+        0xfa => IndicSyllabicCategory::CantillationMark,
+        0xfb => IndicSyllabicCategory::GeminationMark,
+        0xfc => IndicSyllabicCategory::CantillationMark,
+        0xfd..=0xff => IndicSyllabicCategory::Nukta,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pb(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x01..=0x02 => IndicSyllabicCategory::Bindu,
+        0x03 => IndicSyllabicCategory::Visarga,
+        0x05..=0x0c => IndicSyllabicCategory::VowelIndependent,
+        0x0f..=0x10 => IndicSyllabicCategory::VowelIndependent,
+        0x13..=0x14 => IndicSyllabicCategory::VowelIndependent,
+        0x15..=0x28 => IndicSyllabicCategory::Consonant,
+        0x2a..=0x30 => IndicSyllabicCategory::Consonant,
+        0x32..=0x33 => IndicSyllabicCategory::Consonant,
+        0x35..=0x39 => IndicSyllabicCategory::Consonant,
+        0x3c => IndicSyllabicCategory::Nukta,
+        0x3d => IndicSyllabicCategory::Avagraha,
+        0x3e..=0x44 => IndicSyllabicCategory::VowelDependent,
+        0x47..=0x48 => IndicSyllabicCategory::VowelDependent,
+        0x4b..=0x4c => IndicSyllabicCategory::VowelDependent,
+        0x4d => IndicSyllabicCategory::Virama,
+        0x55..=0x57 => IndicSyllabicCategory::VowelDependent,
+        0x5c..=0x5d => IndicSyllabicCategory::Consonant,
+        0x5f => IndicSyllabicCategory::Consonant,
+        0x60..=0x61 => IndicSyllabicCategory::VowelIndependent,
+        0x62..=0x63 => IndicSyllabicCategory::VowelDependent,
+        0x66..=0x6f => IndicSyllabicCategory::Number,
+        0x71 => IndicSyllabicCategory::Consonant,
+        0x82 => IndicSyllabicCategory::Bindu,
+        0x83 => IndicSyllabicCategory::ModifyingLetter,
+        0x85..=0x8a => IndicSyllabicCategory::VowelIndependent,
+        0x8e..=0x90 => IndicSyllabicCategory::VowelIndependent,
+        0x92..=0x94 => IndicSyllabicCategory::VowelIndependent,
+        0x95 => IndicSyllabicCategory::Consonant,
+        0x99..=0x9a => IndicSyllabicCategory::Consonant,
+        0x9c => IndicSyllabicCategory::Consonant,
+        0x9e..=0x9f => IndicSyllabicCategory::Consonant,
+        0xa3..=0xa4 => IndicSyllabicCategory::Consonant,
+        0xa8..=0xaa => IndicSyllabicCategory::Consonant,
+        0xae..=0xb9 => IndicSyllabicCategory::Consonant,
+        0xbe..=0xc2 => IndicSyllabicCategory::VowelDependent,
+        0xc6..=0xc8 => IndicSyllabicCategory::VowelDependent,
+        0xca..=0xcc => IndicSyllabicCategory::VowelDependent,
+        0xcd => IndicSyllabicCategory::Virama,
+        0xd7 => IndicSyllabicCategory::VowelDependent,
+        0xe6..=0xef => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pc(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x02 => IndicSyllabicCategory::Bindu,
+        0x03 => IndicSyllabicCategory::Visarga,
+        0x04 => IndicSyllabicCategory::Bindu,
+        0x05..=0x0c => IndicSyllabicCategory::VowelIndependent,
+        0x0e..=0x10 => IndicSyllabicCategory::VowelIndependent,
+        0x12..=0x14 => IndicSyllabicCategory::VowelIndependent,
+        0x15..=0x28 => IndicSyllabicCategory::Consonant,
+        0x2a..=0x39 => IndicSyllabicCategory::Consonant,
+        0x3c => IndicSyllabicCategory::Nukta,
+        0x3d => IndicSyllabicCategory::Avagraha,
+        0x3e..=0x44 => IndicSyllabicCategory::VowelDependent,
+        0x46..=0x48 => IndicSyllabicCategory::VowelDependent,
+        0x4a..=0x4c => IndicSyllabicCategory::VowelDependent,
+        0x4d => IndicSyllabicCategory::Virama,
+        0x55..=0x56 => IndicSyllabicCategory::VowelDependent,
+        0x58..=0x5a => IndicSyllabicCategory::Consonant,
+        0x5d => IndicSyllabicCategory::ConsonantDead,
+        0x60..=0x61 => IndicSyllabicCategory::VowelIndependent,
+        0x62..=0x63 => IndicSyllabicCategory::VowelDependent,
+        0x66..=0x6f => IndicSyllabicCategory::Number,
+        0x80..=0x82 => IndicSyllabicCategory::Bindu,
+        0x83 => IndicSyllabicCategory::Visarga,
+        0x85..=0x8c => IndicSyllabicCategory::VowelIndependent,
+        0x8e..=0x90 => IndicSyllabicCategory::VowelIndependent,
+        0x92..=0x94 => IndicSyllabicCategory::VowelIndependent,
+        0x95..=0xa8 => IndicSyllabicCategory::Consonant,
+        0xaa..=0xb3 => IndicSyllabicCategory::Consonant,
+        0xb5..=0xb9 => IndicSyllabicCategory::Consonant,
+        0xbc => IndicSyllabicCategory::Nukta,
+        0xbd => IndicSyllabicCategory::Avagraha,
+        0xbe..=0xc4 => IndicSyllabicCategory::VowelDependent,
+        0xc6..=0xc8 => IndicSyllabicCategory::VowelDependent,
+        0xca..=0xcc => IndicSyllabicCategory::VowelDependent,
+        0xcd => IndicSyllabicCategory::Virama,
+        0xd5..=0xd6 => IndicSyllabicCategory::VowelDependent,
+        0xdd => IndicSyllabicCategory::ConsonantDead,
+        0xde => IndicSyllabicCategory::Consonant,
+        0xe0..=0xe1 => IndicSyllabicCategory::VowelIndependent,
+        0xe2..=0xe3 => IndicSyllabicCategory::VowelDependent,
+        0xe6..=0xef => IndicSyllabicCategory::Number,
+        0xf1..=0xf2 => IndicSyllabicCategory::ConsonantWithStacker,
+        0xf3 => IndicSyllabicCategory::Bindu,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pd(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x02 => IndicSyllabicCategory::Bindu,
+        0x03 => IndicSyllabicCategory::Visarga,
+        0x04 => IndicSyllabicCategory::Bindu,
+        0x05..=0x0c => IndicSyllabicCategory::VowelIndependent,
+        0x0e..=0x10 => IndicSyllabicCategory::VowelIndependent,
+        0x12..=0x14 => IndicSyllabicCategory::VowelIndependent,
+        0x15..=0x3a => IndicSyllabicCategory::Consonant,
+        0x3b..=0x3c => IndicSyllabicCategory::PureKiller,
+        0x3d => IndicSyllabicCategory::Avagraha,
+        0x3e..=0x44 => IndicSyllabicCategory::VowelDependent,
+        0x46..=0x48 => IndicSyllabicCategory::VowelDependent,
+        0x4a..=0x4c => IndicSyllabicCategory::VowelDependent,
+        0x4d => IndicSyllabicCategory::Virama,
+        0x4e => IndicSyllabicCategory::ConsonantPrecedingRepha,
+        0x54..=0x56 => IndicSyllabicCategory::ConsonantDead,
+        0x57 => IndicSyllabicCategory::VowelDependent,
+        0x5f..=0x61 => IndicSyllabicCategory::VowelIndependent,
+        0x62..=0x63 => IndicSyllabicCategory::VowelDependent,
+        0x66..=0x6f => IndicSyllabicCategory::Number,
+        0x7a..=0x7f => IndicSyllabicCategory::ConsonantDead,
+        0x81..=0x82 => IndicSyllabicCategory::Bindu,
+        0x83 => IndicSyllabicCategory::Visarga,
+        0x85..=0x96 => IndicSyllabicCategory::VowelIndependent,
+        0x9a..=0xb1 => IndicSyllabicCategory::Consonant,
+        0xb3..=0xbb => IndicSyllabicCategory::Consonant,
+        0xbd => IndicSyllabicCategory::Consonant,
+        0xc0..=0xc6 => IndicSyllabicCategory::Consonant,
+        0xca => IndicSyllabicCategory::Virama,
+        0xcf..=0xd4 => IndicSyllabicCategory::VowelDependent,
+        0xd6 => IndicSyllabicCategory::VowelDependent,
+        0xd8..=0xdf => IndicSyllabicCategory::VowelDependent,
+        0xe6..=0xef => IndicSyllabicCategory::Number,
+        0xf2..=0xf3 => IndicSyllabicCategory::VowelDependent,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pe(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x01..=0x2e => IndicSyllabicCategory::Consonant,
+        0x30..=0x39 => IndicSyllabicCategory::VowelDependent,
+        0x3a => IndicSyllabicCategory::PureKiller,
+        0x40..=0x45 => IndicSyllabicCategory::VowelDependent,
+        0x47 => IndicSyllabicCategory::VowelDependent,
+        0x48..=0x4b => IndicSyllabicCategory::ToneMark,
+        0x4c => IndicSyllabicCategory::ConsonantKiller,
+        0x4d => IndicSyllabicCategory::Bindu,
+        0x4e => IndicSyllabicCategory::PureKiller,
+        0x50..=0x59 => IndicSyllabicCategory::Number,
+        0x81..=0x82 => IndicSyllabicCategory::Consonant,
+        0x84 => IndicSyllabicCategory::Consonant,
+        0x86..=0x8a => IndicSyllabicCategory::Consonant,
+        0x8c..=0xa3 => IndicSyllabicCategory::Consonant,
+        0xa5 => IndicSyllabicCategory::Consonant,
+        0xa7..=0xae => IndicSyllabicCategory::Consonant,
+        0xb0..=0xb9 => IndicSyllabicCategory::VowelDependent,
+        0xba => IndicSyllabicCategory::PureKiller,
+        0xbb => IndicSyllabicCategory::VowelDependent,
+        0xbc..=0xbd => IndicSyllabicCategory::ConsonantMedial,
+        0xc0..=0xc4 => IndicSyllabicCategory::VowelDependent,
+        0xc8..=0xcb => IndicSyllabicCategory::ToneMark,
+        0xcd => IndicSyllabicCategory::Bindu,
+        0xce => IndicSyllabicCategory::SyllableModifier,
+        0xd0..=0xd9 => IndicSyllabicCategory::Number,
+        0xdc..=0xdf => IndicSyllabicCategory::Consonant,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pf(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x20..=0x33 => IndicSyllabicCategory::Number,
+        0x35 => IndicSyllabicCategory::SyllableModifier,
+        0x37 => IndicSyllabicCategory::SyllableModifier,
+        0x39 => IndicSyllabicCategory::Nukta,
+        0x40..=0x47 => IndicSyllabicCategory::Consonant,
+        0x49..=0x6c => IndicSyllabicCategory::Consonant,
+        0x71..=0x7d => IndicSyllabicCategory::VowelDependent,
+        0x7e => IndicSyllabicCategory::Bindu,
+        0x7f => IndicSyllabicCategory::Visarga,
+        0x80..=0x81 => IndicSyllabicCategory::VowelDependent,
+        0x82..=0x83 => IndicSyllabicCategory::Bindu,
+        0x84 => IndicSyllabicCategory::PureKiller,
+        0x85 => IndicSyllabicCategory::Avagraha,
+        0x88..=0x8c => IndicSyllabicCategory::ConsonantHeadLetter,
+        0x8d..=0x97 => IndicSyllabicCategory::ConsonantSubjoined,
+        0x99..=0xbc => IndicSyllabicCategory::ConsonantSubjoined,
+        0xc6 => IndicSyllabicCategory::SyllableModifier,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p10(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x20 => IndicSyllabicCategory::Consonant,
+        0x21..=0x2a => IndicSyllabicCategory::VowelIndependent,
+        0x2b..=0x35 => IndicSyllabicCategory::VowelDependent,
+        0x36 => IndicSyllabicCategory::Bindu,
+        0x37 => IndicSyllabicCategory::ToneMark,
+        0x38 => IndicSyllabicCategory::Visarga,
+        0x39 => IndicSyllabicCategory::InvisibleStacker,
+        0x3a => IndicSyllabicCategory::PureKiller,
+        0x3b..=0x3e => IndicSyllabicCategory::ConsonantMedial,
+        0x3f => IndicSyllabicCategory::Consonant,
+        0x40..=0x49 => IndicSyllabicCategory::Number,
+        0x4b => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x4e => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x50..=0x51 => IndicSyllabicCategory::Consonant,
+        0x52..=0x55 => IndicSyllabicCategory::VowelIndependent,
+        0x56..=0x59 => IndicSyllabicCategory::VowelDependent,
+        0x5a..=0x5d => IndicSyllabicCategory::Consonant,
+        0x5e..=0x60 => IndicSyllabicCategory::ConsonantMedial,
+        0x61 => IndicSyllabicCategory::Consonant,
+        0x62 => IndicSyllabicCategory::VowelDependent,
+        0x63..=0x64 => IndicSyllabicCategory::ToneMark,
+        0x65..=0x66 => IndicSyllabicCategory::Consonant,
+        0x67..=0x68 => IndicSyllabicCategory::VowelDependent,
+        0x69..=0x6d => IndicSyllabicCategory::ToneMark,
+        0x6e..=0x70 => IndicSyllabicCategory::Consonant,
+        0x71..=0x74 => IndicSyllabicCategory::VowelDependent,
+        0x75..=0x81 => IndicSyllabicCategory::Consonant,
+        0x82 => IndicSyllabicCategory::ConsonantMedial,
+        0x83..=0x86 => IndicSyllabicCategory::VowelDependent,
+        0x87..=0x8d => IndicSyllabicCategory::ToneMark,
+        0x8e => IndicSyllabicCategory::Consonant,
+        0x8f => IndicSyllabicCategory::ToneMark,
+        0x90..=0x99 => IndicSyllabicCategory::Number,
+        0x9a..=0x9b => IndicSyllabicCategory::ToneMark,
+        0x9c..=0x9d => IndicSyllabicCategory::VowelDependent,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p17(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x02 => IndicSyllabicCategory::VowelIndependent,
+        0x03..=0x11 => IndicSyllabicCategory::Consonant,
+        0x12..=0x13 => IndicSyllabicCategory::VowelDependent,
+        0x14..=0x15 => IndicSyllabicCategory::PureKiller,
+        0x1f => IndicSyllabicCategory::Consonant,
+        0x20..=0x22 => IndicSyllabicCategory::VowelIndependent,
+        0x23..=0x31 => IndicSyllabicCategory::Consonant,
+        0x32..=0x33 => IndicSyllabicCategory::VowelDependent,
+        0x34 => IndicSyllabicCategory::PureKiller,
+        0x40..=0x42 => IndicSyllabicCategory::VowelIndependent,
+        0x43..=0x51 => IndicSyllabicCategory::Consonant,
+        0x52..=0x53 => IndicSyllabicCategory::VowelDependent,
+        0x60..=0x62 => IndicSyllabicCategory::VowelIndependent,
+        0x63..=0x6c => IndicSyllabicCategory::Consonant,
+        0x6e..=0x70 => IndicSyllabicCategory::Consonant,
+        0x72..=0x73 => IndicSyllabicCategory::VowelDependent,
+        0x80..=0xa2 => IndicSyllabicCategory::Consonant,
+        0xa3..=0xb3 => IndicSyllabicCategory::VowelIndependent,
+        0xb6..=0xc5 => IndicSyllabicCategory::VowelDependent,
+        0xc6 => IndicSyllabicCategory::Bindu,
+        0xc7 => IndicSyllabicCategory::Visarga,
+        0xc8 => IndicSyllabicCategory::VowelDependent,
+        0xc9..=0xca => IndicSyllabicCategory::RegisterShifter,
+        0xcb => IndicSyllabicCategory::SyllableModifier,
+        0xcc => IndicSyllabicCategory::ConsonantSucceedingRepha,
+        0xcd => IndicSyllabicCategory::ConsonantKiller,
+        0xce..=0xd0 => IndicSyllabicCategory::SyllableModifier,
+        0xd1 => IndicSyllabicCategory::PureKiller,
+        0xd2 => IndicSyllabicCategory::InvisibleStacker,
+        0xd3 => IndicSyllabicCategory::SyllableModifier,
+        0xdc => IndicSyllabicCategory::Avagraha,
+        0xdd => IndicSyllabicCategory::SyllableModifier,
+        0xe0..=0xe9 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p19(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x1e => IndicSyllabicCategory::Consonant,
+        0x20..=0x28 => IndicSyllabicCategory::VowelDependent,
+        0x29..=0x2b => IndicSyllabicCategory::ConsonantSubjoined,
+        0x30..=0x31 => IndicSyllabicCategory::ConsonantFinal,
+        0x32 => IndicSyllabicCategory::Bindu,
+        0x33..=0x39 => IndicSyllabicCategory::ConsonantFinal,
+        0x3a => IndicSyllabicCategory::VowelDependent,
+        0x3b => IndicSyllabicCategory::SyllableModifier,
+        0x46..=0x4f => IndicSyllabicCategory::Number,
+        0x50..=0x62 => IndicSyllabicCategory::Consonant,
+        0x63..=0x6d => IndicSyllabicCategory::Vowel,
+        0x70..=0x74 => IndicSyllabicCategory::ToneLetter,
+        0x80..=0xab => IndicSyllabicCategory::Consonant,
+        0xb0..=0xc0 => IndicSyllabicCategory::VowelDependent,
+        0xc1..=0xc7 => IndicSyllabicCategory::ConsonantFinal,
+        0xc8..=0xc9 => IndicSyllabicCategory::ToneMark,
+        0xd0..=0xda => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p1a(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x16 => IndicSyllabicCategory::Consonant,
+        0x17..=0x1b => IndicSyllabicCategory::VowelDependent,
+        0x20..=0x4c => IndicSyllabicCategory::Consonant,
+        0x4d..=0x52 => IndicSyllabicCategory::VowelIndependent,
+        0x53..=0x54 => IndicSyllabicCategory::Consonant,
+        0x55..=0x56 => IndicSyllabicCategory::ConsonantMedial,
+        0x57 => IndicSyllabicCategory::ConsonantSubjoined,
+        0x58..=0x59 => IndicSyllabicCategory::ConsonantFinal,
+        0x5a => IndicSyllabicCategory::ConsonantInitialPostfixed,
+        0x5b..=0x5e => IndicSyllabicCategory::ConsonantSubjoined,
+        0x60 => IndicSyllabicCategory::InvisibleStacker,
+        0x61..=0x73 => IndicSyllabicCategory::VowelDependent,
+        0x74 => IndicSyllabicCategory::Bindu,
+        0x75..=0x79 => IndicSyllabicCategory::ToneMark,
+        0x7a => IndicSyllabicCategory::PureKiller,
+        0x7b..=0x7c => IndicSyllabicCategory::SyllableModifier,
+        0x7f => IndicSyllabicCategory::SyllableModifier,
+        0x80..=0x89 => IndicSyllabicCategory::Number,
+        0x90..=0x99 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p1b(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x02 => IndicSyllabicCategory::Bindu,
+        0x03 => IndicSyllabicCategory::ConsonantFinal,
+        0x04 => IndicSyllabicCategory::Visarga,
+        0x05..=0x12 => IndicSyllabicCategory::VowelIndependent,
+        0x13..=0x33 => IndicSyllabicCategory::Consonant,
+        0x34 => IndicSyllabicCategory::Nukta,
+        0x35..=0x43 => IndicSyllabicCategory::VowelDependent,
+        0x44 => IndicSyllabicCategory::Virama,
+        0x45..=0x4c => IndicSyllabicCategory::Consonant,
+        0x50..=0x59 => IndicSyllabicCategory::Number,
+        0x80 => IndicSyllabicCategory::Bindu,
+        0x81 => IndicSyllabicCategory::ConsonantFinal,
+        0x82 => IndicSyllabicCategory::Visarga,
+        0x83..=0x89 => IndicSyllabicCategory::VowelIndependent,
+        0x8a..=0xa0 => IndicSyllabicCategory::Consonant,
+        0xa1..=0xa3 => IndicSyllabicCategory::ConsonantSubjoined,
+        0xa4..=0xa9 => IndicSyllabicCategory::VowelDependent,
+        0xaa => IndicSyllabicCategory::PureKiller,
+        0xab => IndicSyllabicCategory::InvisibleStacker,
+        0xac..=0xad => IndicSyllabicCategory::ConsonantSubjoined,
+        0xae..=0xaf => IndicSyllabicCategory::Consonant,
+        0xb0..=0xb9 => IndicSyllabicCategory::Number,
+        0xba => IndicSyllabicCategory::Avagraha,
+        0xbb..=0xbd => IndicSyllabicCategory::Consonant,
+        0xbe..=0xbf => IndicSyllabicCategory::ConsonantFinal,
+        0xc0..=0xe3 => IndicSyllabicCategory::Consonant,
+        0xe4..=0xe5 => IndicSyllabicCategory::VowelIndependent,
+        0xe6 => IndicSyllabicCategory::Nukta,
+        0xe7..=0xef => IndicSyllabicCategory::VowelDependent,
+        0xf0..=0xf1 => IndicSyllabicCategory::ConsonantFinal,
+        0xf2..=0xf3 => IndicSyllabicCategory::ReorderingKiller,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p1c(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x23 => IndicSyllabicCategory::Consonant,
+        0x24..=0x25 => IndicSyllabicCategory::ConsonantSubjoined,
+        0x26..=0x2c => IndicSyllabicCategory::VowelDependent,
+        0x2d..=0x33 => IndicSyllabicCategory::ConsonantFinal,
+        0x34..=0x35 => IndicSyllabicCategory::Bindu,
+        0x36 => IndicSyllabicCategory::SyllableModifier,
+        0x37 => IndicSyllabicCategory::Nukta,
+        0x40..=0x49 => IndicSyllabicCategory::Number,
+        0x4d..=0x4f => IndicSyllabicCategory::Consonant,
+        0xd0..=0xd2 => IndicSyllabicCategory::CantillationMark,
+        0xd4..=0xe1 => IndicSyllabicCategory::CantillationMark,
+        0xf2..=0xf3 => IndicSyllabicCategory::ConsonantDead,
+        0xf4 => IndicSyllabicCategory::CantillationMark,
+        0xf5..=0xf6 => IndicSyllabicCategory::ConsonantWithStacker,
+        0xf7..=0xf9 => IndicSyllabicCategory::CantillationMark,
+        0xfa => IndicSyllabicCategory::ConsonantPlaceholder,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p1d(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0xfb => IndicSyllabicCategory::SyllableModifier,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p20(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x0c => IndicSyllabicCategory::NonJoiner,
+        0x0d => IndicSyllabicCategory::Joiner,
+        0x10..=0x14 => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x74 => IndicSyllabicCategory::SyllableModifier,
+        0x82..=0x84 => IndicSyllabicCategory::SyllableModifier,
+        0xf0 => IndicSyllabicCategory::CantillationMark,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_p25(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0xcc => IndicSyllabicCategory::ConsonantPlaceholder,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pa8(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x01 => IndicSyllabicCategory::VowelIndependent,
+        0x02 => IndicSyllabicCategory::VowelDependent,
+        0x03..=0x05 => IndicSyllabicCategory::VowelIndependent,
+        0x06 => IndicSyllabicCategory::Virama,
+        0x07..=0x0a => IndicSyllabicCategory::Consonant,
+        0x0b => IndicSyllabicCategory::Bindu,
+        0x0c..=0x22 => IndicSyllabicCategory::Consonant,
+        0x23..=0x27 => IndicSyllabicCategory::VowelDependent,
+        0x2c => IndicSyllabicCategory::PureKiller,
+        0x40..=0x5d => IndicSyllabicCategory::Consonant,
+        0x5e..=0x61 => IndicSyllabicCategory::Vowel,
+        0x62..=0x65 => IndicSyllabicCategory::Consonant,
+        0x66 => IndicSyllabicCategory::Vowel,
+        0x67..=0x68 => IndicSyllabicCategory::ConsonantSubjoined,
+        0x69..=0x70 => IndicSyllabicCategory::Consonant,
+        0x71 => IndicSyllabicCategory::ConsonantSubjoined,
+        0x72 => IndicSyllabicCategory::Consonant,
+        0x73 => IndicSyllabicCategory::Bindu,
+        0x80 => IndicSyllabicCategory::Bindu,
+        0x81 => IndicSyllabicCategory::Visarga,
+        0x82..=0x91 => IndicSyllabicCategory::VowelIndependent,
+        0x92..=0xb3 => IndicSyllabicCategory::Consonant,
+        0xb4 => IndicSyllabicCategory::ConsonantMedial,
+        0xb5..=0xc3 => IndicSyllabicCategory::VowelDependent,
+        0xc4 => IndicSyllabicCategory::Virama,
+        0xc5 => IndicSyllabicCategory::Bindu,
+        0xd0..=0xd9 => IndicSyllabicCategory::Number,
+        0xe0..=0xf1 => IndicSyllabicCategory::CantillationMark,
+        0xf2..=0xf3 => IndicSyllabicCategory::Bindu,
+        0xfe => IndicSyllabicCategory::VowelIndependent,
+        0xff => IndicSyllabicCategory::VowelDependent,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pa9(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x09 => IndicSyllabicCategory::Number,
+        0x0a..=0x21 => IndicSyllabicCategory::Consonant,
+        0x22..=0x2a => IndicSyllabicCategory::Vowel,
+        0x2b..=0x2d => IndicSyllabicCategory::ToneMark,
+        0x30..=0x46 => IndicSyllabicCategory::Consonant,
+        0x47..=0x4e => IndicSyllabicCategory::VowelDependent,
+        0x4f..=0x52 => IndicSyllabicCategory::ConsonantFinal,
+        0x53 => IndicSyllabicCategory::PureKiller,
+        0x80..=0x81 => IndicSyllabicCategory::Bindu,
+        0x82 => IndicSyllabicCategory::ConsonantFinal,
+        0x83 => IndicSyllabicCategory::Visarga,
+        0x84..=0x88 => IndicSyllabicCategory::VowelIndependent,
+        0x89..=0x8b => IndicSyllabicCategory::Consonant,
+        0x8c..=0x8e => IndicSyllabicCategory::VowelIndependent,
+        0x8f..=0xb2 => IndicSyllabicCategory::Consonant,
+        0xb3 => IndicSyllabicCategory::Nukta,
+        0xb4..=0xbc => IndicSyllabicCategory::VowelDependent,
+        0xbd..=0xbf => IndicSyllabicCategory::ConsonantMedial,
+        0xc0 => IndicSyllabicCategory::Virama,
+        0xd0..=0xd9 => IndicSyllabicCategory::Number,
+        0xe0..=0xe4 => IndicSyllabicCategory::Consonant,
+        0xe5 => IndicSyllabicCategory::VowelDependent,
+        0xe7..=0xef => IndicSyllabicCategory::Consonant,
+        0xf0..=0xf9 => IndicSyllabicCategory::Number,
+        0xfa..=0xfe => IndicSyllabicCategory::Consonant,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_paa(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x05 => IndicSyllabicCategory::VowelIndependent,
+        0x06..=0x28 => IndicSyllabicCategory::Consonant,
+        0x29..=0x32 => IndicSyllabicCategory::VowelDependent,
+        0x33..=0x36 => IndicSyllabicCategory::ConsonantMedial,
+        0x40..=0x4d => IndicSyllabicCategory::ConsonantFinal,
+        0x50..=0x59 => IndicSyllabicCategory::Number,
+        0x60..=0x6f => IndicSyllabicCategory::Consonant,
+        0x71..=0x73 => IndicSyllabicCategory::Consonant,
+        0x74..=0x76 => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x7a => IndicSyllabicCategory::Consonant,
+        0x7b..=0x7d => IndicSyllabicCategory::ToneMark,
+        0x7e..=0xaf => IndicSyllabicCategory::Consonant,
+        0xb0..=0xbe => IndicSyllabicCategory::VowelDependent,
+        0xbf => IndicSyllabicCategory::ToneMark,
+        0xc0 => IndicSyllabicCategory::ToneLetter,
+        0xc1 => IndicSyllabicCategory::ToneMark,
+        0xc2 => IndicSyllabicCategory::ToneLetter,
+        0xe0..=0xe1 => IndicSyllabicCategory::VowelIndependent,
+        0xe2..=0xea => IndicSyllabicCategory::Consonant,
+        0xeb..=0xef => IndicSyllabicCategory::VowelDependent,
+        0xf5 => IndicSyllabicCategory::Visarga,
+        0xf6 => IndicSyllabicCategory::InvisibleStacker,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn isc_pab(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0xc0..=0xcd => IndicSyllabicCategory::Consonant,
+        0xce..=0xcf => IndicSyllabicCategory::VowelIndependent,
+        0xd0 => IndicSyllabicCategory::Consonant,
+        0xd1 => IndicSyllabicCategory::VowelIndependent,
+        0xd2..=0xda => IndicSyllabicCategory::Consonant,
+        0xdb..=0xe2 => IndicSyllabicCategory::ConsonantFinal,
+        0xe3..=0xea => IndicSyllabicCategory::VowelDependent,
+        0xec => IndicSyllabicCategory::ToneMark,
+        0xed => IndicSyllabicCategory::PureKiller,
+        0xf0..=0xf9 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p10a(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00 => IndicSyllabicCategory::Consonant,
+        0x01..=0x03 => IndicSyllabicCategory::VowelDependent,
+        0x05..=0x06 => IndicSyllabicCategory::VowelDependent,
+        0x0c..=0x0d => IndicSyllabicCategory::VowelDependent,
+        0x0e => IndicSyllabicCategory::Bindu,
+        0x0f => IndicSyllabicCategory::Visarga,
+        0x10..=0x13 => IndicSyllabicCategory::Consonant,
+        0x15..=0x17 => IndicSyllabicCategory::Consonant,
+        0x19..=0x35 => IndicSyllabicCategory::Consonant,
+        0x38..=0x3a => IndicSyllabicCategory::Nukta,
+        0x3f => IndicSyllabicCategory::InvisibleStacker,
+        0x40..=0x48 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p110(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x01 => IndicSyllabicCategory::Bindu,
+        0x02 => IndicSyllabicCategory::Visarga,
+        0x03..=0x04 => IndicSyllabicCategory::ConsonantWithStacker,
+        0x05..=0x12 => IndicSyllabicCategory::VowelIndependent,
+        0x13..=0x37 => IndicSyllabicCategory::Consonant,
+        0x38..=0x45 => IndicSyllabicCategory::VowelDependent,
+        0x46 => IndicSyllabicCategory::Virama,
+        0x52..=0x65 => IndicSyllabicCategory::BrahmiJoiningNumber,
+        0x66..=0x6f => IndicSyllabicCategory::Number,
+        0x70 => IndicSyllabicCategory::PureKiller,
+        0x71..=0x72 => IndicSyllabicCategory::VowelIndependent,
+        0x73..=0x74 => IndicSyllabicCategory::VowelDependent,
+        0x75 => IndicSyllabicCategory::Consonant,
+        0x7f => IndicSyllabicCategory::NumberJoiner,
+        0x80..=0x81 => IndicSyllabicCategory::Bindu,
+        0x82 => IndicSyllabicCategory::Visarga,
+        0x83..=0x8c => IndicSyllabicCategory::VowelIndependent,
+        0x8d..=0xaf => IndicSyllabicCategory::Consonant,
+        0xb0..=0xb8 => IndicSyllabicCategory::VowelDependent,
+        0xb9 => IndicSyllabicCategory::Virama,
+        0xba => IndicSyllabicCategory::Nukta,
+        0xc2 => IndicSyllabicCategory::VowelDependent,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p111(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x01 => IndicSyllabicCategory::Bindu,
+        0x02 => IndicSyllabicCategory::Visarga,
+        0x03..=0x06 => IndicSyllabicCategory::VowelIndependent,
+        0x07..=0x26 => IndicSyllabicCategory::Consonant,
+        0x27..=0x32 => IndicSyllabicCategory::VowelDependent,
+        0x33 => IndicSyllabicCategory::InvisibleStacker,
+        0x34 => IndicSyllabicCategory::PureKiller,
+        0x36..=0x3f => IndicSyllabicCategory::Number,
+        0x44 => IndicSyllabicCategory::Consonant,
+        0x45..=0x46 => IndicSyllabicCategory::VowelDependent,
+        0x47 => IndicSyllabicCategory::Consonant,
+        0x50..=0x54 => IndicSyllabicCategory::Vowel,
+        0x55..=0x72 => IndicSyllabicCategory::Consonant,
+        0x73 => IndicSyllabicCategory::Nukta,
+        0x80..=0x81 => IndicSyllabicCategory::Bindu,
+        0x82 => IndicSyllabicCategory::Visarga,
+        0x83..=0x90 => IndicSyllabicCategory::VowelIndependent,
+        0x91..=0xb2 => IndicSyllabicCategory::Consonant,
+        0xb3..=0xbf => IndicSyllabicCategory::VowelDependent,
+        0xc0 => IndicSyllabicCategory::Virama,
+        0xc1 => IndicSyllabicCategory::Avagraha,
+        0xc2..=0xc3 => IndicSyllabicCategory::ConsonantPrefixed,
+        0xc9 => IndicSyllabicCategory::SyllableModifier,
+        0xca => IndicSyllabicCategory::Nukta,
+        0xcb..=0xcc => IndicSyllabicCategory::VowelDependent,
+        0xce => IndicSyllabicCategory::VowelDependent,
+        0xcf => IndicSyllabicCategory::Bindu,
+        0xd0..=0xd9 => IndicSyllabicCategory::Number,
+        0xe1..=0xf4 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p112(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x07 => IndicSyllabicCategory::VowelIndependent,
+        0x08..=0x11 => IndicSyllabicCategory::Consonant,
+        0x13..=0x2b => IndicSyllabicCategory::Consonant,
+        0x2c..=0x33 => IndicSyllabicCategory::VowelDependent,
+        0x34 => IndicSyllabicCategory::Bindu,
+        0x35 => IndicSyllabicCategory::Virama,
+        0x36 => IndicSyllabicCategory::Nukta,
+        0x37 => IndicSyllabicCategory::GeminationMark,
+        0x3e => IndicSyllabicCategory::CantillationMark,
+        0x3f => IndicSyllabicCategory::Consonant,
+        0x40 => IndicSyllabicCategory::VowelIndependent,
+        0x41 => IndicSyllabicCategory::VowelDependent,
+        0x80..=0x83 => IndicSyllabicCategory::VowelIndependent,
+        0x84..=0x86 => IndicSyllabicCategory::Consonant,
+        0x88 => IndicSyllabicCategory::Consonant,
+        0x8a..=0x8d => IndicSyllabicCategory::Consonant,
+        0x8f..=0x9d => IndicSyllabicCategory::Consonant,
+        0x9f..=0xa8 => IndicSyllabicCategory::Consonant,
+        0xb0..=0xb9 => IndicSyllabicCategory::VowelIndependent,
+        0xba..=0xde => IndicSyllabicCategory::Consonant,
+        0xdf => IndicSyllabicCategory::Bindu,
+        0xe0..=0xe8 => IndicSyllabicCategory::VowelDependent,
+        0xe9 => IndicSyllabicCategory::Nukta,
+        0xea => IndicSyllabicCategory::PureKiller,
+        0xf0..=0xf9 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p113(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x02 => IndicSyllabicCategory::Bindu,
+        0x03 => IndicSyllabicCategory::Visarga,
+        0x05..=0x0c => IndicSyllabicCategory::VowelIndependent,
+        0x0f..=0x10 => IndicSyllabicCategory::VowelIndependent,
+        0x13..=0x14 => IndicSyllabicCategory::VowelIndependent,
+        0x15..=0x28 => IndicSyllabicCategory::Consonant,
+        0x2a..=0x30 => IndicSyllabicCategory::Consonant,
+        0x32..=0x33 => IndicSyllabicCategory::Consonant,
+        0x35..=0x39 => IndicSyllabicCategory::Consonant,
+        0x3b..=0x3c => IndicSyllabicCategory::Nukta,
+        0x3d => IndicSyllabicCategory::Avagraha,
+        0x3e..=0x44 => IndicSyllabicCategory::VowelDependent,
+        0x47..=0x48 => IndicSyllabicCategory::VowelDependent,
+        0x4b..=0x4c => IndicSyllabicCategory::VowelDependent,
+        0x4d => IndicSyllabicCategory::Virama,
+        0x57 => IndicSyllabicCategory::VowelDependent,
+        0x5e..=0x5f => IndicSyllabicCategory::Bindu,
+        0x60..=0x61 => IndicSyllabicCategory::VowelIndependent,
+        0x62..=0x63 => IndicSyllabicCategory::VowelDependent,
+        0x66..=0x6c => IndicSyllabicCategory::CantillationMark,
+        0x70..=0x74 => IndicSyllabicCategory::CantillationMark,
+        0x80..=0x89 => IndicSyllabicCategory::VowelIndependent,
+        0x8b => IndicSyllabicCategory::VowelIndependent,
+        0x8e => IndicSyllabicCategory::VowelIndependent,
+        0x90..=0x91 => IndicSyllabicCategory::VowelIndependent,
+        0x92..=0xb5 => IndicSyllabicCategory::Consonant,
+        0xb7 => IndicSyllabicCategory::Avagraha,
+        0xb8..=0xc0 => IndicSyllabicCategory::VowelDependent,
+        0xc2 => IndicSyllabicCategory::VowelDependent,
+        0xc5 => IndicSyllabicCategory::VowelDependent,
+        0xc7..=0xc9 => IndicSyllabicCategory::VowelDependent,
+        0xca => IndicSyllabicCategory::Bindu,
+        0xcc => IndicSyllabicCategory::Bindu,
+        0xcd => IndicSyllabicCategory::Visarga,
+        0xce..=0xcf => IndicSyllabicCategory::PureKiller,
+        0xd0 => IndicSyllabicCategory::InvisibleStacker,
+        0xd1 => IndicSyllabicCategory::ConsonantPrecedingRepha,
+        0xd2 => IndicSyllabicCategory::GeminationMark,
+        0xe1..=0xe2 => IndicSyllabicCategory::CantillationMark,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p114(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x0d => IndicSyllabicCategory::VowelIndependent,
+        0x0e..=0x34 => IndicSyllabicCategory::Consonant,
+        0x35..=0x41 => IndicSyllabicCategory::VowelDependent,
+        0x42 => IndicSyllabicCategory::Virama,
+        0x43..=0x44 => IndicSyllabicCategory::Bindu,
+        0x45 => IndicSyllabicCategory::Visarga,
+        0x46 => IndicSyllabicCategory::Nukta,
+        0x47 => IndicSyllabicCategory::Avagraha,
+        0x50..=0x59 => IndicSyllabicCategory::Number,
+        0x5e => IndicSyllabicCategory::SyllableModifier,
+        0x5f => IndicSyllabicCategory::Bindu,
+        0x60..=0x61 => IndicSyllabicCategory::ConsonantWithStacker,
+        0x81..=0x8e => IndicSyllabicCategory::VowelIndependent,
+        0x8f..=0xaf => IndicSyllabicCategory::Consonant,
+        0xb0..=0xbe => IndicSyllabicCategory::VowelDependent,
+        0xbf..=0xc0 => IndicSyllabicCategory::Bindu,
+        0xc1 => IndicSyllabicCategory::Visarga,
+        0xc2 => IndicSyllabicCategory::Virama,
+        0xc3 => IndicSyllabicCategory::Nukta,
+        0xc4 => IndicSyllabicCategory::Avagraha,
+        0xd0..=0xd9 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p115(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x80..=0x8d => IndicSyllabicCategory::VowelIndependent,
+        0x8e..=0xae => IndicSyllabicCategory::Consonant,
+        0xaf..=0xb5 => IndicSyllabicCategory::VowelDependent,
+        0xb8..=0xbb => IndicSyllabicCategory::VowelDependent,
+        0xbc..=0xbd => IndicSyllabicCategory::Bindu,
+        0xbe => IndicSyllabicCategory::Visarga,
+        0xbf => IndicSyllabicCategory::Virama,
+        0xc0 => IndicSyllabicCategory::Nukta,
+        0xd8..=0xdb => IndicSyllabicCategory::VowelIndependent,
+        0xdc..=0xdd => IndicSyllabicCategory::VowelDependent,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p116(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x0d => IndicSyllabicCategory::VowelIndependent,
+        0x0e..=0x2f => IndicSyllabicCategory::Consonant,
+        0x30..=0x3c => IndicSyllabicCategory::VowelDependent,
+        0x3d => IndicSyllabicCategory::Bindu,
+        0x3e => IndicSyllabicCategory::Visarga,
+        0x3f => IndicSyllabicCategory::Virama,
+        0x40 => IndicSyllabicCategory::VowelDependent,
+        0x50..=0x59 => IndicSyllabicCategory::Number,
+        0x80..=0x89 => IndicSyllabicCategory::VowelIndependent,
+        0x8a..=0xaa => IndicSyllabicCategory::Consonant,
+        0xab => IndicSyllabicCategory::Bindu,
+        0xac => IndicSyllabicCategory::Visarga,
+        0xad..=0xb5 => IndicSyllabicCategory::VowelDependent,
+        0xb6 => IndicSyllabicCategory::Virama,
+        0xb7 => IndicSyllabicCategory::Nukta,
+        0xb8 => IndicSyllabicCategory::Consonant,
+        0xc0..=0xc9 => IndicSyllabicCategory::Number,
+        0xd0..=0xe3 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p117(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x1a => IndicSyllabicCategory::Consonant,
+        0x1d..=0x1f => IndicSyllabicCategory::ConsonantMedial,
+        0x20..=0x2a => IndicSyllabicCategory::VowelDependent,
+        0x2b => IndicSyllabicCategory::PureKiller,
+        0x30..=0x3b => IndicSyllabicCategory::Number,
+        0x40..=0x46 => IndicSyllabicCategory::Consonant,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p118(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x09 => IndicSyllabicCategory::VowelIndependent,
+        0x0a..=0x2b => IndicSyllabicCategory::Consonant,
+        0x2c..=0x36 => IndicSyllabicCategory::VowelDependent,
+        0x37 => IndicSyllabicCategory::Bindu,
+        0x38 => IndicSyllabicCategory::Visarga,
+        0x39 => IndicSyllabicCategory::Virama,
+        0x3a => IndicSyllabicCategory::Nukta,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p119(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x06 => IndicSyllabicCategory::VowelIndependent,
+        0x09 => IndicSyllabicCategory::VowelIndependent,
+        0x0c..=0x13 => IndicSyllabicCategory::Consonant,
+        0x15..=0x16 => IndicSyllabicCategory::Consonant,
+        0x18..=0x2f => IndicSyllabicCategory::Consonant,
+        0x30..=0x35 => IndicSyllabicCategory::VowelDependent,
+        0x37..=0x38 => IndicSyllabicCategory::VowelDependent,
+        0x3b..=0x3c => IndicSyllabicCategory::Bindu,
+        0x3d => IndicSyllabicCategory::PureKiller,
+        0x3e => IndicSyllabicCategory::InvisibleStacker,
+        0x3f => IndicSyllabicCategory::ConsonantPrefixed,
+        0x40 => IndicSyllabicCategory::ConsonantMedial,
+        0x41 => IndicSyllabicCategory::ConsonantPrecedingRepha,
+        0x42 => IndicSyllabicCategory::ConsonantMedial,
+        0x43 => IndicSyllabicCategory::Nukta,
+        0x50..=0x59 => IndicSyllabicCategory::Number,
+        0xa0..=0xa7 => IndicSyllabicCategory::VowelIndependent,
+        0xaa..=0xad => IndicSyllabicCategory::VowelIndependent,
+        0xae..=0xd0 => IndicSyllabicCategory::Consonant,
+        0xd1..=0xd7 => IndicSyllabicCategory::VowelDependent,
+        0xda..=0xdd => IndicSyllabicCategory::VowelDependent,
+        0xde => IndicSyllabicCategory::Bindu,
+        0xdf => IndicSyllabicCategory::Visarga,
+        0xe0 => IndicSyllabicCategory::Virama,
+        0xe1 => IndicSyllabicCategory::Avagraha,
+        0xe4 => IndicSyllabicCategory::VowelDependent,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p11a(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00 => IndicSyllabicCategory::Consonant,
+        0x01..=0x0a => IndicSyllabicCategory::VowelDependent,
+        0x0b..=0x32 => IndicSyllabicCategory::Consonant,
+        0x33 => IndicSyllabicCategory::SyllableModifier,
+        0x34 => IndicSyllabicCategory::PureKiller,
+        0x35..=0x38 => IndicSyllabicCategory::Bindu,
+        0x39 => IndicSyllabicCategory::Visarga,
+        0x3a => IndicSyllabicCategory::ConsonantWithStacker,
+        0x3b..=0x3e => IndicSyllabicCategory::ConsonantMedial,
+        0x3f => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x45 => IndicSyllabicCategory::ConsonantPlaceholder,
+        0x47 => IndicSyllabicCategory::InvisibleStacker,
+        0x50 => IndicSyllabicCategory::Consonant,
+        0x51..=0x5b => IndicSyllabicCategory::VowelDependent,
+        0x5c..=0x83 => IndicSyllabicCategory::Consonant,
+        0x84..=0x85 => IndicSyllabicCategory::ConsonantPrefixed,
+        0x86 => IndicSyllabicCategory::ConsonantPrecedingRepha,
+        0x87..=0x89 => IndicSyllabicCategory::ConsonantPrefixed,
+        0x8a..=0x95 => IndicSyllabicCategory::ConsonantFinal,
+        0x96 => IndicSyllabicCategory::Bindu,
+        0x97 => IndicSyllabicCategory::Visarga,
+        0x98 => IndicSyllabicCategory::GeminationMark,
+        0x99 => IndicSyllabicCategory::InvisibleStacker,
+        0x9d => IndicSyllabicCategory::Avagraha,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p11b(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x60..=0x67 => IndicSyllabicCategory::VowelDependent,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p11c(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x08 => IndicSyllabicCategory::VowelIndependent,
+        0x0a..=0x0d => IndicSyllabicCategory::VowelIndependent,
+        0x0e..=0x2e => IndicSyllabicCategory::Consonant,
+        0x2f..=0x36 => IndicSyllabicCategory::VowelDependent,
+        0x38..=0x3b => IndicSyllabicCategory::VowelDependent,
+        0x3c..=0x3d => IndicSyllabicCategory::Bindu,
+        0x3e => IndicSyllabicCategory::Visarga,
+        0x3f => IndicSyllabicCategory::Virama,
+        0x40 => IndicSyllabicCategory::Avagraha,
+        0x50..=0x6c => IndicSyllabicCategory::Number,
+        0x72..=0x8f => IndicSyllabicCategory::Consonant,
+        0x92..=0xa7 => IndicSyllabicCategory::ConsonantSubjoined,
+        0xa9..=0xaf => IndicSyllabicCategory::ConsonantSubjoined,
+        0xb0..=0xb4 => IndicSyllabicCategory::VowelDependent,
+        0xb5..=0xb6 => IndicSyllabicCategory::Bindu,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p11d(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x06 => IndicSyllabicCategory::VowelIndependent,
+        0x08..=0x09 => IndicSyllabicCategory::VowelIndependent,
+        0x0b => IndicSyllabicCategory::VowelIndependent,
+        0x0c..=0x30 => IndicSyllabicCategory::Consonant,
+        0x31..=0x36 => IndicSyllabicCategory::VowelDependent,
+        0x3a => IndicSyllabicCategory::VowelDependent,
+        0x3c..=0x3d => IndicSyllabicCategory::VowelDependent,
+        0x3f => IndicSyllabicCategory::VowelDependent,
+        0x40 => IndicSyllabicCategory::Bindu,
+        0x41 => IndicSyllabicCategory::Visarga,
+        0x42 => IndicSyllabicCategory::Nukta,
+        0x43 => IndicSyllabicCategory::VowelDependent,
+        0x44 => IndicSyllabicCategory::PureKiller,
+        0x45 => IndicSyllabicCategory::InvisibleStacker,
+        0x46 => IndicSyllabicCategory::ConsonantPrecedingRepha,
+        0x47 => IndicSyllabicCategory::ConsonantMedial,
+        0x50..=0x59 => IndicSyllabicCategory::Number,
+        0x60..=0x65 => IndicSyllabicCategory::VowelIndependent,
+        0x67..=0x68 => IndicSyllabicCategory::VowelIndependent,
+        0x6a..=0x6b => IndicSyllabicCategory::VowelIndependent,
+        0x6c..=0x89 => IndicSyllabicCategory::Consonant,
+        0x8a..=0x8e => IndicSyllabicCategory::VowelDependent,
+        0x90..=0x91 => IndicSyllabicCategory::VowelDependent,
+        0x93..=0x94 => IndicSyllabicCategory::VowelDependent,
+        0x95 => IndicSyllabicCategory::Bindu,
+        0x96 => IndicSyllabicCategory::Visarga,
+        0x97 => IndicSyllabicCategory::InvisibleStacker,
+        0xa0..=0xa9 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p11e(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0xe0..=0xf1 => IndicSyllabicCategory::Consonant,
+        0xf2 => IndicSyllabicCategory::ConsonantPlaceholder,
+        0xf3..=0xf6 => IndicSyllabicCategory::VowelDependent,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p11f(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00..=0x01 => IndicSyllabicCategory::Bindu,
+        0x02 => IndicSyllabicCategory::ConsonantPrecedingRepha,
+        0x03 => IndicSyllabicCategory::Visarga,
+        0x04..=0x10 => IndicSyllabicCategory::VowelIndependent,
+        0x12..=0x33 => IndicSyllabicCategory::Consonant,
+        0x34..=0x3a => IndicSyllabicCategory::VowelDependent,
+        0x3e..=0x40 => IndicSyllabicCategory::VowelDependent,
+        0x41 => IndicSyllabicCategory::PureKiller,
+        0x42 => IndicSyllabicCategory::InvisibleStacker,
+        0x50..=0x59 => IndicSyllabicCategory::Number,
+        0x5a => IndicSyllabicCategory::Nukta,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p161(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x00 => IndicSyllabicCategory::VowelIndependent,
+        0x01..=0x1d => IndicSyllabicCategory::Consonant,
+        0x1e..=0x29 => IndicSyllabicCategory::VowelDependent,
+        0x2a..=0x2c => IndicSyllabicCategory::ConsonantMedial,
+        0x2d => IndicSyllabicCategory::Bindu,
+        0x2e => IndicSyllabicCategory::ConsonantMedial,
+        0x2f => IndicSyllabicCategory::PureKiller,
+        0x30..=0x39 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn isc_p16d(b: u8) -> IndicSyllabicCategory {
+    match b {
+        0x40..=0x41 => IndicSyllabicCategory::Bindu,
+        0x42 => IndicSyllabicCategory::Visarga,
+        0x43..=0x62 => IndicSyllabicCategory::Consonant,
+        0x63..=0x6a => IndicSyllabicCategory::VowelDependent,
+        0x6b..=0x6c => IndicSyllabicCategory::PureKiller,
+        0x70..=0x79 => IndicSyllabicCategory::Number,
+        _ => IndicSyllabicCategory::Other,
+    }
+}

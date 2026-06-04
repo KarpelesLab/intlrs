@@ -714,6 +714,48 @@ fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
         &jt_render,
     );
 
+    // ---- Indic_Syllabic_Category (UAX #44 / IndicSyllabicCategory.txt). ----
+    let isc_txt = fs::read_to_string(ucd.join("IndicSyllabicCategory.txt"))
+        .expect("read IndicSyllabicCategory.txt");
+    let mut isc_names: BTreeSet<String> = BTreeSet::new();
+    for line in isc_txt.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if let Some(v) = line.split(';').nth(1) {
+            let v = v.trim();
+            if !v.is_empty() {
+                isc_names.insert(v.to_string());
+            }
+        }
+    }
+    // Index 0 is the default `Other` (the @missing value); the rest are sorted.
+    let isc_list: Vec<String> = isc_names.into_iter().filter(|n| n != "Other").collect();
+    let mut isc_code: BTreeMap<&str, u32> = BTreeMap::new();
+    isc_code.insert("Other", 0);
+    let mut isc_render = vec!["IndicSyllabicCategory::Other".to_string()];
+    let mut isc_variants = String::from("    Other,\n");
+    for (i, n) in isc_list.iter().enumerate() {
+        let v = pascal_case(n);
+        isc_code.insert(n.as_str(), (i + 1) as u32);
+        isc_render.push(format!("IndicSyllabicCategory::{v}"));
+        let _ = write!(isc_variants, "    {v},\n");
+    }
+    let _ = write!(
+        out,
+        "/// The `Indic_Syllabic_Category` property (UAX #44) for complex-script \
+         shaping.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\n\
+         pub enum IndicSyllabicCategory {{\n{isc_variants}}}\n\n"
+    );
+    let isc_codes = parse_ranged(&ucd.join("IndicSyllabicCategory.txt"), &isc_code, 0);
+    emit_lookup(
+        &mut out,
+        "indic_syllabic_category",
+        "isc",
+        "IndicSyllabicCategory",
+        &isc_codes,
+        0,
+        &isc_render,
+    );
+
     write_module(out_dir, modules, "properties", &out);
 }
 

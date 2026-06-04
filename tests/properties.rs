@@ -43,3 +43,13 @@ fn joining_types() {
     assert_eq!(joining_type('A'), NonJoining);
     assert_eq!(joining_type(' '), NonJoining);
 }
+
+#[cfg(feature = "bmp")]
+#[test]
+fn indic_categories() {
+    use intl::unicode::{indic_syllabic_category as isc, IndicSyllabicCategory::*};
+    assert_eq!(isc('\u{0915}'), Consonant); // DEVANAGARI KA
+    assert_eq!(isc('\u{094D}'), Virama); // DEVANAGARI VIRAMA
+    assert_eq!(isc('\u{0905}'), VowelIndependent); // DEVANAGARI A
+    assert_eq!(isc('A'), Other);
+}
