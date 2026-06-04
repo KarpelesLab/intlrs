@@ -162,3 +162,30 @@ pub fn fold<I: Iterator<Item = char>>(iter: I) -> CaseMapping<I> {
         cur: None,
     }
 }
+
+/// Title-case a string: the first cased character of each word (per UAX #29
+/// word segmentation) is title-cased and the rest are lower-cased
+/// (`"loud HOUSE" → "Loud House"`). Requires the `alloc` feature.
+#[cfg(feature = "alloc")]
+#[must_use]
+pub fn titlecase(s: &str) -> alloc::string::String {
+    use super::category::Group;
+    let mut out = alloc::string::String::new();
+    for word in super::segment::words(s) {
+        let mut titled = false;
+        for c in word.chars() {
+            // The first cased letter is title-cased; everything else lower-cased.
+            let is_cased = matches!(
+                super::generated::general_category::general_category(c as u32).group(),
+                Group::Letter
+            );
+            if !titled && is_cased {
+                out.extend(to_titlecase(c));
+                titled = true;
+            } else {
+                out.extend(to_lowercase(c));
+            }
+        }
+    }
+    out
+}

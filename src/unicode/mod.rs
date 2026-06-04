@@ -44,6 +44,8 @@ pub mod script;
 pub mod segment;
 pub mod width;
 
+#[cfg(feature = "alloc")]
+pub use case::titlecase;
 pub use case::{
     case_fold, fold, lowercase, to_lowercase, to_titlecase, to_uppercase, uppercase, CaseMapIter,
     CaseMapping,

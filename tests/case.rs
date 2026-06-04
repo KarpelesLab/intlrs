@@ -47,3 +47,12 @@ fn bmp_case() {
     assert_eq!(s(case_fold('\u{212A}')), "k");
     assert_eq!(s(case_fold('K')), s(case_fold('\u{212A}')));
 }
+
+#[cfg(feature = "alloc")]
+#[test]
+fn title_casing() {
+    use intl::unicode::titlecase;
+    assert_eq!(titlecase("loud HOUSE"), "Loud House");
+    assert_eq!(titlecase("can't stop"), "Can't Stop");
+    assert_eq!(titlecase("ﬂour"), "Flour"); // ﬂ ligature title-cases to "Fl"
+}
