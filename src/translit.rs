@@ -106,6 +106,79 @@ pub fn cyrillic_to_latin(s: &str) -> String {
     out
 }
 
+/// Transliterate Greek script to Latin (ELOT 743 / ISO 843, ASCII-leaning):
+/// `θ→th`, `χ→ch`, `ψ→ps`, `η→i`, `ω→o`, accents dropped. Non-Greek characters
+/// pass through unchanged.
+///
+/// ```
+/// use intl::translit::greek_to_latin;
+/// assert_eq!(greek_to_latin("Αθήνα"), "Athina");
+/// assert_eq!(greek_to_latin("ψυχή"), "psychi");
+/// assert_eq!(greek_to_latin("Ελλάδα"), "Ellada");
+/// ```
+/// The ASCII-leaning Latin form of a lowercase Greek letter, or `None`.
+fn greek_letter(c: char) -> Option<&'static str> {
+    Some(match c {
+        'α' => "a",
+        'β' => "v",
+        'γ' => "g",
+        'δ' => "d",
+        'ε' => "e",
+        'ζ' => "z",
+        'η' => "i",
+        'θ' => "th",
+        'ι' => "i",
+        'κ' => "k",
+        'λ' => "l",
+        'μ' => "m",
+        'ν' => "n",
+        'ξ' => "x",
+        'ο' => "o",
+        'π' => "p",
+        'ρ' => "r",
+        'σ' | 'ς' => "s",
+        'τ' => "t",
+        'υ' => "y",
+        'φ' => "f",
+        'χ' => "ch",
+        'ψ' => "ps",
+        'ω' => "o",
+        _ => return None,
+    })
+}
+
+#[must_use]
+pub fn greek_to_latin(s: &str) -> String {
+    // NFD so accented vowels become base + combining mark; drop the marks.
+    let chars: alloc::vec::Vec<char> = nfd(s.chars())
+        .filter(|&c| !matches!(general_category(c).group(), Group::Mark))
+        .collect();
+    let mut out = String::with_capacity(s.len());
+    for (i, &c) in chars.iter().enumerate() {
+        if let Some(latin) = greek_letter(c) {
+            out.push_str(latin);
+        } else if c.is_uppercase() && greek_letter(c.to_lowercase().next().unwrap_or(c)).is_some() {
+            let latin = greek_letter(c.to_lowercase().next().unwrap()).unwrap();
+            // All-caps the digraph when a neighbor is upper-case (e.g. "ΘΕΟΣ"),
+            // else title-case it ("Θεός" → "Theos").
+            let all_caps = chars.get(i + 1).is_some_and(|n| n.is_uppercase())
+                || (i > 0 && chars[i - 1].is_uppercase());
+            if all_caps {
+                out.extend(latin.chars().flat_map(char::to_uppercase));
+            } else {
+                let mut it = latin.chars();
+                if let Some(f) = it.next() {
+                    out.extend(f.to_uppercase());
+                    out.push_str(it.as_str());
+                }
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
 /// Fold Latin text to ASCII: decompose (NFD), drop combining marks, and map the
 /// non-decomposing Latin letters (`ø→o`, `æ→ae`, `ß→ss`, `þ→th`, …) and common
 /// typographic punctuation (curly quotes, dashes, ellipsis, NBSP). Non-Latin

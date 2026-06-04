@@ -175,8 +175,8 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 
 - 🟡🔬 **Transliteration** — `intl::translit::latin_ascii` folds Latin text to
   ASCII (NFD + mark-strip + non-decomposing-letter/punctuation maps; café->cafe,
-  Straße->Strasse). ✅ Cyrillic→Latin
-  (`cyrillic_to_latin`, ISO 9) + `remove_diacritics`. Still: other script
+  Straße->Strasse). ✅ Cyrillic→Latin (ISO 9) +
+  ✅ Greek→Latin (ELOT/ISO 843) + `remove_diacritics`. Still: other script
   romanizations + a general rule-based transform engine (e.g.
   Latin↔Cyrillic, Any-Latin, NFC/NFD as transforms). Rule engine + CLDR/ICU
   transform rules. Conformance: ICU transform test data.

@@ -48,3 +48,14 @@ fn cyrillic() {
     // Non-Cyrillic passes through.
     assert_eq!(c("hello"), "hello");
 }
+
+#[test]
+fn greek() {
+    use intl::translit::greek_to_latin as g;
+    assert_eq!(g("Αθήνα"), "Athina");
+    assert_eq!(g("ψυχή"), "psychi");
+    assert_eq!(g("Ελλάδα"), "Ellada");
+    assert_eq!(g("φιλοσοφία"), "filosofia");
+    assert_eq!(g("ΘΕΟΣ"), "THEOS");
+    assert_eq!(g("hello"), "hello"); // non-Greek passthrough
+}

@@ -141,6 +141,7 @@ fn fuzz_invariants() {
         let _ = intl::translit::latin_ascii(&s);
         let _ = intl::translit::remove_diacritics(&s);
         let _ = intl::translit::cyrillic_to_latin(&s);
+        let _ = intl::translit::greek_to_latin(&s);
         let _ = intl::unicode::idna::to_ascii(&s);
         let _ = intl::unicode::idna::to_unicode(&s);
         let _ = intl::unicode::spoof::skeleton(&s);
