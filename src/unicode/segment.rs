@@ -69,6 +69,27 @@ pub(crate) enum Wb {
     WSegSpace,
 }
 
+/// Sentence_Break value (UAX #29). Order must match the generated table.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::upper_case_acronyms, dead_code)]
+pub(crate) enum Sb {
+    Other,
+    CR,
+    LF,
+    Extend,
+    Sep,
+    Format,
+    Sp,
+    Lower,
+    Upper,
+    OLetter,
+    Numeric,
+    ATerm,
+    SContinue,
+    STerm,
+    Close,
+}
+
 #[inline]
 fn gcb(c: char) -> Gcb {
     gen::grapheme_break(c as u32)
@@ -405,4 +426,162 @@ impl<'a> Iterator for Words<'a> {
 #[must_use]
 pub fn words(s: &str) -> Words<'_> {
     Words { s, pos: 0 }
+}
+
+// ---- Sentence boundaries (UAX #29) ----
+
+#[inline]
+fn sb(c: char) -> Sb {
+    gen::sentence_break(c as u32)
+}
+
+/// An effective sentence-break unit: a base character plus any trailing
+/// Extend/Format that rule SB5 folds into it.
+fn sb_unit(s: &str, i: usize) -> (Sb, usize) {
+    let base = s[i..].chars().next().unwrap();
+    let cat = sb(base);
+    let mut end = i + base.len_utf8();
+    if !matches!(cat, Sb::CR | Sb::LF | Sb::Sep) {
+        for c in s[end..].chars() {
+            match sb(c) {
+                Sb::Extend | Sb::Format => end += c.len_utf8(),
+                _ => break,
+            }
+        }
+    }
+    (cat, end)
+}
+
+/// Position within an `(STerm | ATerm) Close* Sp*` terminator sequence.
+#[derive(Clone, Copy, PartialEq)]
+enum Term {
+    None,
+    A,
+    AClose,
+    ASp,
+    S,
+    SClose,
+    SSp,
+}
+
+fn term_next(t: Term, c: Sb) -> Term {
+    match c {
+        Sb::ATerm => Term::A,
+        Sb::STerm => Term::S,
+        Sb::Close => match t {
+            Term::A | Term::AClose => Term::AClose,
+            Term::S | Term::SClose => Term::SClose,
+            _ => Term::None,
+        },
+        Sb::Sp => match t {
+            Term::A | Term::AClose | Term::ASp => Term::ASp,
+            Term::S | Term::SClose | Term::SSp => Term::SSp,
+            _ => Term::None,
+        },
+        _ => Term::None,
+    }
+}
+
+#[inline]
+fn in_aterm_seq(t: Term) -> bool {
+    matches!(t, Term::A | Term::AClose | Term::ASp)
+}
+#[inline]
+fn in_term_seq(t: Term) -> bool {
+    !matches!(t, Term::None)
+}
+#[inline]
+fn in_close_phase(t: Term) -> bool {
+    matches!(t, Term::A | Term::AClose | Term::S | Term::SClose)
+}
+
+/// SB8 lookahead: starting at byte `at`, is the first
+/// non-`(OLetter|Upper|Lower|Sep|CR|LF|STerm|ATerm)` "stopper" a `Lower`?
+fn sb8_lower_ahead(s: &str, mut at: usize) -> bool {
+    while at < s.len() {
+        let (cat, end) = sb_unit(s, at);
+        match cat {
+            Sb::Lower => return true,
+            Sb::OLetter | Sb::Upper | Sb::Sep | Sb::CR | Sb::LF | Sb::STerm | Sb::ATerm => {
+                return false
+            }
+            _ => {}
+        }
+        at = end;
+    }
+    false
+}
+
+/// Decide whether there is a sentence break before `cur`.
+fn sentence_break(prev2: Sb, prev: Sb, term: Term, cur: Sb, lower_ahead: bool) -> bool {
+    use Sb::*;
+    if prev == CR && cur == LF {
+        return false; // SB3
+    }
+    if matches!(prev, Sep | CR | LF) {
+        return true; // SB4
+    }
+    if prev == ATerm && cur == Numeric {
+        return false; // SB6
+    }
+    if matches!(prev2, Upper | Lower) && prev == ATerm && cur == Upper {
+        return false; // SB7
+    }
+    if in_aterm_seq(term) && lower_ahead {
+        return false; // SB8
+    }
+    if in_term_seq(term) && matches!(cur, SContinue | STerm | ATerm) {
+        return false; // SB8a
+    }
+    if in_close_phase(term) && matches!(cur, Close | Sp | Sep | CR | LF) {
+        return false; // SB9
+    }
+    if in_term_seq(term) && matches!(cur, Sp | Sep | CR | LF) {
+        return false; // SB10
+    }
+    if in_term_seq(term) {
+        return true; // SB11
+    }
+    false // SB998
+}
+
+/// Iterator over the sentences (UAX #29 sentence-boundary spans) of a string.
+#[derive(Clone)]
+pub struct Sentences<'a> {
+    s: &'a str,
+    pos: usize,
+}
+
+impl<'a> Iterator for Sentences<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<&'a str> {
+        if self.pos >= self.s.len() {
+            return None;
+        }
+        let start = self.pos;
+        let (mut prev, mut at) = sb_unit(self.s, start);
+        let mut prev2 = Sb::Other; // sot
+        let mut term = term_next(Term::None, prev);
+        while at < self.s.len() {
+            let (cur, end) = sb_unit(self.s, at);
+            let lower_ahead = in_aterm_seq(term) && sb8_lower_ahead(self.s, at);
+            if sentence_break(prev2, prev, term, cur, lower_ahead) {
+                break;
+            }
+            term = term_next(term, cur);
+            prev2 = prev;
+            prev = cur;
+            at = end;
+        }
+        let sentence = &self.s[start..at];
+        self.pos = at;
+        Some(sentence)
+    }
+}
+
+/// Iterate over the sentence-boundary spans of `s` (UAX #29).
+#[must_use]
+pub fn sentences(s: &str) -> Sentences<'_> {
+    Sentences { s, pos: 0 }
 }

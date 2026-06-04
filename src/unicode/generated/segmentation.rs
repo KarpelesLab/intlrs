@@ -4,7 +4,7 @@
 #![allow(unreachable_patterns)]
 #![allow(dead_code)]
 
-use crate::unicode::segment::{Gcb, Incb, Wb};
+use crate::unicode::segment::{Gcb, Incb, Sb, Wb};
 
 #[inline]
 pub(crate) const fn grapheme_break(cp: u32) -> Gcb {
@@ -6578,5 +6578,4783 @@ const fn wb_pe01(b: u8) -> Wb {
     match b {
         0x00..=0xef => Wb::Extend,
         _ => Wb::Other,
+    }
+}
+
+#[inline]
+pub(crate) const fn sentence_break(cp: u32) -> Sb {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => sb_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => sb_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => sb_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => sb_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => sb_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => sb_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x006 => sb_p6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x007 => sb_p7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x008 => sb_p8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x009 => sb_p9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00a => sb_pa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00b => sb_pb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00c => sb_pc(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00d => sb_pd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00e => sb_pe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x00f => sb_pf(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => sb_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x011 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x012 => sb_p12(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => sb_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x014 => sb_p14(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x015 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x016 => sb_p16(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x017 => sb_p17(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x018 => sb_p18(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x019 => sb_p19(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01a => sb_p1a(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01b => sb_p1b(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => sb_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => sb_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => sb_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => sb_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => sb_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => sb_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x023 => sb_p23(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => sb_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x027 => sb_p27(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x029 => sb_p29(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => sb_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => sb_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02e => sb_p2e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x030 => sb_p30(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x031 => sb_p31(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x034 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x035 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x036 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x037 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x038 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x039 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x03a => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x03b => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x03c => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x03d => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x03e => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x03f => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x040 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x041 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x042 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x043 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x044 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x045 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x046 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x047 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x048 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x049 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x04a => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x04b => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x04c => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x04d => sb_p4d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x04e => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x04f => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x050 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x051 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x052 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x053 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x054 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x055 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x056 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x057 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x058 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x059 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x05a => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x05b => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x05c => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x05d => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x05e => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x05f => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x060 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x061 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x062 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x063 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x064 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x065 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x066 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x067 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x068 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x069 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x06a => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x06b => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x06c => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x06d => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x06e => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x06f => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x070 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x071 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x072 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x073 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x074 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x075 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x076 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x077 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x078 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x079 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x07a => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x07b => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x07c => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x07d => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x07e => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x07f => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x080 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x081 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x082 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x083 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x084 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x085 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x086 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x087 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x088 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x089 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x08a => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x08b => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x08c => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x08d => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x08e => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x08f => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x090 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x091 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x092 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x093 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x094 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x095 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x096 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x097 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x098 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x099 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x09a => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x09b => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x09c => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x09d => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x09e => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x09f => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0a0 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0a1 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0a2 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0a3 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0a4 => sb_pa4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a5 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0a6 => sb_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => sb_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a8 => sb_pa8(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a9 => sb_pa9(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0aa => sb_paa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => sb_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ac => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0ad => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0ae => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0af => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b0 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b1 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b2 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b3 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b4 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b5 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b6 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b7 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b8 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0b9 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0ba => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0bb => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0bc => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0bd => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0be => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0bf => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c0 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c1 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c2 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c3 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c4 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c5 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c6 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c7 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c8 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0c9 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0ca => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0cb => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0cc => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0cd => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0ce => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0cf => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0d0 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0d1 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0d2 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0d3 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0d4 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0d5 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0d6 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0d7 => sb_pd7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0f9 => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0fa => sb_pfa(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => sb_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fc => Sb::OLetter,
+        #[cfg(feature = "bmp")]
+        0x0fd => sb_pfd(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fe => sb_pfe(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => sb_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x100 => sb_p100(cp as u8),
+        #[cfg(feature = "full")]
+        0x101 => sb_p101(cp as u8),
+        #[cfg(feature = "full")]
+        0x102 => sb_p102(cp as u8),
+        #[cfg(feature = "full")]
+        0x103 => sb_p103(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => sb_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => sb_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x106 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x107 => sb_p107(cp as u8),
+        #[cfg(feature = "full")]
+        0x108 => sb_p108(cp as u8),
+        #[cfg(feature = "full")]
+        0x109 => sb_p109(cp as u8),
+        #[cfg(feature = "full")]
+        0x10a => sb_p10a(cp as u8),
+        #[cfg(feature = "full")]
+        0x10b => sb_p10b(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => sb_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => sb_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x10e => sb_p10e(cp as u8),
+        #[cfg(feature = "full")]
+        0x10f => sb_p10f(cp as u8),
+        #[cfg(feature = "full")]
+        0x110 => sb_p110(cp as u8),
+        #[cfg(feature = "full")]
+        0x111 => sb_p111(cp as u8),
+        #[cfg(feature = "full")]
+        0x112 => sb_p112(cp as u8),
+        #[cfg(feature = "full")]
+        0x113 => sb_p113(cp as u8),
+        #[cfg(feature = "full")]
+        0x114 => sb_p114(cp as u8),
+        #[cfg(feature = "full")]
+        0x115 => sb_p115(cp as u8),
+        #[cfg(feature = "full")]
+        0x116 => sb_p116(cp as u8),
+        #[cfg(feature = "full")]
+        0x117 => sb_p117(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => sb_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x119 => sb_p119(cp as u8),
+        #[cfg(feature = "full")]
+        0x11a => sb_p11a(cp as u8),
+        #[cfg(feature = "full")]
+        0x11b => sb_p11b(cp as u8),
+        #[cfg(feature = "full")]
+        0x11c => sb_p11c(cp as u8),
+        #[cfg(feature = "full")]
+        0x11d => sb_p11d(cp as u8),
+        #[cfg(feature = "full")]
+        0x11e => sb_p11e(cp as u8),
+        #[cfg(feature = "full")]
+        0x11f => sb_p11f(cp as u8),
+        #[cfg(feature = "full")]
+        0x120 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x121 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x122 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x123 => sb_p123(cp as u8),
+        #[cfg(feature = "full")]
+        0x124 => sb_p124(cp as u8),
+        #[cfg(feature = "full")]
+        0x125 => sb_p125(cp as u8),
+        #[cfg(feature = "full")]
+        0x12f => sb_p12f(cp as u8),
+        #[cfg(feature = "full")]
+        0x130 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x131 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x132 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x133 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x134 => sb_p134(cp as u8),
+        #[cfg(feature = "full")]
+        0x135 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x136 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x137 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x138 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x139 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x13a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x13b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x13c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x13d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x13e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x13f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x140 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x141 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x142 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x143 => sb_p143(cp as u8),
+        #[cfg(feature = "full")]
+        0x144 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x145 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x146 => sb_p146(cp as u8),
+        #[cfg(feature = "full")]
+        0x161 => sb_p161(cp as u8),
+        #[cfg(feature = "full")]
+        0x168 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x169 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x16a => sb_p16a(cp as u8),
+        #[cfg(feature = "full")]
+        0x16b => sb_p16b(cp as u8),
+        #[cfg(feature = "full")]
+        0x16d => sb_p16d(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => sb_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x16f => sb_p16f(cp as u8),
+        #[cfg(feature = "full")]
+        0x170 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x171 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x172 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x173 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x174 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x175 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x176 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x177 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x178 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x179 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x17a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x17b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x17c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x17d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x17e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x17f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x180 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x181 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x182 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x183 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x184 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x185 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x186 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x187 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x188 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x189 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x18a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x18b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x18c => sb_p18c(cp as u8),
+        #[cfg(feature = "full")]
+        0x18d => sb_p18d(cp as u8),
+        #[cfg(feature = "full")]
+        0x1af => sb_p1af(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b0 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x1b1 => sb_p1b1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1b2 => sb_p1b2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1bc => sb_p1bc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cc => sb_p1cc(cp as u8),
+        #[cfg(feature = "full")]
+        0x1cf => sb_p1cf(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d1 => sb_p1d1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d2 => sb_p1d2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d4 => sb_p1d4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d5 => sb_p1d5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d6 => sb_p1d6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d7 => sb_p1d7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1da => sb_p1da(cp as u8),
+        #[cfg(feature = "full")]
+        0x1df => sb_p1df(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => sb_p1e0(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e1 => sb_p1e1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e2 => sb_p1e2(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e4 => sb_p1e4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e5 => sb_p1e5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e6 => sb_p1e6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e7 => sb_p1e7(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e8 => sb_p1e8(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => sb_p1e9(cp as u8),
+        #[cfg(feature = "full")]
+        0x1ee => sb_p1ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f1 => sb_p1f1(cp as u8),
+        #[cfg(feature = "full")]
+        0x1f6 => sb_p1f6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1fb => sb_p1fb(cp as u8),
+        #[cfg(feature = "full")]
+        0x200 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x201 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x202 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x203 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x204 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x205 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x206 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x207 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x208 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x209 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x20a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x20b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x20c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x20d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x20e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x20f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x210 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x211 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x212 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x213 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x214 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x215 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x216 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x217 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x218 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x219 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x21a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x21b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x21c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x21d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x21e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x21f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x220 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x221 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x222 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x223 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x224 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x225 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x226 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x227 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x228 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x229 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x22a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x22b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x22c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x22d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x22e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x22f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x230 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x231 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x232 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x233 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x234 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x235 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x236 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x237 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x238 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x239 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x23a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x23b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x23c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x23d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x23e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x23f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x240 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x241 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x242 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x243 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x244 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x245 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x246 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x247 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x248 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x249 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x24a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x24b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x24c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x24d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x24e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x24f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x250 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x251 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x252 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x253 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x254 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x255 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x256 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x257 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x258 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x259 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x25a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x25b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x25c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x25d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x25e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x25f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x260 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x261 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x262 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x263 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x264 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x265 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x266 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x267 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x268 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x269 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x26a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x26b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x26c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x26d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x26e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x26f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x270 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x271 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x272 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x273 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x274 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x275 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x276 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x277 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x278 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x279 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x27a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x27b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x27c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x27d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x27e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x27f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x280 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x281 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x282 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x283 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x284 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x285 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x286 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x287 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x288 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x289 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x28a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x28b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x28c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x28d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x28e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x28f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x290 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x291 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x292 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x293 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x294 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x295 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x296 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x297 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x298 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x299 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x29a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x29b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x29c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x29d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x29e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x29f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a0 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a1 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a2 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a3 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a4 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a5 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a6 => sb_p2a6(cp as u8),
+        #[cfg(feature = "full")]
+        0x2a7 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a8 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2a9 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2aa => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ab => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ac => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ad => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ae => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2af => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b0 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b1 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b2 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b3 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b4 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b5 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b6 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b7 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2b8 => sb_p2b8(cp as u8),
+        #[cfg(feature = "full")]
+        0x2b9 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ba => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2bb => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2bc => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2bd => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2be => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2bf => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c0 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c1 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c2 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c3 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c4 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c5 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c6 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c7 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c8 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2c9 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ca => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2cb => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2cc => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2cd => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ce => sb_p2ce(cp as u8),
+        #[cfg(feature = "full")]
+        0x2cf => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d0 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d1 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d2 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d3 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d4 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d5 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d6 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d7 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d8 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2d9 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2da => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2db => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2dc => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2dd => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2de => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2df => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e0 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e1 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e2 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e3 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e4 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e5 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e6 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e7 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e8 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2e9 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ea => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2eb => sb_p2eb(cp as u8),
+        #[cfg(feature = "full")]
+        0x2ec => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ed => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2ee => sb_p2ee(cp as u8),
+        #[cfg(feature = "full")]
+        0x2f8 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2f9 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x2fa => sb_p2fa(cp as u8),
+        #[cfg(feature = "full")]
+        0x300 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x301 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x302 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x303 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x304 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x305 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x306 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x307 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x308 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x309 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x30a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x30b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x30c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x30d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x30e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x30f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x310 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x311 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x312 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x313 => sb_p313(cp as u8),
+        #[cfg(feature = "full")]
+        0x314 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x315 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x316 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x317 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x318 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x319 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x31a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x31b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x31c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x31d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x31e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x31f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x320 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x321 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x322 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x323 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x324 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x325 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x326 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x327 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x328 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x329 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x32a => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x32b => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x32c => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x32d => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x32e => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x32f => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x330 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x331 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x332 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x333 => Sb::OLetter,
+        #[cfg(feature = "full")]
+        0x334 => sb_p334(cp as u8),
+        #[cfg(feature = "full")]
+        0xe00 => sb_pe00(cp as u8),
+        #[cfg(feature = "full")]
+        0xe01 => sb_pe01(cp as u8),
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn sb_p0(b: u8) -> Sb {
+    match b {
+        0x09 => Sb::Sp,
+        0x0a => Sb::LF,
+        0x0b..=0x0c => Sb::Sp,
+        0x0d => Sb::CR,
+        0x20 => Sb::Sp,
+        0x21 => Sb::STerm,
+        0x22 => Sb::Close,
+        0x27..=0x29 => Sb::Close,
+        0x2c..=0x2d => Sb::SContinue,
+        0x2e => Sb::ATerm,
+        0x30..=0x39 => Sb::Numeric,
+        0x3a..=0x3b => Sb::SContinue,
+        0x3f => Sb::STerm,
+        0x41..=0x5a => Sb::Upper,
+        0x5b => Sb::Close,
+        0x5d => Sb::Close,
+        0x61..=0x7a => Sb::Lower,
+        0x7b => Sb::Close,
+        0x7d => Sb::Close,
+        #[cfg(feature = "latin1")]
+        0x85 => Sb::Sep,
+        #[cfg(feature = "latin1")]
+        0xa0 => Sb::Sp,
+        #[cfg(feature = "latin1")]
+        0xaa => Sb::Lower,
+        #[cfg(feature = "latin1")]
+        0xab => Sb::Close,
+        #[cfg(feature = "latin1")]
+        0xad => Sb::Format,
+        #[cfg(feature = "latin1")]
+        0xb5 => Sb::Lower,
+        #[cfg(feature = "latin1")]
+        0xba => Sb::Lower,
+        #[cfg(feature = "latin1")]
+        0xbb => Sb::Close,
+        #[cfg(feature = "latin1")]
+        0xc0..=0xd6 => Sb::Upper,
+        #[cfg(feature = "latin1")]
+        0xd8..=0xde => Sb::Upper,
+        #[cfg(feature = "latin1")]
+        0xdf..=0xf6 => Sb::Lower,
+        #[cfg(feature = "latin1")]
+        0xf8..=0xff => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p1(b: u8) -> Sb {
+    match b {
+        0x00 => Sb::Upper,
+        0x01 => Sb::Lower,
+        0x02 => Sb::Upper,
+        0x03 => Sb::Lower,
+        0x04 => Sb::Upper,
+        0x05 => Sb::Lower,
+        0x06 => Sb::Upper,
+        0x07 => Sb::Lower,
+        0x08 => Sb::Upper,
+        0x09 => Sb::Lower,
+        0x0a => Sb::Upper,
+        0x0b => Sb::Lower,
+        0x0c => Sb::Upper,
+        0x0d => Sb::Lower,
+        0x0e => Sb::Upper,
+        0x0f => Sb::Lower,
+        0x10 => Sb::Upper,
+        0x11 => Sb::Lower,
+        0x12 => Sb::Upper,
+        0x13 => Sb::Lower,
+        0x14 => Sb::Upper,
+        0x15 => Sb::Lower,
+        0x16 => Sb::Upper,
+        0x17 => Sb::Lower,
+        0x18 => Sb::Upper,
+        0x19 => Sb::Lower,
+        0x1a => Sb::Upper,
+        0x1b => Sb::Lower,
+        0x1c => Sb::Upper,
+        0x1d => Sb::Lower,
+        0x1e => Sb::Upper,
+        0x1f => Sb::Lower,
+        0x20 => Sb::Upper,
+        0x21 => Sb::Lower,
+        0x22 => Sb::Upper,
+        0x23 => Sb::Lower,
+        0x24 => Sb::Upper,
+        0x25 => Sb::Lower,
+        0x26 => Sb::Upper,
+        0x27 => Sb::Lower,
+        0x28 => Sb::Upper,
+        0x29 => Sb::Lower,
+        0x2a => Sb::Upper,
+        0x2b => Sb::Lower,
+        0x2c => Sb::Upper,
+        0x2d => Sb::Lower,
+        0x2e => Sb::Upper,
+        0x2f => Sb::Lower,
+        0x30 => Sb::Upper,
+        0x31 => Sb::Lower,
+        0x32 => Sb::Upper,
+        0x33 => Sb::Lower,
+        0x34 => Sb::Upper,
+        0x35 => Sb::Lower,
+        0x36 => Sb::Upper,
+        0x37..=0x38 => Sb::Lower,
+        0x39 => Sb::Upper,
+        0x3a => Sb::Lower,
+        0x3b => Sb::Upper,
+        0x3c => Sb::Lower,
+        0x3d => Sb::Upper,
+        0x3e => Sb::Lower,
+        0x3f => Sb::Upper,
+        0x40 => Sb::Lower,
+        0x41 => Sb::Upper,
+        0x42 => Sb::Lower,
+        0x43 => Sb::Upper,
+        0x44 => Sb::Lower,
+        0x45 => Sb::Upper,
+        0x46 => Sb::Lower,
+        0x47 => Sb::Upper,
+        0x48..=0x49 => Sb::Lower,
+        0x4a => Sb::Upper,
+        0x4b => Sb::Lower,
+        0x4c => Sb::Upper,
+        0x4d => Sb::Lower,
+        0x4e => Sb::Upper,
+        0x4f => Sb::Lower,
+        0x50 => Sb::Upper,
+        0x51 => Sb::Lower,
+        0x52 => Sb::Upper,
+        0x53 => Sb::Lower,
+        0x54 => Sb::Upper,
+        0x55 => Sb::Lower,
+        0x56 => Sb::Upper,
+        0x57 => Sb::Lower,
+        0x58 => Sb::Upper,
+        0x59 => Sb::Lower,
+        0x5a => Sb::Upper,
+        0x5b => Sb::Lower,
+        0x5c => Sb::Upper,
+        0x5d => Sb::Lower,
+        0x5e => Sb::Upper,
+        0x5f => Sb::Lower,
+        0x60 => Sb::Upper,
+        0x61 => Sb::Lower,
+        0x62 => Sb::Upper,
+        0x63 => Sb::Lower,
+        0x64 => Sb::Upper,
+        0x65 => Sb::Lower,
+        0x66 => Sb::Upper,
+        0x67 => Sb::Lower,
+        0x68 => Sb::Upper,
+        0x69 => Sb::Lower,
+        0x6a => Sb::Upper,
+        0x6b => Sb::Lower,
+        0x6c => Sb::Upper,
+        0x6d => Sb::Lower,
+        0x6e => Sb::Upper,
+        0x6f => Sb::Lower,
+        0x70 => Sb::Upper,
+        0x71 => Sb::Lower,
+        0x72 => Sb::Upper,
+        0x73 => Sb::Lower,
+        0x74 => Sb::Upper,
+        0x75 => Sb::Lower,
+        0x76 => Sb::Upper,
+        0x77 => Sb::Lower,
+        0x78..=0x79 => Sb::Upper,
+        0x7a => Sb::Lower,
+        0x7b => Sb::Upper,
+        0x7c => Sb::Lower,
+        0x7d => Sb::Upper,
+        0x7e..=0x80 => Sb::Lower,
+        0x81..=0x82 => Sb::Upper,
+        0x83 => Sb::Lower,
+        0x84 => Sb::Upper,
+        0x85 => Sb::Lower,
+        0x86..=0x87 => Sb::Upper,
+        0x88 => Sb::Lower,
+        0x89..=0x8b => Sb::Upper,
+        0x8c..=0x8d => Sb::Lower,
+        0x8e..=0x91 => Sb::Upper,
+        0x92 => Sb::Lower,
+        0x93..=0x94 => Sb::Upper,
+        0x95 => Sb::Lower,
+        0x96..=0x98 => Sb::Upper,
+        0x99..=0x9b => Sb::Lower,
+        0x9c..=0x9d => Sb::Upper,
+        0x9e => Sb::Lower,
+        0x9f..=0xa0 => Sb::Upper,
+        0xa1 => Sb::Lower,
+        0xa2 => Sb::Upper,
+        0xa3 => Sb::Lower,
+        0xa4 => Sb::Upper,
+        0xa5 => Sb::Lower,
+        0xa6..=0xa7 => Sb::Upper,
+        0xa8 => Sb::Lower,
+        0xa9 => Sb::Upper,
+        0xaa..=0xab => Sb::Lower,
+        0xac => Sb::Upper,
+        0xad => Sb::Lower,
+        0xae..=0xaf => Sb::Upper,
+        0xb0 => Sb::Lower,
+        0xb1..=0xb3 => Sb::Upper,
+        0xb4 => Sb::Lower,
+        0xb5 => Sb::Upper,
+        0xb6 => Sb::Lower,
+        0xb7..=0xb8 => Sb::Upper,
+        0xb9..=0xba => Sb::Lower,
+        0xbb => Sb::OLetter,
+        0xbc => Sb::Upper,
+        0xbd..=0xbf => Sb::Lower,
+        0xc0..=0xc3 => Sb::OLetter,
+        0xc4..=0xc5 => Sb::Upper,
+        0xc6 => Sb::Lower,
+        0xc7..=0xc8 => Sb::Upper,
+        0xc9 => Sb::Lower,
+        0xca..=0xcb => Sb::Upper,
+        0xcc => Sb::Lower,
+        0xcd => Sb::Upper,
+        0xce => Sb::Lower,
+        0xcf => Sb::Upper,
+        0xd0 => Sb::Lower,
+        0xd1 => Sb::Upper,
+        0xd2 => Sb::Lower,
+        0xd3 => Sb::Upper,
+        0xd4 => Sb::Lower,
+        0xd5 => Sb::Upper,
+        0xd6 => Sb::Lower,
+        0xd7 => Sb::Upper,
+        0xd8 => Sb::Lower,
+        0xd9 => Sb::Upper,
+        0xda => Sb::Lower,
+        0xdb => Sb::Upper,
+        0xdc..=0xdd => Sb::Lower,
+        0xde => Sb::Upper,
+        0xdf => Sb::Lower,
+        0xe0 => Sb::Upper,
+        0xe1 => Sb::Lower,
+        0xe2 => Sb::Upper,
+        0xe3 => Sb::Lower,
+        0xe4 => Sb::Upper,
+        0xe5 => Sb::Lower,
+        0xe6 => Sb::Upper,
+        0xe7 => Sb::Lower,
+        0xe8 => Sb::Upper,
+        0xe9 => Sb::Lower,
+        0xea => Sb::Upper,
+        0xeb => Sb::Lower,
+        0xec => Sb::Upper,
+        0xed => Sb::Lower,
+        0xee => Sb::Upper,
+        0xef..=0xf0 => Sb::Lower,
+        0xf1..=0xf2 => Sb::Upper,
+        0xf3 => Sb::Lower,
+        0xf4 => Sb::Upper,
+        0xf5 => Sb::Lower,
+        0xf6..=0xf8 => Sb::Upper,
+        0xf9 => Sb::Lower,
+        0xfa => Sb::Upper,
+        0xfb => Sb::Lower,
+        0xfc => Sb::Upper,
+        0xfd => Sb::Lower,
+        0xfe => Sb::Upper,
+        0xff => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p2(b: u8) -> Sb {
+    match b {
+        0x00 => Sb::Upper,
+        0x01 => Sb::Lower,
+        0x02 => Sb::Upper,
+        0x03 => Sb::Lower,
+        0x04 => Sb::Upper,
+        0x05 => Sb::Lower,
+        0x06 => Sb::Upper,
+        0x07 => Sb::Lower,
+        0x08 => Sb::Upper,
+        0x09 => Sb::Lower,
+        0x0a => Sb::Upper,
+        0x0b => Sb::Lower,
+        0x0c => Sb::Upper,
+        0x0d => Sb::Lower,
+        0x0e => Sb::Upper,
+        0x0f => Sb::Lower,
+        0x10 => Sb::Upper,
+        0x11 => Sb::Lower,
+        0x12 => Sb::Upper,
+        0x13 => Sb::Lower,
+        0x14 => Sb::Upper,
+        0x15 => Sb::Lower,
+        0x16 => Sb::Upper,
+        0x17 => Sb::Lower,
+        0x18 => Sb::Upper,
+        0x19 => Sb::Lower,
+        0x1a => Sb::Upper,
+        0x1b => Sb::Lower,
+        0x1c => Sb::Upper,
+        0x1d => Sb::Lower,
+        0x1e => Sb::Upper,
+        0x1f => Sb::Lower,
+        0x20 => Sb::Upper,
+        0x21 => Sb::Lower,
+        0x22 => Sb::Upper,
+        0x23 => Sb::Lower,
+        0x24 => Sb::Upper,
+        0x25 => Sb::Lower,
+        0x26 => Sb::Upper,
+        0x27 => Sb::Lower,
+        0x28 => Sb::Upper,
+        0x29 => Sb::Lower,
+        0x2a => Sb::Upper,
+        0x2b => Sb::Lower,
+        0x2c => Sb::Upper,
+        0x2d => Sb::Lower,
+        0x2e => Sb::Upper,
+        0x2f => Sb::Lower,
+        0x30 => Sb::Upper,
+        0x31 => Sb::Lower,
+        0x32 => Sb::Upper,
+        0x33..=0x39 => Sb::Lower,
+        0x3a..=0x3b => Sb::Upper,
+        0x3c => Sb::Lower,
+        0x3d..=0x3e => Sb::Upper,
+        0x3f..=0x40 => Sb::Lower,
+        0x41 => Sb::Upper,
+        0x42 => Sb::Lower,
+        0x43..=0x46 => Sb::Upper,
+        0x47 => Sb::Lower,
+        0x48 => Sb::Upper,
+        0x49 => Sb::Lower,
+        0x4a => Sb::Upper,
+        0x4b => Sb::Lower,
+        0x4c => Sb::Upper,
+        0x4d => Sb::Lower,
+        0x4e => Sb::Upper,
+        0x4f..=0x93 => Sb::Lower,
+        0x94..=0x95 => Sb::OLetter,
+        0x96..=0xb8 => Sb::Lower,
+        0xb9..=0xbf => Sb::OLetter,
+        0xc0..=0xc1 => Sb::Lower,
+        0xc6..=0xd1 => Sb::OLetter,
+        0xe0..=0xe4 => Sb::Lower,
+        0xec => Sb::OLetter,
+        0xee => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p3(b: u8) -> Sb {
+    match b {
+        0x00..=0x6f => Sb::Extend,
+        0x70 => Sb::Upper,
+        0x71 => Sb::Lower,
+        0x72 => Sb::Upper,
+        0x73 => Sb::Lower,
+        0x74 => Sb::OLetter,
+        0x76 => Sb::Upper,
+        0x77 => Sb::Lower,
+        0x7a..=0x7d => Sb::Lower,
+        0x7e => Sb::SContinue,
+        0x7f => Sb::Upper,
+        0x86 => Sb::Upper,
+        0x88..=0x8a => Sb::Upper,
+        0x8c => Sb::Upper,
+        0x8e..=0x8f => Sb::Upper,
+        0x90 => Sb::Lower,
+        0x91..=0xa1 => Sb::Upper,
+        0xa3..=0xab => Sb::Upper,
+        0xac..=0xce => Sb::Lower,
+        0xcf => Sb::Upper,
+        0xd0..=0xd1 => Sb::Lower,
+        0xd2..=0xd4 => Sb::Upper,
+        0xd5..=0xd7 => Sb::Lower,
+        0xd8 => Sb::Upper,
+        0xd9 => Sb::Lower,
+        0xda => Sb::Upper,
+        0xdb => Sb::Lower,
+        0xdc => Sb::Upper,
+        0xdd => Sb::Lower,
+        0xde => Sb::Upper,
+        0xdf => Sb::Lower,
+        0xe0 => Sb::Upper,
+        0xe1 => Sb::Lower,
+        0xe2 => Sb::Upper,
+        0xe3 => Sb::Lower,
+        0xe4 => Sb::Upper,
+        0xe5 => Sb::Lower,
+        0xe6 => Sb::Upper,
+        0xe7 => Sb::Lower,
+        0xe8 => Sb::Upper,
+        0xe9 => Sb::Lower,
+        0xea => Sb::Upper,
+        0xeb => Sb::Lower,
+        0xec => Sb::Upper,
+        0xed => Sb::Lower,
+        0xee => Sb::Upper,
+        0xef..=0xf3 => Sb::Lower,
+        0xf4 => Sb::Upper,
+        0xf5 => Sb::Lower,
+        0xf7 => Sb::Upper,
+        0xf8 => Sb::Lower,
+        0xf9..=0xfa => Sb::Upper,
+        0xfb..=0xfc => Sb::Lower,
+        0xfd..=0xff => Sb::Upper,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p4(b: u8) -> Sb {
+    match b {
+        0x00..=0x2f => Sb::Upper,
+        0x30..=0x5f => Sb::Lower,
+        0x60 => Sb::Upper,
+        0x61 => Sb::Lower,
+        0x62 => Sb::Upper,
+        0x63 => Sb::Lower,
+        0x64 => Sb::Upper,
+        0x65 => Sb::Lower,
+        0x66 => Sb::Upper,
+        0x67 => Sb::Lower,
+        0x68 => Sb::Upper,
+        0x69 => Sb::Lower,
+        0x6a => Sb::Upper,
+        0x6b => Sb::Lower,
+        0x6c => Sb::Upper,
+        0x6d => Sb::Lower,
+        0x6e => Sb::Upper,
+        0x6f => Sb::Lower,
+        0x70 => Sb::Upper,
+        0x71 => Sb::Lower,
+        0x72 => Sb::Upper,
+        0x73 => Sb::Lower,
+        0x74 => Sb::Upper,
+        0x75 => Sb::Lower,
+        0x76 => Sb::Upper,
+        0x77 => Sb::Lower,
+        0x78 => Sb::Upper,
+        0x79 => Sb::Lower,
+        0x7a => Sb::Upper,
+        0x7b => Sb::Lower,
+        0x7c => Sb::Upper,
+        0x7d => Sb::Lower,
+        0x7e => Sb::Upper,
+        0x7f => Sb::Lower,
+        0x80 => Sb::Upper,
+        0x81 => Sb::Lower,
+        0x83..=0x89 => Sb::Extend,
+        0x8a => Sb::Upper,
+        0x8b => Sb::Lower,
+        0x8c => Sb::Upper,
+        0x8d => Sb::Lower,
+        0x8e => Sb::Upper,
+        0x8f => Sb::Lower,
+        0x90 => Sb::Upper,
+        0x91 => Sb::Lower,
+        0x92 => Sb::Upper,
+        0x93 => Sb::Lower,
+        0x94 => Sb::Upper,
+        0x95 => Sb::Lower,
+        0x96 => Sb::Upper,
+        0x97 => Sb::Lower,
+        0x98 => Sb::Upper,
+        0x99 => Sb::Lower,
+        0x9a => Sb::Upper,
+        0x9b => Sb::Lower,
+        0x9c => Sb::Upper,
+        0x9d => Sb::Lower,
+        0x9e => Sb::Upper,
+        0x9f => Sb::Lower,
+        0xa0 => Sb::Upper,
+        0xa1 => Sb::Lower,
+        0xa2 => Sb::Upper,
+        0xa3 => Sb::Lower,
+        0xa4 => Sb::Upper,
+        0xa5 => Sb::Lower,
+        0xa6 => Sb::Upper,
+        0xa7 => Sb::Lower,
+        0xa8 => Sb::Upper,
+        0xa9 => Sb::Lower,
+        0xaa => Sb::Upper,
+        0xab => Sb::Lower,
+        0xac => Sb::Upper,
+        0xad => Sb::Lower,
+        0xae => Sb::Upper,
+        0xaf => Sb::Lower,
+        0xb0 => Sb::Upper,
+        0xb1 => Sb::Lower,
+        0xb2 => Sb::Upper,
+        0xb3 => Sb::Lower,
+        0xb4 => Sb::Upper,
+        0xb5 => Sb::Lower,
+        0xb6 => Sb::Upper,
+        0xb7 => Sb::Lower,
+        0xb8 => Sb::Upper,
+        0xb9 => Sb::Lower,
+        0xba => Sb::Upper,
+        0xbb => Sb::Lower,
+        0xbc => Sb::Upper,
+        0xbd => Sb::Lower,
+        0xbe => Sb::Upper,
+        0xbf => Sb::Lower,
+        0xc0..=0xc1 => Sb::Upper,
+        0xc2 => Sb::Lower,
+        0xc3 => Sb::Upper,
+        0xc4 => Sb::Lower,
+        0xc5 => Sb::Upper,
+        0xc6 => Sb::Lower,
+        0xc7 => Sb::Upper,
+        0xc8 => Sb::Lower,
+        0xc9 => Sb::Upper,
+        0xca => Sb::Lower,
+        0xcb => Sb::Upper,
+        0xcc => Sb::Lower,
+        0xcd => Sb::Upper,
+        0xce..=0xcf => Sb::Lower,
+        0xd0 => Sb::Upper,
+        0xd1 => Sb::Lower,
+        0xd2 => Sb::Upper,
+        0xd3 => Sb::Lower,
+        0xd4 => Sb::Upper,
+        0xd5 => Sb::Lower,
+        0xd6 => Sb::Upper,
+        0xd7 => Sb::Lower,
+        0xd8 => Sb::Upper,
+        0xd9 => Sb::Lower,
+        0xda => Sb::Upper,
+        0xdb => Sb::Lower,
+        0xdc => Sb::Upper,
+        0xdd => Sb::Lower,
+        0xde => Sb::Upper,
+        0xdf => Sb::Lower,
+        0xe0 => Sb::Upper,
+        0xe1 => Sb::Lower,
+        0xe2 => Sb::Upper,
+        0xe3 => Sb::Lower,
+        0xe4 => Sb::Upper,
+        0xe5 => Sb::Lower,
+        0xe6 => Sb::Upper,
+        0xe7 => Sb::Lower,
+        0xe8 => Sb::Upper,
+        0xe9 => Sb::Lower,
+        0xea => Sb::Upper,
+        0xeb => Sb::Lower,
+        0xec => Sb::Upper,
+        0xed => Sb::Lower,
+        0xee => Sb::Upper,
+        0xef => Sb::Lower,
+        0xf0 => Sb::Upper,
+        0xf1 => Sb::Lower,
+        0xf2 => Sb::Upper,
+        0xf3 => Sb::Lower,
+        0xf4 => Sb::Upper,
+        0xf5 => Sb::Lower,
+        0xf6 => Sb::Upper,
+        0xf7 => Sb::Lower,
+        0xf8 => Sb::Upper,
+        0xf9 => Sb::Lower,
+        0xfa => Sb::Upper,
+        0xfb => Sb::Lower,
+        0xfc => Sb::Upper,
+        0xfd => Sb::Lower,
+        0xfe => Sb::Upper,
+        0xff => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p5(b: u8) -> Sb {
+    match b {
+        0x00 => Sb::Upper,
+        0x01 => Sb::Lower,
+        0x02 => Sb::Upper,
+        0x03 => Sb::Lower,
+        0x04 => Sb::Upper,
+        0x05 => Sb::Lower,
+        0x06 => Sb::Upper,
+        0x07 => Sb::Lower,
+        0x08 => Sb::Upper,
+        0x09 => Sb::Lower,
+        0x0a => Sb::Upper,
+        0x0b => Sb::Lower,
+        0x0c => Sb::Upper,
+        0x0d => Sb::Lower,
+        0x0e => Sb::Upper,
+        0x0f => Sb::Lower,
+        0x10 => Sb::Upper,
+        0x11 => Sb::Lower,
+        0x12 => Sb::Upper,
+        0x13 => Sb::Lower,
+        0x14 => Sb::Upper,
+        0x15 => Sb::Lower,
+        0x16 => Sb::Upper,
+        0x17 => Sb::Lower,
+        0x18 => Sb::Upper,
+        0x19 => Sb::Lower,
+        0x1a => Sb::Upper,
+        0x1b => Sb::Lower,
+        0x1c => Sb::Upper,
+        0x1d => Sb::Lower,
+        0x1e => Sb::Upper,
+        0x1f => Sb::Lower,
+        0x20 => Sb::Upper,
+        0x21 => Sb::Lower,
+        0x22 => Sb::Upper,
+        0x23 => Sb::Lower,
+        0x24 => Sb::Upper,
+        0x25 => Sb::Lower,
+        0x26 => Sb::Upper,
+        0x27 => Sb::Lower,
+        0x28 => Sb::Upper,
+        0x29 => Sb::Lower,
+        0x2a => Sb::Upper,
+        0x2b => Sb::Lower,
+        0x2c => Sb::Upper,
+        0x2d => Sb::Lower,
+        0x2e => Sb::Upper,
+        0x2f => Sb::Lower,
+        0x31..=0x56 => Sb::Upper,
+        0x59 => Sb::OLetter,
+        0x5d => Sb::SContinue,
+        0x60..=0x88 => Sb::Lower,
+        0x89 => Sb::STerm,
+        0x91..=0xbd => Sb::Extend,
+        0xbf => Sb::Extend,
+        0xc1..=0xc2 => Sb::Extend,
+        0xc4..=0xc5 => Sb::Extend,
+        0xc7 => Sb::Extend,
+        0xd0..=0xea => Sb::OLetter,
+        0xef..=0xf3 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p6(b: u8) -> Sb {
+    match b {
+        0x00..=0x05 => Sb::Numeric,
+        0x0c..=0x0d => Sb::SContinue,
+        0x10..=0x1a => Sb::Extend,
+        0x1c => Sb::Format,
+        0x1d..=0x1f => Sb::STerm,
+        0x20..=0x4a => Sb::OLetter,
+        0x4b..=0x5f => Sb::Extend,
+        0x60..=0x69 => Sb::Numeric,
+        0x6b..=0x6c => Sb::Numeric,
+        0x6e..=0x6f => Sb::OLetter,
+        0x70 => Sb::Extend,
+        0x71..=0xd3 => Sb::OLetter,
+        0xd4 => Sb::STerm,
+        0xd5 => Sb::OLetter,
+        0xd6..=0xdc => Sb::Extend,
+        0xdd => Sb::Numeric,
+        0xdf..=0xe4 => Sb::Extend,
+        0xe5..=0xe6 => Sb::OLetter,
+        0xe7..=0xe8 => Sb::Extend,
+        0xea..=0xed => Sb::Extend,
+        0xee..=0xef => Sb::OLetter,
+        0xf0..=0xf9 => Sb::Numeric,
+        0xfa..=0xfc => Sb::OLetter,
+        0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p7(b: u8) -> Sb {
+    match b {
+        0x00..=0x02 => Sb::STerm,
+        0x0f => Sb::Format,
+        0x10 => Sb::OLetter,
+        0x11 => Sb::Extend,
+        0x12..=0x2f => Sb::OLetter,
+        0x30..=0x4a => Sb::Extend,
+        0x4d..=0xa5 => Sb::OLetter,
+        0xa6..=0xb0 => Sb::Extend,
+        0xb1 => Sb::OLetter,
+        0xc0..=0xc9 => Sb::Numeric,
+        0xca..=0xea => Sb::OLetter,
+        0xeb..=0xf3 => Sb::Extend,
+        0xf4..=0xf5 => Sb::OLetter,
+        0xf8 => Sb::SContinue,
+        0xf9 => Sb::STerm,
+        0xfa => Sb::OLetter,
+        0xfd => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p8(b: u8) -> Sb {
+    match b {
+        0x00..=0x15 => Sb::OLetter,
+        0x16..=0x19 => Sb::Extend,
+        0x1a => Sb::OLetter,
+        0x1b..=0x23 => Sb::Extend,
+        0x24 => Sb::OLetter,
+        0x25..=0x27 => Sb::Extend,
+        0x28 => Sb::OLetter,
+        0x29..=0x2d => Sb::Extend,
+        0x37 => Sb::STerm,
+        0x39 => Sb::STerm,
+        0x3d..=0x3e => Sb::STerm,
+        0x40..=0x58 => Sb::OLetter,
+        0x59..=0x5b => Sb::Extend,
+        0x60..=0x6a => Sb::OLetter,
+        0x70..=0x87 => Sb::OLetter,
+        0x89..=0x8f => Sb::OLetter,
+        0x90..=0x91 => Sb::Numeric,
+        0x97..=0x9f => Sb::Extend,
+        0xa0..=0xc9 => Sb::OLetter,
+        0xca..=0xe1 => Sb::Extend,
+        0xe2 => Sb::Numeric,
+        0xe3..=0xff => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p9(b: u8) -> Sb {
+    match b {
+        0x00..=0x03 => Sb::Extend,
+        0x04..=0x39 => Sb::OLetter,
+        0x3a..=0x3c => Sb::Extend,
+        0x3d => Sb::OLetter,
+        0x3e..=0x4f => Sb::Extend,
+        0x50 => Sb::OLetter,
+        0x51..=0x57 => Sb::Extend,
+        0x58..=0x61 => Sb::OLetter,
+        0x62..=0x63 => Sb::Extend,
+        0x64..=0x65 => Sb::STerm,
+        0x66..=0x6f => Sb::Numeric,
+        0x71..=0x80 => Sb::OLetter,
+        0x81..=0x83 => Sb::Extend,
+        0x85..=0x8c => Sb::OLetter,
+        0x8f..=0x90 => Sb::OLetter,
+        0x93..=0xa8 => Sb::OLetter,
+        0xaa..=0xb0 => Sb::OLetter,
+        0xb2 => Sb::OLetter,
+        0xb6..=0xb9 => Sb::OLetter,
+        0xbc => Sb::Extend,
+        0xbd => Sb::OLetter,
+        0xbe..=0xc4 => Sb::Extend,
+        0xc7..=0xc8 => Sb::Extend,
+        0xcb..=0xcd => Sb::Extend,
+        0xce => Sb::OLetter,
+        0xd7 => Sb::Extend,
+        0xdc..=0xdd => Sb::OLetter,
+        0xdf..=0xe1 => Sb::OLetter,
+        0xe2..=0xe3 => Sb::Extend,
+        0xe6..=0xef => Sb::Numeric,
+        0xf0..=0xf1 => Sb::OLetter,
+        0xfc => Sb::OLetter,
+        0xfe => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pa(b: u8) -> Sb {
+    match b {
+        0x01..=0x03 => Sb::Extend,
+        0x05..=0x0a => Sb::OLetter,
+        0x0f..=0x10 => Sb::OLetter,
+        0x13..=0x28 => Sb::OLetter,
+        0x2a..=0x30 => Sb::OLetter,
+        0x32..=0x33 => Sb::OLetter,
+        0x35..=0x36 => Sb::OLetter,
+        0x38..=0x39 => Sb::OLetter,
+        0x3c => Sb::Extend,
+        0x3e..=0x42 => Sb::Extend,
+        0x47..=0x48 => Sb::Extend,
+        0x4b..=0x4d => Sb::Extend,
+        0x51 => Sb::Extend,
+        0x59..=0x5c => Sb::OLetter,
+        0x5e => Sb::OLetter,
+        0x66..=0x6f => Sb::Numeric,
+        0x70..=0x71 => Sb::Extend,
+        0x72..=0x74 => Sb::OLetter,
+        0x75 => Sb::Extend,
+        0x81..=0x83 => Sb::Extend,
+        0x85..=0x8d => Sb::OLetter,
+        0x8f..=0x91 => Sb::OLetter,
+        0x93..=0xa8 => Sb::OLetter,
+        0xaa..=0xb0 => Sb::OLetter,
+        0xb2..=0xb3 => Sb::OLetter,
+        0xb5..=0xb9 => Sb::OLetter,
+        0xbc => Sb::Extend,
+        0xbd => Sb::OLetter,
+        0xbe..=0xc5 => Sb::Extend,
+        0xc7..=0xc9 => Sb::Extend,
+        0xcb..=0xcd => Sb::Extend,
+        0xd0 => Sb::OLetter,
+        0xe0..=0xe1 => Sb::OLetter,
+        0xe2..=0xe3 => Sb::Extend,
+        0xe6..=0xef => Sb::Numeric,
+        0xf9 => Sb::OLetter,
+        0xfa..=0xff => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pb(b: u8) -> Sb {
+    match b {
+        0x01..=0x03 => Sb::Extend,
+        0x05..=0x0c => Sb::OLetter,
+        0x0f..=0x10 => Sb::OLetter,
+        0x13..=0x28 => Sb::OLetter,
+        0x2a..=0x30 => Sb::OLetter,
+        0x32..=0x33 => Sb::OLetter,
+        0x35..=0x39 => Sb::OLetter,
+        0x3c => Sb::Extend,
+        0x3d => Sb::OLetter,
+        0x3e..=0x44 => Sb::Extend,
+        0x47..=0x48 => Sb::Extend,
+        0x4b..=0x4d => Sb::Extend,
+        0x55..=0x57 => Sb::Extend,
+        0x5c..=0x5d => Sb::OLetter,
+        0x5f..=0x61 => Sb::OLetter,
+        0x62..=0x63 => Sb::Extend,
+        0x66..=0x6f => Sb::Numeric,
+        0x71 => Sb::OLetter,
+        0x82 => Sb::Extend,
+        0x83 => Sb::OLetter,
+        0x85..=0x8a => Sb::OLetter,
+        0x8e..=0x90 => Sb::OLetter,
+        0x92..=0x95 => Sb::OLetter,
+        0x99..=0x9a => Sb::OLetter,
+        0x9c => Sb::OLetter,
+        0x9e..=0x9f => Sb::OLetter,
+        0xa3..=0xa4 => Sb::OLetter,
+        0xa8..=0xaa => Sb::OLetter,
+        0xae..=0xb9 => Sb::OLetter,
+        0xbe..=0xc2 => Sb::Extend,
+        0xc6..=0xc8 => Sb::Extend,
+        0xca..=0xcd => Sb::Extend,
+        0xd0 => Sb::OLetter,
+        0xd7 => Sb::Extend,
+        0xe6..=0xef => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pc(b: u8) -> Sb {
+    match b {
+        0x00..=0x04 => Sb::Extend,
+        0x05..=0x0c => Sb::OLetter,
+        0x0e..=0x10 => Sb::OLetter,
+        0x12..=0x28 => Sb::OLetter,
+        0x2a..=0x39 => Sb::OLetter,
+        0x3c => Sb::Extend,
+        0x3d => Sb::OLetter,
+        0x3e..=0x44 => Sb::Extend,
+        0x46..=0x48 => Sb::Extend,
+        0x4a..=0x4d => Sb::Extend,
+        0x55..=0x56 => Sb::Extend,
+        0x58..=0x5a => Sb::OLetter,
+        0x5c..=0x5d => Sb::OLetter,
+        0x60..=0x61 => Sb::OLetter,
+        0x62..=0x63 => Sb::Extend,
+        0x66..=0x6f => Sb::Numeric,
+        0x80 => Sb::OLetter,
+        0x81..=0x83 => Sb::Extend,
+        0x85..=0x8c => Sb::OLetter,
+        0x8e..=0x90 => Sb::OLetter,
+        0x92..=0xa8 => Sb::OLetter,
+        0xaa..=0xb3 => Sb::OLetter,
+        0xb5..=0xb9 => Sb::OLetter,
+        0xbc => Sb::Extend,
+        0xbd => Sb::OLetter,
+        0xbe..=0xc4 => Sb::Extend,
+        0xc6..=0xc8 => Sb::Extend,
+        0xca..=0xcd => Sb::Extend,
+        0xd5..=0xd6 => Sb::Extend,
+        0xdc..=0xde => Sb::OLetter,
+        0xe0..=0xe1 => Sb::OLetter,
+        0xe2..=0xe3 => Sb::Extend,
+        0xe6..=0xef => Sb::Numeric,
+        0xf1..=0xf2 => Sb::OLetter,
+        0xf3 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pd(b: u8) -> Sb {
+    match b {
+        0x00..=0x03 => Sb::Extend,
+        0x04..=0x0c => Sb::OLetter,
+        0x0e..=0x10 => Sb::OLetter,
+        0x12..=0x3a => Sb::OLetter,
+        0x3b..=0x3c => Sb::Extend,
+        0x3d => Sb::OLetter,
+        0x3e..=0x44 => Sb::Extend,
+        0x46..=0x48 => Sb::Extend,
+        0x4a..=0x4d => Sb::Extend,
+        0x4e => Sb::OLetter,
+        0x54..=0x56 => Sb::OLetter,
+        0x57 => Sb::Extend,
+        0x5f..=0x61 => Sb::OLetter,
+        0x62..=0x63 => Sb::Extend,
+        0x66..=0x6f => Sb::Numeric,
+        0x7a..=0x7f => Sb::OLetter,
+        0x81..=0x83 => Sb::Extend,
+        0x85..=0x96 => Sb::OLetter,
+        0x9a..=0xb1 => Sb::OLetter,
+        0xb3..=0xbb => Sb::OLetter,
+        0xbd => Sb::OLetter,
+        0xc0..=0xc6 => Sb::OLetter,
+        0xca => Sb::Extend,
+        0xcf..=0xd4 => Sb::Extend,
+        0xd6 => Sb::Extend,
+        0xd8..=0xdf => Sb::Extend,
+        0xe6..=0xef => Sb::Numeric,
+        0xf2..=0xf3 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pe(b: u8) -> Sb {
+    match b {
+        0x01..=0x30 => Sb::OLetter,
+        0x31 => Sb::Extend,
+        0x32..=0x33 => Sb::OLetter,
+        0x34..=0x3a => Sb::Extend,
+        0x40..=0x46 => Sb::OLetter,
+        0x47..=0x4e => Sb::Extend,
+        0x50..=0x59 => Sb::Numeric,
+        0x81..=0x82 => Sb::OLetter,
+        0x84 => Sb::OLetter,
+        0x86..=0x8a => Sb::OLetter,
+        0x8c..=0xa3 => Sb::OLetter,
+        0xa5 => Sb::OLetter,
+        0xa7..=0xb0 => Sb::OLetter,
+        0xb1 => Sb::Extend,
+        0xb2..=0xb3 => Sb::OLetter,
+        0xb4..=0xbc => Sb::Extend,
+        0xbd => Sb::OLetter,
+        0xc0..=0xc4 => Sb::OLetter,
+        0xc6 => Sb::OLetter,
+        0xc8..=0xce => Sb::Extend,
+        0xd0..=0xd9 => Sb::Numeric,
+        0xdc..=0xdf => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pf(b: u8) -> Sb {
+    match b {
+        0x00 => Sb::OLetter,
+        0x18..=0x19 => Sb::Extend,
+        0x20..=0x29 => Sb::Numeric,
+        0x35 => Sb::Extend,
+        0x37 => Sb::Extend,
+        0x39 => Sb::Extend,
+        0x3a..=0x3d => Sb::Close,
+        0x3e..=0x3f => Sb::Extend,
+        0x40..=0x47 => Sb::OLetter,
+        0x49..=0x6c => Sb::OLetter,
+        0x71..=0x84 => Sb::Extend,
+        0x86..=0x87 => Sb::Extend,
+        0x88..=0x8c => Sb::OLetter,
+        0x8d..=0x97 => Sb::Extend,
+        0x99..=0xbc => Sb::Extend,
+        0xc6 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p10(b: u8) -> Sb {
+    match b {
+        0x00..=0x2a => Sb::OLetter,
+        0x2b..=0x3e => Sb::Extend,
+        0x3f => Sb::OLetter,
+        0x40..=0x49 => Sb::Numeric,
+        0x4a..=0x4b => Sb::STerm,
+        0x50..=0x55 => Sb::OLetter,
+        0x56..=0x59 => Sb::Extend,
+        0x5a..=0x5d => Sb::OLetter,
+        0x5e..=0x60 => Sb::Extend,
+        0x61 => Sb::OLetter,
+        0x62..=0x64 => Sb::Extend,
+        0x65..=0x66 => Sb::OLetter,
+        0x67..=0x6d => Sb::Extend,
+        0x6e..=0x70 => Sb::OLetter,
+        0x71..=0x74 => Sb::Extend,
+        0x75..=0x81 => Sb::OLetter,
+        0x82..=0x8d => Sb::Extend,
+        0x8e => Sb::OLetter,
+        0x8f => Sb::Extend,
+        0x90..=0x99 => Sb::Numeric,
+        0x9a..=0x9d => Sb::Extend,
+        0xa0..=0xc5 => Sb::Upper,
+        0xc7 => Sb::Upper,
+        0xcd => Sb::Upper,
+        0xd0..=0xfa => Sb::OLetter,
+        0xfc => Sb::Lower,
+        0xfd..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p12(b: u8) -> Sb {
+    match b {
+        0x00..=0x48 => Sb::OLetter,
+        0x4a..=0x4d => Sb::OLetter,
+        0x50..=0x56 => Sb::OLetter,
+        0x58 => Sb::OLetter,
+        0x5a..=0x5d => Sb::OLetter,
+        0x60..=0x88 => Sb::OLetter,
+        0x8a..=0x8d => Sb::OLetter,
+        0x90..=0xb0 => Sb::OLetter,
+        0xb2..=0xb5 => Sb::OLetter,
+        0xb8..=0xbe => Sb::OLetter,
+        0xc0 => Sb::OLetter,
+        0xc2..=0xc5 => Sb::OLetter,
+        0xc8..=0xd6 => Sb::OLetter,
+        0xd8..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p13(b: u8) -> Sb {
+    match b {
+        0x00..=0x10 => Sb::OLetter,
+        0x12..=0x15 => Sb::OLetter,
+        0x18..=0x5a => Sb::OLetter,
+        0x5d..=0x5f => Sb::Extend,
+        0x62 => Sb::STerm,
+        0x67..=0x68 => Sb::STerm,
+        0x80..=0x8f => Sb::OLetter,
+        0xa0..=0xf5 => Sb::Upper,
+        0xf8..=0xfd => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p14(b: u8) -> Sb {
+    match b {
+        0x01..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p16(b: u8) -> Sb {
+    match b {
+        0x00..=0x6c => Sb::OLetter,
+        0x6e => Sb::STerm,
+        0x6f..=0x7f => Sb::OLetter,
+        0x80 => Sb::Sp,
+        0x81..=0x9a => Sb::OLetter,
+        0x9b..=0x9c => Sb::Close,
+        0xa0..=0xea => Sb::OLetter,
+        0xee..=0xf8 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p17(b: u8) -> Sb {
+    match b {
+        0x00..=0x11 => Sb::OLetter,
+        0x12..=0x15 => Sb::Extend,
+        0x1f..=0x31 => Sb::OLetter,
+        0x32..=0x34 => Sb::Extend,
+        0x35..=0x36 => Sb::STerm,
+        0x40..=0x51 => Sb::OLetter,
+        0x52..=0x53 => Sb::Extend,
+        0x60..=0x6c => Sb::OLetter,
+        0x6e..=0x70 => Sb::OLetter,
+        0x72..=0x73 => Sb::Extend,
+        0x80..=0xb3 => Sb::OLetter,
+        0xb4..=0xd3 => Sb::Extend,
+        0xd4..=0xd5 => Sb::STerm,
+        0xd7 => Sb::OLetter,
+        0xdc => Sb::OLetter,
+        0xdd => Sb::Extend,
+        0xe0..=0xe9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p18(b: u8) -> Sb {
+    match b {
+        0x02 => Sb::SContinue,
+        0x03 => Sb::STerm,
+        0x08 => Sb::SContinue,
+        0x09 => Sb::STerm,
+        0x0b..=0x0d => Sb::Extend,
+        0x0e => Sb::Format,
+        0x0f => Sb::Extend,
+        0x10..=0x19 => Sb::Numeric,
+        0x20..=0x78 => Sb::OLetter,
+        0x80..=0x84 => Sb::OLetter,
+        0x85..=0x86 => Sb::Extend,
+        0x87..=0xa8 => Sb::OLetter,
+        0xa9 => Sb::Extend,
+        0xaa => Sb::OLetter,
+        0xb0..=0xf5 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p19(b: u8) -> Sb {
+    match b {
+        0x00..=0x1e => Sb::OLetter,
+        0x20..=0x2b => Sb::Extend,
+        0x30..=0x3b => Sb::Extend,
+        0x44..=0x45 => Sb::STerm,
+        0x46..=0x4f => Sb::Numeric,
+        0x50..=0x6d => Sb::OLetter,
+        0x70..=0x74 => Sb::OLetter,
+        0x80..=0xab => Sb::OLetter,
+        0xb0..=0xc9 => Sb::OLetter,
+        0xd0..=0xda => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p1a(b: u8) -> Sb {
+    match b {
+        0x00..=0x16 => Sb::OLetter,
+        0x17..=0x1b => Sb::Extend,
+        0x20..=0x54 => Sb::OLetter,
+        0x55..=0x5e => Sb::Extend,
+        0x60..=0x7c => Sb::Extend,
+        0x7f => Sb::Extend,
+        0x80..=0x89 => Sb::Numeric,
+        0x90..=0x99 => Sb::Numeric,
+        0xa7 => Sb::OLetter,
+        0xa8..=0xab => Sb::STerm,
+        0xb0..=0xdd => Sb::Extend,
+        0xe0..=0xeb => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p1b(b: u8) -> Sb {
+    match b {
+        0x00..=0x04 => Sb::Extend,
+        0x05..=0x33 => Sb::OLetter,
+        0x34..=0x44 => Sb::Extend,
+        0x45..=0x4c => Sb::OLetter,
+        0x4e..=0x4f => Sb::STerm,
+        0x50..=0x59 => Sb::Numeric,
+        0x5a..=0x5b => Sb::STerm,
+        0x5e..=0x5f => Sb::STerm,
+        0x6b..=0x73 => Sb::Extend,
+        0x7d..=0x7f => Sb::STerm,
+        0x80..=0x82 => Sb::Extend,
+        0x83..=0xa0 => Sb::OLetter,
+        0xa1..=0xad => Sb::Extend,
+        0xae..=0xaf => Sb::OLetter,
+        0xb0..=0xb9 => Sb::Numeric,
+        0xba..=0xe5 => Sb::OLetter,
+        0xe6..=0xf3 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p1c(b: u8) -> Sb {
+    match b {
+        0x00..=0x23 => Sb::OLetter,
+        0x24..=0x37 => Sb::Extend,
+        0x3b..=0x3c => Sb::STerm,
+        0x40..=0x49 => Sb::Numeric,
+        0x4d..=0x4f => Sb::OLetter,
+        0x50..=0x59 => Sb::Numeric,
+        0x5a..=0x7d => Sb::OLetter,
+        0x7e..=0x7f => Sb::STerm,
+        0x80..=0x88 => Sb::Lower,
+        0x89 => Sb::Upper,
+        0x8a => Sb::Lower,
+        0x90..=0xba => Sb::OLetter,
+        0xbd..=0xbf => Sb::OLetter,
+        0xd0..=0xd2 => Sb::Extend,
+        0xd4..=0xe8 => Sb::Extend,
+        0xe9..=0xec => Sb::OLetter,
+        0xed => Sb::Extend,
+        0xee..=0xf3 => Sb::OLetter,
+        0xf4 => Sb::Extend,
+        0xf5..=0xf6 => Sb::OLetter,
+        0xf7..=0xf9 => Sb::Extend,
+        0xfa => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p1d(b: u8) -> Sb {
+    match b {
+        0x00..=0xbf => Sb::Lower,
+        0xc0..=0xff => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p1e(b: u8) -> Sb {
+    match b {
+        0x00 => Sb::Upper,
+        0x01 => Sb::Lower,
+        0x02 => Sb::Upper,
+        0x03 => Sb::Lower,
+        0x04 => Sb::Upper,
+        0x05 => Sb::Lower,
+        0x06 => Sb::Upper,
+        0x07 => Sb::Lower,
+        0x08 => Sb::Upper,
+        0x09 => Sb::Lower,
+        0x0a => Sb::Upper,
+        0x0b => Sb::Lower,
+        0x0c => Sb::Upper,
+        0x0d => Sb::Lower,
+        0x0e => Sb::Upper,
+        0x0f => Sb::Lower,
+        0x10 => Sb::Upper,
+        0x11 => Sb::Lower,
+        0x12 => Sb::Upper,
+        0x13 => Sb::Lower,
+        0x14 => Sb::Upper,
+        0x15 => Sb::Lower,
+        0x16 => Sb::Upper,
+        0x17 => Sb::Lower,
+        0x18 => Sb::Upper,
+        0x19 => Sb::Lower,
+        0x1a => Sb::Upper,
+        0x1b => Sb::Lower,
+        0x1c => Sb::Upper,
+        0x1d => Sb::Lower,
+        0x1e => Sb::Upper,
+        0x1f => Sb::Lower,
+        0x20 => Sb::Upper,
+        0x21 => Sb::Lower,
+        0x22 => Sb::Upper,
+        0x23 => Sb::Lower,
+        0x24 => Sb::Upper,
+        0x25 => Sb::Lower,
+        0x26 => Sb::Upper,
+        0x27 => Sb::Lower,
+        0x28 => Sb::Upper,
+        0x29 => Sb::Lower,
+        0x2a => Sb::Upper,
+        0x2b => Sb::Lower,
+        0x2c => Sb::Upper,
+        0x2d => Sb::Lower,
+        0x2e => Sb::Upper,
+        0x2f => Sb::Lower,
+        0x30 => Sb::Upper,
+        0x31 => Sb::Lower,
+        0x32 => Sb::Upper,
+        0x33 => Sb::Lower,
+        0x34 => Sb::Upper,
+        0x35 => Sb::Lower,
+        0x36 => Sb::Upper,
+        0x37 => Sb::Lower,
+        0x38 => Sb::Upper,
+        0x39 => Sb::Lower,
+        0x3a => Sb::Upper,
+        0x3b => Sb::Lower,
+        0x3c => Sb::Upper,
+        0x3d => Sb::Lower,
+        0x3e => Sb::Upper,
+        0x3f => Sb::Lower,
+        0x40 => Sb::Upper,
+        0x41 => Sb::Lower,
+        0x42 => Sb::Upper,
+        0x43 => Sb::Lower,
+        0x44 => Sb::Upper,
+        0x45 => Sb::Lower,
+        0x46 => Sb::Upper,
+        0x47 => Sb::Lower,
+        0x48 => Sb::Upper,
+        0x49 => Sb::Lower,
+        0x4a => Sb::Upper,
+        0x4b => Sb::Lower,
+        0x4c => Sb::Upper,
+        0x4d => Sb::Lower,
+        0x4e => Sb::Upper,
+        0x4f => Sb::Lower,
+        0x50 => Sb::Upper,
+        0x51 => Sb::Lower,
+        0x52 => Sb::Upper,
+        0x53 => Sb::Lower,
+        0x54 => Sb::Upper,
+        0x55 => Sb::Lower,
+        0x56 => Sb::Upper,
+        0x57 => Sb::Lower,
+        0x58 => Sb::Upper,
+        0x59 => Sb::Lower,
+        0x5a => Sb::Upper,
+        0x5b => Sb::Lower,
+        0x5c => Sb::Upper,
+        0x5d => Sb::Lower,
+        0x5e => Sb::Upper,
+        0x5f => Sb::Lower,
+        0x60 => Sb::Upper,
+        0x61 => Sb::Lower,
+        0x62 => Sb::Upper,
+        0x63 => Sb::Lower,
+        0x64 => Sb::Upper,
+        0x65 => Sb::Lower,
+        0x66 => Sb::Upper,
+        0x67 => Sb::Lower,
+        0x68 => Sb::Upper,
+        0x69 => Sb::Lower,
+        0x6a => Sb::Upper,
+        0x6b => Sb::Lower,
+        0x6c => Sb::Upper,
+        0x6d => Sb::Lower,
+        0x6e => Sb::Upper,
+        0x6f => Sb::Lower,
+        0x70 => Sb::Upper,
+        0x71 => Sb::Lower,
+        0x72 => Sb::Upper,
+        0x73 => Sb::Lower,
+        0x74 => Sb::Upper,
+        0x75 => Sb::Lower,
+        0x76 => Sb::Upper,
+        0x77 => Sb::Lower,
+        0x78 => Sb::Upper,
+        0x79 => Sb::Lower,
+        0x7a => Sb::Upper,
+        0x7b => Sb::Lower,
+        0x7c => Sb::Upper,
+        0x7d => Sb::Lower,
+        0x7e => Sb::Upper,
+        0x7f => Sb::Lower,
+        0x80 => Sb::Upper,
+        0x81 => Sb::Lower,
+        0x82 => Sb::Upper,
+        0x83 => Sb::Lower,
+        0x84 => Sb::Upper,
+        0x85 => Sb::Lower,
+        0x86 => Sb::Upper,
+        0x87 => Sb::Lower,
+        0x88 => Sb::Upper,
+        0x89 => Sb::Lower,
+        0x8a => Sb::Upper,
+        0x8b => Sb::Lower,
+        0x8c => Sb::Upper,
+        0x8d => Sb::Lower,
+        0x8e => Sb::Upper,
+        0x8f => Sb::Lower,
+        0x90 => Sb::Upper,
+        0x91 => Sb::Lower,
+        0x92 => Sb::Upper,
+        0x93 => Sb::Lower,
+        0x94 => Sb::Upper,
+        0x95..=0x9d => Sb::Lower,
+        0x9e => Sb::Upper,
+        0x9f => Sb::Lower,
+        0xa0 => Sb::Upper,
+        0xa1 => Sb::Lower,
+        0xa2 => Sb::Upper,
+        0xa3 => Sb::Lower,
+        0xa4 => Sb::Upper,
+        0xa5 => Sb::Lower,
+        0xa6 => Sb::Upper,
+        0xa7 => Sb::Lower,
+        0xa8 => Sb::Upper,
+        0xa9 => Sb::Lower,
+        0xaa => Sb::Upper,
+        0xab => Sb::Lower,
+        0xac => Sb::Upper,
+        0xad => Sb::Lower,
+        0xae => Sb::Upper,
+        0xaf => Sb::Lower,
+        0xb0 => Sb::Upper,
+        0xb1 => Sb::Lower,
+        0xb2 => Sb::Upper,
+        0xb3 => Sb::Lower,
+        0xb4 => Sb::Upper,
+        0xb5 => Sb::Lower,
+        0xb6 => Sb::Upper,
+        0xb7 => Sb::Lower,
+        0xb8 => Sb::Upper,
+        0xb9 => Sb::Lower,
+        0xba => Sb::Upper,
+        0xbb => Sb::Lower,
+        0xbc => Sb::Upper,
+        0xbd => Sb::Lower,
+        0xbe => Sb::Upper,
+        0xbf => Sb::Lower,
+        0xc0 => Sb::Upper,
+        0xc1 => Sb::Lower,
+        0xc2 => Sb::Upper,
+        0xc3 => Sb::Lower,
+        0xc4 => Sb::Upper,
+        0xc5 => Sb::Lower,
+        0xc6 => Sb::Upper,
+        0xc7 => Sb::Lower,
+        0xc8 => Sb::Upper,
+        0xc9 => Sb::Lower,
+        0xca => Sb::Upper,
+        0xcb => Sb::Lower,
+        0xcc => Sb::Upper,
+        0xcd => Sb::Lower,
+        0xce => Sb::Upper,
+        0xcf => Sb::Lower,
+        0xd0 => Sb::Upper,
+        0xd1 => Sb::Lower,
+        0xd2 => Sb::Upper,
+        0xd3 => Sb::Lower,
+        0xd4 => Sb::Upper,
+        0xd5 => Sb::Lower,
+        0xd6 => Sb::Upper,
+        0xd7 => Sb::Lower,
+        0xd8 => Sb::Upper,
+        0xd9 => Sb::Lower,
+        0xda => Sb::Upper,
+        0xdb => Sb::Lower,
+        0xdc => Sb::Upper,
+        0xdd => Sb::Lower,
+        0xde => Sb::Upper,
+        0xdf => Sb::Lower,
+        0xe0 => Sb::Upper,
+        0xe1 => Sb::Lower,
+        0xe2 => Sb::Upper,
+        0xe3 => Sb::Lower,
+        0xe4 => Sb::Upper,
+        0xe5 => Sb::Lower,
+        0xe6 => Sb::Upper,
+        0xe7 => Sb::Lower,
+        0xe8 => Sb::Upper,
+        0xe9 => Sb::Lower,
+        0xea => Sb::Upper,
+        0xeb => Sb::Lower,
+        0xec => Sb::Upper,
+        0xed => Sb::Lower,
+        0xee => Sb::Upper,
+        0xef => Sb::Lower,
+        0xf0 => Sb::Upper,
+        0xf1 => Sb::Lower,
+        0xf2 => Sb::Upper,
+        0xf3 => Sb::Lower,
+        0xf4 => Sb::Upper,
+        0xf5 => Sb::Lower,
+        0xf6 => Sb::Upper,
+        0xf7 => Sb::Lower,
+        0xf8 => Sb::Upper,
+        0xf9 => Sb::Lower,
+        0xfa => Sb::Upper,
+        0xfb => Sb::Lower,
+        0xfc => Sb::Upper,
+        0xfd => Sb::Lower,
+        0xfe => Sb::Upper,
+        0xff => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p1f(b: u8) -> Sb {
+    match b {
+        0x00..=0x07 => Sb::Lower,
+        0x08..=0x0f => Sb::Upper,
+        0x10..=0x15 => Sb::Lower,
+        0x18..=0x1d => Sb::Upper,
+        0x20..=0x27 => Sb::Lower,
+        0x28..=0x2f => Sb::Upper,
+        0x30..=0x37 => Sb::Lower,
+        0x38..=0x3f => Sb::Upper,
+        0x40..=0x45 => Sb::Lower,
+        0x48..=0x4d => Sb::Upper,
+        0x50..=0x57 => Sb::Lower,
+        0x59 => Sb::Upper,
+        0x5b => Sb::Upper,
+        0x5d => Sb::Upper,
+        0x5f => Sb::Upper,
+        0x60..=0x67 => Sb::Lower,
+        0x68..=0x6f => Sb::Upper,
+        0x70..=0x7d => Sb::Lower,
+        0x80..=0x87 => Sb::Lower,
+        0x88..=0x8f => Sb::Upper,
+        0x90..=0x97 => Sb::Lower,
+        0x98..=0x9f => Sb::Upper,
+        0xa0..=0xa7 => Sb::Lower,
+        0xa8..=0xaf => Sb::Upper,
+        0xb0..=0xb4 => Sb::Lower,
+        0xb6..=0xb7 => Sb::Lower,
+        0xb8..=0xbc => Sb::Upper,
+        0xbe => Sb::Lower,
+        0xc2..=0xc4 => Sb::Lower,
+        0xc6..=0xc7 => Sb::Lower,
+        0xc8..=0xcc => Sb::Upper,
+        0xd0..=0xd3 => Sb::Lower,
+        0xd6..=0xd7 => Sb::Lower,
+        0xd8..=0xdb => Sb::Upper,
+        0xe0..=0xe7 => Sb::Lower,
+        0xe8..=0xec => Sb::Upper,
+        0xf2..=0xf4 => Sb::Lower,
+        0xf6..=0xf7 => Sb::Lower,
+        0xf8..=0xfc => Sb::Upper,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p20(b: u8) -> Sb {
+    match b {
+        0x00..=0x0a => Sb::Sp,
+        0x0b => Sb::Format,
+        0x0c..=0x0d => Sb::Extend,
+        0x0e..=0x0f => Sb::Format,
+        0x13..=0x14 => Sb::SContinue,
+        0x18..=0x1f => Sb::Close,
+        0x24 => Sb::ATerm,
+        0x28..=0x29 => Sb::Sep,
+        0x2a..=0x2e => Sb::Format,
+        0x2f => Sb::Sp,
+        0x39..=0x3a => Sb::Close,
+        0x3c..=0x3d => Sb::STerm,
+        0x45..=0x46 => Sb::Close,
+        0x47..=0x49 => Sb::STerm,
+        0x5f => Sb::Sp,
+        0x60..=0x64 => Sb::Format,
+        0x66..=0x6f => Sb::Format,
+        0x71 => Sb::Lower,
+        0x7d..=0x7e => Sb::Close,
+        0x7f => Sb::Lower,
+        0x8d..=0x8e => Sb::Close,
+        0x90..=0x9c => Sb::Lower,
+        0xd0..=0xf0 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p21(b: u8) -> Sb {
+    match b {
+        0x02 => Sb::Upper,
+        0x07 => Sb::Upper,
+        0x0a => Sb::Lower,
+        0x0b..=0x0d => Sb::Upper,
+        0x0e..=0x0f => Sb::Lower,
+        0x10..=0x12 => Sb::Upper,
+        0x13 => Sb::Lower,
+        0x15 => Sb::Upper,
+        0x19..=0x1d => Sb::Upper,
+        0x24 => Sb::Upper,
+        0x26 => Sb::Upper,
+        0x28 => Sb::Upper,
+        0x2a..=0x2d => Sb::Upper,
+        0x2f => Sb::Lower,
+        0x30..=0x33 => Sb::Upper,
+        0x34 => Sb::Lower,
+        0x35..=0x38 => Sb::OLetter,
+        0x39 => Sb::Lower,
+        0x3c..=0x3d => Sb::Lower,
+        0x3e..=0x3f => Sb::Upper,
+        0x45 => Sb::Upper,
+        0x46..=0x49 => Sb::Lower,
+        0x4e => Sb::Lower,
+        0x60..=0x6f => Sb::Upper,
+        0x70..=0x7f => Sb::Lower,
+        0x80..=0x82 => Sb::OLetter,
+        0x83 => Sb::Upper,
+        0x84 => Sb::Lower,
+        0x85..=0x88 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p23(b: u8) -> Sb {
+    match b {
+        0x08..=0x0b => Sb::Close,
+        0x29..=0x2a => Sb::Close,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p24(b: u8) -> Sb {
+    match b {
+        0xb6..=0xcf => Sb::Upper,
+        0xd0..=0xe9 => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p27(b: u8) -> Sb {
+    match b {
+        0x5b..=0x60 => Sb::Close,
+        0x68..=0x75 => Sb::Close,
+        0xc5..=0xc6 => Sb::Close,
+        0xe6..=0xef => Sb::Close,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p29(b: u8) -> Sb {
+    match b {
+        0x83..=0x98 => Sb::Close,
+        0xd8..=0xdb => Sb::Close,
+        0xfc..=0xfd => Sb::Close,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p2c(b: u8) -> Sb {
+    match b {
+        0x00..=0x2f => Sb::Upper,
+        0x30..=0x5f => Sb::Lower,
+        0x60 => Sb::Upper,
+        0x61 => Sb::Lower,
+        0x62..=0x64 => Sb::Upper,
+        0x65..=0x66 => Sb::Lower,
+        0x67 => Sb::Upper,
+        0x68 => Sb::Lower,
+        0x69 => Sb::Upper,
+        0x6a => Sb::Lower,
+        0x6b => Sb::Upper,
+        0x6c => Sb::Lower,
+        0x6d..=0x70 => Sb::Upper,
+        0x71 => Sb::Lower,
+        0x72 => Sb::Upper,
+        0x73..=0x74 => Sb::Lower,
+        0x75 => Sb::Upper,
+        0x76..=0x7d => Sb::Lower,
+        0x7e..=0x80 => Sb::Upper,
+        0x81 => Sb::Lower,
+        0x82 => Sb::Upper,
+        0x83 => Sb::Lower,
+        0x84 => Sb::Upper,
+        0x85 => Sb::Lower,
+        0x86 => Sb::Upper,
+        0x87 => Sb::Lower,
+        0x88 => Sb::Upper,
+        0x89 => Sb::Lower,
+        0x8a => Sb::Upper,
+        0x8b => Sb::Lower,
+        0x8c => Sb::Upper,
+        0x8d => Sb::Lower,
+        0x8e => Sb::Upper,
+        0x8f => Sb::Lower,
+        0x90 => Sb::Upper,
+        0x91 => Sb::Lower,
+        0x92 => Sb::Upper,
+        0x93 => Sb::Lower,
+        0x94 => Sb::Upper,
+        0x95 => Sb::Lower,
+        0x96 => Sb::Upper,
+        0x97 => Sb::Lower,
+        0x98 => Sb::Upper,
+        0x99 => Sb::Lower,
+        0x9a => Sb::Upper,
+        0x9b => Sb::Lower,
+        0x9c => Sb::Upper,
+        0x9d => Sb::Lower,
+        0x9e => Sb::Upper,
+        0x9f => Sb::Lower,
+        0xa0 => Sb::Upper,
+        0xa1 => Sb::Lower,
+        0xa2 => Sb::Upper,
+        0xa3 => Sb::Lower,
+        0xa4 => Sb::Upper,
+        0xa5 => Sb::Lower,
+        0xa6 => Sb::Upper,
+        0xa7 => Sb::Lower,
+        0xa8 => Sb::Upper,
+        0xa9 => Sb::Lower,
+        0xaa => Sb::Upper,
+        0xab => Sb::Lower,
+        0xac => Sb::Upper,
+        0xad => Sb::Lower,
+        0xae => Sb::Upper,
+        0xaf => Sb::Lower,
+        0xb0 => Sb::Upper,
+        0xb1 => Sb::Lower,
+        0xb2 => Sb::Upper,
+        0xb3 => Sb::Lower,
+        0xb4 => Sb::Upper,
+        0xb5 => Sb::Lower,
+        0xb6 => Sb::Upper,
+        0xb7 => Sb::Lower,
+        0xb8 => Sb::Upper,
+        0xb9 => Sb::Lower,
+        0xba => Sb::Upper,
+        0xbb => Sb::Lower,
+        0xbc => Sb::Upper,
+        0xbd => Sb::Lower,
+        0xbe => Sb::Upper,
+        0xbf => Sb::Lower,
+        0xc0 => Sb::Upper,
+        0xc1 => Sb::Lower,
+        0xc2 => Sb::Upper,
+        0xc3 => Sb::Lower,
+        0xc4 => Sb::Upper,
+        0xc5 => Sb::Lower,
+        0xc6 => Sb::Upper,
+        0xc7 => Sb::Lower,
+        0xc8 => Sb::Upper,
+        0xc9 => Sb::Lower,
+        0xca => Sb::Upper,
+        0xcb => Sb::Lower,
+        0xcc => Sb::Upper,
+        0xcd => Sb::Lower,
+        0xce => Sb::Upper,
+        0xcf => Sb::Lower,
+        0xd0 => Sb::Upper,
+        0xd1 => Sb::Lower,
+        0xd2 => Sb::Upper,
+        0xd3 => Sb::Lower,
+        0xd4 => Sb::Upper,
+        0xd5 => Sb::Lower,
+        0xd6 => Sb::Upper,
+        0xd7 => Sb::Lower,
+        0xd8 => Sb::Upper,
+        0xd9 => Sb::Lower,
+        0xda => Sb::Upper,
+        0xdb => Sb::Lower,
+        0xdc => Sb::Upper,
+        0xdd => Sb::Lower,
+        0xde => Sb::Upper,
+        0xdf => Sb::Lower,
+        0xe0 => Sb::Upper,
+        0xe1 => Sb::Lower,
+        0xe2 => Sb::Upper,
+        0xe3..=0xe4 => Sb::Lower,
+        0xeb => Sb::Upper,
+        0xec => Sb::Lower,
+        0xed => Sb::Upper,
+        0xee => Sb::Lower,
+        0xef..=0xf1 => Sb::Extend,
+        0xf2 => Sb::Upper,
+        0xf3 => Sb::Lower,
+        0xf9..=0xfb => Sb::STerm,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p2d(b: u8) -> Sb {
+    match b {
+        0x00..=0x25 => Sb::Lower,
+        0x27 => Sb::Lower,
+        0x2d => Sb::Lower,
+        0x30..=0x67 => Sb::OLetter,
+        0x6f => Sb::OLetter,
+        0x7f => Sb::Extend,
+        0x80..=0x96 => Sb::OLetter,
+        0xa0..=0xa6 => Sb::OLetter,
+        0xa8..=0xae => Sb::OLetter,
+        0xb0..=0xb6 => Sb::OLetter,
+        0xb8..=0xbe => Sb::OLetter,
+        0xc0..=0xc6 => Sb::OLetter,
+        0xc8..=0xce => Sb::OLetter,
+        0xd0..=0xd6 => Sb::OLetter,
+        0xd8..=0xde => Sb::OLetter,
+        0xe0..=0xff => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p2e(b: u8) -> Sb {
+    match b {
+        0x00..=0x0d => Sb::Close,
+        0x1c..=0x1d => Sb::Close,
+        0x20..=0x29 => Sb::Close,
+        0x2e => Sb::STerm,
+        0x2f => Sb::OLetter,
+        0x3c => Sb::STerm,
+        0x42 => Sb::Close,
+        0x53..=0x54 => Sb::STerm,
+        0x55..=0x5c => Sb::Close,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p30(b: u8) -> Sb {
+    match b {
+        0x00 => Sb::Sp,
+        0x01 => Sb::SContinue,
+        0x02 => Sb::STerm,
+        0x05..=0x07 => Sb::OLetter,
+        0x08..=0x11 => Sb::Close,
+        0x14..=0x1b => Sb::Close,
+        0x1d..=0x1f => Sb::Close,
+        0x21..=0x29 => Sb::OLetter,
+        0x2a..=0x2f => Sb::Extend,
+        0x31..=0x35 => Sb::OLetter,
+        0x38..=0x3c => Sb::OLetter,
+        0x41..=0x96 => Sb::OLetter,
+        0x99..=0x9a => Sb::Extend,
+        0x9d..=0x9f => Sb::OLetter,
+        0xa1..=0xfa => Sb::OLetter,
+        0xfc..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p31(b: u8) -> Sb {
+    match b {
+        0x05..=0x2f => Sb::OLetter,
+        0x31..=0x8e => Sb::OLetter,
+        0xa0..=0xbf => Sb::OLetter,
+        0xf0..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_p4d(b: u8) -> Sb {
+    match b {
+        0x00..=0xbf => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pa4(b: u8) -> Sb {
+    match b {
+        0x00..=0x8c => Sb::OLetter,
+        0xd0..=0xfd => Sb::OLetter,
+        0xff => Sb::STerm,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pa6(b: u8) -> Sb {
+    match b {
+        0x00..=0x0c => Sb::OLetter,
+        0x0e..=0x0f => Sb::STerm,
+        0x10..=0x1f => Sb::OLetter,
+        0x20..=0x29 => Sb::Numeric,
+        0x2a..=0x2b => Sb::OLetter,
+        0x40 => Sb::Upper,
+        0x41 => Sb::Lower,
+        0x42 => Sb::Upper,
+        0x43 => Sb::Lower,
+        0x44 => Sb::Upper,
+        0x45 => Sb::Lower,
+        0x46 => Sb::Upper,
+        0x47 => Sb::Lower,
+        0x48 => Sb::Upper,
+        0x49 => Sb::Lower,
+        0x4a => Sb::Upper,
+        0x4b => Sb::Lower,
+        0x4c => Sb::Upper,
+        0x4d => Sb::Lower,
+        0x4e => Sb::Upper,
+        0x4f => Sb::Lower,
+        0x50 => Sb::Upper,
+        0x51 => Sb::Lower,
+        0x52 => Sb::Upper,
+        0x53 => Sb::Lower,
+        0x54 => Sb::Upper,
+        0x55 => Sb::Lower,
+        0x56 => Sb::Upper,
+        0x57 => Sb::Lower,
+        0x58 => Sb::Upper,
+        0x59 => Sb::Lower,
+        0x5a => Sb::Upper,
+        0x5b => Sb::Lower,
+        0x5c => Sb::Upper,
+        0x5d => Sb::Lower,
+        0x5e => Sb::Upper,
+        0x5f => Sb::Lower,
+        0x60 => Sb::Upper,
+        0x61 => Sb::Lower,
+        0x62 => Sb::Upper,
+        0x63 => Sb::Lower,
+        0x64 => Sb::Upper,
+        0x65 => Sb::Lower,
+        0x66 => Sb::Upper,
+        0x67 => Sb::Lower,
+        0x68 => Sb::Upper,
+        0x69 => Sb::Lower,
+        0x6a => Sb::Upper,
+        0x6b => Sb::Lower,
+        0x6c => Sb::Upper,
+        0x6d => Sb::Lower,
+        0x6e => Sb::OLetter,
+        0x6f..=0x72 => Sb::Extend,
+        0x74..=0x7d => Sb::Extend,
+        0x7f => Sb::OLetter,
+        0x80 => Sb::Upper,
+        0x81 => Sb::Lower,
+        0x82 => Sb::Upper,
+        0x83 => Sb::Lower,
+        0x84 => Sb::Upper,
+        0x85 => Sb::Lower,
+        0x86 => Sb::Upper,
+        0x87 => Sb::Lower,
+        0x88 => Sb::Upper,
+        0x89 => Sb::Lower,
+        0x8a => Sb::Upper,
+        0x8b => Sb::Lower,
+        0x8c => Sb::Upper,
+        0x8d => Sb::Lower,
+        0x8e => Sb::Upper,
+        0x8f => Sb::Lower,
+        0x90 => Sb::Upper,
+        0x91 => Sb::Lower,
+        0x92 => Sb::Upper,
+        0x93 => Sb::Lower,
+        0x94 => Sb::Upper,
+        0x95 => Sb::Lower,
+        0x96 => Sb::Upper,
+        0x97 => Sb::Lower,
+        0x98 => Sb::Upper,
+        0x99 => Sb::Lower,
+        0x9a => Sb::Upper,
+        0x9b..=0x9d => Sb::Lower,
+        0x9e..=0x9f => Sb::Extend,
+        0xa0..=0xef => Sb::OLetter,
+        0xf0..=0xf1 => Sb::Extend,
+        0xf3 => Sb::STerm,
+        0xf7 => Sb::STerm,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pa7(b: u8) -> Sb {
+    match b {
+        0x17..=0x1f => Sb::OLetter,
+        0x22 => Sb::Upper,
+        0x23 => Sb::Lower,
+        0x24 => Sb::Upper,
+        0x25 => Sb::Lower,
+        0x26 => Sb::Upper,
+        0x27 => Sb::Lower,
+        0x28 => Sb::Upper,
+        0x29 => Sb::Lower,
+        0x2a => Sb::Upper,
+        0x2b => Sb::Lower,
+        0x2c => Sb::Upper,
+        0x2d => Sb::Lower,
+        0x2e => Sb::Upper,
+        0x2f..=0x31 => Sb::Lower,
+        0x32 => Sb::Upper,
+        0x33 => Sb::Lower,
+        0x34 => Sb::Upper,
+        0x35 => Sb::Lower,
+        0x36 => Sb::Upper,
+        0x37 => Sb::Lower,
+        0x38 => Sb::Upper,
+        0x39 => Sb::Lower,
+        0x3a => Sb::Upper,
+        0x3b => Sb::Lower,
+        0x3c => Sb::Upper,
+        0x3d => Sb::Lower,
+        0x3e => Sb::Upper,
+        0x3f => Sb::Lower,
+        0x40 => Sb::Upper,
+        0x41 => Sb::Lower,
+        0x42 => Sb::Upper,
+        0x43 => Sb::Lower,
+        0x44 => Sb::Upper,
+        0x45 => Sb::Lower,
+        0x46 => Sb::Upper,
+        0x47 => Sb::Lower,
+        0x48 => Sb::Upper,
+        0x49 => Sb::Lower,
+        0x4a => Sb::Upper,
+        0x4b => Sb::Lower,
+        0x4c => Sb::Upper,
+        0x4d => Sb::Lower,
+        0x4e => Sb::Upper,
+        0x4f => Sb::Lower,
+        0x50 => Sb::Upper,
+        0x51 => Sb::Lower,
+        0x52 => Sb::Upper,
+        0x53 => Sb::Lower,
+        0x54 => Sb::Upper,
+        0x55 => Sb::Lower,
+        0x56 => Sb::Upper,
+        0x57 => Sb::Lower,
+        0x58 => Sb::Upper,
+        0x59 => Sb::Lower,
+        0x5a => Sb::Upper,
+        0x5b => Sb::Lower,
+        0x5c => Sb::Upper,
+        0x5d => Sb::Lower,
+        0x5e => Sb::Upper,
+        0x5f => Sb::Lower,
+        0x60 => Sb::Upper,
+        0x61 => Sb::Lower,
+        0x62 => Sb::Upper,
+        0x63 => Sb::Lower,
+        0x64 => Sb::Upper,
+        0x65 => Sb::Lower,
+        0x66 => Sb::Upper,
+        0x67 => Sb::Lower,
+        0x68 => Sb::Upper,
+        0x69 => Sb::Lower,
+        0x6a => Sb::Upper,
+        0x6b => Sb::Lower,
+        0x6c => Sb::Upper,
+        0x6d => Sb::Lower,
+        0x6e => Sb::Upper,
+        0x6f..=0x78 => Sb::Lower,
+        0x79 => Sb::Upper,
+        0x7a => Sb::Lower,
+        0x7b => Sb::Upper,
+        0x7c => Sb::Lower,
+        0x7d..=0x7e => Sb::Upper,
+        0x7f => Sb::Lower,
+        0x80 => Sb::Upper,
+        0x81 => Sb::Lower,
+        0x82 => Sb::Upper,
+        0x83 => Sb::Lower,
+        0x84 => Sb::Upper,
+        0x85 => Sb::Lower,
+        0x86 => Sb::Upper,
+        0x87 => Sb::Lower,
+        0x88 => Sb::OLetter,
+        0x8b => Sb::Upper,
+        0x8c => Sb::Lower,
+        0x8d => Sb::Upper,
+        0x8e => Sb::Lower,
+        0x8f => Sb::OLetter,
+        0x90 => Sb::Upper,
+        0x91 => Sb::Lower,
+        0x92 => Sb::Upper,
+        0x93..=0x95 => Sb::Lower,
+        0x96 => Sb::Upper,
+        0x97 => Sb::Lower,
+        0x98 => Sb::Upper,
+        0x99 => Sb::Lower,
+        0x9a => Sb::Upper,
+        0x9b => Sb::Lower,
+        0x9c => Sb::Upper,
+        0x9d => Sb::Lower,
+        0x9e => Sb::Upper,
+        0x9f => Sb::Lower,
+        0xa0 => Sb::Upper,
+        0xa1 => Sb::Lower,
+        0xa2 => Sb::Upper,
+        0xa3 => Sb::Lower,
+        0xa4 => Sb::Upper,
+        0xa5 => Sb::Lower,
+        0xa6 => Sb::Upper,
+        0xa7 => Sb::Lower,
+        0xa8 => Sb::Upper,
+        0xa9 => Sb::Lower,
+        0xaa..=0xae => Sb::Upper,
+        0xaf => Sb::Lower,
+        0xb0..=0xb4 => Sb::Upper,
+        0xb5 => Sb::Lower,
+        0xb6 => Sb::Upper,
+        0xb7 => Sb::Lower,
+        0xb8 => Sb::Upper,
+        0xb9 => Sb::Lower,
+        0xba => Sb::Upper,
+        0xbb => Sb::Lower,
+        0xbc => Sb::Upper,
+        0xbd => Sb::Lower,
+        0xbe => Sb::Upper,
+        0xbf => Sb::Lower,
+        0xc0 => Sb::Upper,
+        0xc1 => Sb::Lower,
+        0xc2 => Sb::Upper,
+        0xc3 => Sb::Lower,
+        0xc4..=0xc7 => Sb::Upper,
+        0xc8 => Sb::Lower,
+        0xc9 => Sb::Upper,
+        0xca => Sb::Lower,
+        0xcb..=0xcc => Sb::Upper,
+        0xcd => Sb::Lower,
+        0xce => Sb::Upper,
+        0xcf => Sb::Lower,
+        0xd0 => Sb::Upper,
+        0xd1 => Sb::Lower,
+        0xd2 => Sb::Upper,
+        0xd3 => Sb::Lower,
+        0xd4 => Sb::Upper,
+        0xd5 => Sb::Lower,
+        0xd6 => Sb::Upper,
+        0xd7 => Sb::Lower,
+        0xd8 => Sb::Upper,
+        0xd9 => Sb::Lower,
+        0xda => Sb::Upper,
+        0xdb => Sb::Lower,
+        0xdc => Sb::Upper,
+        0xf1..=0xf4 => Sb::Lower,
+        0xf5 => Sb::Upper,
+        0xf6 => Sb::Lower,
+        0xf7 => Sb::OLetter,
+        0xf8..=0xfa => Sb::Lower,
+        0xfb..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pa8(b: u8) -> Sb {
+    match b {
+        0x00..=0x01 => Sb::OLetter,
+        0x02 => Sb::Extend,
+        0x03..=0x05 => Sb::OLetter,
+        0x06 => Sb::Extend,
+        0x07..=0x0a => Sb::OLetter,
+        0x0b => Sb::Extend,
+        0x0c..=0x22 => Sb::OLetter,
+        0x23..=0x27 => Sb::Extend,
+        0x2c => Sb::Extend,
+        0x40..=0x73 => Sb::OLetter,
+        0x76..=0x77 => Sb::STerm,
+        0x80..=0x81 => Sb::Extend,
+        0x82..=0xb3 => Sb::OLetter,
+        0xb4..=0xc5 => Sb::Extend,
+        0xce..=0xcf => Sb::STerm,
+        0xd0..=0xd9 => Sb::Numeric,
+        0xe0..=0xf1 => Sb::Extend,
+        0xf2..=0xf7 => Sb::OLetter,
+        0xfb => Sb::OLetter,
+        0xfd..=0xfe => Sb::OLetter,
+        0xff => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pa9(b: u8) -> Sb {
+    match b {
+        0x00..=0x09 => Sb::Numeric,
+        0x0a..=0x25 => Sb::OLetter,
+        0x26..=0x2d => Sb::Extend,
+        0x2f => Sb::STerm,
+        0x30..=0x46 => Sb::OLetter,
+        0x47..=0x53 => Sb::Extend,
+        0x60..=0x7c => Sb::OLetter,
+        0x80..=0x83 => Sb::Extend,
+        0x84..=0xb2 => Sb::OLetter,
+        0xb3..=0xc0 => Sb::Extend,
+        0xc8..=0xc9 => Sb::STerm,
+        0xcf => Sb::OLetter,
+        0xd0..=0xd9 => Sb::Numeric,
+        0xe0..=0xe4 => Sb::OLetter,
+        0xe5 => Sb::Extend,
+        0xe6..=0xef => Sb::OLetter,
+        0xf0..=0xf9 => Sb::Numeric,
+        0xfa..=0xfe => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_paa(b: u8) -> Sb {
+    match b {
+        0x00..=0x28 => Sb::OLetter,
+        0x29..=0x36 => Sb::Extend,
+        0x40..=0x42 => Sb::OLetter,
+        0x43 => Sb::Extend,
+        0x44..=0x4b => Sb::OLetter,
+        0x4c..=0x4d => Sb::Extend,
+        0x50..=0x59 => Sb::Numeric,
+        0x5d..=0x5f => Sb::STerm,
+        0x60..=0x76 => Sb::OLetter,
+        0x7a => Sb::OLetter,
+        0x7b..=0x7d => Sb::Extend,
+        0x7e..=0xaf => Sb::OLetter,
+        0xb0 => Sb::Extend,
+        0xb1 => Sb::OLetter,
+        0xb2..=0xb4 => Sb::Extend,
+        0xb5..=0xb6 => Sb::OLetter,
+        0xb7..=0xb8 => Sb::Extend,
+        0xb9..=0xbd => Sb::OLetter,
+        0xbe..=0xbf => Sb::Extend,
+        0xc0 => Sb::OLetter,
+        0xc1 => Sb::Extend,
+        0xc2 => Sb::OLetter,
+        0xdb..=0xdd => Sb::OLetter,
+        0xe0..=0xea => Sb::OLetter,
+        0xeb..=0xef => Sb::Extend,
+        0xf0..=0xf1 => Sb::STerm,
+        0xf2..=0xf4 => Sb::OLetter,
+        0xf5..=0xf6 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pab(b: u8) -> Sb {
+    match b {
+        0x01..=0x06 => Sb::OLetter,
+        0x09..=0x0e => Sb::OLetter,
+        0x11..=0x16 => Sb::OLetter,
+        0x20..=0x26 => Sb::OLetter,
+        0x28..=0x2e => Sb::OLetter,
+        0x30..=0x5a => Sb::Lower,
+        0x5c..=0x69 => Sb::Lower,
+        0x70..=0xbf => Sb::Lower,
+        0xc0..=0xe2 => Sb::OLetter,
+        0xe3..=0xea => Sb::Extend,
+        0xeb => Sb::STerm,
+        0xec..=0xed => Sb::Extend,
+        0xf0..=0xf9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pd7(b: u8) -> Sb {
+    match b {
+        0x00..=0xa3 => Sb::OLetter,
+        0xb0..=0xc6 => Sb::OLetter,
+        0xcb..=0xfb => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pfa(b: u8) -> Sb {
+    match b {
+        0x00..=0x6d => Sb::OLetter,
+        0x70..=0xd9 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pfb(b: u8) -> Sb {
+    match b {
+        0x00..=0x06 => Sb::Lower,
+        0x13..=0x17 => Sb::Lower,
+        0x1d => Sb::OLetter,
+        0x1e => Sb::Extend,
+        0x1f..=0x28 => Sb::OLetter,
+        0x2a..=0x36 => Sb::OLetter,
+        0x38..=0x3c => Sb::OLetter,
+        0x3e => Sb::OLetter,
+        0x40..=0x41 => Sb::OLetter,
+        0x43..=0x44 => Sb::OLetter,
+        0x46..=0xb1 => Sb::OLetter,
+        0xd3..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pfd(b: u8) -> Sb {
+    match b {
+        0x00..=0x3d => Sb::OLetter,
+        0x3e..=0x3f => Sb::Close,
+        0x50..=0x8f => Sb::OLetter,
+        0x92..=0xc7 => Sb::OLetter,
+        0xf0..=0xfb => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pfe(b: u8) -> Sb {
+    match b {
+        0x00..=0x0f => Sb::Extend,
+        0x10..=0x11 => Sb::SContinue,
+        0x12 => Sb::STerm,
+        0x13..=0x14 => Sb::SContinue,
+        0x15..=0x16 => Sb::STerm,
+        0x17..=0x18 => Sb::Close,
+        0x20..=0x2f => Sb::Extend,
+        0x31..=0x32 => Sb::SContinue,
+        0x35..=0x44 => Sb::Close,
+        0x47..=0x48 => Sb::Close,
+        0x50..=0x51 => Sb::SContinue,
+        0x52 => Sb::ATerm,
+        0x54..=0x55 => Sb::SContinue,
+        0x56..=0x57 => Sb::STerm,
+        0x58 => Sb::SContinue,
+        0x59..=0x5e => Sb::Close,
+        0x63 => Sb::SContinue,
+        0x70..=0x74 => Sb::OLetter,
+        0x76..=0xfc => Sb::OLetter,
+        0xff => Sb::Format,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sb_pff(b: u8) -> Sb {
+    match b {
+        0x01 => Sb::STerm,
+        0x08..=0x09 => Sb::Close,
+        0x0c..=0x0d => Sb::SContinue,
+        0x0e => Sb::ATerm,
+        0x10..=0x19 => Sb::Numeric,
+        0x1a..=0x1b => Sb::SContinue,
+        0x1f => Sb::STerm,
+        0x21..=0x3a => Sb::Upper,
+        0x3b => Sb::Close,
+        0x3d => Sb::Close,
+        0x41..=0x5a => Sb::Lower,
+        0x5b => Sb::Close,
+        0x5d => Sb::Close,
+        0x5f..=0x60 => Sb::Close,
+        0x61 => Sb::STerm,
+        0x62..=0x63 => Sb::Close,
+        0x64 => Sb::SContinue,
+        0x66..=0x9d => Sb::OLetter,
+        0x9e..=0x9f => Sb::Extend,
+        0xa0..=0xbe => Sb::OLetter,
+        0xc2..=0xc7 => Sb::OLetter,
+        0xca..=0xcf => Sb::OLetter,
+        0xd2..=0xd7 => Sb::OLetter,
+        0xda..=0xdc => Sb::OLetter,
+        0xf9..=0xfb => Sb::Format,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p100(b: u8) -> Sb {
+    match b {
+        0x00..=0x0b => Sb::OLetter,
+        0x0d..=0x26 => Sb::OLetter,
+        0x28..=0x3a => Sb::OLetter,
+        0x3c..=0x3d => Sb::OLetter,
+        0x3f..=0x4d => Sb::OLetter,
+        0x50..=0x5d => Sb::OLetter,
+        0x80..=0xfa => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p101(b: u8) -> Sb {
+    match b {
+        0x40..=0x74 => Sb::OLetter,
+        0xfd => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p102(b: u8) -> Sb {
+    match b {
+        0x80..=0x9c => Sb::OLetter,
+        0xa0..=0xd0 => Sb::OLetter,
+        0xe0 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p103(b: u8) -> Sb {
+    match b {
+        0x00..=0x1f => Sb::OLetter,
+        0x2d..=0x4a => Sb::OLetter,
+        0x50..=0x75 => Sb::OLetter,
+        0x76..=0x7a => Sb::Extend,
+        0x80..=0x9d => Sb::OLetter,
+        0xa0..=0xc3 => Sb::OLetter,
+        0xc8..=0xcf => Sb::OLetter,
+        0xd1..=0xd5 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p104(b: u8) -> Sb {
+    match b {
+        0x00..=0x27 => Sb::Upper,
+        0x28..=0x4f => Sb::Lower,
+        0x50..=0x9d => Sb::OLetter,
+        0xa0..=0xa9 => Sb::Numeric,
+        0xb0..=0xd3 => Sb::Upper,
+        0xd8..=0xfb => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p105(b: u8) -> Sb {
+    match b {
+        0x00..=0x27 => Sb::OLetter,
+        0x30..=0x63 => Sb::OLetter,
+        0x70..=0x7a => Sb::Upper,
+        0x7c..=0x8a => Sb::Upper,
+        0x8c..=0x92 => Sb::Upper,
+        0x94..=0x95 => Sb::Upper,
+        0x97..=0xa1 => Sb::Lower,
+        0xa3..=0xb1 => Sb::Lower,
+        0xb3..=0xb9 => Sb::Lower,
+        0xbb..=0xbc => Sb::Lower,
+        0xc0..=0xf3 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p107(b: u8) -> Sb {
+    match b {
+        0x00..=0x36 => Sb::OLetter,
+        0x40..=0x55 => Sb::OLetter,
+        0x60..=0x67 => Sb::OLetter,
+        0x80 => Sb::Lower,
+        0x81..=0x82 => Sb::OLetter,
+        0x83..=0x85 => Sb::Lower,
+        0x87..=0xb0 => Sb::Lower,
+        0xb2..=0xba => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p108(b: u8) -> Sb {
+    match b {
+        0x00..=0x05 => Sb::OLetter,
+        0x08 => Sb::OLetter,
+        0x0a..=0x35 => Sb::OLetter,
+        0x37..=0x38 => Sb::OLetter,
+        0x3c => Sb::OLetter,
+        0x3f..=0x55 => Sb::OLetter,
+        0x60..=0x76 => Sb::OLetter,
+        0x80..=0x9e => Sb::OLetter,
+        0xe0..=0xf2 => Sb::OLetter,
+        0xf4..=0xf5 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p109(b: u8) -> Sb {
+    match b {
+        0x00..=0x15 => Sb::OLetter,
+        0x20..=0x39 => Sb::OLetter,
+        0x40..=0x59 => Sb::OLetter,
+        0x80..=0xb7 => Sb::OLetter,
+        0xbe..=0xbf => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p10a(b: u8) -> Sb {
+    match b {
+        0x00 => Sb::OLetter,
+        0x01..=0x03 => Sb::Extend,
+        0x05..=0x06 => Sb::Extend,
+        0x0c..=0x0f => Sb::Extend,
+        0x10..=0x13 => Sb::OLetter,
+        0x15..=0x17 => Sb::OLetter,
+        0x19..=0x35 => Sb::OLetter,
+        0x38..=0x3a => Sb::Extend,
+        0x3f => Sb::Extend,
+        0x56..=0x57 => Sb::STerm,
+        0x60..=0x7c => Sb::OLetter,
+        0x80..=0x9c => Sb::OLetter,
+        0xc0..=0xc7 => Sb::OLetter,
+        0xc9..=0xe4 => Sb::OLetter,
+        0xe5..=0xe6 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p10b(b: u8) -> Sb {
+    match b {
+        0x00..=0x35 => Sb::OLetter,
+        0x40..=0x55 => Sb::OLetter,
+        0x60..=0x72 => Sb::OLetter,
+        0x80..=0x91 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p10c(b: u8) -> Sb {
+    match b {
+        0x00..=0x48 => Sb::OLetter,
+        0x80..=0xb2 => Sb::Upper,
+        0xc0..=0xf2 => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p10d(b: u8) -> Sb {
+    match b {
+        0x00..=0x23 => Sb::OLetter,
+        0x24..=0x27 => Sb::Extend,
+        0x30..=0x39 => Sb::Numeric,
+        0x40..=0x49 => Sb::Numeric,
+        0x4a..=0x4f => Sb::OLetter,
+        0x50..=0x65 => Sb::Upper,
+        0x69..=0x6d => Sb::Extend,
+        0x6f => Sb::OLetter,
+        0x70..=0x85 => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p10e(b: u8) -> Sb {
+    match b {
+        0x80..=0xa9 => Sb::OLetter,
+        0xab..=0xac => Sb::Extend,
+        0xb0..=0xb1 => Sb::OLetter,
+        0xc2..=0xc7 => Sb::OLetter,
+        0xfa..=0xff => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p10f(b: u8) -> Sb {
+    match b {
+        0x00..=0x1c => Sb::OLetter,
+        0x27 => Sb::OLetter,
+        0x30..=0x45 => Sb::OLetter,
+        0x46..=0x50 => Sb::Extend,
+        0x55..=0x59 => Sb::STerm,
+        0x70..=0x81 => Sb::OLetter,
+        0x82..=0x85 => Sb::Extend,
+        0x86..=0x89 => Sb::STerm,
+        0xb0..=0xc4 => Sb::OLetter,
+        0xe0..=0xf6 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p110(b: u8) -> Sb {
+    match b {
+        0x00..=0x02 => Sb::Extend,
+        0x03..=0x37 => Sb::OLetter,
+        0x38..=0x46 => Sb::Extend,
+        0x47..=0x48 => Sb::STerm,
+        0x66..=0x6f => Sb::Numeric,
+        0x70 => Sb::Extend,
+        0x71..=0x72 => Sb::OLetter,
+        0x73..=0x74 => Sb::Extend,
+        0x75 => Sb::OLetter,
+        0x7f..=0x82 => Sb::Extend,
+        0x83..=0xaf => Sb::OLetter,
+        0xb0..=0xba => Sb::Extend,
+        0xbd => Sb::Numeric,
+        0xbe..=0xc1 => Sb::STerm,
+        0xc2 => Sb::Extend,
+        0xcd => Sb::Numeric,
+        0xd0..=0xe8 => Sb::OLetter,
+        0xf0..=0xf9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p111(b: u8) -> Sb {
+    match b {
+        0x00..=0x02 => Sb::Extend,
+        0x03..=0x26 => Sb::OLetter,
+        0x27..=0x34 => Sb::Extend,
+        0x36..=0x3f => Sb::Numeric,
+        0x41..=0x43 => Sb::STerm,
+        0x44 => Sb::OLetter,
+        0x45..=0x46 => Sb::Extend,
+        0x47 => Sb::OLetter,
+        0x50..=0x72 => Sb::OLetter,
+        0x73 => Sb::Extend,
+        0x76 => Sb::OLetter,
+        0x80..=0x82 => Sb::Extend,
+        0x83..=0xb2 => Sb::OLetter,
+        0xb3..=0xc0 => Sb::Extend,
+        0xc1..=0xc4 => Sb::OLetter,
+        0xc5..=0xc6 => Sb::STerm,
+        0xc9..=0xcc => Sb::Extend,
+        0xcd => Sb::STerm,
+        0xce..=0xcf => Sb::Extend,
+        0xd0..=0xd9 => Sb::Numeric,
+        0xda => Sb::OLetter,
+        0xdc => Sb::OLetter,
+        0xde..=0xdf => Sb::STerm,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p112(b: u8) -> Sb {
+    match b {
+        0x00..=0x11 => Sb::OLetter,
+        0x13..=0x2b => Sb::OLetter,
+        0x2c..=0x37 => Sb::Extend,
+        0x38..=0x39 => Sb::STerm,
+        0x3b..=0x3c => Sb::STerm,
+        0x3e => Sb::Extend,
+        0x3f..=0x40 => Sb::OLetter,
+        0x41 => Sb::Extend,
+        0x80..=0x86 => Sb::OLetter,
+        0x88 => Sb::OLetter,
+        0x8a..=0x8d => Sb::OLetter,
+        0x8f..=0x9d => Sb::OLetter,
+        0x9f..=0xa8 => Sb::OLetter,
+        0xa9 => Sb::STerm,
+        0xb0..=0xde => Sb::OLetter,
+        0xdf..=0xea => Sb::Extend,
+        0xf0..=0xf9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p113(b: u8) -> Sb {
+    match b {
+        0x00..=0x03 => Sb::Extend,
+        0x05..=0x0c => Sb::OLetter,
+        0x0f..=0x10 => Sb::OLetter,
+        0x13..=0x28 => Sb::OLetter,
+        0x2a..=0x30 => Sb::OLetter,
+        0x32..=0x33 => Sb::OLetter,
+        0x35..=0x39 => Sb::OLetter,
+        0x3b..=0x3c => Sb::Extend,
+        0x3d => Sb::OLetter,
+        0x3e..=0x44 => Sb::Extend,
+        0x47..=0x48 => Sb::Extend,
+        0x4b..=0x4d => Sb::Extend,
+        0x50 => Sb::OLetter,
+        0x57 => Sb::Extend,
+        0x5d..=0x61 => Sb::OLetter,
+        0x62..=0x63 => Sb::Extend,
+        0x66..=0x6c => Sb::Extend,
+        0x70..=0x74 => Sb::Extend,
+        0x80..=0x89 => Sb::OLetter,
+        0x8b => Sb::OLetter,
+        0x8e => Sb::OLetter,
+        0x90..=0xb5 => Sb::OLetter,
+        0xb7 => Sb::OLetter,
+        0xb8..=0xc0 => Sb::Extend,
+        0xc2 => Sb::Extend,
+        0xc5 => Sb::Extend,
+        0xc7..=0xca => Sb::Extend,
+        0xcc..=0xd0 => Sb::Extend,
+        0xd1 => Sb::OLetter,
+        0xd2 => Sb::Extend,
+        0xd3 => Sb::OLetter,
+        0xd4..=0xd5 => Sb::STerm,
+        0xe1..=0xe2 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p114(b: u8) -> Sb {
+    match b {
+        0x00..=0x34 => Sb::OLetter,
+        0x35..=0x46 => Sb::Extend,
+        0x47..=0x4a => Sb::OLetter,
+        0x4b..=0x4c => Sb::STerm,
+        0x50..=0x59 => Sb::Numeric,
+        0x5e => Sb::Extend,
+        0x5f..=0x61 => Sb::OLetter,
+        0x80..=0xaf => Sb::OLetter,
+        0xb0..=0xc3 => Sb::Extend,
+        0xc4..=0xc5 => Sb::OLetter,
+        0xc7 => Sb::OLetter,
+        0xd0..=0xd9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p115(b: u8) -> Sb {
+    match b {
+        0x80..=0xae => Sb::OLetter,
+        0xaf..=0xb5 => Sb::Extend,
+        0xb8..=0xc0 => Sb::Extend,
+        0xc2..=0xc3 => Sb::STerm,
+        0xc9..=0xd7 => Sb::STerm,
+        0xd8..=0xdb => Sb::OLetter,
+        0xdc..=0xdd => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p116(b: u8) -> Sb {
+    match b {
+        0x00..=0x2f => Sb::OLetter,
+        0x30..=0x40 => Sb::Extend,
+        0x41..=0x42 => Sb::STerm,
+        0x44 => Sb::OLetter,
+        0x50..=0x59 => Sb::Numeric,
+        0x80..=0xaa => Sb::OLetter,
+        0xab..=0xb7 => Sb::Extend,
+        0xb8 => Sb::OLetter,
+        0xc0..=0xc9 => Sb::Numeric,
+        0xd0..=0xe3 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p117(b: u8) -> Sb {
+    match b {
+        0x00..=0x1a => Sb::OLetter,
+        0x1d..=0x2b => Sb::Extend,
+        0x30..=0x39 => Sb::Numeric,
+        0x3c..=0x3e => Sb::STerm,
+        0x40..=0x46 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p118(b: u8) -> Sb {
+    match b {
+        0x00..=0x2b => Sb::OLetter,
+        0x2c..=0x3a => Sb::Extend,
+        0xa0..=0xbf => Sb::Upper,
+        0xc0..=0xdf => Sb::Lower,
+        0xe0..=0xe9 => Sb::Numeric,
+        0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p119(b: u8) -> Sb {
+    match b {
+        0x00..=0x06 => Sb::OLetter,
+        0x09 => Sb::OLetter,
+        0x0c..=0x13 => Sb::OLetter,
+        0x15..=0x16 => Sb::OLetter,
+        0x18..=0x2f => Sb::OLetter,
+        0x30..=0x35 => Sb::Extend,
+        0x37..=0x38 => Sb::Extend,
+        0x3b..=0x3e => Sb::Extend,
+        0x3f => Sb::OLetter,
+        0x40 => Sb::Extend,
+        0x41 => Sb::OLetter,
+        0x42..=0x43 => Sb::Extend,
+        0x44 => Sb::STerm,
+        0x46 => Sb::STerm,
+        0x50..=0x59 => Sb::Numeric,
+        0xa0..=0xa7 => Sb::OLetter,
+        0xaa..=0xd0 => Sb::OLetter,
+        0xd1..=0xd7 => Sb::Extend,
+        0xda..=0xe0 => Sb::Extend,
+        0xe1 => Sb::OLetter,
+        0xe3 => Sb::OLetter,
+        0xe4 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p11a(b: u8) -> Sb {
+    match b {
+        0x00 => Sb::OLetter,
+        0x01..=0x0a => Sb::Extend,
+        0x0b..=0x32 => Sb::OLetter,
+        0x33..=0x39 => Sb::Extend,
+        0x3a => Sb::OLetter,
+        0x3b..=0x3e => Sb::Extend,
+        0x42..=0x43 => Sb::STerm,
+        0x47 => Sb::Extend,
+        0x50 => Sb::OLetter,
+        0x51..=0x5b => Sb::Extend,
+        0x5c..=0x89 => Sb::OLetter,
+        0x8a..=0x99 => Sb::Extend,
+        0x9b..=0x9c => Sb::STerm,
+        0x9d => Sb::OLetter,
+        0xb0..=0xf8 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p11b(b: u8) -> Sb {
+    match b {
+        0x60..=0x67 => Sb::Extend,
+        0xc0..=0xe0 => Sb::OLetter,
+        0xf0..=0xf9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p11c(b: u8) -> Sb {
+    match b {
+        0x00..=0x08 => Sb::OLetter,
+        0x0a..=0x2e => Sb::OLetter,
+        0x2f..=0x36 => Sb::Extend,
+        0x38..=0x3f => Sb::Extend,
+        0x40 => Sb::OLetter,
+        0x41..=0x42 => Sb::STerm,
+        0x50..=0x59 => Sb::Numeric,
+        0x72..=0x8f => Sb::OLetter,
+        0x92..=0xa7 => Sb::Extend,
+        0xa9..=0xb6 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p11d(b: u8) -> Sb {
+    match b {
+        0x00..=0x06 => Sb::OLetter,
+        0x08..=0x09 => Sb::OLetter,
+        0x0b..=0x30 => Sb::OLetter,
+        0x31..=0x36 => Sb::Extend,
+        0x3a => Sb::Extend,
+        0x3c..=0x3d => Sb::Extend,
+        0x3f..=0x45 => Sb::Extend,
+        0x46 => Sb::OLetter,
+        0x47 => Sb::Extend,
+        0x50..=0x59 => Sb::Numeric,
+        0x60..=0x65 => Sb::OLetter,
+        0x67..=0x68 => Sb::OLetter,
+        0x6a..=0x89 => Sb::OLetter,
+        0x8a..=0x8e => Sb::Extend,
+        0x90..=0x91 => Sb::Extend,
+        0x93..=0x97 => Sb::Extend,
+        0x98 => Sb::OLetter,
+        0xa0..=0xa9 => Sb::Numeric,
+        0xb0..=0xdb => Sb::OLetter,
+        0xe0..=0xe9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p11e(b: u8) -> Sb {
+    match b {
+        0xe0..=0xf2 => Sb::OLetter,
+        0xf3..=0xf6 => Sb::Extend,
+        0xf7..=0xf8 => Sb::STerm,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p11f(b: u8) -> Sb {
+    match b {
+        0x00..=0x01 => Sb::Extend,
+        0x02 => Sb::OLetter,
+        0x03 => Sb::Extend,
+        0x04..=0x10 => Sb::OLetter,
+        0x12..=0x33 => Sb::OLetter,
+        0x34..=0x3a => Sb::Extend,
+        0x3e..=0x42 => Sb::Extend,
+        0x43..=0x44 => Sb::STerm,
+        0x50..=0x59 => Sb::Numeric,
+        0x5a => Sb::Extend,
+        0xb0 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p123(b: u8) -> Sb {
+    match b {
+        0x00..=0x99 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p124(b: u8) -> Sb {
+    match b {
+        0x00..=0x6e => Sb::OLetter,
+        0x80..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p125(b: u8) -> Sb {
+    match b {
+        0x00..=0x43 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p12f(b: u8) -> Sb {
+    match b {
+        0x90..=0xf0 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p134(b: u8) -> Sb {
+    match b {
+        0x00..=0x2f => Sb::OLetter,
+        0x30..=0x3f => Sb::Format,
+        0x40 => Sb::Extend,
+        0x41..=0x46 => Sb::OLetter,
+        0x47..=0x55 => Sb::Extend,
+        0x60..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p143(b: u8) -> Sb {
+    match b {
+        0x00..=0xfa => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p146(b: u8) -> Sb {
+    match b {
+        0x00..=0x46 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p161(b: u8) -> Sb {
+    match b {
+        0x00..=0x1d => Sb::OLetter,
+        0x1e..=0x2f => Sb::Extend,
+        0x30..=0x39 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p16a(b: u8) -> Sb {
+    match b {
+        0x00..=0x38 => Sb::OLetter,
+        0x40..=0x5e => Sb::OLetter,
+        0x60..=0x69 => Sb::Numeric,
+        0x6e..=0x6f => Sb::STerm,
+        0x70..=0xbe => Sb::OLetter,
+        0xc0..=0xc9 => Sb::Numeric,
+        0xd0..=0xed => Sb::OLetter,
+        0xf0..=0xf4 => Sb::Extend,
+        0xf5 => Sb::STerm,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p16b(b: u8) -> Sb {
+    match b {
+        0x00..=0x2f => Sb::OLetter,
+        0x30..=0x36 => Sb::Extend,
+        0x37..=0x38 => Sb::STerm,
+        0x40..=0x43 => Sb::OLetter,
+        0x44 => Sb::STerm,
+        0x50..=0x59 => Sb::Numeric,
+        0x63..=0x77 => Sb::OLetter,
+        0x7d..=0x8f => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p16d(b: u8) -> Sb {
+    match b {
+        0x40..=0x6c => Sb::OLetter,
+        0x6e..=0x6f => Sb::STerm,
+        0x70..=0x79 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p16e(b: u8) -> Sb {
+    match b {
+        0x40..=0x5f => Sb::Upper,
+        0x60..=0x7f => Sb::Lower,
+        0x98 => Sb::STerm,
+        0xa0..=0xb8 => Sb::Upper,
+        0xbb..=0xd3 => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p16f(b: u8) -> Sb {
+    match b {
+        0x00..=0x4a => Sb::OLetter,
+        0x4f => Sb::Extend,
+        0x50 => Sb::OLetter,
+        0x51..=0x87 => Sb::Extend,
+        0x8f..=0x92 => Sb::Extend,
+        0x93..=0x9f => Sb::OLetter,
+        0xe0..=0xe1 => Sb::OLetter,
+        0xe3 => Sb::OLetter,
+        0xe4 => Sb::Extend,
+        0xf0..=0xf1 => Sb::Extend,
+        0xf2..=0xf6 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p18c(b: u8) -> Sb {
+    match b {
+        0x00..=0xd5 => Sb::OLetter,
+        0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p18d(b: u8) -> Sb {
+    match b {
+        0x00..=0x1e => Sb::OLetter,
+        0x80..=0xf2 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1af(b: u8) -> Sb {
+    match b {
+        0xf0..=0xf3 => Sb::OLetter,
+        0xf5..=0xfb => Sb::OLetter,
+        0xfd..=0xfe => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1b1(b: u8) -> Sb {
+    match b {
+        0x00..=0x22 => Sb::OLetter,
+        0x32 => Sb::OLetter,
+        0x50..=0x52 => Sb::OLetter,
+        0x55 => Sb::OLetter,
+        0x64..=0x67 => Sb::OLetter,
+        0x70..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1b2(b: u8) -> Sb {
+    match b {
+        0x00..=0xfb => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1bc(b: u8) -> Sb {
+    match b {
+        0x00..=0x6a => Sb::OLetter,
+        0x70..=0x7c => Sb::OLetter,
+        0x80..=0x88 => Sb::OLetter,
+        0x90..=0x99 => Sb::OLetter,
+        0x9d..=0x9e => Sb::Extend,
+        0x9f => Sb::STerm,
+        0xa0..=0xa3 => Sb::Format,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1cc(b: u8) -> Sb {
+    match b {
+        0xf0..=0xf9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1cf(b: u8) -> Sb {
+    match b {
+        0x00..=0x2d => Sb::Extend,
+        0x30..=0x46 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1d1(b: u8) -> Sb {
+    match b {
+        0x65..=0x69 => Sb::Extend,
+        0x6d..=0x72 => Sb::Extend,
+        0x73..=0x7a => Sb::Format,
+        0x7b..=0x82 => Sb::Extend,
+        0x85..=0x8b => Sb::Extend,
+        0xaa..=0xad => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1d2(b: u8) -> Sb {
+    match b {
+        0x42..=0x44 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1d4(b: u8) -> Sb {
+    match b {
+        0x00..=0x19 => Sb::Upper,
+        0x1a..=0x33 => Sb::Lower,
+        0x34..=0x4d => Sb::Upper,
+        0x4e..=0x54 => Sb::Lower,
+        0x56..=0x67 => Sb::Lower,
+        0x68..=0x81 => Sb::Upper,
+        0x82..=0x9b => Sb::Lower,
+        0x9c => Sb::Upper,
+        0x9e..=0x9f => Sb::Upper,
+        0xa2 => Sb::Upper,
+        0xa5..=0xa6 => Sb::Upper,
+        0xa9..=0xac => Sb::Upper,
+        0xae..=0xb5 => Sb::Upper,
+        0xb6..=0xb9 => Sb::Lower,
+        0xbb => Sb::Lower,
+        0xbd..=0xc3 => Sb::Lower,
+        0xc5..=0xcf => Sb::Lower,
+        0xd0..=0xe9 => Sb::Upper,
+        0xea..=0xff => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1d5(b: u8) -> Sb {
+    match b {
+        0x00..=0x03 => Sb::Lower,
+        0x04..=0x05 => Sb::Upper,
+        0x07..=0x0a => Sb::Upper,
+        0x0d..=0x14 => Sb::Upper,
+        0x16..=0x1c => Sb::Upper,
+        0x1e..=0x37 => Sb::Lower,
+        0x38..=0x39 => Sb::Upper,
+        0x3b..=0x3e => Sb::Upper,
+        0x40..=0x44 => Sb::Upper,
+        0x46 => Sb::Upper,
+        0x4a..=0x50 => Sb::Upper,
+        0x52..=0x6b => Sb::Lower,
+        0x6c..=0x85 => Sb::Upper,
+        0x86..=0x9f => Sb::Lower,
+        0xa0..=0xb9 => Sb::Upper,
+        0xba..=0xd3 => Sb::Lower,
+        0xd4..=0xed => Sb::Upper,
+        0xee..=0xff => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1d6(b: u8) -> Sb {
+    match b {
+        0x00..=0x07 => Sb::Lower,
+        0x08..=0x21 => Sb::Upper,
+        0x22..=0x3b => Sb::Lower,
+        0x3c..=0x55 => Sb::Upper,
+        0x56..=0x6f => Sb::Lower,
+        0x70..=0x89 => Sb::Upper,
+        0x8a..=0xa5 => Sb::Lower,
+        0xa8..=0xc0 => Sb::Upper,
+        0xc2..=0xda => Sb::Lower,
+        0xdc..=0xe1 => Sb::Lower,
+        0xe2..=0xfa => Sb::Upper,
+        0xfc..=0xff => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1d7(b: u8) -> Sb {
+    match b {
+        0x00..=0x14 => Sb::Lower,
+        0x16..=0x1b => Sb::Lower,
+        0x1c..=0x34 => Sb::Upper,
+        0x36..=0x4e => Sb::Lower,
+        0x50..=0x55 => Sb::Lower,
+        0x56..=0x6e => Sb::Upper,
+        0x70..=0x88 => Sb::Lower,
+        0x8a..=0x8f => Sb::Lower,
+        0x90..=0xa8 => Sb::Upper,
+        0xaa..=0xc2 => Sb::Lower,
+        0xc4..=0xc9 => Sb::Lower,
+        0xca => Sb::Upper,
+        0xcb => Sb::Lower,
+        0xce..=0xff => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1da(b: u8) -> Sb {
+    match b {
+        0x00..=0x36 => Sb::Extend,
+        0x3b..=0x6c => Sb::Extend,
+        0x75 => Sb::Extend,
+        0x84 => Sb::Extend,
+        0x88 => Sb::STerm,
+        0x9b..=0x9f => Sb::Extend,
+        0xa1..=0xaf => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1df(b: u8) -> Sb {
+    match b {
+        0x00..=0x09 => Sb::Lower,
+        0x0a => Sb::OLetter,
+        0x0b..=0x1e => Sb::Lower,
+        0x25..=0x2a => Sb::Lower,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e0(b: u8) -> Sb {
+    match b {
+        0x00..=0x06 => Sb::Extend,
+        0x08..=0x18 => Sb::Extend,
+        0x1b..=0x21 => Sb::Extend,
+        0x23..=0x24 => Sb::Extend,
+        0x26..=0x2a => Sb::Extend,
+        0x30..=0x6d => Sb::Lower,
+        0x8f => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e1(b: u8) -> Sb {
+    match b {
+        0x00..=0x2c => Sb::OLetter,
+        0x30..=0x36 => Sb::Extend,
+        0x37..=0x3d => Sb::OLetter,
+        0x40..=0x49 => Sb::Numeric,
+        0x4e => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e2(b: u8) -> Sb {
+    match b {
+        0x90..=0xad => Sb::OLetter,
+        0xae => Sb::Extend,
+        0xc0..=0xeb => Sb::OLetter,
+        0xec..=0xef => Sb::Extend,
+        0xf0..=0xf9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e4(b: u8) -> Sb {
+    match b {
+        0xd0..=0xeb => Sb::OLetter,
+        0xec..=0xef => Sb::Extend,
+        0xf0..=0xf9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e5(b: u8) -> Sb {
+    match b {
+        0xd0..=0xed => Sb::OLetter,
+        0xee..=0xef => Sb::Extend,
+        0xf0 => Sb::OLetter,
+        0xf1..=0xfa => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e6(b: u8) -> Sb {
+    match b {
+        0xc0..=0xde => Sb::OLetter,
+        0xe0..=0xe2 => Sb::OLetter,
+        0xe3 => Sb::Extend,
+        0xe4..=0xe5 => Sb::OLetter,
+        0xe6 => Sb::Extend,
+        0xe7..=0xed => Sb::OLetter,
+        0xee..=0xef => Sb::Extend,
+        0xf0..=0xf4 => Sb::OLetter,
+        0xf5 => Sb::Extend,
+        0xfe..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e7(b: u8) -> Sb {
+    match b {
+        0xe0..=0xe6 => Sb::OLetter,
+        0xe8..=0xeb => Sb::OLetter,
+        0xed..=0xee => Sb::OLetter,
+        0xf0..=0xfe => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e8(b: u8) -> Sb {
+    match b {
+        0x00..=0xc4 => Sb::OLetter,
+        0xd0..=0xd6 => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1e9(b: u8) -> Sb {
+    match b {
+        0x00..=0x21 => Sb::Upper,
+        0x22..=0x43 => Sb::Lower,
+        0x44..=0x4a => Sb::Extend,
+        0x4b => Sb::OLetter,
+        0x50..=0x59 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1ee(b: u8) -> Sb {
+    match b {
+        0x00..=0x03 => Sb::OLetter,
+        0x05..=0x1f => Sb::OLetter,
+        0x21..=0x22 => Sb::OLetter,
+        0x24 => Sb::OLetter,
+        0x27 => Sb::OLetter,
+        0x29..=0x32 => Sb::OLetter,
+        0x34..=0x37 => Sb::OLetter,
+        0x39 => Sb::OLetter,
+        0x3b => Sb::OLetter,
+        0x42 => Sb::OLetter,
+        0x47 => Sb::OLetter,
+        0x49 => Sb::OLetter,
+        0x4b => Sb::OLetter,
+        0x4d..=0x4f => Sb::OLetter,
+        0x51..=0x52 => Sb::OLetter,
+        0x54 => Sb::OLetter,
+        0x57 => Sb::OLetter,
+        0x59 => Sb::OLetter,
+        0x5b => Sb::OLetter,
+        0x5d => Sb::OLetter,
+        0x5f => Sb::OLetter,
+        0x61..=0x62 => Sb::OLetter,
+        0x64 => Sb::OLetter,
+        0x67..=0x6a => Sb::OLetter,
+        0x6c..=0x72 => Sb::OLetter,
+        0x74..=0x77 => Sb::OLetter,
+        0x79..=0x7c => Sb::OLetter,
+        0x7e => Sb::OLetter,
+        0x80..=0x89 => Sb::OLetter,
+        0x8b..=0x9b => Sb::OLetter,
+        0xa1..=0xa3 => Sb::OLetter,
+        0xa5..=0xa9 => Sb::OLetter,
+        0xab..=0xbb => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1f1(b: u8) -> Sb {
+    match b {
+        0x30..=0x49 => Sb::Upper,
+        0x50..=0x69 => Sb::Upper,
+        0x70..=0x89 => Sb::Upper,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1f6(b: u8) -> Sb {
+    match b {
+        0x76..=0x78 => Sb::Close,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p1fb(b: u8) -> Sb {
+    match b {
+        0xf0..=0xf9 => Sb::Numeric,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p2a6(b: u8) -> Sb {
+    match b {
+        0x00..=0xdf => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p2b8(b: u8) -> Sb {
+    match b {
+        0x00..=0x1d => Sb::OLetter,
+        0x20..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p2ce(b: u8) -> Sb {
+    match b {
+        0x00..=0xad => Sb::OLetter,
+        0xb0..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p2eb(b: u8) -> Sb {
+    match b {
+        0x00..=0xe0 => Sb::OLetter,
+        0xf0..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p2ee(b: u8) -> Sb {
+    match b {
+        0x00..=0x5d => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p2fa(b: u8) -> Sb {
+    match b {
+        0x00..=0x1d => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p313(b: u8) -> Sb {
+    match b {
+        0x00..=0x4a => Sb::OLetter,
+        0x50..=0xff => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_p334(b: u8) -> Sb {
+    match b {
+        0x00..=0x79 => Sb::OLetter,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_pe00(b: u8) -> Sb {
+    match b {
+        0x01 => Sb::Format,
+        0x20..=0x7f => Sb::Extend,
+        _ => Sb::Other,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sb_pe01(b: u8) -> Sb {
+    match b {
+        0x00..=0xef => Sb::Extend,
+        _ => Sb::Other,
     }
 }

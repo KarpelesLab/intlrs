@@ -96,12 +96,13 @@ codepoint would.
   category-derived `is_letter`, `is_mark`, `is_numeric`, `is_decimal_digit`,
   `is_punctuation`, `is_symbol`, `is_separator`, `is_control`, `is_format`,
   and `is_assigned`.
-- **Segmentation** (UAX #29) — extended grapheme cluster and word boundary
-  iteration via `graphemes(&str)` and `words(&str)` (yielding `&str`,
-  allocation-free). Grapheme breaking is correct for combining marks, Hangul,
-  Indic conjuncts, regional-indicator flags, and emoji ZWJ sequences; word
-  breaking implements the full WB rule set. Both validated against the official
-  `GraphemeBreakTest` / `WordBreakTest` suites.
+- **Segmentation** (UAX #29) — extended grapheme cluster, word, and sentence
+  boundary iteration via `graphemes(&str)`, `words(&str)`, and `sentences(&str)`
+  (each yielding `&str`, allocation-free). Grapheme breaking handles combining
+  marks, Hangul, Indic conjuncts, regional-indicator flags, and emoji ZWJ
+  sequences; word and sentence breaking implement the full WB / SB rule sets.
+  All three validated against the official `GraphemeBreakTest` / `WordBreakTest`
+  / `SentenceBreakTest` suites.
 - **Collation** (UTS #10) — DUCET root collation via `collate::compare` /
   `collate::Collator` (and `sort_key`), with non-ignorable or shifted variable
   handling. Validated against the full official `CollationTest` suite (both

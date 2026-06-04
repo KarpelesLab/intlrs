@@ -1,10 +1,16 @@
 //! Readable grapheme segmentation checks. The exhaustive UAX #29 run lives in
 //! `grapheme_conformance.rs`.
 
-use intl::unicode::{graphemes, words};
+use intl::unicode::{graphemes, sentences, words};
 
 fn g(s: &str) -> Vec<&str> {
     graphemes(s).collect()
+}
+
+#[test]
+fn sentence_boundaries() {
+    let s: Vec<&str> = sentences("Hello world. How are you? I'm fine.").collect();
+    assert_eq!(s, ["Hello world. ", "How are you? ", "I'm fine."]);
 }
 
 #[test]

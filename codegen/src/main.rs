@@ -881,7 +881,7 @@ fn emit_collation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path, uca: &P
 fn emit_segmentation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     let mut out = String::new();
     write_header(&mut out);
-    out.push_str("use crate::unicode::segment::{Gcb, Incb, Wb};\n\n");
+    out.push_str("use crate::unicode::segment::{Gcb, Incb, Sb, Wb};\n\n");
 
     let gcb_map: BTreeMap<&str, u32> = [
         ("CR", 1),
@@ -985,6 +985,33 @@ fn emit_segmentation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     let mut wb_render = vec!["Wb::Other".to_string()];
     wb_render.extend(wb_names.iter().map(|n| format!("Wb::{}", pascal_case(n))));
     emit_lookup(&mut out, "word_break", "wb", "Wb", &wb, 0, &wb_render);
+
+    // Sentence_Break (UAX #29).
+    let sb_names = [
+        "CR",
+        "LF",
+        "Extend",
+        "Sep",
+        "Format",
+        "Sp",
+        "Lower",
+        "Upper",
+        "OLetter",
+        "Numeric",
+        "ATerm",
+        "SContinue",
+        "STerm",
+        "Close",
+    ];
+    let sb_map: BTreeMap<&str, u32> = sb_names
+        .iter()
+        .enumerate()
+        .map(|(i, &n)| (n, (i + 1) as u32))
+        .collect();
+    let sb = parse_ranged(&ucd.join("auxiliary/SentenceBreakProperty.txt"), &sb_map, 0);
+    let mut sb_render = vec!["Sb::Other".to_string()];
+    sb_render.extend(sb_names.iter().map(|n| format!("Sb::{}", pascal_case(n))));
+    emit_lookup(&mut out, "sentence_break", "sb", "Sb", &sb, 0, &sb_render);
 
     write_module(out_dir, modules, "segmentation", &out);
 }
