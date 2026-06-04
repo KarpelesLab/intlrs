@@ -167,7 +167,8 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   select/plural/gender, nested args.
 - 🟡🧱 **Collation tailoring** — ✅ strength levels (`Collator::with_strength`:
   primary/secondary/tertiary for accent-/case-insensitive comparison). Still:
-  locale-tailored collators from CLDR (beyond DUCET
+  numeric ordering (`with_numeric`,
+  natural sort) + locale-tailored collators from CLDR (beyond DUCET
   root), collation strength/options, **string search** (collation-based) and
   **alphabetic index**.
 

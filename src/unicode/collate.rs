@@ -165,6 +165,49 @@ fn collation_elements(mut cv: Vec<char>) -> Vec<u64> {
     cea
 }
 
+/// Emit synthetic collation elements for an ASCII-digit run so that numeric
+/// values sort by magnitude (`"file2" < "file10"`). Encoding: a fixed marker
+/// primary (placing numbers where digits sort), then the significant-digit count
+/// (so shorter numbers sort first), then one primary per significant digit.
+fn emit_number(digits: &[char], cea: &mut Vec<u64>) {
+    // The marker = the DUCET primary of '0', so numbers keep the digit position.
+    let marker = primary(collation_elements(alloc::vec!['0'])[0]) as u32;
+    // Significant digits (drop leading zeros, but keep a single zero for "0").
+    let first_sig = digits
+        .iter()
+        .position(|&c| c != '0')
+        .unwrap_or(digits.len() - 1);
+    let sig = &digits[first_sig..];
+    cea.push(pack(marker, 0, 0));
+    cea.push(pack(sig.len() as u32 + 1, 0, 0));
+    for &d in sig {
+        cea.push(pack((d as u32 - '0' as u32) + 1, 0, 0));
+    }
+}
+
+/// Collation element array with numeric ordering: ASCII-digit runs become a
+/// single magnitude-ordered element, the rest uses the normal UCA algorithm.
+fn collation_elements_numeric(cv: Vec<char>) -> Vec<u64> {
+    let mut cea = Vec::new();
+    let mut i = 0;
+    while i < cv.len() {
+        if cv[i].is_ascii_digit() {
+            let start = i;
+            while i < cv.len() && cv[i].is_ascii_digit() {
+                i += 1;
+            }
+            emit_number(&cv[start..i], &mut cea);
+        } else {
+            let start = i;
+            while i < cv.len() && !cv[i].is_ascii_digit() {
+                i += 1;
+            }
+            cea.extend(collation_elements(cv[start..i].to_vec()));
+        }
+    }
+    cea
+}
+
 /// Collation strength — the most significant weight level that is compared.
 /// Lower strengths ignore finer distinctions: [`Primary`](Strength::Primary)
 /// ignores accents and case, [`Secondary`](Strength::Secondary) ignores case
@@ -282,6 +325,7 @@ fn build_sort_key(cea: &[u64], alternate: AlternateHandling, strength: Strength)
 pub struct Collator {
     alternate: AlternateHandling,
     strength: Strength,
+    numeric: bool,
 }
 
 impl Default for Collator {
@@ -289,6 +333,7 @@ impl Default for Collator {
         Collator {
             alternate: AlternateHandling::Shifted,
             strength: Strength::Tertiary,
+            numeric: false,
         }
     }
 }
@@ -300,6 +345,7 @@ impl Collator {
         Collator {
             alternate,
             strength: Strength::Tertiary,
+            numeric: false,
         }
     }
 
@@ -311,12 +357,25 @@ impl Collator {
         self
     }
 
+    /// Enable **numeric** ordering (CLDR `kn`): runs of ASCII digits compare by
+    /// numeric value, so `"item2"` sorts before `"item10"`.
+    #[must_use]
+    pub fn with_numeric(mut self, numeric: bool) -> Self {
+        self.numeric = numeric;
+        self
+    }
+
     /// The DUCET sort key for `s`: comparing two sort keys lexicographically
     /// yields the same order as [`compare`](Self::compare).
     #[must_use]
     pub fn sort_key(&self, s: &str) -> Vec<u16> {
         let cv: Vec<char> = nfd(s.chars()).collect();
-        build_sort_key(&collation_elements(cv), self.alternate, self.strength)
+        let cea = if self.numeric {
+            collation_elements_numeric(cv)
+        } else {
+            collation_elements(cv)
+        };
+        build_sort_key(&cea, self.alternate, self.strength)
     }
 
     /// Compare two strings in DUCET collation order.

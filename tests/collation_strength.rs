@@ -24,3 +24,23 @@ fn strength_levels() {
     // Ordering by base letter is preserved at every strength.
     assert_eq!(prim.compare("apple", "banana"), Ordering::Less);
 }
+
+#[test]
+fn numeric_ordering() {
+    let n = Collator::default().with_numeric(true);
+    let plain = Collator::default();
+    // Natural numeric order.
+    assert_eq!(n.compare("file2", "file10"), Ordering::Less);
+    assert_eq!(n.compare("file10", "file9"), Ordering::Greater);
+    assert_eq!(n.compare("item100", "item99"), Ordering::Greater);
+    // Plain (codepoint) order sorts "file10" before "file2".
+    assert_eq!(plain.compare("file10", "file2"), Ordering::Less);
+    // Leading zeros: equal numeric value.
+    assert_eq!(n.compare("v007", "v7"), Ordering::Equal);
+    // Mixed text after the number.
+    assert_eq!(n.compare("x2y", "x10y"), Ordering::Less);
+    // Equal strings stay equal.
+    assert_eq!(n.compare("abc123", "abc123"), Ordering::Equal);
+    // Pure text unaffected.
+    assert_eq!(n.compare("apple", "banana"), Ordering::Less);
+}
