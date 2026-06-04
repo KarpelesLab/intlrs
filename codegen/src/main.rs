@@ -277,6 +277,7 @@ fn main() {
         "locales",
     );
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
+    emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1654,6 +1655,22 @@ fn emit_units(cldr_dir: &Path, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "units", &records);
+}
+
+/// Write `cldr/timezone.bin`: per-locale localized GMT offset formats
+/// (gmtFormat, gmtZeroFormat, hourFormat).
+fn emit_timezone(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read timezone.json");
+    let json = json_parse(&text);
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let mut p = Vec::new();
+        for key in ["gmt", "zero", "hour"] {
+            enc_str(&mut p, loc.get(key).and_then(Json::as_str).unwrap_or(""));
+        }
+        records.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "timezone", &records);
 }
 
 /// Write `cldr/likely.bin`: the likelySubtags table (locale key -> maximized

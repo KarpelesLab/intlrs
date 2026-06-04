@@ -139,6 +139,28 @@ const UNITS: &[u8] = include_bytes!("cldr/units.bin");
 const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
 const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
 const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
+const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
+
+/// Localized GMT offset formats for one locale.
+#[derive(Debug, Clone, Copy)]
+pub struct TzSpec {
+    /// The GMT pattern, e.g. `"GMT{0}"` / `"UTC{0}"`.
+    pub gmt: &'static str,
+    /// The zero-offset form, e.g. `"GMT"` / `"UTC"`.
+    pub zero: &'static str,
+    /// The `+HH:mm;-HH:mm` hour format (positive/negative subpatterns).
+    pub hour: &'static str,
+}
+
+/// Localized GMT offset formats for an exact (lowercased) locale key.
+pub(crate) fn tz_spec(lang: &str) -> Option<TzSpec> {
+    let mut c = find(TIMEZONE, lang)?;
+    Some(TzSpec {
+        gmt: c.str(),
+        zero: c.str(),
+        hour: c.str(),
+    })
+}
 
 /// The maximized locale for a likelySubtags key (e.g. `"en"` → `"en-Latn-US"`).
 pub(crate) fn likely_subtags(key: &str) -> Option<&'static str> {

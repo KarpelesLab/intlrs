@@ -307,6 +307,45 @@ pub fn format_skeleton(lang: &str, dt: &DateTime, skeleton: &str) -> String {
     render(pattern, dt, &s)
 }
 
+/// Format a fixed UTC offset (in minutes) in the localized GMT form, e.g.
+/// `"GMT+5:30"`-style output: `format_gmt_offset("en", 330)` → `"GMT+05:30"`,
+/// `format_gmt_offset("fr", -480)` → `"UTC−08:00"`, `0` → `"GMT"` / `"UTC"`.
+/// This is the data-light part of time-zone support (a concrete offset, not the
+/// IANA zone database).
+#[must_use]
+pub fn format_gmt_offset(lang: &str, offset_minutes: i32) -> String {
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut end = norm.len();
+    let tz = loop {
+        if let Some(t) = crate::cldr::tz_spec(&norm[..end]) {
+            break t;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => break crate::cldr::tz_spec("en").expect("root tz present"),
+        }
+    };
+    if offset_minutes == 0 {
+        return String::from(tz.zero);
+    }
+    let (pos, neg) = tz.hour.split_once(';').unwrap_or((tz.hour, tz.hour));
+    let sub = if offset_minutes >= 0 { pos } else { neg };
+    let (h, m) = (offset_minutes.abs() / 60, offset_minutes.abs() % 60);
+    let body = sub
+        .replace("HH", &alloc::format!("{h:02}"))
+        .replace("mm", &alloc::format!("{m:02}"));
+    tz.gmt.replace("{0}", &body)
+}
+
 /// Format both date and time, combined with the locale's date+time pattern.
 #[must_use]
 pub fn format_datetime(

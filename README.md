@@ -100,7 +100,9 @@ Beyond the `unicode` module:
   formatting).
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian and
   civil (tabular) Islamic calendars via the Julian Day Number, plus ISO-8601
-  week dates and day-of-week — pure integer arithmetic.
+  week dates and day-of-week — pure integer arithmetic. `DateTime` also does
+  ISO-8601 timestamp parse/format, and `format_gmt_offset` renders a localized
+  UTC offset (`GMT+05:30`, `UTC−08:00`).
 
 These build out the CLDR/locale layer toward full ICU-style formatting. The
 locale data is compiled by the offline codegen into flat binary blobs committed

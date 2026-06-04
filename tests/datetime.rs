@@ -83,3 +83,14 @@ fn iso8601() {
     assert_eq!(DateTime::parse_iso8601("not-a-date"), None);
     assert_eq!(DateTime::parse_iso8601("2026-13-01"), None); // bad month
 }
+
+#[test]
+fn gmt_offset() {
+    use intl::datetime::format_gmt_offset as g;
+    assert_eq!(g("en", 0), "GMT");
+    assert_eq!(g("en", 330), "GMT+05:30"); // India
+    assert_eq!(g("en", -480), "GMT-08:00"); // US Pacific
+    assert_eq!(g("fr", 0), "UTC");
+    assert_eq!(g("fr", -480), "UTC\u{2212}08:00"); // French uses UTC + minus sign
+    assert_eq!(g("en", 60), "GMT+01:00");
+}
