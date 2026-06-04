@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/KarpelesLab/intlrs/compare/v0.1.4...v0.2.0) - 2026-06-04
+
+### Other
+
+- Add a rule-based Transform to transliteration (x > y rewrites)
+- Add collation expansions to the tailoring engine (ä → "ae")
+- document collation strength/numeric/tailoring
+- Add Tailoring::for_locale for well-known collations
+- handle <<, <<<, = relation levels (not just primary)
+- Add locale-tailored collation engine (Tailoring, primary reordering)
+- Add numeric collation (Collator::with_numeric, natural sort)
+- Add translit::any_ascii convenience (mixed-script -> ASCII)
+- Add collation strength levels (Collator::with_strength)
+- Add Greek->Latin transliteration (ELOT 743 / ISO 843)
+- Add Cyrillic->Latin transliteration (ISO 9)
+- Add remove_diacritics to the transliteration module
+- Add transliteration module: Latin-ASCII fold (translit::latin_ascii)
+- Fix format_compact panic on non-finite values
+- Add ordinal number formatting (number::format_ordinal)
+- Parse the compact c/e plural operand (PluralOperands)
+- Add cargo-fuzz harness (unicode + formatters targets)
+- Add bidi mirroring (bidi_mirror + is_bidi_mirrored)
+- Add Changes_When_* predicates (UAX #44)
+- Fix doc-comment placement on lowercase_str_lang
+- Add Lithuanian locale casing (retained dot above)
+- Track compiled binary size per tier in CI (sizeprobe example)
+- Gate differential test on the bmp tier
+- Format differential test (rustfmt)
+- Add differential tests against std (case mapping + predicates)
+- reject the trie migration; keep the paged match tables
+- Add Joining_Group property (UAX #9)
+- Add char_name for algorithmically-named characters (Hangul + ideographs)
+- Add algorithmic Hangul syllable names
+- Add MSRV CI job (Rust 1.70); fix f64::abs not in core on MSRV
+- Add Turkic (tr/az) locale-aware casing
+- Fix codegen clippy: allow too_many_arguments on emit_value_enum
+- Add context-sensitive lowercasing with Greek Final_Sigma
+- Add Indic_Positional_Category; factor a value-enum codegen helper
+- Add Indic_Syllabic_Category property (UAX #44)
+- Add Joining_Type property (Arabic shaping, UAX #9)
+- Add the Chinese (lunisolar) calendar
+- Add duration formatting; correct stale CLDR/formatter roadmap status
+- Add Age and Block character properties (UCD)
+- Fix panics on unvalidated input; fuzz every input-facing API
+- Add full IANA time-zone support via the timezone-data crate
+- Add native digit systems to number formatting
+- Add compact number notation (number::format_compact)
+- Add scientific number notation (number::format_scientific)
+- Add locale-aware number parsing (number::parse_decimal)
+- Add locale-driven RBNF cardinal spell-out
+- Add POSIX TZ time zones (intl::timezone)
+- Update the crate-level docs to describe the full library
+- Render localized Persian dates; share the non-Gregorian renderer
+- Add date arithmetic to DateTime (add_seconds/add_days/weekday)
+- Render localized Islamic (Hijri) dates
+- report embedded-data footprint (Phase 2 size tracking)
+- Add Hebrew calendar (Dershowitz-Reingold arithmetic)
+- Add Persian (Solar Hijri) and Japanese calendars
+- Add localized GMT offset formatting (CLDR time zones, data-light)
+- Add ISO-8601 timestamp parse/format to DateTime
+- Add calendar conversions (no_std): Gregorian, Islamic, ISO week
+- Parse BCP-47 extension and private-use subtags in Locale
+- Add locale negotiation (best-match)
+- Add likely-subtags maximize/minimize to Locale (CLDR / UTS #35)
+- Add flexible date skeleton formatting (CLDR availableFormats)
+- Remove English-only spellout
+- Add English number spell-out (RBNF)
+- Add Gregorian date/time formatting (CLDR / UTS #35)
+- Add ICU MessageFormat subset (intl::message)
+- Add measurement-unit formatting (CLDR / UTS #35)
+- Add locale display names (CLDR / UTS #35)
+- Embed CLDR formatter tables as no_std binary blobs; add currency
+
 ## [0.1.4](https://github.com/KarpelesLab/intlrs/compare/v0.1.3...v0.1.4) - 2026-06-04
 
 ### Other
