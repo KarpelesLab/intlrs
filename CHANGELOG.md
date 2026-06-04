@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/KarpelesLab/intlrs/compare/v0.1.2...v0.1.3) - 2026-06-04
+
+### Other
+
+- add crates.io, docs.rs, CI, and license badges
+- Add whole-string case adaptors: uppercase/lowercase/fold
+- Format codegen (separate package, not covered by cargo fmt --all)
+- Add UTS #10 collation (DUCET root collation)
+
 ## [0.1.2](https://github.com/KarpelesLab/intlrs/compare/v0.1.1...v0.1.2) - 2026-06-04
 
 ### Other
