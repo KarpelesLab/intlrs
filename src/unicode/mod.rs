@@ -68,8 +68,9 @@ pub use normalize::{
 };
 pub use numeric::{numeric_type, numeric_value, numeric_value_u32, NumericType, NumericValue};
 pub use predicates::{
-    general_category, general_category_u32, is_alphabetic, is_assigned, is_control,
-    is_decimal_digit, is_format, is_letter, is_lowercase, is_mark, is_numeric, is_punctuation,
+    general_category, general_category_u32, is_alphabetic, is_assigned, is_control, is_dash,
+    is_decimal_digit, is_default_ignorable, is_diacritic, is_format, is_hex_digit, is_join_control,
+    is_letter, is_lowercase, is_mark, is_math, is_numeric, is_punctuation, is_quotation_mark,
     is_separator, is_symbol, is_uppercase, is_whitespace, CharExt,
 };
 pub use script::{

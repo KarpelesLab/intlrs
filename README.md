@@ -101,7 +101,9 @@ codepoint would.
   `is_whitespace` (from the derived Unicode properties), plus the
   category-derived `is_letter`, `is_mark`, `is_numeric`, `is_decimal_digit`,
   `is_punctuation`, `is_symbol`, `is_separator`, `is_control`, `is_format`,
-  and `is_assigned`.
+  and `is_assigned`; plus the property predicates `is_math`, `is_dash`,
+  `is_diacritic`, `is_hex_digit`, `is_quotation_mark`, `is_join_control`, and
+  `is_default_ignorable`.
 - **Segmentation** (UAX #29) — extended grapheme cluster, word, and sentence
   boundary iteration via `graphemes(&str)`, `words(&str)`, and `sentences(&str)`
   (each yielding `&str`, allocation-free). Grapheme breaking handles combining

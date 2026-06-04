@@ -130,6 +130,57 @@ pub const fn is_assigned(c: char) -> bool {
     general_category(c).is_assigned()
 }
 
+/// `Math` property (mathematical symbols and operators).
+#[inline]
+#[must_use]
+pub const fn is_math(c: char) -> bool {
+    binary_props::math(c as u32)
+}
+
+/// `Default_Ignorable_Code_Point` (e.g. ZWJ, variation selectors, soft hyphen) —
+/// characters that should be ignored in rendering when unsupported.
+#[inline]
+#[must_use]
+pub const fn is_default_ignorable(c: char) -> bool {
+    binary_props::default_ignorable(c as u32)
+}
+
+/// `Dash` property (dash punctuation and dash symbols).
+#[inline]
+#[must_use]
+pub const fn is_dash(c: char) -> bool {
+    binary_props::dash(c as u32)
+}
+
+/// `Diacritic` property (accents and other modifying marks).
+#[inline]
+#[must_use]
+pub const fn is_diacritic(c: char) -> bool {
+    binary_props::diacritic(c as u32)
+}
+
+/// `Hex_Digit` property (characters usable as hexadecimal digits, ASCII and
+/// fullwidth).
+#[inline]
+#[must_use]
+pub const fn is_hex_digit(c: char) -> bool {
+    binary_props::hex_digit(c as u32)
+}
+
+/// `Quotation_Mark` property.
+#[inline]
+#[must_use]
+pub const fn is_quotation_mark(c: char) -> bool {
+    binary_props::quotation_mark(c as u32)
+}
+
+/// `Join_Control` property (ZWNJ and ZWJ).
+#[inline]
+#[must_use]
+pub const fn is_join_control(c: char) -> bool {
+    binary_props::join_control(c as u32)
+}
+
 /// Character-classification methods mirroring the free functions in this module.
 ///
 /// Implemented for [`char`]; bring it into scope to call e.g. `'x'.is_letter()`.

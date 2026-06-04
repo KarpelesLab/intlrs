@@ -88,3 +88,14 @@ fn supplementary_categories() {
     assert_eq!(general_category('😀'), GC::OtherSymbol); // U+1F600
     assert!('\u{10000}'.is_assigned() && '\u{10000}'.is_letter());
 }
+
+#[cfg(feature = "bmp")]
+#[test]
+fn extra_binary_props() {
+    use intl::unicode::{is_dash, is_default_ignorable, is_diacritic, is_hex_digit, is_math};
+    assert!(is_math('+') && is_math('=') && !is_math('a'));
+    assert!(is_dash('-') && is_dash('—'));
+    assert!(is_hex_digit('F') && is_hex_digit('9') && !is_hex_digit('g'));
+    assert!(is_default_ignorable('\u{200B}')); // zero width space
+    assert!(is_diacritic('\u{0301}')); // combining acute
+}
