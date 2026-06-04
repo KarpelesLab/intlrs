@@ -105,3 +105,19 @@ fn native_digits() {
     // English stays Latin.
     assert_eq!(fdn("en", 1234.5), "1,234.5");
 }
+
+#[test]
+fn ordinals() {
+    use intl::number::format_ordinal as o;
+    assert_eq!(o("en", 1), "1st");
+    assert_eq!(o("en", 2), "2nd");
+    assert_eq!(o("en", 3), "3rd");
+    assert_eq!(o("en", 4), "4th");
+    assert_eq!(o("en", 11), "11th");
+    assert_eq!(o("en", 21), "21st");
+    assert_eq!(o("en", 102), "102nd");
+    assert_eq!(o("fr", 1), "1er");
+    assert_eq!(o("fr", 2), "2e");
+    assert_eq!(o("de", 2), "2."); // period convention
+    assert_eq!(o("sv", 1), "1:a");
+}

@@ -319,6 +319,7 @@ fn main() {
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
     emit_compact(&cldr_dir, &cldr.join("compact.json"));
     emit_numsys(&cldr_dir, &cldr.join("numsys.json"));
+    emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic.json"));
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian.json"));
 
@@ -2107,6 +2108,26 @@ fn emit_alt_calendar(cldr_dir: &Path, name: &str, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, name, &records);
+}
+
+/// Write `cldr/ordsuffix.bin`: per-locale ordinal suffix for each plural
+/// category (zero/one/two/few/many/other), filling absent categories with the
+/// `other` suffix.
+fn emit_ordsuffix(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read ordsuffix.json");
+    let json = json_parse(&text);
+    let cats = ["zero", "one", "two", "few", "many", "other"];
+    let mut records = Vec::new();
+    for (lang, loc) in json.get("locales").expect("locales").entries() {
+        let other = loc.get("other").and_then(Json::as_str).unwrap_or("");
+        let mut p = Vec::new();
+        for cat in cats {
+            let s = loc.get(cat).and_then(Json::as_str).unwrap_or(other);
+            enc_str(&mut p, s);
+        }
+        records.push((lang.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "ordsuffix", &records);
 }
 
 /// Write `cldr/numsys_digits.bin` (numbering system → 10 digit glyphs) and

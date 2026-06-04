@@ -78,7 +78,8 @@ Beyond the `unicode` module:
   `format_currency("en", 1234.5, "USD")` → `"$1,234.50"`, `format_scientific`
   (`"1.2345E4"`), `format_compact` (`"1.5K"`, `"2.3M"`), and `parse_decimal`
   back to an `f64` (`parse_decimal("de", "1.234,5")` → `1234.5`), plus native
-  digit systems (`to_numbering_system("2024", "arab")` → `"٢٠٢٤"`).
+  digit systems (`to_numbering_system("2024", "arab")` → `"٢٠٢٤"`) and ordinals
+  (`format_ordinal("en", 21)` → `"21st"`).
 
 - `intl::list` (alloc) joins items with locale connectors —
   `format_list("en", &["a","b","c"], ListStyle::And)` → `"a, b, and c"`.

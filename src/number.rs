@@ -108,6 +108,47 @@ pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
     out
 }
 
+/// Format `n` as an ordinal in `lang`, e.g. `format_ordinal("en", 21)` →
+/// `"21st"`, `format_ordinal("fr", 1)` → `"1er"`, `format_ordinal("de", 2)` →
+/// `"2."`. The suffix is chosen by the CLDR **ordinal** plural category of `n`.
+///
+/// ```
+/// use intl::number::format_ordinal;
+/// assert_eq!(format_ordinal("en", 1), "1st");
+/// assert_eq!(format_ordinal("en", 2), "2nd");
+/// assert_eq!(format_ordinal("en", 3), "3rd");
+/// assert_eq!(format_ordinal("en", 4), "4th");
+/// assert_eq!(format_ordinal("en", 21), "21st");
+/// ```
+#[must_use]
+pub fn format_ordinal(lang: &str, n: i64) -> String {
+    use crate::plural::{ordinal_category, PluralOperands};
+    let cat = ordinal_category(lang, &PluralOperands::from_int(n)) as usize;
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut end = norm.len();
+    let suffix = loop {
+        if let Some(s) = crate::cldr::ordinal_suffix(&norm[..end], cat) {
+            break s;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => break crate::cldr::ordinal_suffix("en", cat).unwrap_or(""),
+        }
+    };
+    let mut out = format_decimal(lang, n as f64);
+    out.push_str(suffix);
+    out
+}
+
 /// Transliterate the ASCII digits `0`–`9` in `s` to the glyphs of the named
 /// numbering `system` (e.g. `"arab"`, `"deva"`). Non-digit characters and
 /// unknown systems are left unchanged.

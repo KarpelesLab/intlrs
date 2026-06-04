@@ -146,9 +146,9 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   (`to_numbering_system`). CLDR symbols + grouping/fraction patterns, curated
   locale set.
 - 🟡🧱 **Rule-based number formatting (RBNF)** — `intl::spellout::spell_cardinal`
-  is a locale-driven CLDR RBNF engine (rule selection, radix, substitution,
-  ruleset references); cardinal spell-out for a curated locale set. Still:
-  ordinals and fractional/year forms.
+  is a locale-driven CLDR RBNF engine; cardinal spell-out for a curated locale
+  set. ✅ ordinal *formatting* (`number::format_ordinal`, "21st"/"1er"/"2.").
+  Still: ordinal spell-out words and fractional/year forms.
 - ✅ **Calendars** — `intl::calendar`: Gregorian, civil Islamic, Persian (Solar
   Hijri), Hebrew, **Chinese** (lunisolar, 1900–2099 via an embedded lunar table),
   Japanese (era/year), and ISO week dates / day-of-week, all via a Julian-Day-

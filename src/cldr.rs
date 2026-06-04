@@ -144,6 +144,21 @@ const RBNF: &[u8] = include_bytes!("cldr/rbnf.bin");
 const COMPACT: &[u8] = include_bytes!("cldr/compact.bin");
 const NUMSYS_DIGITS: &[u8] = include_bytes!("cldr/numsys_digits.bin");
 const NUMSYS_DEFAULT: &[u8] = include_bytes!("cldr/numsys_default.bin");
+const ORDSUFFIX: &[u8] = include_bytes!("cldr/ordsuffix.bin");
+
+/// The ordinal suffix for `category` (0=zero…5=other) in an exact (lowercased)
+/// locale key.
+pub(crate) fn ordinal_suffix(lang: &str, category: usize) -> Option<&'static str> {
+    let mut c = find(ORDSUFFIX, lang)?;
+    let mut s = "";
+    for i in 0..6 {
+        let v = c.str();
+        if i == category {
+            s = v;
+        }
+    }
+    Some(s)
+}
 
 /// The 10 digit glyphs of a numbering system (e.g. `"arab"` → `"٠١٢٣٤٥٦٧٨٩"`).
 pub(crate) fn numbering_digits(system: &str) -> Option<&'static str> {
