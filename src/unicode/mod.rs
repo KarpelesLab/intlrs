@@ -42,6 +42,8 @@ pub mod numeric;
 mod predicates;
 pub mod script;
 pub mod segment;
+#[cfg(feature = "alloc")]
+pub mod spoof;
 pub mod width;
 
 #[cfg(feature = "alloc")]

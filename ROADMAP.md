@@ -49,7 +49,7 @@ conformance corpus. Highest value, lowest risk — do these next.
 - ✅ **Identifiers (UAX #31)** — `is_xid_start`/`is_xid_continue`, identifier
   validation, default identifier syntax. Data: XID_Start/Continue (already in
   `DerivedCoreProperties.txt`). Small.
-- ⬜🔬 **Confusables / spoof detection (UTS #39)** — `confusable_skeleton`,
+- ✅ **Confusables / spoof detection (UTS #39)** — `confusable_skeleton`,
   mixed-script & restriction-level checks. Data: `confusables.txt`,
   `IdentifierStatus.txt`, `IdentifierType.txt`. Conformance: examples in the
   spec; cross-check vs ICU `uspoof`.

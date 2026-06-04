@@ -119,7 +119,12 @@ fn main() {
         ("uppercase", "up", "DerivedCoreProperties.txt", "Uppercase"),
         ("lowercase", "lo", "DerivedCoreProperties.txt", "Lowercase"),
         ("xid_start", "xs", "DerivedCoreProperties.txt", "XID_Start"),
-        ("xid_continue", "xc", "DerivedCoreProperties.txt", "XID_Continue"),
+        (
+            "xid_continue",
+            "xc",
+            "DerivedCoreProperties.txt",
+            "XID_Continue",
+        ),
     ] {
         let codes = parse_binary_prop(&ucd.join(file), prop);
         emit_bool_lookup(&mut bp_out, fn_name, prefix, &codes);
@@ -175,6 +180,10 @@ fn main() {
 
     // ---- Segmentation (UAX #29) ----
     emit_segmentation(&out_dir, &mut modules, &ucd);
+
+    // ---- Confusables (UTS #39) ----
+    let security = root.join("data/security").join(version);
+    emit_confusables(&out_dir, &mut modules, &security);
 
     // ---- generated/mod.rs ----
     modules.sort();
@@ -1064,6 +1073,33 @@ fn emit_segmentation(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     emit_lookup(&mut out, "line_break", "lb", "Lb", &lb, al, &lb_render);
 
     write_module(out_dir, modules, "segmentation", &out);
+}
+
+/// Emit `generated/confusables.rs`: the UTS #39 confusable prototype mapping
+/// (source codepoint -> prototype character sequence).
+fn emit_confusables(out_dir: &Path, modules: &mut Vec<String>, security: &Path) {
+    let text = fs::read_to_string(security.join("confusables.txt")).expect("read confusables.txt");
+    let mut protos: Vec<Vec<u32>> = vec![vec![]; NUM_CODEPOINTS];
+    for line in text.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let mut f = line.split(';');
+        let src = f.next().unwrap().trim();
+        let tgt = f.next().unwrap_or("").trim();
+        let Ok(cp) = u32::from_str_radix(src, 16) else {
+            continue;
+        };
+        protos[cp as usize] = tgt
+            .split_whitespace()
+            .map(|h| u32::from_str_radix(h, 16).unwrap())
+            .collect();
+    }
+    let mut out = String::new();
+    write_header(&mut out);
+    emit_char_seq_lookup(&mut out, "confusable_prototype", "cf", "CF", &protos);
+    write_module(out_dir, modules, "confusables", &out);
 }
 
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.
