@@ -14183,3 +14183,3905 @@ const fn ci_pe01(b: u8) -> bool {
         _ => false,
     }
 }
+
+#[inline]
+pub(crate) const fn changes_when_lowercased(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => cwl_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => cwl_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => cwl_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => cwl_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => cwl_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => cwl_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => cwl_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => cwl_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => cwl_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => cwl_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => cwl_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => cwl_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => cwl_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => cwl_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a6 => cwl_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => cwl_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => cwl_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => cwl_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => cwl_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => cwl_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => cwl_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => cwl_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => cwl_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => cwl_p1e9(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn cwl_p0(b: u8) -> bool {
+    match b {
+        0x41..=0x5a => true,
+        #[cfg(feature = "latin1")]
+        0xc0..=0xd6 => true,
+        #[cfg(feature = "latin1")]
+        0xd8..=0xde => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p1(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x02 => true,
+        0x04 => true,
+        0x06 => true,
+        0x08 => true,
+        0x0a => true,
+        0x0c => true,
+        0x0e => true,
+        0x10 => true,
+        0x12 => true,
+        0x14 => true,
+        0x16 => true,
+        0x18 => true,
+        0x1a => true,
+        0x1c => true,
+        0x1e => true,
+        0x20 => true,
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x30 => true,
+        0x32 => true,
+        0x34 => true,
+        0x36 => true,
+        0x39 => true,
+        0x3b => true,
+        0x3d => true,
+        0x3f => true,
+        0x41 => true,
+        0x43 => true,
+        0x45 => true,
+        0x47 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        0x50 => true,
+        0x52 => true,
+        0x54 => true,
+        0x56 => true,
+        0x58 => true,
+        0x5a => true,
+        0x5c => true,
+        0x5e => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x6e => true,
+        0x70 => true,
+        0x72 => true,
+        0x74 => true,
+        0x76 => true,
+        0x78..=0x79 => true,
+        0x7b => true,
+        0x7d => true,
+        0x81..=0x82 => true,
+        0x84 => true,
+        0x86..=0x87 => true,
+        0x89..=0x8b => true,
+        0x8e..=0x91 => true,
+        0x93..=0x94 => true,
+        0x96..=0x98 => true,
+        0x9c..=0x9d => true,
+        0x9f..=0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6..=0xa7 => true,
+        0xa9 => true,
+        0xac => true,
+        0xae..=0xaf => true,
+        0xb1..=0xb3 => true,
+        0xb5 => true,
+        0xb7..=0xb8 => true,
+        0xbc => true,
+        0xc4..=0xc5 => true,
+        0xc7..=0xc8 => true,
+        0xca..=0xcb => true,
+        0xcd => true,
+        0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xe4 => true,
+        0xe6 => true,
+        0xe8 => true,
+        0xea => true,
+        0xec => true,
+        0xee => true,
+        0xf1..=0xf2 => true,
+        0xf4 => true,
+        0xf6..=0xf8 => true,
+        0xfa => true,
+        0xfc => true,
+        0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p2(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x02 => true,
+        0x04 => true,
+        0x06 => true,
+        0x08 => true,
+        0x0a => true,
+        0x0c => true,
+        0x0e => true,
+        0x10 => true,
+        0x12 => true,
+        0x14 => true,
+        0x16 => true,
+        0x18 => true,
+        0x1a => true,
+        0x1c => true,
+        0x1e => true,
+        0x20 => true,
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x30 => true,
+        0x32 => true,
+        0x3a..=0x3b => true,
+        0x3d..=0x3e => true,
+        0x41 => true,
+        0x43..=0x46 => true,
+        0x48 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p3(b: u8) -> bool {
+    match b {
+        0x70 => true,
+        0x72 => true,
+        0x76 => true,
+        0x7f => true,
+        0x86 => true,
+        0x88..=0x8a => true,
+        0x8c => true,
+        0x8e..=0x8f => true,
+        0x91..=0xa1 => true,
+        0xa3..=0xab => true,
+        0xcf => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xe4 => true,
+        0xe6 => true,
+        0xe8 => true,
+        0xea => true,
+        0xec => true,
+        0xee => true,
+        0xf4 => true,
+        0xf7 => true,
+        0xf9..=0xfa => true,
+        0xfd..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p4(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x6e => true,
+        0x70 => true,
+        0x72 => true,
+        0x74 => true,
+        0x76 => true,
+        0x78 => true,
+        0x7a => true,
+        0x7c => true,
+        0x7e => true,
+        0x80 => true,
+        0x8a => true,
+        0x8c => true,
+        0x8e => true,
+        0x90 => true,
+        0x92 => true,
+        0x94 => true,
+        0x96 => true,
+        0x98 => true,
+        0x9a => true,
+        0x9c => true,
+        0x9e => true,
+        0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6 => true,
+        0xa8 => true,
+        0xaa => true,
+        0xac => true,
+        0xae => true,
+        0xb0 => true,
+        0xb2 => true,
+        0xb4 => true,
+        0xb6 => true,
+        0xb8 => true,
+        0xba => true,
+        0xbc => true,
+        0xbe => true,
+        0xc0..=0xc1 => true,
+        0xc3 => true,
+        0xc5 => true,
+        0xc7 => true,
+        0xc9 => true,
+        0xcb => true,
+        0xcd => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xe4 => true,
+        0xe6 => true,
+        0xe8 => true,
+        0xea => true,
+        0xec => true,
+        0xee => true,
+        0xf0 => true,
+        0xf2 => true,
+        0xf4 => true,
+        0xf6 => true,
+        0xf8 => true,
+        0xfa => true,
+        0xfc => true,
+        0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p5(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x02 => true,
+        0x04 => true,
+        0x06 => true,
+        0x08 => true,
+        0x0a => true,
+        0x0c => true,
+        0x0e => true,
+        0x10 => true,
+        0x12 => true,
+        0x14 => true,
+        0x16 => true,
+        0x18 => true,
+        0x1a => true,
+        0x1c => true,
+        0x1e => true,
+        0x20 => true,
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x31..=0x56 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p10(b: u8) -> bool {
+    match b {
+        0xa0..=0xc5 => true,
+        0xc7 => true,
+        0xcd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p13(b: u8) -> bool {
+    match b {
+        0xa0..=0xf5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p1c(b: u8) -> bool {
+    match b {
+        0x89 => true,
+        0x90..=0xba => true,
+        0xbd..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p1e(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x02 => true,
+        0x04 => true,
+        0x06 => true,
+        0x08 => true,
+        0x0a => true,
+        0x0c => true,
+        0x0e => true,
+        0x10 => true,
+        0x12 => true,
+        0x14 => true,
+        0x16 => true,
+        0x18 => true,
+        0x1a => true,
+        0x1c => true,
+        0x1e => true,
+        0x20 => true,
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x30 => true,
+        0x32 => true,
+        0x34 => true,
+        0x36 => true,
+        0x38 => true,
+        0x3a => true,
+        0x3c => true,
+        0x3e => true,
+        0x40 => true,
+        0x42 => true,
+        0x44 => true,
+        0x46 => true,
+        0x48 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        0x50 => true,
+        0x52 => true,
+        0x54 => true,
+        0x56 => true,
+        0x58 => true,
+        0x5a => true,
+        0x5c => true,
+        0x5e => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x6e => true,
+        0x70 => true,
+        0x72 => true,
+        0x74 => true,
+        0x76 => true,
+        0x78 => true,
+        0x7a => true,
+        0x7c => true,
+        0x7e => true,
+        0x80 => true,
+        0x82 => true,
+        0x84 => true,
+        0x86 => true,
+        0x88 => true,
+        0x8a => true,
+        0x8c => true,
+        0x8e => true,
+        0x90 => true,
+        0x92 => true,
+        0x94 => true,
+        0x9e => true,
+        0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6 => true,
+        0xa8 => true,
+        0xaa => true,
+        0xac => true,
+        0xae => true,
+        0xb0 => true,
+        0xb2 => true,
+        0xb4 => true,
+        0xb6 => true,
+        0xb8 => true,
+        0xba => true,
+        0xbc => true,
+        0xbe => true,
+        0xc0 => true,
+        0xc2 => true,
+        0xc4 => true,
+        0xc6 => true,
+        0xc8 => true,
+        0xca => true,
+        0xcc => true,
+        0xce => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xe4 => true,
+        0xe6 => true,
+        0xe8 => true,
+        0xea => true,
+        0xec => true,
+        0xee => true,
+        0xf0 => true,
+        0xf2 => true,
+        0xf4 => true,
+        0xf6 => true,
+        0xf8 => true,
+        0xfa => true,
+        0xfc => true,
+        0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p1f(b: u8) -> bool {
+    match b {
+        0x08..=0x0f => true,
+        0x18..=0x1d => true,
+        0x28..=0x2f => true,
+        0x38..=0x3f => true,
+        0x48..=0x4d => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x68..=0x6f => true,
+        0x88..=0x8f => true,
+        0x98..=0x9f => true,
+        0xa8..=0xaf => true,
+        0xb8..=0xbc => true,
+        0xc8..=0xcc => true,
+        0xd8..=0xdb => true,
+        0xe8..=0xec => true,
+        0xf8..=0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p21(b: u8) -> bool {
+    match b {
+        0x26 => true,
+        0x2a..=0x2b => true,
+        0x32 => true,
+        0x60..=0x6f => true,
+        0x83 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p24(b: u8) -> bool {
+    match b {
+        0xb6..=0xcf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_p2c(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x60 => true,
+        0x62..=0x64 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d..=0x70 => true,
+        0x72 => true,
+        0x75 => true,
+        0x7e..=0x80 => true,
+        0x82 => true,
+        0x84 => true,
+        0x86 => true,
+        0x88 => true,
+        0x8a => true,
+        0x8c => true,
+        0x8e => true,
+        0x90 => true,
+        0x92 => true,
+        0x94 => true,
+        0x96 => true,
+        0x98 => true,
+        0x9a => true,
+        0x9c => true,
+        0x9e => true,
+        0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6 => true,
+        0xa8 => true,
+        0xaa => true,
+        0xac => true,
+        0xae => true,
+        0xb0 => true,
+        0xb2 => true,
+        0xb4 => true,
+        0xb6 => true,
+        0xb8 => true,
+        0xba => true,
+        0xbc => true,
+        0xbe => true,
+        0xc0 => true,
+        0xc2 => true,
+        0xc4 => true,
+        0xc6 => true,
+        0xc8 => true,
+        0xca => true,
+        0xcc => true,
+        0xce => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xeb => true,
+        0xed => true,
+        0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_pa6(b: u8) -> bool {
+    match b {
+        0x40 => true,
+        0x42 => true,
+        0x44 => true,
+        0x46 => true,
+        0x48 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        0x50 => true,
+        0x52 => true,
+        0x54 => true,
+        0x56 => true,
+        0x58 => true,
+        0x5a => true,
+        0x5c => true,
+        0x5e => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x80 => true,
+        0x82 => true,
+        0x84 => true,
+        0x86 => true,
+        0x88 => true,
+        0x8a => true,
+        0x8c => true,
+        0x8e => true,
+        0x90 => true,
+        0x92 => true,
+        0x94 => true,
+        0x96 => true,
+        0x98 => true,
+        0x9a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_pa7(b: u8) -> bool {
+    match b {
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x32 => true,
+        0x34 => true,
+        0x36 => true,
+        0x38 => true,
+        0x3a => true,
+        0x3c => true,
+        0x3e => true,
+        0x40 => true,
+        0x42 => true,
+        0x44 => true,
+        0x46 => true,
+        0x48 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        0x50 => true,
+        0x52 => true,
+        0x54 => true,
+        0x56 => true,
+        0x58 => true,
+        0x5a => true,
+        0x5c => true,
+        0x5e => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x6e => true,
+        0x79 => true,
+        0x7b => true,
+        0x7d..=0x7e => true,
+        0x80 => true,
+        0x82 => true,
+        0x84 => true,
+        0x86 => true,
+        0x8b => true,
+        0x8d => true,
+        0x90 => true,
+        0x92 => true,
+        0x96 => true,
+        0x98 => true,
+        0x9a => true,
+        0x9c => true,
+        0x9e => true,
+        0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6 => true,
+        0xa8 => true,
+        0xaa..=0xae => true,
+        0xb0..=0xb4 => true,
+        0xb6 => true,
+        0xb8 => true,
+        0xba => true,
+        0xbc => true,
+        0xbe => true,
+        0xc0 => true,
+        0xc2 => true,
+        0xc4..=0xc7 => true,
+        0xc9 => true,
+        0xcb..=0xcc => true,
+        0xce => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xf5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwl_pff(b: u8) -> bool {
+    match b {
+        0x21..=0x3a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwl_p104(b: u8) -> bool {
+    match b {
+        0x00..=0x27 => true,
+        0xb0..=0xd3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwl_p105(b: u8) -> bool {
+    match b {
+        0x70..=0x7a => true,
+        0x7c..=0x8a => true,
+        0x8c..=0x92 => true,
+        0x94..=0x95 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwl_p10c(b: u8) -> bool {
+    match b {
+        0x80..=0xb2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwl_p10d(b: u8) -> bool {
+    match b {
+        0x50..=0x65 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwl_p118(b: u8) -> bool {
+    match b {
+        0xa0..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwl_p16e(b: u8) -> bool {
+    match b {
+        0x40..=0x5f => true,
+        0xa0..=0xb8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwl_p1e9(b: u8) -> bool {
+    match b {
+        0x00..=0x21 => true,
+        _ => false,
+    }
+}
+
+#[inline]
+pub(crate) const fn changes_when_uppercased(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => cwu_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => cwu_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => cwu_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => cwu_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => cwu_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => cwu_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => cwu_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => cwu_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => cwu_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => cwu_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => cwu_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => cwu_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => cwu_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => cwu_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => cwu_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => cwu_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a6 => cwu_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => cwu_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => cwu_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => cwu_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => cwu_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => cwu_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => cwu_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => cwu_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => cwu_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => cwu_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => cwu_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => cwu_p1e9(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn cwu_p0(b: u8) -> bool {
+    match b {
+        0x61..=0x7a => true,
+        #[cfg(feature = "latin1")]
+        0xb5 => true,
+        #[cfg(feature = "latin1")]
+        0xdf..=0xf6 => true,
+        #[cfg(feature = "latin1")]
+        0xf8..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p1(b: u8) -> bool {
+    match b {
+        0x01 => true,
+        0x03 => true,
+        0x05 => true,
+        0x07 => true,
+        0x09 => true,
+        0x0b => true,
+        0x0d => true,
+        0x0f => true,
+        0x11 => true,
+        0x13 => true,
+        0x15 => true,
+        0x17 => true,
+        0x19 => true,
+        0x1b => true,
+        0x1d => true,
+        0x1f => true,
+        0x21 => true,
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x31 => true,
+        0x33 => true,
+        0x35 => true,
+        0x37 => true,
+        0x3a => true,
+        0x3c => true,
+        0x3e => true,
+        0x40 => true,
+        0x42 => true,
+        0x44 => true,
+        0x46 => true,
+        0x48..=0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f => true,
+        0x51 => true,
+        0x53 => true,
+        0x55 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x6f => true,
+        0x71 => true,
+        0x73 => true,
+        0x75 => true,
+        0x77 => true,
+        0x7a => true,
+        0x7c => true,
+        0x7e..=0x80 => true,
+        0x83 => true,
+        0x85 => true,
+        0x88 => true,
+        0x8c => true,
+        0x92 => true,
+        0x95 => true,
+        0x99..=0x9b => true,
+        0x9e => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa8 => true,
+        0xad => true,
+        0xb0 => true,
+        0xb4 => true,
+        0xb6 => true,
+        0xb9 => true,
+        0xbd => true,
+        0xbf => true,
+        0xc5..=0xc6 => true,
+        0xc8..=0xc9 => true,
+        0xcb..=0xcc => true,
+        0xce => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc..=0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xe5 => true,
+        0xe7 => true,
+        0xe9 => true,
+        0xeb => true,
+        0xed => true,
+        0xef..=0xf0 => true,
+        0xf2..=0xf3 => true,
+        0xf5 => true,
+        0xf9 => true,
+        0xfb => true,
+        0xfd => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p2(b: u8) -> bool {
+    match b {
+        0x01 => true,
+        0x03 => true,
+        0x05 => true,
+        0x07 => true,
+        0x09 => true,
+        0x0b => true,
+        0x0d => true,
+        0x0f => true,
+        0x11 => true,
+        0x13 => true,
+        0x15 => true,
+        0x17 => true,
+        0x19 => true,
+        0x1b => true,
+        0x1d => true,
+        0x1f => true,
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x31 => true,
+        0x33 => true,
+        0x3c => true,
+        0x3f..=0x40 => true,
+        0x42 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f..=0x54 => true,
+        0x56..=0x57 => true,
+        0x59 => true,
+        0x5b..=0x5c => true,
+        0x60..=0x61 => true,
+        0x63..=0x66 => true,
+        0x68..=0x6c => true,
+        0x6f => true,
+        0x71..=0x72 => true,
+        0x75 => true,
+        0x7d => true,
+        0x80 => true,
+        0x82..=0x83 => true,
+        0x87..=0x8c => true,
+        0x92 => true,
+        0x9d..=0x9e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p3(b: u8) -> bool {
+    match b {
+        0x45 => true,
+        0x71 => true,
+        0x73 => true,
+        0x77 => true,
+        0x7b..=0x7d => true,
+        0x90 => true,
+        0xac..=0xce => true,
+        0xd0..=0xd1 => true,
+        0xd5..=0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xe5 => true,
+        0xe7 => true,
+        0xe9 => true,
+        0xeb => true,
+        0xed => true,
+        0xef..=0xf3 => true,
+        0xf5 => true,
+        0xf8 => true,
+        0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p4(b: u8) -> bool {
+    match b {
+        0x30..=0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x6f => true,
+        0x71 => true,
+        0x73 => true,
+        0x75 => true,
+        0x77 => true,
+        0x79 => true,
+        0x7b => true,
+        0x7d => true,
+        0x7f => true,
+        0x81 => true,
+        0x8b => true,
+        0x8d => true,
+        0x8f => true,
+        0x91 => true,
+        0x93 => true,
+        0x95 => true,
+        0x97 => true,
+        0x99 => true,
+        0x9b => true,
+        0x9d => true,
+        0x9f => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa7 => true,
+        0xa9 => true,
+        0xab => true,
+        0xad => true,
+        0xaf => true,
+        0xb1 => true,
+        0xb3 => true,
+        0xb5 => true,
+        0xb7 => true,
+        0xb9 => true,
+        0xbb => true,
+        0xbd => true,
+        0xbf => true,
+        0xc2 => true,
+        0xc4 => true,
+        0xc6 => true,
+        0xc8 => true,
+        0xca => true,
+        0xcc => true,
+        0xce..=0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xe5 => true,
+        0xe7 => true,
+        0xe9 => true,
+        0xeb => true,
+        0xed => true,
+        0xef => true,
+        0xf1 => true,
+        0xf3 => true,
+        0xf5 => true,
+        0xf7 => true,
+        0xf9 => true,
+        0xfb => true,
+        0xfd => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p5(b: u8) -> bool {
+    match b {
+        0x01 => true,
+        0x03 => true,
+        0x05 => true,
+        0x07 => true,
+        0x09 => true,
+        0x0b => true,
+        0x0d => true,
+        0x0f => true,
+        0x11 => true,
+        0x13 => true,
+        0x15 => true,
+        0x17 => true,
+        0x19 => true,
+        0x1b => true,
+        0x1d => true,
+        0x1f => true,
+        0x21 => true,
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x61..=0x87 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p10(b: u8) -> bool {
+    match b {
+        0xd0..=0xfa => true,
+        0xfd..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p13(b: u8) -> bool {
+    match b {
+        0xf8..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p1c(b: u8) -> bool {
+    match b {
+        0x80..=0x88 => true,
+        0x8a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p1d(b: u8) -> bool {
+    match b {
+        0x79 => true,
+        0x7d => true,
+        0x8e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p1e(b: u8) -> bool {
+    match b {
+        0x01 => true,
+        0x03 => true,
+        0x05 => true,
+        0x07 => true,
+        0x09 => true,
+        0x0b => true,
+        0x0d => true,
+        0x0f => true,
+        0x11 => true,
+        0x13 => true,
+        0x15 => true,
+        0x17 => true,
+        0x19 => true,
+        0x1b => true,
+        0x1d => true,
+        0x1f => true,
+        0x21 => true,
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x31 => true,
+        0x33 => true,
+        0x35 => true,
+        0x37 => true,
+        0x39 => true,
+        0x3b => true,
+        0x3d => true,
+        0x3f => true,
+        0x41 => true,
+        0x43 => true,
+        0x45 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f => true,
+        0x51 => true,
+        0x53 => true,
+        0x55 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x6f => true,
+        0x71 => true,
+        0x73 => true,
+        0x75 => true,
+        0x77 => true,
+        0x79 => true,
+        0x7b => true,
+        0x7d => true,
+        0x7f => true,
+        0x81 => true,
+        0x83 => true,
+        0x85 => true,
+        0x87 => true,
+        0x89 => true,
+        0x8b => true,
+        0x8d => true,
+        0x8f => true,
+        0x91 => true,
+        0x93 => true,
+        0x95..=0x9b => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa7 => true,
+        0xa9 => true,
+        0xab => true,
+        0xad => true,
+        0xaf => true,
+        0xb1 => true,
+        0xb3 => true,
+        0xb5 => true,
+        0xb7 => true,
+        0xb9 => true,
+        0xbb => true,
+        0xbd => true,
+        0xbf => true,
+        0xc1 => true,
+        0xc3 => true,
+        0xc5 => true,
+        0xc7 => true,
+        0xc9 => true,
+        0xcb => true,
+        0xcd => true,
+        0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xe5 => true,
+        0xe7 => true,
+        0xe9 => true,
+        0xeb => true,
+        0xed => true,
+        0xef => true,
+        0xf1 => true,
+        0xf3 => true,
+        0xf5 => true,
+        0xf7 => true,
+        0xf9 => true,
+        0xfb => true,
+        0xfd => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p1f(b: u8) -> bool {
+    match b {
+        0x00..=0x07 => true,
+        0x10..=0x15 => true,
+        0x20..=0x27 => true,
+        0x30..=0x37 => true,
+        0x40..=0x45 => true,
+        0x50..=0x57 => true,
+        0x60..=0x67 => true,
+        0x70..=0x7d => true,
+        0x80..=0xb4 => true,
+        0xb6..=0xb7 => true,
+        0xbc => true,
+        0xbe => true,
+        0xc2..=0xc4 => true,
+        0xc6..=0xc7 => true,
+        0xcc => true,
+        0xd0..=0xd3 => true,
+        0xd6..=0xd7 => true,
+        0xe0..=0xe7 => true,
+        0xf2..=0xf4 => true,
+        0xf6..=0xf7 => true,
+        0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p21(b: u8) -> bool {
+    match b {
+        0x4e => true,
+        0x70..=0x7f => true,
+        0x84 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p24(b: u8) -> bool {
+    match b {
+        0xd0..=0xe9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p2c(b: u8) -> bool {
+    match b {
+        0x30..=0x5f => true,
+        0x61 => true,
+        0x65..=0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x73 => true,
+        0x76 => true,
+        0x81 => true,
+        0x83 => true,
+        0x85 => true,
+        0x87 => true,
+        0x89 => true,
+        0x8b => true,
+        0x8d => true,
+        0x8f => true,
+        0x91 => true,
+        0x93 => true,
+        0x95 => true,
+        0x97 => true,
+        0x99 => true,
+        0x9b => true,
+        0x9d => true,
+        0x9f => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa7 => true,
+        0xa9 => true,
+        0xab => true,
+        0xad => true,
+        0xaf => true,
+        0xb1 => true,
+        0xb3 => true,
+        0xb5 => true,
+        0xb7 => true,
+        0xb9 => true,
+        0xbb => true,
+        0xbd => true,
+        0xbf => true,
+        0xc1 => true,
+        0xc3 => true,
+        0xc5 => true,
+        0xc7 => true,
+        0xc9 => true,
+        0xcb => true,
+        0xcd => true,
+        0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xec => true,
+        0xee => true,
+        0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_p2d(b: u8) -> bool {
+    match b {
+        0x00..=0x25 => true,
+        0x27 => true,
+        0x2d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_pa6(b: u8) -> bool {
+    match b {
+        0x41 => true,
+        0x43 => true,
+        0x45 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f => true,
+        0x51 => true,
+        0x53 => true,
+        0x55 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x81 => true,
+        0x83 => true,
+        0x85 => true,
+        0x87 => true,
+        0x89 => true,
+        0x8b => true,
+        0x8d => true,
+        0x8f => true,
+        0x91 => true,
+        0x93 => true,
+        0x95 => true,
+        0x97 => true,
+        0x99 => true,
+        0x9b => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_pa7(b: u8) -> bool {
+    match b {
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x33 => true,
+        0x35 => true,
+        0x37 => true,
+        0x39 => true,
+        0x3b => true,
+        0x3d => true,
+        0x3f => true,
+        0x41 => true,
+        0x43 => true,
+        0x45 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f => true,
+        0x51 => true,
+        0x53 => true,
+        0x55 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x6f => true,
+        0x7a => true,
+        0x7c => true,
+        0x7f => true,
+        0x81 => true,
+        0x83 => true,
+        0x85 => true,
+        0x87 => true,
+        0x8c => true,
+        0x91 => true,
+        0x93..=0x94 => true,
+        0x97 => true,
+        0x99 => true,
+        0x9b => true,
+        0x9d => true,
+        0x9f => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa7 => true,
+        0xa9 => true,
+        0xb5 => true,
+        0xb7 => true,
+        0xb9 => true,
+        0xbb => true,
+        0xbd => true,
+        0xbf => true,
+        0xc1 => true,
+        0xc3 => true,
+        0xc8 => true,
+        0xca => true,
+        0xcd => true,
+        0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_pab(b: u8) -> bool {
+    match b {
+        0x53 => true,
+        0x70..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_pfb(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x13..=0x17 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwu_pff(b: u8) -> bool {
+    match b {
+        0x41..=0x5a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwu_p104(b: u8) -> bool {
+    match b {
+        0x28..=0x4f => true,
+        0xd8..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwu_p105(b: u8) -> bool {
+    match b {
+        0x97..=0xa1 => true,
+        0xa3..=0xb1 => true,
+        0xb3..=0xb9 => true,
+        0xbb..=0xbc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwu_p10c(b: u8) -> bool {
+    match b {
+        0xc0..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwu_p10d(b: u8) -> bool {
+    match b {
+        0x70..=0x85 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwu_p118(b: u8) -> bool {
+    match b {
+        0xc0..=0xdf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwu_p16e(b: u8) -> bool {
+    match b {
+        0x60..=0x7f => true,
+        0xbb..=0xd3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwu_p1e9(b: u8) -> bool {
+    match b {
+        0x22..=0x43 => true,
+        _ => false,
+    }
+}
+
+#[inline]
+pub(crate) const fn changes_when_titlecased(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => cwt_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => cwt_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => cwt_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => cwt_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => cwt_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => cwt_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => cwt_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => cwt_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => cwt_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => cwt_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => cwt_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => cwt_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => cwt_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => cwt_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => cwt_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a6 => cwt_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => cwt_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => cwt_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => cwt_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => cwt_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => cwt_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => cwt_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => cwt_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => cwt_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => cwt_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => cwt_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => cwt_p1e9(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn cwt_p0(b: u8) -> bool {
+    match b {
+        0x61..=0x7a => true,
+        #[cfg(feature = "latin1")]
+        0xb5 => true,
+        #[cfg(feature = "latin1")]
+        0xdf..=0xf6 => true,
+        #[cfg(feature = "latin1")]
+        0xf8..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p1(b: u8) -> bool {
+    match b {
+        0x01 => true,
+        0x03 => true,
+        0x05 => true,
+        0x07 => true,
+        0x09 => true,
+        0x0b => true,
+        0x0d => true,
+        0x0f => true,
+        0x11 => true,
+        0x13 => true,
+        0x15 => true,
+        0x17 => true,
+        0x19 => true,
+        0x1b => true,
+        0x1d => true,
+        0x1f => true,
+        0x21 => true,
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x31 => true,
+        0x33 => true,
+        0x35 => true,
+        0x37 => true,
+        0x3a => true,
+        0x3c => true,
+        0x3e => true,
+        0x40 => true,
+        0x42 => true,
+        0x44 => true,
+        0x46 => true,
+        0x48..=0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f => true,
+        0x51 => true,
+        0x53 => true,
+        0x55 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x6f => true,
+        0x71 => true,
+        0x73 => true,
+        0x75 => true,
+        0x77 => true,
+        0x7a => true,
+        0x7c => true,
+        0x7e..=0x80 => true,
+        0x83 => true,
+        0x85 => true,
+        0x88 => true,
+        0x8c => true,
+        0x92 => true,
+        0x95 => true,
+        0x99..=0x9b => true,
+        0x9e => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa8 => true,
+        0xad => true,
+        0xb0 => true,
+        0xb4 => true,
+        0xb6 => true,
+        0xb9 => true,
+        0xbd => true,
+        0xbf => true,
+        0xc4 => true,
+        0xc6..=0xc7 => true,
+        0xc9..=0xca => true,
+        0xcc => true,
+        0xce => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc..=0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xe5 => true,
+        0xe7 => true,
+        0xe9 => true,
+        0xeb => true,
+        0xed => true,
+        0xef..=0xf1 => true,
+        0xf3 => true,
+        0xf5 => true,
+        0xf9 => true,
+        0xfb => true,
+        0xfd => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p2(b: u8) -> bool {
+    match b {
+        0x01 => true,
+        0x03 => true,
+        0x05 => true,
+        0x07 => true,
+        0x09 => true,
+        0x0b => true,
+        0x0d => true,
+        0x0f => true,
+        0x11 => true,
+        0x13 => true,
+        0x15 => true,
+        0x17 => true,
+        0x19 => true,
+        0x1b => true,
+        0x1d => true,
+        0x1f => true,
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x31 => true,
+        0x33 => true,
+        0x3c => true,
+        0x3f..=0x40 => true,
+        0x42 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f..=0x54 => true,
+        0x56..=0x57 => true,
+        0x59 => true,
+        0x5b..=0x5c => true,
+        0x60..=0x61 => true,
+        0x63..=0x66 => true,
+        0x68..=0x6c => true,
+        0x6f => true,
+        0x71..=0x72 => true,
+        0x75 => true,
+        0x7d => true,
+        0x80 => true,
+        0x82..=0x83 => true,
+        0x87..=0x8c => true,
+        0x92 => true,
+        0x9d..=0x9e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p3(b: u8) -> bool {
+    match b {
+        0x45 => true,
+        0x71 => true,
+        0x73 => true,
+        0x77 => true,
+        0x7b..=0x7d => true,
+        0x90 => true,
+        0xac..=0xce => true,
+        0xd0..=0xd1 => true,
+        0xd5..=0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xe5 => true,
+        0xe7 => true,
+        0xe9 => true,
+        0xeb => true,
+        0xed => true,
+        0xef..=0xf3 => true,
+        0xf5 => true,
+        0xf8 => true,
+        0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p4(b: u8) -> bool {
+    match b {
+        0x30..=0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x6f => true,
+        0x71 => true,
+        0x73 => true,
+        0x75 => true,
+        0x77 => true,
+        0x79 => true,
+        0x7b => true,
+        0x7d => true,
+        0x7f => true,
+        0x81 => true,
+        0x8b => true,
+        0x8d => true,
+        0x8f => true,
+        0x91 => true,
+        0x93 => true,
+        0x95 => true,
+        0x97 => true,
+        0x99 => true,
+        0x9b => true,
+        0x9d => true,
+        0x9f => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa7 => true,
+        0xa9 => true,
+        0xab => true,
+        0xad => true,
+        0xaf => true,
+        0xb1 => true,
+        0xb3 => true,
+        0xb5 => true,
+        0xb7 => true,
+        0xb9 => true,
+        0xbb => true,
+        0xbd => true,
+        0xbf => true,
+        0xc2 => true,
+        0xc4 => true,
+        0xc6 => true,
+        0xc8 => true,
+        0xca => true,
+        0xcc => true,
+        0xce..=0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xe5 => true,
+        0xe7 => true,
+        0xe9 => true,
+        0xeb => true,
+        0xed => true,
+        0xef => true,
+        0xf1 => true,
+        0xf3 => true,
+        0xf5 => true,
+        0xf7 => true,
+        0xf9 => true,
+        0xfb => true,
+        0xfd => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p5(b: u8) -> bool {
+    match b {
+        0x01 => true,
+        0x03 => true,
+        0x05 => true,
+        0x07 => true,
+        0x09 => true,
+        0x0b => true,
+        0x0d => true,
+        0x0f => true,
+        0x11 => true,
+        0x13 => true,
+        0x15 => true,
+        0x17 => true,
+        0x19 => true,
+        0x1b => true,
+        0x1d => true,
+        0x1f => true,
+        0x21 => true,
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x61..=0x87 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p13(b: u8) -> bool {
+    match b {
+        0xf8..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p1c(b: u8) -> bool {
+    match b {
+        0x80..=0x88 => true,
+        0x8a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p1d(b: u8) -> bool {
+    match b {
+        0x79 => true,
+        0x7d => true,
+        0x8e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p1e(b: u8) -> bool {
+    match b {
+        0x01 => true,
+        0x03 => true,
+        0x05 => true,
+        0x07 => true,
+        0x09 => true,
+        0x0b => true,
+        0x0d => true,
+        0x0f => true,
+        0x11 => true,
+        0x13 => true,
+        0x15 => true,
+        0x17 => true,
+        0x19 => true,
+        0x1b => true,
+        0x1d => true,
+        0x1f => true,
+        0x21 => true,
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x31 => true,
+        0x33 => true,
+        0x35 => true,
+        0x37 => true,
+        0x39 => true,
+        0x3b => true,
+        0x3d => true,
+        0x3f => true,
+        0x41 => true,
+        0x43 => true,
+        0x45 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f => true,
+        0x51 => true,
+        0x53 => true,
+        0x55 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x6f => true,
+        0x71 => true,
+        0x73 => true,
+        0x75 => true,
+        0x77 => true,
+        0x79 => true,
+        0x7b => true,
+        0x7d => true,
+        0x7f => true,
+        0x81 => true,
+        0x83 => true,
+        0x85 => true,
+        0x87 => true,
+        0x89 => true,
+        0x8b => true,
+        0x8d => true,
+        0x8f => true,
+        0x91 => true,
+        0x93 => true,
+        0x95..=0x9b => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa7 => true,
+        0xa9 => true,
+        0xab => true,
+        0xad => true,
+        0xaf => true,
+        0xb1 => true,
+        0xb3 => true,
+        0xb5 => true,
+        0xb7 => true,
+        0xb9 => true,
+        0xbb => true,
+        0xbd => true,
+        0xbf => true,
+        0xc1 => true,
+        0xc3 => true,
+        0xc5 => true,
+        0xc7 => true,
+        0xc9 => true,
+        0xcb => true,
+        0xcd => true,
+        0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xe5 => true,
+        0xe7 => true,
+        0xe9 => true,
+        0xeb => true,
+        0xed => true,
+        0xef => true,
+        0xf1 => true,
+        0xf3 => true,
+        0xf5 => true,
+        0xf7 => true,
+        0xf9 => true,
+        0xfb => true,
+        0xfd => true,
+        0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p1f(b: u8) -> bool {
+    match b {
+        0x00..=0x07 => true,
+        0x10..=0x15 => true,
+        0x20..=0x27 => true,
+        0x30..=0x37 => true,
+        0x40..=0x45 => true,
+        0x50..=0x57 => true,
+        0x60..=0x67 => true,
+        0x70..=0x7d => true,
+        0x80..=0x87 => true,
+        0x90..=0x97 => true,
+        0xa0..=0xa7 => true,
+        0xb0..=0xb4 => true,
+        0xb6..=0xb7 => true,
+        0xbe => true,
+        0xc2..=0xc4 => true,
+        0xc6..=0xc7 => true,
+        0xd0..=0xd3 => true,
+        0xd6..=0xd7 => true,
+        0xe0..=0xe7 => true,
+        0xf2..=0xf4 => true,
+        0xf6..=0xf7 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p21(b: u8) -> bool {
+    match b {
+        0x4e => true,
+        0x70..=0x7f => true,
+        0x84 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p24(b: u8) -> bool {
+    match b {
+        0xd0..=0xe9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p2c(b: u8) -> bool {
+    match b {
+        0x30..=0x5f => true,
+        0x61 => true,
+        0x65..=0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x73 => true,
+        0x76 => true,
+        0x81 => true,
+        0x83 => true,
+        0x85 => true,
+        0x87 => true,
+        0x89 => true,
+        0x8b => true,
+        0x8d => true,
+        0x8f => true,
+        0x91 => true,
+        0x93 => true,
+        0x95 => true,
+        0x97 => true,
+        0x99 => true,
+        0x9b => true,
+        0x9d => true,
+        0x9f => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa7 => true,
+        0xa9 => true,
+        0xab => true,
+        0xad => true,
+        0xaf => true,
+        0xb1 => true,
+        0xb3 => true,
+        0xb5 => true,
+        0xb7 => true,
+        0xb9 => true,
+        0xbb => true,
+        0xbd => true,
+        0xbf => true,
+        0xc1 => true,
+        0xc3 => true,
+        0xc5 => true,
+        0xc7 => true,
+        0xc9 => true,
+        0xcb => true,
+        0xcd => true,
+        0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xdd => true,
+        0xdf => true,
+        0xe1 => true,
+        0xe3 => true,
+        0xec => true,
+        0xee => true,
+        0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_p2d(b: u8) -> bool {
+    match b {
+        0x00..=0x25 => true,
+        0x27 => true,
+        0x2d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_pa6(b: u8) -> bool {
+    match b {
+        0x41 => true,
+        0x43 => true,
+        0x45 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f => true,
+        0x51 => true,
+        0x53 => true,
+        0x55 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x81 => true,
+        0x83 => true,
+        0x85 => true,
+        0x87 => true,
+        0x89 => true,
+        0x8b => true,
+        0x8d => true,
+        0x8f => true,
+        0x91 => true,
+        0x93 => true,
+        0x95 => true,
+        0x97 => true,
+        0x99 => true,
+        0x9b => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_pa7(b: u8) -> bool {
+    match b {
+        0x23 => true,
+        0x25 => true,
+        0x27 => true,
+        0x29 => true,
+        0x2b => true,
+        0x2d => true,
+        0x2f => true,
+        0x33 => true,
+        0x35 => true,
+        0x37 => true,
+        0x39 => true,
+        0x3b => true,
+        0x3d => true,
+        0x3f => true,
+        0x41 => true,
+        0x43 => true,
+        0x45 => true,
+        0x47 => true,
+        0x49 => true,
+        0x4b => true,
+        0x4d => true,
+        0x4f => true,
+        0x51 => true,
+        0x53 => true,
+        0x55 => true,
+        0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x61 => true,
+        0x63 => true,
+        0x65 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d => true,
+        0x6f => true,
+        0x7a => true,
+        0x7c => true,
+        0x7f => true,
+        0x81 => true,
+        0x83 => true,
+        0x85 => true,
+        0x87 => true,
+        0x8c => true,
+        0x91 => true,
+        0x93..=0x94 => true,
+        0x97 => true,
+        0x99 => true,
+        0x9b => true,
+        0x9d => true,
+        0x9f => true,
+        0xa1 => true,
+        0xa3 => true,
+        0xa5 => true,
+        0xa7 => true,
+        0xa9 => true,
+        0xb5 => true,
+        0xb7 => true,
+        0xb9 => true,
+        0xbb => true,
+        0xbd => true,
+        0xbf => true,
+        0xc1 => true,
+        0xc3 => true,
+        0xc8 => true,
+        0xca => true,
+        0xcd => true,
+        0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_pab(b: u8) -> bool {
+    match b {
+        0x53 => true,
+        0x70..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_pfb(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x13..=0x17 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwt_pff(b: u8) -> bool {
+    match b {
+        0x41..=0x5a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwt_p104(b: u8) -> bool {
+    match b {
+        0x28..=0x4f => true,
+        0xd8..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwt_p105(b: u8) -> bool {
+    match b {
+        0x97..=0xa1 => true,
+        0xa3..=0xb1 => true,
+        0xb3..=0xb9 => true,
+        0xbb..=0xbc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwt_p10c(b: u8) -> bool {
+    match b {
+        0xc0..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwt_p10d(b: u8) -> bool {
+    match b {
+        0x70..=0x85 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwt_p118(b: u8) -> bool {
+    match b {
+        0xc0..=0xdf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwt_p16e(b: u8) -> bool {
+    match b {
+        0x60..=0x7f => true,
+        0xbb..=0xd3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwt_p1e9(b: u8) -> bool {
+    match b {
+        0x22..=0x43 => true,
+        _ => false,
+    }
+}
+
+#[inline]
+pub(crate) const fn changes_when_casefolded(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => cwcf_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => cwcf_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => cwcf_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => cwcf_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => cwcf_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => cwcf_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => cwcf_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => cwcf_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => cwcf_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => cwcf_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => cwcf_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => cwcf_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => cwcf_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => cwcf_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a6 => cwcf_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => cwcf_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => cwcf_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => cwcf_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => cwcf_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => cwcf_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => cwcf_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => cwcf_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => cwcf_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => cwcf_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => cwcf_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => cwcf_p1e9(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn cwcf_p0(b: u8) -> bool {
+    match b {
+        0x41..=0x5a => true,
+        #[cfg(feature = "latin1")]
+        0xb5 => true,
+        #[cfg(feature = "latin1")]
+        0xc0..=0xd6 => true,
+        #[cfg(feature = "latin1")]
+        0xd8..=0xdf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p1(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x02 => true,
+        0x04 => true,
+        0x06 => true,
+        0x08 => true,
+        0x0a => true,
+        0x0c => true,
+        0x0e => true,
+        0x10 => true,
+        0x12 => true,
+        0x14 => true,
+        0x16 => true,
+        0x18 => true,
+        0x1a => true,
+        0x1c => true,
+        0x1e => true,
+        0x20 => true,
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x30 => true,
+        0x32 => true,
+        0x34 => true,
+        0x36 => true,
+        0x39 => true,
+        0x3b => true,
+        0x3d => true,
+        0x3f => true,
+        0x41 => true,
+        0x43 => true,
+        0x45 => true,
+        0x47 => true,
+        0x49..=0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        0x50 => true,
+        0x52 => true,
+        0x54 => true,
+        0x56 => true,
+        0x58 => true,
+        0x5a => true,
+        0x5c => true,
+        0x5e => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x6e => true,
+        0x70 => true,
+        0x72 => true,
+        0x74 => true,
+        0x76 => true,
+        0x78..=0x79 => true,
+        0x7b => true,
+        0x7d => true,
+        0x7f => true,
+        0x81..=0x82 => true,
+        0x84 => true,
+        0x86..=0x87 => true,
+        0x89..=0x8b => true,
+        0x8e..=0x91 => true,
+        0x93..=0x94 => true,
+        0x96..=0x98 => true,
+        0x9c..=0x9d => true,
+        0x9f..=0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6..=0xa7 => true,
+        0xa9 => true,
+        0xac => true,
+        0xae..=0xaf => true,
+        0xb1..=0xb3 => true,
+        0xb5 => true,
+        0xb7..=0xb8 => true,
+        0xbc => true,
+        0xc4..=0xc5 => true,
+        0xc7..=0xc8 => true,
+        0xca..=0xcb => true,
+        0xcd => true,
+        0xcf => true,
+        0xd1 => true,
+        0xd3 => true,
+        0xd5 => true,
+        0xd7 => true,
+        0xd9 => true,
+        0xdb => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xe4 => true,
+        0xe6 => true,
+        0xe8 => true,
+        0xea => true,
+        0xec => true,
+        0xee => true,
+        0xf1..=0xf2 => true,
+        0xf4 => true,
+        0xf6..=0xf8 => true,
+        0xfa => true,
+        0xfc => true,
+        0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p2(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x02 => true,
+        0x04 => true,
+        0x06 => true,
+        0x08 => true,
+        0x0a => true,
+        0x0c => true,
+        0x0e => true,
+        0x10 => true,
+        0x12 => true,
+        0x14 => true,
+        0x16 => true,
+        0x18 => true,
+        0x1a => true,
+        0x1c => true,
+        0x1e => true,
+        0x20 => true,
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x30 => true,
+        0x32 => true,
+        0x3a..=0x3b => true,
+        0x3d..=0x3e => true,
+        0x41 => true,
+        0x43..=0x46 => true,
+        0x48 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p3(b: u8) -> bool {
+    match b {
+        0x45 => true,
+        0x70 => true,
+        0x72 => true,
+        0x76 => true,
+        0x7f => true,
+        0x86 => true,
+        0x88..=0x8a => true,
+        0x8c => true,
+        0x8e..=0x8f => true,
+        0x91..=0xa1 => true,
+        0xa3..=0xab => true,
+        0xc2 => true,
+        0xcf..=0xd1 => true,
+        0xd5..=0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xe4 => true,
+        0xe6 => true,
+        0xe8 => true,
+        0xea => true,
+        0xec => true,
+        0xee => true,
+        0xf0..=0xf1 => true,
+        0xf4..=0xf5 => true,
+        0xf7 => true,
+        0xf9..=0xfa => true,
+        0xfd..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p4(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x6e => true,
+        0x70 => true,
+        0x72 => true,
+        0x74 => true,
+        0x76 => true,
+        0x78 => true,
+        0x7a => true,
+        0x7c => true,
+        0x7e => true,
+        0x80 => true,
+        0x8a => true,
+        0x8c => true,
+        0x8e => true,
+        0x90 => true,
+        0x92 => true,
+        0x94 => true,
+        0x96 => true,
+        0x98 => true,
+        0x9a => true,
+        0x9c => true,
+        0x9e => true,
+        0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6 => true,
+        0xa8 => true,
+        0xaa => true,
+        0xac => true,
+        0xae => true,
+        0xb0 => true,
+        0xb2 => true,
+        0xb4 => true,
+        0xb6 => true,
+        0xb8 => true,
+        0xba => true,
+        0xbc => true,
+        0xbe => true,
+        0xc0..=0xc1 => true,
+        0xc3 => true,
+        0xc5 => true,
+        0xc7 => true,
+        0xc9 => true,
+        0xcb => true,
+        0xcd => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xe4 => true,
+        0xe6 => true,
+        0xe8 => true,
+        0xea => true,
+        0xec => true,
+        0xee => true,
+        0xf0 => true,
+        0xf2 => true,
+        0xf4 => true,
+        0xf6 => true,
+        0xf8 => true,
+        0xfa => true,
+        0xfc => true,
+        0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p5(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x02 => true,
+        0x04 => true,
+        0x06 => true,
+        0x08 => true,
+        0x0a => true,
+        0x0c => true,
+        0x0e => true,
+        0x10 => true,
+        0x12 => true,
+        0x14 => true,
+        0x16 => true,
+        0x18 => true,
+        0x1a => true,
+        0x1c => true,
+        0x1e => true,
+        0x20 => true,
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x31..=0x56 => true,
+        0x87 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p10(b: u8) -> bool {
+    match b {
+        0xa0..=0xc5 => true,
+        0xc7 => true,
+        0xcd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p13(b: u8) -> bool {
+    match b {
+        0xf8..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p1c(b: u8) -> bool {
+    match b {
+        0x80..=0x89 => true,
+        0x90..=0xba => true,
+        0xbd..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p1e(b: u8) -> bool {
+    match b {
+        0x00 => true,
+        0x02 => true,
+        0x04 => true,
+        0x06 => true,
+        0x08 => true,
+        0x0a => true,
+        0x0c => true,
+        0x0e => true,
+        0x10 => true,
+        0x12 => true,
+        0x14 => true,
+        0x16 => true,
+        0x18 => true,
+        0x1a => true,
+        0x1c => true,
+        0x1e => true,
+        0x20 => true,
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x30 => true,
+        0x32 => true,
+        0x34 => true,
+        0x36 => true,
+        0x38 => true,
+        0x3a => true,
+        0x3c => true,
+        0x3e => true,
+        0x40 => true,
+        0x42 => true,
+        0x44 => true,
+        0x46 => true,
+        0x48 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        0x50 => true,
+        0x52 => true,
+        0x54 => true,
+        0x56 => true,
+        0x58 => true,
+        0x5a => true,
+        0x5c => true,
+        0x5e => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x6e => true,
+        0x70 => true,
+        0x72 => true,
+        0x74 => true,
+        0x76 => true,
+        0x78 => true,
+        0x7a => true,
+        0x7c => true,
+        0x7e => true,
+        0x80 => true,
+        0x82 => true,
+        0x84 => true,
+        0x86 => true,
+        0x88 => true,
+        0x8a => true,
+        0x8c => true,
+        0x8e => true,
+        0x90 => true,
+        0x92 => true,
+        0x94 => true,
+        0x9a..=0x9b => true,
+        0x9e => true,
+        0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6 => true,
+        0xa8 => true,
+        0xaa => true,
+        0xac => true,
+        0xae => true,
+        0xb0 => true,
+        0xb2 => true,
+        0xb4 => true,
+        0xb6 => true,
+        0xb8 => true,
+        0xba => true,
+        0xbc => true,
+        0xbe => true,
+        0xc0 => true,
+        0xc2 => true,
+        0xc4 => true,
+        0xc6 => true,
+        0xc8 => true,
+        0xca => true,
+        0xcc => true,
+        0xce => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xe4 => true,
+        0xe6 => true,
+        0xe8 => true,
+        0xea => true,
+        0xec => true,
+        0xee => true,
+        0xf0 => true,
+        0xf2 => true,
+        0xf4 => true,
+        0xf6 => true,
+        0xf8 => true,
+        0xfa => true,
+        0xfc => true,
+        0xfe => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p1f(b: u8) -> bool {
+    match b {
+        0x08..=0x0f => true,
+        0x18..=0x1d => true,
+        0x28..=0x2f => true,
+        0x38..=0x3f => true,
+        0x48..=0x4d => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f => true,
+        0x68..=0x6f => true,
+        0x80..=0xaf => true,
+        0xb2..=0xb4 => true,
+        0xb7..=0xbc => true,
+        0xc2..=0xc4 => true,
+        0xc7..=0xcc => true,
+        0xd8..=0xdb => true,
+        0xe8..=0xec => true,
+        0xf2..=0xf4 => true,
+        0xf7..=0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p21(b: u8) -> bool {
+    match b {
+        0x26 => true,
+        0x2a..=0x2b => true,
+        0x32 => true,
+        0x60..=0x6f => true,
+        0x83 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p24(b: u8) -> bool {
+    match b {
+        0xb6..=0xcf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_p2c(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x60 => true,
+        0x62..=0x64 => true,
+        0x67 => true,
+        0x69 => true,
+        0x6b => true,
+        0x6d..=0x70 => true,
+        0x72 => true,
+        0x75 => true,
+        0x7e..=0x80 => true,
+        0x82 => true,
+        0x84 => true,
+        0x86 => true,
+        0x88 => true,
+        0x8a => true,
+        0x8c => true,
+        0x8e => true,
+        0x90 => true,
+        0x92 => true,
+        0x94 => true,
+        0x96 => true,
+        0x98 => true,
+        0x9a => true,
+        0x9c => true,
+        0x9e => true,
+        0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6 => true,
+        0xa8 => true,
+        0xaa => true,
+        0xac => true,
+        0xae => true,
+        0xb0 => true,
+        0xb2 => true,
+        0xb4 => true,
+        0xb6 => true,
+        0xb8 => true,
+        0xba => true,
+        0xbc => true,
+        0xbe => true,
+        0xc0 => true,
+        0xc2 => true,
+        0xc4 => true,
+        0xc6 => true,
+        0xc8 => true,
+        0xca => true,
+        0xcc => true,
+        0xce => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xde => true,
+        0xe0 => true,
+        0xe2 => true,
+        0xeb => true,
+        0xed => true,
+        0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_pa6(b: u8) -> bool {
+    match b {
+        0x40 => true,
+        0x42 => true,
+        0x44 => true,
+        0x46 => true,
+        0x48 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        0x50 => true,
+        0x52 => true,
+        0x54 => true,
+        0x56 => true,
+        0x58 => true,
+        0x5a => true,
+        0x5c => true,
+        0x5e => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x80 => true,
+        0x82 => true,
+        0x84 => true,
+        0x86 => true,
+        0x88 => true,
+        0x8a => true,
+        0x8c => true,
+        0x8e => true,
+        0x90 => true,
+        0x92 => true,
+        0x94 => true,
+        0x96 => true,
+        0x98 => true,
+        0x9a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_pa7(b: u8) -> bool {
+    match b {
+        0x22 => true,
+        0x24 => true,
+        0x26 => true,
+        0x28 => true,
+        0x2a => true,
+        0x2c => true,
+        0x2e => true,
+        0x32 => true,
+        0x34 => true,
+        0x36 => true,
+        0x38 => true,
+        0x3a => true,
+        0x3c => true,
+        0x3e => true,
+        0x40 => true,
+        0x42 => true,
+        0x44 => true,
+        0x46 => true,
+        0x48 => true,
+        0x4a => true,
+        0x4c => true,
+        0x4e => true,
+        0x50 => true,
+        0x52 => true,
+        0x54 => true,
+        0x56 => true,
+        0x58 => true,
+        0x5a => true,
+        0x5c => true,
+        0x5e => true,
+        0x60 => true,
+        0x62 => true,
+        0x64 => true,
+        0x66 => true,
+        0x68 => true,
+        0x6a => true,
+        0x6c => true,
+        0x6e => true,
+        0x79 => true,
+        0x7b => true,
+        0x7d..=0x7e => true,
+        0x80 => true,
+        0x82 => true,
+        0x84 => true,
+        0x86 => true,
+        0x8b => true,
+        0x8d => true,
+        0x90 => true,
+        0x92 => true,
+        0x96 => true,
+        0x98 => true,
+        0x9a => true,
+        0x9c => true,
+        0x9e => true,
+        0xa0 => true,
+        0xa2 => true,
+        0xa4 => true,
+        0xa6 => true,
+        0xa8 => true,
+        0xaa..=0xae => true,
+        0xb0..=0xb4 => true,
+        0xb6 => true,
+        0xb8 => true,
+        0xba => true,
+        0xbc => true,
+        0xbe => true,
+        0xc0 => true,
+        0xc2 => true,
+        0xc4..=0xc7 => true,
+        0xc9 => true,
+        0xcb..=0xcc => true,
+        0xce => true,
+        0xd0 => true,
+        0xd2 => true,
+        0xd4 => true,
+        0xd6 => true,
+        0xd8 => true,
+        0xda => true,
+        0xdc => true,
+        0xf5 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_pab(b: u8) -> bool {
+    match b {
+        0x70..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_pfb(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x13..=0x17 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcf_pff(b: u8) -> bool {
+    match b {
+        0x21..=0x3a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcf_p104(b: u8) -> bool {
+    match b {
+        0x00..=0x27 => true,
+        0xb0..=0xd3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcf_p105(b: u8) -> bool {
+    match b {
+        0x70..=0x7a => true,
+        0x7c..=0x8a => true,
+        0x8c..=0x92 => true,
+        0x94..=0x95 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcf_p10c(b: u8) -> bool {
+    match b {
+        0x80..=0xb2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcf_p10d(b: u8) -> bool {
+    match b {
+        0x50..=0x65 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcf_p118(b: u8) -> bool {
+    match b {
+        0xa0..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcf_p16e(b: u8) -> bool {
+    match b {
+        0x40..=0x5f => true,
+        0xa0..=0xb8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcf_p1e9(b: u8) -> bool {
+    match b {
+        0x00..=0x21 => true,
+        _ => false,
+    }
+}
+
+#[inline]
+pub(crate) const fn changes_when_casemapped(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => cwcm_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => cwcm_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => cwcm_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => cwcm_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => cwcm_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x005 => cwcm_p5(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x010 => cwcm_p10(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x013 => cwcm_p13(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01c => cwcm_p1c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => cwcm_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => cwcm_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01f => cwcm_p1f(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => cwcm_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x024 => cwcm_p24(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => cwcm_p2c(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02d => cwcm_p2d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a6 => cwcm_pa6(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0a7 => cwcm_pa7(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ab => cwcm_pab(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0fb => cwcm_pfb(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x0ff => cwcm_pff(cp as u8),
+        #[cfg(feature = "full")]
+        0x104 => cwcm_p104(cp as u8),
+        #[cfg(feature = "full")]
+        0x105 => cwcm_p105(cp as u8),
+        #[cfg(feature = "full")]
+        0x10c => cwcm_p10c(cp as u8),
+        #[cfg(feature = "full")]
+        0x10d => cwcm_p10d(cp as u8),
+        #[cfg(feature = "full")]
+        0x118 => cwcm_p118(cp as u8),
+        #[cfg(feature = "full")]
+        0x16e => cwcm_p16e(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e9 => cwcm_p1e9(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn cwcm_p0(b: u8) -> bool {
+    match b {
+        0x41..=0x5a => true,
+        0x61..=0x7a => true,
+        #[cfg(feature = "latin1")]
+        0xb5 => true,
+        #[cfg(feature = "latin1")]
+        0xc0..=0xd6 => true,
+        #[cfg(feature = "latin1")]
+        0xd8..=0xf6 => true,
+        #[cfg(feature = "latin1")]
+        0xf8..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p1(b: u8) -> bool {
+    match b {
+        0x00..=0x37 => true,
+        0x39..=0x8c => true,
+        0x8e..=0xa9 => true,
+        0xac..=0xb9 => true,
+        0xbc..=0xbd => true,
+        0xbf => true,
+        0xc4..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p2(b: u8) -> bool {
+    match b {
+        0x00..=0x20 => true,
+        0x22..=0x33 => true,
+        0x3a..=0x54 => true,
+        0x56..=0x57 => true,
+        0x59 => true,
+        0x5b..=0x5c => true,
+        0x60..=0x61 => true,
+        0x63..=0x66 => true,
+        0x68..=0x6c => true,
+        0x6f => true,
+        0x71..=0x72 => true,
+        0x75 => true,
+        0x7d => true,
+        0x80 => true,
+        0x82..=0x83 => true,
+        0x87..=0x8c => true,
+        0x92 => true,
+        0x9d..=0x9e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p3(b: u8) -> bool {
+    match b {
+        0x45 => true,
+        0x70..=0x73 => true,
+        0x76..=0x77 => true,
+        0x7b..=0x7d => true,
+        0x7f => true,
+        0x86 => true,
+        0x88..=0x8a => true,
+        0x8c => true,
+        0x8e..=0xa1 => true,
+        0xa3..=0xd1 => true,
+        0xd5..=0xf5 => true,
+        0xf7..=0xfb => true,
+        0xfd..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p4(b: u8) -> bool {
+    match b {
+        0x00..=0x81 => true,
+        0x8a..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p5(b: u8) -> bool {
+    match b {
+        0x00..=0x2f => true,
+        0x31..=0x56 => true,
+        0x61..=0x87 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p10(b: u8) -> bool {
+    match b {
+        0xa0..=0xc5 => true,
+        0xc7 => true,
+        0xcd => true,
+        0xd0..=0xfa => true,
+        0xfd..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p13(b: u8) -> bool {
+    match b {
+        0xa0..=0xf5 => true,
+        0xf8..=0xfd => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p1c(b: u8) -> bool {
+    match b {
+        0x80..=0x8a => true,
+        0x90..=0xba => true,
+        0xbd..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p1d(b: u8) -> bool {
+    match b {
+        0x79 => true,
+        0x7d => true,
+        0x8e => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p1e(b: u8) -> bool {
+    match b {
+        0x00..=0x9b => true,
+        0x9e => true,
+        0xa0..=0xff => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p1f(b: u8) -> bool {
+    match b {
+        0x00..=0x15 => true,
+        0x18..=0x1d => true,
+        0x20..=0x45 => true,
+        0x48..=0x4d => true,
+        0x50..=0x57 => true,
+        0x59 => true,
+        0x5b => true,
+        0x5d => true,
+        0x5f..=0x7d => true,
+        0x80..=0xb4 => true,
+        0xb6..=0xbc => true,
+        0xbe => true,
+        0xc2..=0xc4 => true,
+        0xc6..=0xcc => true,
+        0xd0..=0xd3 => true,
+        0xd6..=0xdb => true,
+        0xe0..=0xec => true,
+        0xf2..=0xf4 => true,
+        0xf6..=0xfc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p21(b: u8) -> bool {
+    match b {
+        0x26 => true,
+        0x2a..=0x2b => true,
+        0x32 => true,
+        0x4e => true,
+        0x60..=0x7f => true,
+        0x83..=0x84 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p24(b: u8) -> bool {
+    match b {
+        0xb6..=0xe9 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p2c(b: u8) -> bool {
+    match b {
+        0x00..=0x70 => true,
+        0x72..=0x73 => true,
+        0x75..=0x76 => true,
+        0x7e..=0xe3 => true,
+        0xeb..=0xee => true,
+        0xf2..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_p2d(b: u8) -> bool {
+    match b {
+        0x00..=0x25 => true,
+        0x27 => true,
+        0x2d => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_pa6(b: u8) -> bool {
+    match b {
+        0x40..=0x6d => true,
+        0x80..=0x9b => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_pa7(b: u8) -> bool {
+    match b {
+        0x22..=0x2f => true,
+        0x32..=0x6f => true,
+        0x79..=0x87 => true,
+        0x8b..=0x8d => true,
+        0x90..=0x94 => true,
+        0x96..=0xae => true,
+        0xb0..=0xdc => true,
+        0xf5..=0xf6 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_pab(b: u8) -> bool {
+    match b {
+        0x53 => true,
+        0x70..=0xbf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_pfb(b: u8) -> bool {
+    match b {
+        0x00..=0x06 => true,
+        0x13..=0x17 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn cwcm_pff(b: u8) -> bool {
+    match b {
+        0x21..=0x3a => true,
+        0x41..=0x5a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcm_p104(b: u8) -> bool {
+    match b {
+        0x00..=0x4f => true,
+        0xb0..=0xd3 => true,
+        0xd8..=0xfb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcm_p105(b: u8) -> bool {
+    match b {
+        0x70..=0x7a => true,
+        0x7c..=0x8a => true,
+        0x8c..=0x92 => true,
+        0x94..=0x95 => true,
+        0x97..=0xa1 => true,
+        0xa3..=0xb1 => true,
+        0xb3..=0xb9 => true,
+        0xbb..=0xbc => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcm_p10c(b: u8) -> bool {
+    match b {
+        0x80..=0xb2 => true,
+        0xc0..=0xf2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcm_p10d(b: u8) -> bool {
+    match b {
+        0x50..=0x65 => true,
+        0x70..=0x85 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcm_p118(b: u8) -> bool {
+    match b {
+        0xa0..=0xdf => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcm_p16e(b: u8) -> bool {
+    match b {
+        0x40..=0x7f => true,
+        0xa0..=0xb8 => true,
+        0xbb..=0xd3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn cwcm_p1e9(b: u8) -> bool {
+    match b {
+        0x00..=0x43 => true,
+        _ => false,
+    }
+}

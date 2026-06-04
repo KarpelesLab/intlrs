@@ -112,3 +112,15 @@ fn joining_groups() {
     assert_eq!(joining_group('\u{0641}'), Feh); // ARABIC FEH
     assert_eq!(joining_group('A'), NoJoiningGroup);
 }
+
+#[test]
+fn changes_when() {
+    use intl::unicode::*;
+    assert!(changes_when_uppercased('a')); // a -> A
+    assert!(!changes_when_uppercased('A'));
+    assert!(changes_when_lowercased('A'));
+    assert!(!changes_when_lowercased('a'));
+    assert!(changes_when_casemapped('a'));
+    assert!(!changes_when_casemapped('1'));
+    assert!(changes_when_casefolded('A'));
+}

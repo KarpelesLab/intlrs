@@ -144,6 +144,36 @@ fn main() {
             "DerivedCoreProperties.txt",
             "Case_Ignorable",
         ),
+        (
+            "changes_when_lowercased",
+            "cwl",
+            "DerivedCoreProperties.txt",
+            "Changes_When_Lowercased",
+        ),
+        (
+            "changes_when_uppercased",
+            "cwu",
+            "DerivedCoreProperties.txt",
+            "Changes_When_Uppercased",
+        ),
+        (
+            "changes_when_titlecased",
+            "cwt",
+            "DerivedCoreProperties.txt",
+            "Changes_When_Titlecased",
+        ),
+        (
+            "changes_when_casefolded",
+            "cwcf",
+            "DerivedCoreProperties.txt",
+            "Changes_When_Casefolded",
+        ),
+        (
+            "changes_when_casemapped",
+            "cwcm",
+            "DerivedCoreProperties.txt",
+            "Changes_When_Casemapped",
+        ),
     ] {
         let codes = parse_binary_prop(&ucd.join(file), prop);
         emit_bool_lookup(&mut bp_out, fn_name, prefix, &codes);

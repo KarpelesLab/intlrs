@@ -148,6 +148,41 @@ pub const fn is_default_ignorable(c: char) -> bool {
     binary_props::default_ignorable(c as u32)
 }
 
+/// `Changes_When_Lowercased`: `c` is altered by full lowercasing.
+#[inline]
+#[must_use]
+pub const fn changes_when_lowercased(c: char) -> bool {
+    binary_props::changes_when_lowercased(c as u32)
+}
+
+/// `Changes_When_Uppercased`: `c` is altered by full uppercasing.
+#[inline]
+#[must_use]
+pub const fn changes_when_uppercased(c: char) -> bool {
+    binary_props::changes_when_uppercased(c as u32)
+}
+
+/// `Changes_When_Titlecased`: `c` is altered by full titlecasing.
+#[inline]
+#[must_use]
+pub const fn changes_when_titlecased(c: char) -> bool {
+    binary_props::changes_when_titlecased(c as u32)
+}
+
+/// `Changes_When_Casefolded`: `c` is altered by case folding.
+#[inline]
+#[must_use]
+pub const fn changes_when_casefolded(c: char) -> bool {
+    binary_props::changes_when_casefolded(c as u32)
+}
+
+/// `Changes_When_Casemapped`: `c` is altered by any of lower/upper/title-casing.
+#[inline]
+#[must_use]
+pub const fn changes_when_casemapped(c: char) -> bool {
+    binary_props::changes_when_casemapped(c as u32)
+}
+
 /// The Unicode `Age` of `c`: the `(major, minor)` version in which the codepoint
 /// was assigned, or `None` if it is unassigned (in the compiled range).
 ///

@@ -59,7 +59,7 @@ conformance corpus. Highest value, lowest risk — do these next.
 - 🟡 **Case completeness** — ✅ titlecasing (`titlecase`), ✅ Greek Final_Sigma
   (`lowercase_str`), ✅ Turkic dotted/dotless-i (`lowercase_str_lang` /
   `uppercase_str_lang` for tr/az), ✅ Lithuanian retained-dot
-  (`lowercase_str_lang` for lt). Still: `Changes_When_*` predicates.
+  (`lowercase_str_lang` for lt), ✅ `Changes_When_*` predicates. Case completeness: done.
 - 🟡 **More properties** (incremental, cheap): ✅ `Age` (`DerivedAge.txt`),
   ✅ `Block` (`Blocks.txt`), ✅ `Joining_Type` (`DerivedJoiningType.txt`),
   ✅ `Indic_Syllabic_Category`, ✅ `Indic_Positional_Category`, ✅ `Joining_Group`, ✅ Bidi_Class accessor (`bidi_class`),
