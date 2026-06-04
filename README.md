@@ -92,10 +92,13 @@ codepoint would.
 ## Regenerating the tables
 
 The committed files under `src/unicode/generated/` are produced from the
-vendored UCD text files in `data/ucd/<version>/` by the `codegen` tool:
+vendored UCD text files in `data/ucd/<version>/` by the `codegen` tool. It is a
+**packaging-time** tool run only when updating the data or the Unicode version —
+the published crate never builds or invokes it, and `codegen/` is a standalone
+package (not a workspace member and not part of `intl`).
 
 ```sh
-cargo run -p codegen
+cargo run --manifest-path codegen/Cargo.toml
 ```
 
 Output is deterministic and rustfmt-clean, so regeneration with the same data

@@ -81,17 +81,24 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
+          components: rustfmt, clippy
 
       - name: Cache
         uses: Swatinem/rust-cache@v2
 
+      # `codegen` is a standalone packaging-time tool (its own package, not part
+      # of the published crate), so lint it via its own manifest.
+      - name: Lint codegen
+        run: |
+          cargo fmt --manifest-path codegen/Cargo.toml --check
+          cargo clippy --manifest-path codegen/Cargo.toml -- -D warnings
+
       # Regenerate from the vendored UCD and fail if the committed output drifts.
       - name: Regenerate and diff
         run: |
-          cargo run -p codegen
-          git diff --exit-code -- src/generated \
-            || { echo "::error::src/generated is stale; run 'cargo run -p codegen'"; exit 1; }
+          cargo run --manifest-path codegen/Cargo.toml
+          git diff --exit-code -- src/unicode/generated \
+            || { echo "::error::src/unicode/generated is stale; run 'cargo run --manifest-path codegen/Cargo.toml'"; exit 1; }
 
   docs:
     name: Docs build (warnings denied)

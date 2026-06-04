@@ -1,9 +1,15 @@
+# Standalone dev tool, deliberately its OWN workspace root so it is never
+# associated with the `intl` package above it (not built, published, or
+# versioned as part of the crate). Run from the repo root with:
+#   cargo run --manifest-path codegen/Cargo.toml
+[workspace]
+
 [package]
 name = "codegen"
 version = "0.0.0"
 edition = "2021"
 publish = false
-description = "Internal tool: converts vendored UCD tables into committed Rust source for the `unicode` crate. Not published."
+description = "Internal tool: converts vendored UCD tables into committed Rust source for the `intl` crate. Not published."
 
 [[bin]]
 name = "codegen"

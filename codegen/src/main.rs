@@ -8,7 +8,8 @@
 //! features so that excluded ranges simply are not compiled and resolve to the
 //! neutral default.
 //!
-//! Run with `cargo run -p codegen`. Output is deterministic.
+//! Run from the repo root with `cargo run --manifest-path codegen/Cargo.toml`.
+//! Output is deterministic.
 #![allow(clippy::write_with_newline)]
 
 use std::collections::{BTreeMap, BTreeSet};

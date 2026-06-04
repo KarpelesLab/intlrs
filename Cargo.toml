@@ -22,5 +22,9 @@ latin1 = ["ascii"]      # U+0080..=U+00FF
 bmp = ["latin1"]        # U+0100..=U+FFFF (rest of the Basic Multilingual Plane)
 full = ["bmp"]          # U+10000..=U+10FFFF (supplementary planes)
 
-[workspace]
-members = ["codegen"]
+# This crate is intentionally NOT a cargo workspace. The `codegen/` directory is
+# a standalone, packaging-time tool (its own independent package) that
+# regenerates the committed tables under src/unicode/generated/ when the UCD
+# data or Unicode version changes. It is never built, published, or versioned as
+# part of `intl`. Run it with:
+#   cargo run --manifest-path codegen/Cargo.toml
