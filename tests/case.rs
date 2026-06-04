@@ -1,0 +1,38 @@
+//! Full, unconditional case mapping and folding.
+
+use intl::unicode::{case_fold, to_lowercase, to_titlecase, to_uppercase};
+
+fn s(it: impl Iterator<Item = char>) -> String {
+    it.collect()
+}
+
+#[test]
+fn ascii_case() {
+    assert_eq!(s(to_uppercase('a')), "A");
+    assert_eq!(s(to_lowercase('Z')), "z");
+    assert_eq!(s(to_uppercase('A')), "A"); // identity
+    assert_eq!(s(to_titlecase('a')), "A");
+    assert_eq!(s(case_fold('A')), "a");
+    assert_eq!(to_uppercase('a').len(), 1); // ExactSizeIterator
+}
+
+#[cfg(feature = "latin1")]
+#[test]
+fn latin1_case() {
+    // ß uppercases to SS, titlecases to Ss, folds to ss.
+    assert_eq!(s(to_uppercase('ß')), "SS");
+    assert_eq!(s(to_titlecase('ß')), "Ss");
+    assert_eq!(s(case_fold('ß')), "ss");
+    assert_eq!(s(to_lowercase('É')), "é"); // U+00C9 -> U+00E9
+    assert_eq!(to_uppercase('ß').len(), 2);
+}
+
+#[cfg(feature = "bmp")]
+#[test]
+fn bmp_case() {
+    assert_eq!(s(to_uppercase('ﬀ')), "FF"); // U+FB00 ligature
+    assert_eq!(s(to_lowercase('Σ')), "σ"); // U+03A3 -> U+03C3
+                                           // U+212A KELVIN SIGN folds to plain ASCII 'k', enabling caseless match.
+    assert_eq!(s(case_fold('\u{212A}')), "k");
+    assert_eq!(s(case_fold('K')), s(case_fold('\u{212A}')));
+}

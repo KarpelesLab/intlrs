@@ -31,12 +31,14 @@
 //! assert!(!'\u{0378}'.is_assigned()); // a reserved codepoint
 //! ```
 
+pub mod case;
 pub mod category;
 mod generated;
 mod predicates;
 pub mod script;
 pub mod width;
 
+pub use case::{case_fold, to_lowercase, to_titlecase, to_uppercase, CaseMapIter};
 pub use category::{GeneralCategory, Group};
 pub use generated::general_category::UNICODE_VERSION;
 pub use predicates::{

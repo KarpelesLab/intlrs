@@ -69,6 +69,9 @@ codepoint would.
   category-derived `is_letter`, `is_mark`, `is_numeric`, `is_decimal_digit`,
   `is_punctuation`, `is_symbol`, `is_separator`, `is_control`, `is_format`,
   and `is_assigned`.
+- Full, unconditional **case mapping** — `to_uppercase`, `to_lowercase`,
+  `to_titlecase`, and `case_fold`, each returning a `CaseMapIter` (1–3 chars,
+  e.g. `ß` → `SS`; no allocation).
 - `Script` and `Script_Extensions` (UAX #24) via `script` / `script_u32` and
   `script_extensions` / `script_extensions_u32` (`Script` enum with
   `.long_name()`; `ScriptExtensions` with `.contains()` / `.iter()`).

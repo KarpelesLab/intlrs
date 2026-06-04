@@ -157,6 +157,9 @@ fn main() {
     // ---- Scripts + Script_Extensions ----
     emit_scripts(&out_dir, &mut modules, &ucd);
 
+    // ---- Case mapping ----
+    emit_case(&out_dir, &mut modules, &ucd);
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -330,6 +333,131 @@ fn emit_scripts(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     );
 
     write_module(out_dir, modules, "script", &out);
+}
+
+/// Parse a hex codepoint into a `char`.
+fn hex_char(s: &str) -> char {
+    char::from_u32(u32::from_str_radix(s.trim(), 16).unwrap()).expect("valid scalar")
+}
+
+/// Parse a space-separated list of hex codepoints into chars.
+fn parse_chars(field: &str) -> Vec<char> {
+    field.split_whitespace().map(hex_char).collect()
+}
+
+/// Render a 1..=3 char case mapping as a `CaseMap` expression.
+fn render_casemap(m: &[char]) -> String {
+    let lit = |c: char| format!("'\\u{{{:x}}}'", c as u32);
+    match m {
+        [a] => format!("CaseMap::One({})", lit(*a)),
+        [a, b] => format!("CaseMap::Two({}, {})", lit(*a), lit(*b)),
+        [a, b, c] => format!("CaseMap::Three({}, {}, {})", lit(*a), lit(*b), lit(*c)),
+        _ => panic!("case mapping longer than 3: {m:?}"),
+    }
+}
+
+/// Emit one case-mapping lookup. A per-codepoint mapping that is empty, or a
+/// single char equal to the codepoint itself, is encoded as `CaseMap::Same`
+/// (the default) — the public wrapper substitutes the original char.
+fn emit_casemap(out: &mut String, fn_name: &str, prefix: &str, maps: &[Vec<char>]) {
+    let mut render = vec!["CaseMap::Same".to_string()];
+    let mut val_to_code: BTreeMap<Vec<char>, u32> = BTreeMap::new();
+    let mut codes = vec![0u32; NUM_CODEPOINTS];
+    for (cp, m) in maps.iter().enumerate() {
+        if m.is_empty() || (m.len() == 1 && m[0] as usize == cp) {
+            continue; // Same
+        }
+        let code = *val_to_code.entry(m.clone()).or_insert_with(|| {
+            render.push(render_casemap(m));
+            (render.len() - 1) as u32
+        });
+        codes[cp] = code;
+    }
+    emit_lookup(out, fn_name, prefix, "CaseMap", &codes, 0, &render);
+}
+
+/// Build the full unconditional upper/lower/title/fold mappings from
+/// UnicodeData (simple), SpecialCasing (full, unconditional only), and
+/// CaseFolding (statuses C + F).
+fn parse_case_mappings(ucd: &Path) -> [Vec<Vec<char>>; 4] {
+    let n = NUM_CODEPOINTS;
+    let (mut upper, mut lower, mut title, mut fold) = (
+        vec![vec![]; n],
+        vec![vec![]; n],
+        vec![vec![]; n],
+        vec![vec![]; n],
+    );
+
+    let udata = fs::read_to_string(ucd.join("UnicodeData.txt")).expect("read UnicodeData.txt");
+    for line in udata.lines() {
+        let f: Vec<&str> = line.split(';').collect();
+        if f.len() < 15 {
+            continue;
+        }
+        let cp = u32::from_str_radix(f[0], 16).unwrap() as usize;
+        if !f[12].is_empty() {
+            upper[cp] = vec![hex_char(f[12])];
+        }
+        if !f[13].is_empty() {
+            lower[cp] = vec![hex_char(f[13])];
+        }
+        if !f[14].is_empty() {
+            title[cp] = vec![hex_char(f[14])];
+        }
+    }
+
+    let special =
+        fs::read_to_string(ucd.join("SpecialCasing.txt")).expect("read SpecialCasing.txt");
+    for line in special.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        if f.len() < 4 {
+            continue;
+        }
+        // A non-empty 5th field is a condition (language/context) — skip those,
+        // keeping only the unconditional full mappings (matches std behaviour).
+        if f.get(4).map(|c| !c.is_empty()).unwrap_or(false) {
+            continue;
+        }
+        let cp = hex_char(f[0]) as usize;
+        lower[cp] = parse_chars(f[1]);
+        title[cp] = parse_chars(f[2]);
+        upper[cp] = parse_chars(f[3]);
+    }
+
+    let folding = fs::read_to_string(ucd.join("CaseFolding.txt")).expect("read CaseFolding.txt");
+    for line in folding.lines() {
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let f: Vec<&str> = line.split(';').map(str::trim).collect();
+        if f.len() < 3 {
+            continue;
+        }
+        // Full case folding = statuses C (common) and F (full multi-char).
+        if f[1] == "C" || f[1] == "F" {
+            fold[hex_char(f[0]) as usize] = parse_chars(f[2]);
+        }
+    }
+
+    [upper, lower, title, fold]
+}
+
+/// Emit `generated/case.rs`: to_upper / to_lower / to_title / fold lookups.
+fn emit_case(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
+    let [upper, lower, title, fold] = parse_case_mappings(ucd);
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str("use crate::unicode::case::CaseMap;\n\n");
+    emit_casemap(&mut out, "to_upper", "up", &upper);
+    emit_casemap(&mut out, "to_lower", "lo", &lower);
+    emit_casemap(&mut out, "to_title", "ti", &title);
+    emit_casemap(&mut out, "fold", "fo", &fold);
+    write_module(out_dir, modules, "case", &out);
 }
 
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.
