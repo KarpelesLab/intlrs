@@ -59,9 +59,16 @@ use std::cmp::Ordering;
 assert_eq!(compare("café", "cafz"), Ordering::Less); // é (≈ e) sorts before z
 ```
 
-Beyond the `unicode` module, the `alloc`-gated `intl::locale` module parses and
-canonicalizes BCP-47 language tags (`Locale::parse("zh-hant-hk")` →
-`"zh-Hant-HK"`) — the start of the CLDR/locale layer.
+Beyond the `unicode` module:
+
+- `intl::locale` (alloc) parses and canonicalizes BCP-47 language tags
+  (`Locale::parse("zh-hant-hk")` → `"zh-Hant-HK"`).
+- `intl::plural` (`no_std`, no alloc) selects the CLDR cardinal
+  [`PluralCategory`] for a number in a language — the rules are compiled from
+  CLDR into a `match`. `plural_category("pl", &PluralOperands::from_int(5))`
+  → `Many`. Validated against the CLDR sample data (224 locales).
+
+These start the CLDR/locale layer toward number/message formatting.
 
 ## Features
 

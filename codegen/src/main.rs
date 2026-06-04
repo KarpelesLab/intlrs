@@ -252,6 +252,13 @@ fn main() {
     bc_out.push_str("        _ => (0, 0),\n    }\n}\n");
     write_module(&out_dir, &mut modules, "bidi", &bc_out);
 
+    // ---- CLDR plural rules (UTS #35) ----
+    emit_plurals(
+        &out_dir,
+        &mut modules,
+        &root.join("data/cldr/48/plurals.json"),
+    );
+
     // ---- generated/mod.rs ----
     modules.sort();
     let mut mod_out = String::new();
@@ -1225,6 +1232,251 @@ fn emit_idna(out_dir: &Path, modules: &mut Vec<String>, idna: &Path) {
     write_module(out_dir, modules, "idna", &out);
 }
 
+// ---- Minimal JSON parser (CLDR data), std-only to keep codegen dependency-free. ----
+
+enum Json {
+    Obj(Vec<(String, Json)>),
+    Str(String),
+    Other,
+}
+
+impl Json {
+    fn get(&self, key: &str) -> Option<&Json> {
+        match self {
+            Json::Obj(entries) => entries.iter().find(|(k, _)| k == key).map(|(_, v)| v),
+            _ => None,
+        }
+    }
+    fn entries(&self) -> &[(String, Json)] {
+        match self {
+            Json::Obj(e) => e,
+            _ => &[],
+        }
+    }
+    fn as_str(&self) -> Option<&str> {
+        match self {
+            Json::Str(s) => Some(s),
+            _ => None,
+        }
+    }
+}
+
+fn json_parse(s: &str) -> Json {
+    let chars: Vec<char> = s.chars().collect();
+    let mut i = 0;
+    json_value(&chars, &mut i)
+}
+fn json_ws(c: &[char], i: &mut usize) {
+    while *i < c.len() && c[*i].is_whitespace() {
+        *i += 1;
+    }
+}
+fn json_value(c: &[char], i: &mut usize) -> Json {
+    json_ws(c, i);
+    match c[*i] {
+        '{' => json_obj(c, i),
+        '[' => json_arr(c, i),
+        '"' => Json::Str(json_str(c, i)),
+        _ => {
+            while *i < c.len() && !matches!(c[*i], ',' | '}' | ']') {
+                *i += 1;
+            }
+            Json::Other
+        }
+    }
+}
+fn json_obj(c: &[char], i: &mut usize) -> Json {
+    *i += 1; // '{'
+    let mut entries = Vec::new();
+    loop {
+        json_ws(c, i);
+        if c[*i] == '}' {
+            *i += 1;
+            break;
+        }
+        let key = json_str(c, i);
+        json_ws(c, i);
+        *i += 1; // ':'
+        let val = json_value(c, i);
+        entries.push((key, val));
+        json_ws(c, i);
+        if c[*i] == ',' {
+            *i += 1;
+        }
+    }
+    Json::Obj(entries)
+}
+fn json_arr(c: &[char], i: &mut usize) -> Json {
+    *i += 1; // '['
+    loop {
+        json_ws(c, i);
+        if c[*i] == ']' {
+            *i += 1;
+            break;
+        }
+        let _ = json_value(c, i);
+        json_ws(c, i);
+        if c[*i] == ',' {
+            *i += 1;
+        }
+    }
+    Json::Other
+}
+fn json_str(c: &[char], i: &mut usize) -> String {
+    *i += 1; // opening quote
+    let mut s = String::new();
+    while c[*i] != '"' {
+        if c[*i] == '\\' {
+            *i += 1;
+            match c[*i] {
+                'u' => {
+                    let hex: String = c[*i + 1..*i + 5].iter().collect();
+                    if let Some(ch) = u32::from_str_radix(&hex, 16).ok().and_then(char::from_u32) {
+                        s.push(ch);
+                    }
+                    *i += 4;
+                }
+                'n' => s.push('\n'),
+                't' => s.push('\t'),
+                other => s.push(other),
+            }
+        } else {
+            s.push(c[*i]);
+        }
+        *i += 1;
+    }
+    *i += 1; // closing quote
+    s
+}
+
+/// Emit `generated/plurals.rs`: per-language cardinal plural selection, compiled
+/// from the CLDR plural rules into a `match`.
+fn emit_plurals(out_dir: &Path, modules: &mut Vec<String>, path: &Path) {
+    let text = fs::read_to_string(path).expect("read plurals.json");
+    let json = json_parse(&text);
+    let cardinal = json
+        .get("supplemental")
+        .and_then(|s| s.get("plurals-type-cardinal"))
+        .expect("plurals-type-cardinal");
+
+    let cats = [
+        ("zero", "Zero"),
+        ("one", "One"),
+        ("two", "Two"),
+        ("few", "Few"),
+        ("many", "Many"),
+    ];
+    // Group languages by identical compiled rule body (many share one).
+    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for (lang, rules) in cardinal.entries() {
+        let mut body = String::new();
+        for (cat, variant) in cats {
+            if let Some(rule) = rules
+                .get(&format!("pluralRule-count-{cat}"))
+                .and_then(Json::as_str)
+            {
+                let cond = rule.split('@').next().unwrap_or("").trim();
+                if cond.is_empty() {
+                    continue;
+                }
+                let _ = write!(
+                    body,
+                    "            if {} {{ return Some({variant}); }}\n",
+                    compile_condition(cond)
+                );
+            }
+        }
+        groups.entry(body).or_default().push(lang.clone());
+    }
+
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str(
+        "use crate::plural::in_set;\nuse crate::plural::PluralCategory::{self, *};\nuse crate::plural::PluralOperands as Op;\n\n\
+         /// CLDR cardinal plural category for an exact locale key (already\n\
+         /// case-normalized), or `None` if the key is unknown (caller falls back).\n\
+         pub(crate) fn plural_category(lang: &str, op: &Op) -> Option<PluralCategory> {\n    match lang {\n",
+    );
+    for (body, langs) in &groups {
+        if body.is_empty() {
+            continue; // languages with only `other`
+        }
+        let pats: Vec<String> = langs
+            .iter()
+            .map(|l| format!("{:?}", l.to_ascii_lowercase()))
+            .collect();
+        let _ = write!(
+            out,
+            "        {} => {{\n{}            Some(Other)\n        }}\n",
+            pats.join(" | "),
+            body
+        );
+    }
+    out.push_str("        _ => None,\n    }\n}\n");
+    write_module(out_dir, modules, "plurals", &out);
+}
+
+/// Compile a CLDR plural-rule condition (e.g. `i = 1 and v = 0`) into a Rust
+/// boolean expression over `op` / `in_set`.
+fn compile_condition(cond: &str) -> String {
+    cond.split(" or ")
+        .map(|and_cond| {
+            let ands: Vec<String> = and_cond.split(" and ").map(compile_relation).collect();
+            format!("({})", ands.join(" && "))
+        })
+        .collect::<Vec<_>>()
+        .join(" || ")
+}
+
+fn compile_relation(rel: &str) -> String {
+    let rel = rel.trim();
+    let (neg, lhs, rhs) = if let Some(idx) = rel.find("!=") {
+        (true, rel[..idx].trim(), rel[idx + 2..].trim())
+    } else if let Some(idx) = rel.find('=') {
+        (false, rel[..idx].trim(), rel[idx + 1..].trim())
+    } else {
+        panic!("bad plural relation: {rel}");
+    };
+    let expr = if let Some(p) = lhs.find('%') {
+        let m: f64 = lhs[p + 1..].trim().parse().unwrap();
+        format!("({} % {m:?})", operand_expr(lhs[..p].trim()))
+    } else {
+        operand_expr(lhs)
+    };
+    let ranges: Vec<String> = rhs
+        .split(',')
+        .map(|tok| {
+            let tok = tok.trim();
+            if let Some((a, b)) = tok.split_once("..") {
+                let (a, b): (f64, f64) = (a.trim().parse().unwrap(), b.trim().parse().unwrap());
+                format!("({a:?}, {b:?})")
+            } else {
+                let v: f64 = tok.parse().unwrap();
+                format!("({v:?}, {v:?})")
+            }
+        })
+        .collect();
+    let call = format!("in_set({expr}, &[{}])", ranges.join(", "));
+    if neg {
+        format!("!{call}")
+    } else {
+        call
+    }
+}
+
+fn operand_expr(o: &str) -> String {
+    match o {
+        "n" => "op.n".to_string(),
+        "i" => "(op.i as f64)".to_string(),
+        "v" => "(op.v as f64)".to_string(),
+        "w" => "(op.w as f64)".to_string(),
+        "f" => "(op.f as f64)".to_string(),
+        "t" => "(op.t as f64)".to_string(),
+        "c" | "e" => "(op.c as f64)".to_string(),
+        other => panic!("unknown plural operand: {other}"),
+    }
+}
+
 /// Write `content` to `<out_dir>/<name>.rs`, rustfmt it, and record the module.
 fn write_module(out_dir: &Path, modules: &mut Vec<String>, name: &str, content: &str) {
     let path = out_dir.join(format!("{name}.rs"));
@@ -1253,6 +1505,7 @@ fn write_header(out: &mut String) {
          // Regenerate with `cargo run -p codegen` after updating data/ucd/.\n\
          #![allow(clippy::all)]\n\
          #![allow(unreachable_patterns)]\n\
+         #![allow(unused_parens)]\n\
          #![allow(dead_code)]\n\n",
     );
 }

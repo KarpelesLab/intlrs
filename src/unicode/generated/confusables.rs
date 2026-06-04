@@ -2,6 +2,7 @@
 // Regenerate with `cargo run -p codegen` after updating data/ucd/.
 #![allow(clippy::all)]
 #![allow(unreachable_patterns)]
+#![allow(unused_parens)]
 #![allow(dead_code)]
 
 const CF1: &[char] = &['\u{27}', '\u{27}'];

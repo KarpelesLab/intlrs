@@ -2,6 +2,7 @@
 // Regenerate with `cargo run -p codegen` after updating data/ucd/.
 #![allow(clippy::all)]
 #![allow(unreachable_patterns)]
+#![allow(unused_parens)]
 #![allow(dead_code)]
 
 pub(crate) mod bidi;
@@ -14,5 +15,6 @@ pub(crate) mod general_category;
 pub(crate) mod idna;
 pub(crate) mod normalization;
 pub(crate) mod numeric;
+pub(crate) mod plurals;
 pub(crate) mod script;
 pub(crate) mod segmentation;

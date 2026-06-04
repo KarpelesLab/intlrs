@@ -36,7 +36,7 @@ pub mod case;
 pub mod category;
 #[cfg(feature = "alloc")]
 pub mod collate;
-mod generated;
+pub(crate) mod generated;
 pub mod ident;
 #[cfg(feature = "alloc")]
 pub mod idna;

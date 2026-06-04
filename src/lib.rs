@@ -21,4 +21,5 @@ extern crate alloc;
 
 #[cfg(feature = "alloc")]
 pub mod locale;
+pub mod plural;
 pub mod unicode;

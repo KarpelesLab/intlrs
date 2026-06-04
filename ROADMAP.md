@@ -118,8 +118,9 @@ shaped data source than UCD. This phase is the gate for Phase 4.
 - 🟡 **Locale identifiers (BCP 47 / UTS #35)** — parse/canonicalize `Locale`,
   language/script/region/variant/extensions, likely-subtags
   (add/remove/maximize), locale fallback & negotiation/matching.
-- 🧱🔬 **Plural rules (CLDR)** — cardinal/ordinal `PluralCategory` selection.
-  Conformance: CLDR plural test data. Prereq for messages/units.
+- 🟡🔬 **Plural rules (CLDR)** — cardinal `PluralCategory` selection via
+  `intl::plural` (rules compiled to a match; 224 locales, validated against the
+  CLDR sample data). Still to add: ordinal rules and the compact `c`/`e` operand.
 
 ---
 
