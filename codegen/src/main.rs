@@ -137,6 +137,13 @@ fn main() {
         ("hex_digit", "hx", "PropList.txt", "Hex_Digit"),
         ("quotation_mark", "qm", "PropList.txt", "Quotation_Mark"),
         ("join_control", "jc", "PropList.txt", "Join_Control"),
+        ("cased", "cs", "DerivedCoreProperties.txt", "Cased"),
+        (
+            "case_ignorable",
+            "ci",
+            "DerivedCoreProperties.txt",
+            "Case_Ignorable",
+        ),
     ] {
         let codes = parse_binary_prop(&ucd.join(file), prop);
         emit_bool_lookup(&mut bp_out, fn_name, prefix, &codes);

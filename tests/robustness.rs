@@ -130,6 +130,11 @@ fn fuzz_invariants() {
             s.chars().count(),
             "bidi level count: {s:?}"
         );
+        assert_eq!(
+            intl::unicode::lowercase_str(&s).chars().count(),
+            intl::unicode::lowercase(s.chars()).count(),
+            "lowercase_str length matches char map: {s:?}"
+        );
         let _ = intl::unicode::idna::to_ascii(&s);
         let _ = intl::unicode::idna::to_unicode(&s);
         let _ = intl::unicode::spoof::skeleton(&s);

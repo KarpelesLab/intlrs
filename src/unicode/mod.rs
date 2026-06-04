@@ -50,12 +50,12 @@ pub mod spoof;
 pub mod width;
 
 pub use bidi::{base_direction, bidi_class, BidiClass, Direction};
-#[cfg(feature = "alloc")]
-pub use case::titlecase;
 pub use case::{
     case_fold, fold, lowercase, to_lowercase, to_titlecase, to_uppercase, uppercase, CaseMapIter,
     CaseMapping,
 };
+#[cfg(feature = "alloc")]
+pub use case::{lowercase_str, titlecase};
 pub use category::{GeneralCategory, Group};
 #[cfg(feature = "alloc")]
 pub use collate::{compare, sort_key, AlternateHandling, Collator};

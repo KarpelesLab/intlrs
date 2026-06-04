@@ -163,6 +163,47 @@ pub fn fold<I: Iterator<Item = char>>(iter: I) -> CaseMapping<I> {
     }
 }
 
+/// Lower-case a whole string, applying the context-sensitive Greek
+/// **Final_Sigma** rule that the per-character [`to_lowercase`] cannot: a capital
+/// sigma `Σ` becomes final `ς` at the end of a word (preceded by a cased letter,
+/// not followed by one) and `σ` elsewhere. Requires the `alloc` feature.
+///
+/// ```
+/// use intl::unicode::lowercase_str;
+/// assert_eq!(lowercase_str("ὈΔΥΣΣΕΎΣ"), "ὀδυσσεύς"); // final Σ → ς, medial → σ
+/// assert_eq!(lowercase_str("HELLO"), "hello");
+/// ```
+#[cfg(feature = "alloc")]
+#[must_use]
+pub fn lowercase_str(s: &str) -> alloc::string::String {
+    use super::generated::binary_props::{case_ignorable, cased};
+    let chars: alloc::vec::Vec<char> = s.chars().collect();
+    let mut out = alloc::string::String::new();
+    for (i, &c) in chars.iter().enumerate() {
+        if c == '\u{03A3}' {
+            // Final_Sigma: a cased letter precedes (skipping case-ignorables) and
+            // none follows.
+            let before = chars[..i]
+                .iter()
+                .rev()
+                .find(|&&p| !case_ignorable(p as u32))
+                .is_some_and(|&p| cased(p as u32));
+            let after = chars[i + 1..]
+                .iter()
+                .find(|&&n| !case_ignorable(n as u32))
+                .is_some_and(|&n| cased(n as u32));
+            out.push(if before && !after {
+                '\u{03C2}'
+            } else {
+                '\u{03C3}'
+            });
+        } else {
+            out.extend(to_lowercase(c));
+        }
+    }
+    out
+}
+
 /// Title-case a string: the first cased character of each word (per UAX #29
 /// word segmentation) is title-cased and the rest are lower-cased
 /// (`"loud HOUSE" → "Loud House"`). Requires the `alloc` feature.
