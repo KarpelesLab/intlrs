@@ -510,7 +510,10 @@ pub fn format_gmt_offset(lang: &str, offset_minutes: i32) -> String {
     }
     let (pos, neg) = tz.hour.split_once(';').unwrap_or((tz.hour, tz.hour));
     let sub = if offset_minutes >= 0 { pos } else { neg };
-    let (h, m) = (offset_minutes.abs() / 60, offset_minutes.abs() % 60);
+    let (h, m) = (
+        offset_minutes.unsigned_abs() / 60,
+        offset_minutes.unsigned_abs() % 60,
+    );
     let body = sub
         .replace("HH", &alloc::format!("{h:02}"))
         .replace("mm", &alloc::format!("{m:02}"));

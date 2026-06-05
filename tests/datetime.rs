@@ -96,6 +96,21 @@ fn gmt_offset() {
 }
 
 #[test]
+fn gmt_offset_extremes() {
+    use intl::datetime::format_gmt_offset as g;
+    // i32::MIN previously panicked via `.abs()` overflow; must now return a string.
+    let s = g("en", i32::MIN);
+    assert!(s.starts_with("GMT-"), "got {s:?}");
+    assert!(!s.is_empty());
+    // i32::MAX must also be handled without panic.
+    assert!(g("en", i32::MAX).starts_with("GMT+"));
+    // Normal inputs remain byte-for-byte identical.
+    assert_eq!(g("en", 0), "GMT");
+    assert_eq!(g("en", 330), "GMT+05:30");
+    assert_eq!(g("en", -480), "GMT-08:00");
+}
+
+#[test]
 fn islamic_dates() {
     use intl::datetime::{format_islamic_date as fi, DateStyle::*};
     // 9 Ramadan 1445 AH (Ramadan = month 9).
