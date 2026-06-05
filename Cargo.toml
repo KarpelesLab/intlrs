@@ -9,9 +9,16 @@ license = "MIT"
 readme = "README.md"
 keywords = ["intl", "unicode", "no_std", "i18n", "ucd"]
 categories = ["no-std", "internationalization", "text-processing"]
-# Only ship generated Rust + the embedded CLDR `.bin` tables + sources; the
+# Only ship generated Rust + the embedded CLDR/UCD `.bin` tables + sources; the
 # multi-MB vendored UCD/CLDR data and the codegen tool are excluded.
-include = ["src/**/*.rs", "src/cldr/*.bin", "Cargo.toml", "README.md", "LICENSE"]
+include = [
+    "src/**/*.rs",
+    "src/cldr/*.bin",
+    "src/unicode/*.bin",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+]
 
 [features]
 # Coarse, nested codepoint-range tiers. Selecting a tier compiles it and every
@@ -32,6 +39,12 @@ alloc = ["full"]
 # the `DateTime` bridge. NOTE: `timezone-data` raises the MSRV to 1.86 when this
 # feature is enabled; the rest of the crate stays at 1.70.
 iana-tz = ["dep:timezone-data", "alloc"]
+
+# The full tabulated character `Name` database (`unicode::name`). Implies
+# `alloc`. NOTE: embeds a ~1.3 MB name blob (`src/unicode/names.bin`) into the
+# binary when enabled; the algorithmic `char_name` (Hangul/CJK/…) needs no data
+# and is always available.
+names = ["alloc"]
 
 [dependencies]
 # Optional: only pulled in by the `iana-tz` feature. no_std / no-alloc itself.

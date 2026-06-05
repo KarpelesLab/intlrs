@@ -220,6 +220,7 @@ fn main() {
     // ---- Numeric values ----
     emit_numeric(&out_dir, &mut modules, &ucd);
     emit_properties(&out_dir, &mut modules, &ucd);
+    emit_names_blob(&root, &ucd);
 
     // ---- Normalization ----
     emit_normalization(&out_dir, &mut modules, &ucd);
@@ -637,6 +638,52 @@ fn parse_rational(s: &str) -> (i64, u32) {
 /// Emit `generated/numeric.rs`: numeric_value() and numeric_type().
 /// Emit `age` (Unicode version a codepoint was assigned in) and `block`
 /// (Unicode block name) lookups from `DerivedAge.txt` and `Blocks.txt`.
+/// Write `src/unicode/names.bin`: the tabulated character `Name` database for
+/// the explicitly-named codepoints (algorithmic names — Hangul/CJK/… — are
+/// excluded, handled in code). Layout: `[u32 count]`, then `count` sorted
+/// `[u32 cp]`, then `count+1` `[u32 offset]`, then the UTF-8 name bytes. Used
+/// only when the `names` feature is enabled, but always committed/shipped.
+fn emit_names_blob(root: &Path, ucd: &Path) {
+    let text = fs::read_to_string(ucd.join("UnicodeData.txt")).expect("read UnicodeData.txt");
+    let mut entries: Vec<(u32, &str)> = Vec::new();
+    for line in text.lines() {
+        let mut f = line.split(';');
+        let (Some(cp), Some(name)) = (f.next(), f.next()) else {
+            continue;
+        };
+        // Skip the algorithmic/range/control rows (their name starts with '<').
+        if name.starts_with('<') {
+            continue;
+        }
+        if let Ok(cp) = u32::from_str_radix(cp, 16) {
+            entries.push((cp, name));
+        }
+    }
+    entries.sort_by_key(|&(cp, _)| cp);
+    let count = entries.len() as u32;
+    let mut blob = Vec::new();
+    blob.extend_from_slice(&count.to_le_bytes());
+    for &(cp, _) in &entries {
+        blob.extend_from_slice(&cp.to_le_bytes());
+    }
+    let mut off = 0u32;
+    for &(_, name) in &entries {
+        blob.extend_from_slice(&off.to_le_bytes());
+        off += name.len() as u32;
+    }
+    blob.extend_from_slice(&off.to_le_bytes()); // sentinel end offset
+    for &(_, name) in &entries {
+        blob.extend_from_slice(name.as_bytes());
+    }
+    let path = root.join("src/unicode/names.bin");
+    fs::write(&path, &blob).expect("write names.bin");
+    println!(
+        "codegen: wrote names.bin ({} names, {} KB)",
+        count,
+        blob.len() / 1024
+    );
+}
+
 fn emit_properties(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     let mut out = String::new();
 

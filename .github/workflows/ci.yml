@@ -130,7 +130,7 @@ jobs:
       - name: Regenerate and diff
         run: |
           cargo run --manifest-path codegen/Cargo.toml
-          git diff --exit-code -- src/unicode/generated src/cldr \
+          git diff --exit-code -- src/unicode/generated src/cldr src/unicode/names.bin \
             || { echo "::error::generated tables are stale; run 'cargo run --manifest-path codegen/Cargo.toml'"; exit 1; }
 
   conformance:

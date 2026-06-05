@@ -1413,6 +1413,7 @@ pub fn intl::unicode::idna::to_unicode(&str) -> alloc::string::String
 pub mod intl::unicode::names
 pub fn intl::unicode::names::char_name(char) -> core::option::Option<alloc::string::String>
 pub fn intl::unicode::names::hangul_syllable_name(char) -> core::option::Option<alloc::string::String>
+pub fn intl::unicode::names::name(char) -> core::option::Option<alloc::string::String>
 pub mod intl::unicode::normalize
 pub enum intl::unicode::normalize::IsNormalized
 pub intl::unicode::normalize::IsNormalized::Maybe
@@ -3815,6 +3816,7 @@ pub fn intl::unicode::line_breaks(&str) -> intl::unicode::segment::LineBreaks<'_
 pub fn intl::unicode::lowercase<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::case::CaseMapping<I>
 pub fn intl::unicode::lowercase_str(&str) -> alloc::string::String
 pub fn intl::unicode::lowercase_str_lang(&str, &str) -> alloc::string::String
+pub fn intl::unicode::name(char) -> core::option::Option<alloc::string::String>
 pub fn intl::unicode::nfc<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::Recompositions<I>
 pub fn intl::unicode::nfd<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::Decompositions<I>
 pub fn intl::unicode::nfkc<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::Recompositions<I>

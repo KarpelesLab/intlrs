@@ -63,6 +63,8 @@ pub use category::{GeneralCategory, Group};
 pub use collate::{compare, sort_key, AlternateHandling, Collator, Strength, Tailoring};
 pub use generated::general_category::UNICODE_VERSION;
 pub use ident::{is_identifier, is_xid_continue, is_xid_start};
+#[cfg(feature = "names")]
+pub use names::name;
 #[cfg(feature = "alloc")]
 pub use names::{char_name, hangul_syllable_name};
 pub use normalize::{

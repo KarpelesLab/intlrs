@@ -1,8 +1,7 @@
-//! Algorithmically-derived character names. Requires the `alloc` feature.
-//!
-//! The full Unicode `Name` database is large and not embedded; this module
-//! provides the names that are *computed* rather than tabulated — currently the
-//! Hangul syllables, whose names follow directly from their jamo decomposition.
+//! Character names (`alloc`). The *algorithmic* names ([`char_name`],
+//! [`hangul_syllable_name`]) are always available and need no data. The full
+//! tabulated [`name`] database (every explicitly-named codepoint) is behind the
+//! **`names`** feature, which embeds a ~1.3 MB table (`names.bin`).
 
 use alloc::string::String;
 
@@ -74,4 +73,55 @@ pub fn char_name(c: char) -> Option<String> {
     let mut name = String::from(prefix);
     name.push_str(&alloc::format!("{:04X}", c as u32));
     Some(name)
+}
+
+#[cfg(feature = "names")]
+const NAMES: &[u8] = include_bytes!("names.bin");
+
+/// Look up the tabulated `Name` of a codepoint in `names.bin` (binary search).
+#[cfg(feature = "names")]
+fn tabulated_name(cp: u32) -> Option<&'static str> {
+    let rd = |o: usize| u32::from_le_bytes([NAMES[o], NAMES[o + 1], NAMES[o + 2], NAMES[o + 3]]);
+    let count = rd(0) as usize;
+    let cp_base = 4;
+    let off_base = cp_base + count * 4;
+    let data_base = off_base + (count + 1) * 4;
+    let (mut lo, mut hi) = (0usize, count);
+    while lo < hi {
+        let mid = (lo + hi) / 2;
+        let key = rd(cp_base + mid * 4);
+        match key.cmp(&cp) {
+            core::cmp::Ordering::Less => lo = mid + 1,
+            core::cmp::Ordering::Greater => hi = mid,
+            core::cmp::Ordering::Equal => {
+                let (o0, o1) = (
+                    rd(off_base + mid * 4) as usize,
+                    rd(off_base + (mid + 1) * 4) as usize,
+                );
+                return core::str::from_utf8(&NAMES[data_base + o0..data_base + o1]).ok();
+            }
+        }
+    }
+    None
+}
+
+/// The full Unicode `Name` of `c` — the algorithmic names ([`char_name`]) plus
+/// the tabulated database for every explicitly-named codepoint. Requires the
+/// **`names`** feature (which embeds a ~1.3 MB table). Returns `None` only for
+/// unnamed codepoints (control characters, unassigned, private use).
+///
+/// ```
+/// use intl::unicode::name;
+/// assert_eq!(name('A').as_deref(), Some("LATIN CAPITAL LETTER A"));
+/// assert_eq!(name('€').as_deref(), Some("EURO SIGN"));
+/// assert_eq!(name('한').as_deref(), Some("HANGUL SYLLABLE HAN"));
+/// assert_eq!(name('一').as_deref(), Some("CJK UNIFIED IDEOGRAPH-4E00"));
+/// ```
+#[cfg(feature = "names")]
+#[must_use]
+pub fn name(c: char) -> Option<String> {
+    if let Some(n) = char_name(c) {
+        return Some(n);
+    }
+    tabulated_name(c as u32).map(String::from)
 }

@@ -66,8 +66,8 @@ conformance corpus. Highest value, lowest risk — do these next.
   ✅ `Indic_Syllabic_Category`, ✅ `Indic_Positional_Category`, ✅ `Joining_Group`, ✅ Bidi_Class accessor (`bidi_class`),
   ✅ `Default_Ignorable_Code_Point` / `Math` / `Dash` / `Diacritic` /
   `Hex_Digit` / `White_Space` / `Quotation_Mark` / `Join_Control`. Still:
-  the full tabulated `Name` database (large — perfect-hash or
-  trie). ✅ Algorithmic names (`char_name` / `hangul_syllable_name`): Hangul
+  ✅ the tabulated `Name`
+  database behind the `names` feature (`unicode::name`, ~1.3 MB blob). ✅ Algorithmic names (`char_name` / `hangul_syllable_name`): Hangul
   syllables + CJK/Tangut/Khitan/Nüshu ideograph ranges.
 
 ---
