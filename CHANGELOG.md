@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/KarpelesLab/intlrs/compare/v0.2.3...v0.3.0) - 2026-06-05
+
+### Other
+
+- mark Error #[non_exhaustive]
+- declare bidi feature dependency (fixes component-subsets CI)
+- enforce VerifyDnsLength (reject empty/trailing-root labels)
+- apply UTS #39 augmented (CJK) script sets in is_single_script
+- satisfy CI gates for security fixes (fmt, clippy, public-api snapshot)
+- resolve is_single_script via Script_Extensions intersection (UTS #39)
+- IDNA tests: adapt to fallible to_unicode; raise conformance rejection bar to 480
+- enforce full IDNA2008 validity (CheckBidi/ContextJ/Hyphens/V1/V5/V6) and re-canonicalize xn--
+- do not drop combining marks past MAX_COMBINING in NFC recomposition
+- O(1) matched-PDI lookup (latent quadratic)
+- linear find/contains (quadratic-scan DoS)
+- avoid O(n) Vec::remove in discontiguous matching
+- strip Default_Ignorable code points in UTS #39 skeleton (confusable-detection miss)
+- cap MessageFormat parse recursion depth (stack-overflow DoS)
+- use checked arithmetic in POSIX TZ offset parsing (i32 overflow panic/wrap)
+- cap punycode decode output (decompression-bomb DoS) and enforce 253-octet domain limit
+
 ## [0.2.3](https://github.com/KarpelesLab/intlrs/compare/v0.2.2...v0.2.3) - 2026-06-05
 
 ### Other
