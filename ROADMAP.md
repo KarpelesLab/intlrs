@@ -169,21 +169,22 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   ✅ list formatting (`intl::list`), ✅ display names (`intl::display`).
 - 🧱 ✅ MessageFormat (`intl::message`, subset) — ICU MessageFormat (and/or MessageFormat 2.0):
   select/plural/gender, nested args.
-- 🟡🧱 **Collation tailoring** — ✅ strength levels (`Collator::with_strength`),
+- ✅🧱 **Collation tailoring** — ✅ strength levels (`Collator::with_strength`),
   ✅ numeric ordering (`with_numeric`, natural sort), ✅ a locale-tailoring rule
   engine (`Tailoring::parse` for `<`/`<<`/`<<<`/`=` + expansions + multi-char
-  digraph targets) with ✅ ~30 bundled locales via `Tailoring::for_locale`.
-  ✅ **unbounded weight allocation** — tailored letters use a pair-encoded
-  `(base, sub)` primary, so `&a < x₁ < x₂ < … < x₅₀` (and any real CLDR rule's
-  reordering depth) sorts correctly with no gap exhaustion; the root
-  `compare`/`sort_key` path is unchanged (CollationTest stays 100%).
-  ✅ collation-based **string search** (`collate::find`/`contains`) and
+  digraph targets) with ✅ **unbounded weight allocation** (pair-encoded
+  `(base, sub)` primaries — `&a < x₁ < … < x₅₀` sorts correctly, no gap
+  exhaustion; root `compare`/`sort_key` unchanged, CollationTest stays 100%).
+  ✅ `Tailoring::for_locale` is **data-driven from the official CLDR `<collation
+  type="standard">` rules** — committed (`cldr/collation.bin`) and parsed at
+  runtime — for every locale whose rule uses the supported relations (~30
+  locales), plus hand-written fallbacks for the locales whose CLDR rules need
+  the advanced grammar; the other ~600 CLDR locales need no tailoring (DUCET
+  root). ✅ collation-based **string search** (`collate::find`/`contains`) and
   ✅ a locale-tailored **alphabetic index** (`collate::index_labels`/`index_bucket`).
-  **Remaining:** *bundling* all ~700 CLDR locales out of the box — a data/parser
-  effort (full `[import]` resolution, `[before N]`, `/extension`, logical reset
-  positions, plus vendoring every locale's collation data), no longer an engine
-  limit. The engine now expresses any reordering a caller's rule string asks for;
-  ~30 locales are bundled and arbitrary rules are accepted.
+  Open enhancement: the remaining ICU rule grammar (`[before N]`, `[import]`
+  resolution, `/extension`, logical reset positions) that a minority of locales'
+  rules use — the engine handles any reordering a caller's rule string supplies.
 
 ---
 
@@ -214,7 +215,7 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 | IDNA (`uidna`) | ✅ |
 | Spoof/confusables (`uspoof`) | ✅ |
 | Collator root/DUCET (`ucol`) | ✅ 100% CollationTest (both modes) |
-| Collator tailored + search | 🟡 tailoring engine + ~30 locales + search (`find`) + alphabetic index |
+| Collator tailored + search | ✅ engine (unbounded) + CLDR-data-driven locales + search + index |
 | Locale / likely subtags (`uloc`) | ✅ |
 | Plural rules | ✅ (cardinal + ordinal) |
 | Number/decimal/RBNF format | ✅ (RBNF cardinal; ordinal spell-out partial) |

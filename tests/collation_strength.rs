@@ -244,3 +244,28 @@ fn tailoring_capacity() {
         .compare(&letters[letters.len() - 1].to_string(), "b")
         .is_lt());
 }
+
+#[test]
+fn tailoring_cldr_data_driven() {
+    use intl::unicode::collate::Tailoring;
+    // Locales bundled from the official CLDR collation rules (not hand-written).
+    let ro = Tailoring::for_locale("ro").unwrap();
+    assert_eq!(ro.compare("a", "ă"), Ordering::Less);
+    assert_eq!(ro.compare("s", "ș"), Ordering::Less);
+    let lv = Tailoring::for_locale("lv").unwrap();
+    assert_eq!(lv.compare("c", "č"), Ordering::Less);
+    assert_eq!(lv.compare("z", "ž"), Ordering::Less);
+    let sk = Tailoring::for_locale("sk").unwrap();
+    assert_eq!(sk.compare("s", "š"), Ordering::Less);
+    // Cebuano: ñ and the "ng" digraph after n.
+    let ceb = Tailoring::for_locale("ceb").unwrap();
+    assert_eq!(ceb.compare("n", "ñ"), Ordering::Less);
+    assert_eq!(ceb.compare("ñ", "ng"), Ordering::Less);
+    // Spanish now comes from CLDR data too.
+    assert_eq!(
+        Tailoring::for_locale("es").unwrap().compare("n", "ñ"),
+        Ordering::Less
+    );
+    // Full-tag lookup (script subtag).
+    assert!(Tailoring::for_locale("ff-Adlm").is_some());
+}

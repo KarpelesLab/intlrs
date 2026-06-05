@@ -604,9 +604,13 @@ pub struct Tailoring {
 }
 
 impl Tailoring {
-    /// A built-in tailoring for a well-known locale (by language subtag), or
-    /// `None` if no built-in rule is bundled. Covers the Nordic reorderings
-    /// where the accented letters sort *after* `z`.
+    /// A built-in tailoring for a locale, or `None` if none is bundled. Two
+    /// sources are consulted, in order: the **official CLDR collation rules**
+    /// (generated into a committed table for every locale whose rule uses the
+    /// supported relations — the bulk of the coverage), then a small set of
+    /// hand-written rules for locales whose CLDR rules need syntax the parser
+    /// doesn't implement (`[before]`/`[import]`/extensions), e.g. the Nordic
+    /// `&z < å < ä < ö`.
     ///
     /// ```
     /// # #[cfg(feature = "alloc")] {
@@ -614,16 +618,26 @@ impl Tailoring {
     /// use core::cmp::Ordering;
     /// let sv = Tailoring::for_locale("sv").unwrap();
     /// assert_eq!(sv.compare("z", "å"), Ordering::Less);
+    /// let es = Tailoring::for_locale("es").unwrap(); // from CLDR data
+    /// assert_eq!(es.compare("n", "ñ"), Ordering::Less);
     /// # }
     /// ```
     #[must_use]
     pub fn for_locale(lang: &str) -> Option<Tailoring> {
-        // Match on the primary language subtag (before any region/script),
-        // lower-cased — so "fil", "tl", "de-DE", "sr_Latn" all resolve correctly
-        // (a plain `[..2]` truncation would alias "fil" to "fi", i.e. Finnish).
-        let primary = lang.split(['-', '_']).next().unwrap_or(lang);
-        let lc = primary.to_ascii_lowercase();
-        let rules = match lc.as_str() {
+        // Normalize, then try the official CLDR rule table — first the full tag
+        // (`ff-adlm`), then the primary subtag (`es`) — before the hand-written
+        // fallbacks. A plain `[..2]` truncation would alias "fil" to "fi".
+        let full = lang.replace('_', "-").to_ascii_lowercase();
+        let primary = full.split('-').next().unwrap_or(&full);
+        for key in [full.as_str(), primary] {
+            if let Some(rule) = crate::cldr::collation_rule(key) {
+                if let Some(t) = Tailoring::parse(rule) {
+                    return Some(t);
+                }
+            }
+        }
+        let lc = primary;
+        let rules = match lc {
             "sv" | "fi" => "&z < å < ä < ö",               // Swedish, Finnish
             "da" | "nb" | "nn" | "no" => "&z < æ < ø < å", // Danish, Norwegian
             "is" => "&y < ð < þ < æ < ö",                  // Icelandic

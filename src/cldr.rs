@@ -145,6 +145,35 @@ const COMPACT: &[u8] = include_bytes!("cldr/compact.bin");
 const NUMSYS_DIGITS: &[u8] = include_bytes!("cldr/numsys_digits.bin");
 const NUMSYS_DEFAULT: &[u8] = include_bytes!("cldr/numsys_default.bin");
 const ORDSUFFIX: &[u8] = include_bytes!("cldr/ordsuffix.bin");
+#[cfg(feature = "collation")]
+const COLLATION: &[u8] = include_bytes!("cldr/collation.bin");
+
+/// The CLDR collation tailoring rule string for an exact (lowercased) locale
+/// key, or `None`. Used by `unicode::collate::Tailoring::for_locale`.
+#[cfg(feature = "collation")]
+pub(crate) fn collation_rule(lang: &str) -> Option<&'static str> {
+    core::str::from_utf8(rbnf_like_payload(COLLATION, lang)?).ok()
+}
+
+/// Look up a `[u16 count]`-prefixed `(key, payload)` blob by exact key.
+#[cfg(feature = "collation")]
+fn rbnf_like_payload(blob: &'static [u8], lang: &str) -> Option<&'static [u8]> {
+    let count = rd_u16(blob, 0);
+    let mut o = 2;
+    for _ in 0..count {
+        let klen = blob[o] as usize;
+        o += 1;
+        let k = &blob[o..o + klen];
+        o += klen;
+        let plen = rd_u16(blob, o);
+        o += 2;
+        if k == lang.as_bytes() {
+            return Some(&blob[o..o + plen]);
+        }
+        o += plen;
+    }
+    None
+}
 
 /// The ordinal suffix for `category` (0=zero…5=other) in an exact (lowercased)
 /// locale key.

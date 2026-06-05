@@ -321,6 +321,7 @@ fn main() {
     emit_compact(&cldr_dir, &cldr.join("compact.json"));
     emit_numsys(&cldr_dir, &cldr.join("numsys.json"));
     emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
+    emit_collation_rules(&cldr_dir, &cldr.join("collation.json"));
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic.json"));
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian.json"));
 
@@ -2179,6 +2180,25 @@ fn emit_alt_calendar(cldr_dir: &Path, name: &str, path: &Path) {
 /// Write `cldr/ordsuffix.bin`: per-locale ordinal suffix for each plural
 /// category (zero/one/two/few/many/other), filling absent categories with the
 /// `other` suffix.
+/// Write `cldr/collation.bin`: per-locale CLDR collation tailoring **rule
+/// strings** (the `<collation type="standard">` `<cr>` from CLDR), for the
+/// locales whose rules use only the relations the runtime `Tailoring` parser
+/// supports (`&`/`<`/`<<`/`<<<`/`=` + expansions; the vendoring step filtered out
+/// rules needing `[before]`/`[import]`/extensions). `Tailoring::for_locale`
+/// parses the looked-up rule at runtime — so coverage is data-driven from the
+/// official CLDR rules rather than hand-curated.
+fn emit_collation_rules(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read collation.json");
+    let json = json_parse(&text);
+    let mut records = Vec::new();
+    for (lang, rule) in json.entries() {
+        let bytes = rule.as_str().unwrap_or("").as_bytes().to_vec();
+        records.push((lang.to_ascii_lowercase(), bytes));
+    }
+    records.sort();
+    write_blob(cldr_dir, "collation", &records);
+}
+
 fn emit_ordsuffix(cldr_dir: &Path, path: &Path) {
     let text = fs::read_to_string(path).expect("read ordsuffix.json");
     let json = json_parse(&text);
