@@ -828,8 +828,8 @@ fn line_break_before(
     if matches!(c, BA | HY | NS | HH) || p == BB {
         return (false, false); // LB21
     }
-    if prev2.is_some_and(|u| u.cls == HL) && matches!(p, HY | BA) && c != HL {
-        return (false, false); // LB21a: HL (HY|BA) × [^HL]
+    if prev2.is_some_and(|u| u.cls == HL) && p == HY && c != HL {
+        return (false, false); // LB21a: HL HY × [^HL] (the Hebrew compound hyphen)
     }
     if p == SY && c == HL {
         return (false, false); // LB21b
