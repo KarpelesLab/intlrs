@@ -30,12 +30,19 @@ pub enum Arg<'a> {
     Str(&'a str),
 }
 
+/// Recursion-depth cap on nested sub-messages. Bounds the call stack so an
+/// attacker-supplied pattern (e.g. `{x,select,other {{x,select,other {…}}}}`)
+/// cannot overflow it. Any legitimate message nests only a handful of levels;
+/// 64 is far beyond that. At the cap a sub-message renders as the empty string,
+/// matching how the parser already degrades on malformed input.
+const MAX_DEPTH: u32 = 64;
+
 /// Format `pattern` with the named `args` in the conventions of `lang`.
 #[must_use]
 pub fn format_message(lang: &str, pattern: &str, args: &[(&str, Arg)]) -> String {
     let c: Vec<char> = pattern.chars().collect();
     let mut i = 0;
-    parse_message(&c, &mut i, lang, args, None)
+    parse_message(&c, &mut i, lang, args, None, 0)
 }
 
 fn cat_name(c: PluralCategory) -> &'static str {
@@ -82,13 +89,21 @@ fn parse_message(
     lang: &str,
     args: &[(&str, Arg)],
     hash: Option<f64>,
+    depth: u32,
 ) -> String {
     let mut out = String::new();
     while *i < c.len() && c[*i] != '}' {
         match c[*i] {
             '{' => {
                 *i += 1;
-                out.push_str(&parse_arg(c, i, lang, args));
+                if depth >= MAX_DEPTH {
+                    // Too deeply nested: skip this argument's body (the opening
+                    // `{` is already consumed) and emit nothing for it, the way
+                    // malformed/unknown arguments degrade elsewhere.
+                    scan_to_close(c, i);
+                } else {
+                    out.push_str(&parse_arg(c, i, lang, args, depth + 1));
+                }
             }
             '#' if hash.is_some() => {
                 out.push_str(&format_decimal(lang, hash.unwrap()));
@@ -109,7 +124,7 @@ fn lookup<'a>(name: &str, args: &'a [(&str, Arg<'a>)]) -> Option<Arg<'a>> {
 
 /// Parse one `{...}` argument (the leading `{` already consumed) and return its
 /// rendered text. Leaves `*i` just past the matching `}`.
-fn parse_arg(c: &[char], i: &mut usize, lang: &str, args: &[(&str, Arg)]) -> String {
+fn parse_arg(c: &[char], i: &mut usize, lang: &str, args: &[(&str, Arg)], depth: u32) -> String {
     let name = read_token(c, i);
     skip_ws(c, i);
     if *i >= c.len() || c[*i] == '}' {
@@ -129,9 +144,9 @@ fn parse_arg(c: &[char], i: &mut usize, lang: &str, args: &[(&str, Arg)]) -> Str
     let value = lookup(&name, args);
     match kind.as_str() {
         "plural" | "selectordinal" => {
-            parse_plural(c, i, lang, args, value, kind == "selectordinal")
+            parse_plural(c, i, lang, args, value, kind == "selectordinal", depth)
         }
-        "select" => parse_select(c, i, lang, args, value),
+        "select" => parse_select(c, i, lang, args, value, depth),
         _ => {
             scan_to_close(c, i);
             String::new()
@@ -169,6 +184,7 @@ fn render_case(
     lang: &str,
     args: &[(&str, Arg)],
     hash: Option<f64>,
+    depth: u32,
 ) -> String {
     let start = cases
         .iter()
@@ -178,7 +194,7 @@ fn render_case(
     match start {
         Some(s) => {
             let mut j = s;
-            parse_message(c, &mut j, lang, args, hash)
+            parse_message(c, &mut j, lang, args, hash, depth)
         }
         None => String::new(),
     }
@@ -191,6 +207,7 @@ fn parse_plural(
     args: &[(&str, Arg)],
     value: Option<Arg>,
     ordinal: bool,
+    depth: u32,
 ) -> String {
     let num = match value {
         Some(Arg::Num(n)) => n,
@@ -209,7 +226,7 @@ fn parse_plural(
         };
         cat_name(cat).to_string()
     };
-    render_case(c, &cases, &selector, lang, args, Some(num))
+    render_case(c, &cases, &selector, lang, args, Some(num), depth)
 }
 
 fn parse_select(
@@ -218,13 +235,14 @@ fn parse_select(
     lang: &str,
     args: &[(&str, Arg)],
     value: Option<Arg>,
+    depth: u32,
 ) -> String {
     let key = match value {
         Some(Arg::Str(s)) => s.to_string(),
         _ => "other".to_string(),
     };
     let cases = collect_cases(c, i);
-    render_case(c, &cases, &key, lang, args, None)
+    render_case(c, &cases, &key, lang, args, None, depth)
 }
 
 /// Render an integer-valued `f64` without a trailing `.0` (for `=N` matching).
@@ -265,5 +283,45 @@ fn scan_to_close(c: &[char], i: &mut usize) {
             _ => {}
         }
         *i += 1;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A pathologically deep `select` nesting must return without overflowing
+    /// the stack (DoS regression). The depth cap stops the recursion; we only
+    /// assert it terminates and yields a `String`, not the exact output.
+    #[test]
+    fn deeply_nested_does_not_overflow() {
+        let n = 5000;
+        let mut pat = String::new();
+        for _ in 0..n {
+            pat.push_str("{x,select,other {");
+        }
+        pat.push_str("deep");
+        for _ in 0..n {
+            pat.push('}');
+        }
+        // Must not panic / abort. The cap truncates the sub-message past
+        // MAX_DEPTH, so the inner "deep" text is dropped, but the call returns.
+        let out = format_message("en", &pat, &[("x", Arg::Str("y"))]);
+        assert!(out.len() < pat.len());
+    }
+
+    /// Legitimate nesting (a few levels) is unaffected by the depth cap.
+    #[test]
+    fn modest_nesting_still_renders() {
+        let pat = "{g,select,female {She has {n,plural,one {# cat} other {# cats}}} \
+                   other {They have {n,plural,one {# cat} other {# cats}}}}";
+        assert_eq!(
+            format_message("en", pat, &[("g", Arg::Str("female")), ("n", Arg::Num(1.0))]),
+            "She has 1 cat"
+        );
+        assert_eq!(
+            format_message("en", pat, &[("g", Arg::Str("male")), ("n", Arg::Num(3.0))]),
+            "They have 3 cats"
+        );
     }
 }
