@@ -28,8 +28,8 @@ fn idna_test_v2_to_ascii() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("data/idna/17.0.0/IdnaTestV2.txt");
     let text = fs::read_to_string(&path).expect("read IdnaTestV2.txt");
 
-    let mut checked = 0usize;
-    let mut failures = 0usize;
+    let (mut valid, mut valid_fail) = (0usize, 0usize);
+    let (mut reject_total, mut reject_ok) = (0usize, 0usize);
     for raw in text.lines() {
         let line = raw.split('#').next().unwrap().trim();
         if line.is_empty() {
@@ -40,33 +40,44 @@ fn idna_test_v2_to_ascii() {
             continue;
         }
         let source = &cols[0];
-        // We implement the mapping + Punycode core, not the contextual validity
-        // rules (CheckBidi / CheckJoiners / full STD3), so only the lines that
-        // expect a *successful* ToASCII are in scope here.
-        if !cols[2].is_empty() || !cols[4].is_empty() {
-            continue;
+        if cols[4].is_empty() && cols[2].is_empty() {
+            // Clean-success line: ToASCII must produce the expected A-label.
+            let to_unicode = if cols[1].is_empty() {
+                source.clone()
+            } else {
+                cols[1].clone()
+            };
+            let expected = if cols[3].is_empty() {
+                to_unicode
+            } else {
+                cols[3].clone()
+            };
+            match to_ascii(source) {
+                Ok(a) if a == expected => valid += 1,
+                _ => valid_fail += 1,
+            }
+        } else if !cols[4].is_empty() {
+            // Line that ToASCII must reject (toAsciiNStatus carries error codes).
+            reject_total += 1;
+            if to_ascii(source).is_err() {
+                reject_ok += 1;
+            }
         }
-        let to_unicode = if cols[1].is_empty() {
-            source.clone()
-        } else {
-            cols[1].clone()
-        };
-        let expected = if cols[3].is_empty() {
-            to_unicode
-        } else {
-            cols[3].clone()
-        };
-
-        match to_ascii(source) {
-            Ok(a) if a == expected => {}
-            _ => failures += 1,
-        }
-        checked += 1;
     }
-    let pass = checked - failures;
-    eprintln!("IDNA ToASCII (valid inputs): {pass}/{checked} lines pass");
-    // The mapping + Punycode core handles every clean-success line in the suite.
-    // (Lines that expect an error exercise CheckBidi / CheckJoiners / STD3, which
-    // are not yet implemented, and are out of scope here.)
-    assert_eq!(failures, 0, "IDNA core: {pass}/{checked}");
+    eprintln!(
+        "IDNA: clean-success {valid}/{} ; required rejections {reject_ok}/{reject_total}",
+        valid + valid_fail
+    );
+    // Every clean-success line must pass (mapping + Punycode core).
+    assert_eq!(
+        valid_fail, 0,
+        "IDNA clean-success regressed: {valid_fail} failed"
+    );
+    // Of the must-reject lines, we catch the basic ones (empty/over-long labels,
+    // bad Punycode). The remainder need CheckBidi / CheckJoiners, which are not
+    // implemented (documented). Guard the count we *do* reject against regression.
+    assert!(
+        reject_ok >= 330,
+        "IDNA rejection coverage regressed: only {reject_ok}/{reject_total}"
+    );
 }

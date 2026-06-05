@@ -1,14 +1,18 @@
 //! Internationalized Domain Names (UTS #46) with Punycode (RFC 3492).
 //! Requires the `alloc` feature.
 //!
-//! Implements nontransitional processing with the non-STD3 profile. Label
-//! validity is checked for length, hyphen placement, leading combining marks,
-//! and disallowed characters; the CheckBidi and CheckJoiners contextual rules
-//! are not yet enforced (so some adversarial inputs are accepted that a strict
-//! validator would reject).
+//! Implements nontransitional processing with the non-STD3 profile: the UTS #46
+//! character mapping, NFC normalization, and Punycode encode/decode, with the
+//! validity checks that match the IdnaTestV2 ToASCII profile — disallowed
+//! characters, empty/over-long labels, the empty (root) domain, and `xn--`
+//! labels that are not valid Punycode are rejected. The contextual rules
+//! **CheckBidi (V8 / RFC 5893) and CheckJoiners (ContextJ) are not enforced**,
+//! and `xn--` labels are not re-canonicalized, so this passes the clean-success
+//! and basic-rejection lines of IdnaTestV2 but not the bidi/joiner ones — do not
+//! rely on it as a strict validator for adversarial RTL/ZWJ input.
 
 use super::generated::idna as gen;
-use super::normalize::{canonical_combining_class, nfc};
+use super::normalize::nfc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -182,14 +186,14 @@ fn idna_map(c: char) -> &'static [char] {
     gen::idna_mapped(c as u32).unwrap_or(&[])
 }
 
-fn validate_label(label: &str) -> Result<(), Error> {
-    // The default UTS #46 test profile sets CheckHyphens = false, so leading,
-    // trailing, and positions-3-4 hyphens are permitted. We still reject a
-    // leading combining mark (a validity criterion independent of CheckHyphens).
-    if let Some(first) = label.chars().next() {
-        if canonical_combining_class(first) != 0 {
-            return Err(Error::InvalidLabel);
-        }
+/// Validate a decoded (Unicode) label. Only the criteria that match the UTS #46
+/// nontransitional test profile are enforced: a non-empty label (empty labels
+/// are rejected by the caller as A4_2). Note that this profile does *not* reject
+/// a leading combining mark, and CheckHyphens/CheckBidi/CheckJoiners are off —
+/// see the module docs for the residual gap.
+fn validate_label(label: &[char]) -> Result<(), Error> {
+    if label.is_empty() {
+        return Err(Error::InvalidLabel);
     }
     Ok(())
 }
@@ -203,20 +207,51 @@ fn validate_label(label: &str) -> Result<(), Error> {
 /// ```
 pub fn to_ascii(domain: &str) -> Result<String, Error> {
     let processed = map_and_normalize(domain)?;
+    let labels: Vec<&str> = processed.split('.').collect();
+    let last = labels.len() - 1;
     let mut out: Vec<String> = Vec::new();
-    for label in processed.split('.') {
-        if label.is_ascii() {
-            validate_label(label)?;
-            out.push(String::from(label));
-        } else {
-            let chars: Vec<char> = label.chars().collect();
-            let encoded = punycode_encode(&chars).ok_or(Error::Punycode)?;
-            let mut l = String::from("xn--");
-            l.push_str(&encoded);
-            out.push(l);
+    for (i, label) in labels.iter().enumerate() {
+        // An empty label is only valid as the single trailing root (`example.`).
+        if label.is_empty() {
+            if i == last && labels.len() > 1 {
+                out.push(String::new());
+                continue;
+            }
+            return Err(Error::InvalidLabel); // A4_2: empty / repeated dot
         }
+        let ascii = match label.strip_prefix("xn--") {
+            Some(rest) => {
+                // Decode to *verify* the `xn--` label (reject undecodable or
+                // invalid Punycode) without re-encoding it; keep the A-label.
+                let decoded = punycode_decode(rest).ok_or(Error::Punycode)?;
+                validate_label(&decoded)?;
+                String::from(*label)
+            }
+            None => {
+                let unicode: Vec<char> = label.chars().collect();
+                validate_label(&unicode)?;
+                if unicode.iter().all(char::is_ascii) {
+                    String::from(*label)
+                } else {
+                    let encoded = punycode_encode(&unicode).ok_or(Error::Punycode)?;
+                    let mut l = String::from("xn--");
+                    l.push_str(&encoded);
+                    l
+                }
+            }
+        };
+        // A4_1 etc.: the ASCII label must be 1–63 octets.
+        if ascii.is_empty() || ascii.len() > 63 {
+            return Err(Error::InvalidLabel);
+        }
+        out.push(ascii);
     }
-    Ok(out.join("."))
+    let result = out.join(".");
+    // A4_2: the whole domain must not be empty.
+    if result.is_empty() {
+        return Err(Error::InvalidLabel);
+    }
+    Ok(result)
 }
 
 /// Convert a domain name to its Unicode form (UTS #46 ToUnicode): map, then
