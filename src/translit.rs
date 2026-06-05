@@ -149,7 +149,7 @@ impl Transform {
         let Some(ranges) = &rule.set else {
             return rest
                 .starts_with(rule.source.as_str())
-                .then(|| rule.source.len());
+                .then_some(rule.source.len());
         };
         let in_set = |c: char| ranges.iter().any(|&(lo, hi)| (lo..=hi).contains(&c));
         match rule.quantifier {
