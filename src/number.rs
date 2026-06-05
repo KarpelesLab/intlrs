@@ -270,7 +270,7 @@ pub fn format_compact(lang: &str, value: f64) -> String {
         return format_decimal(lang, value);
     }
     let mut divisor = 1.0f64; // 10^(exp + 1 - zeros), without std::f64::powi
-    for _ in 0..(exp + 1 - zeros) {
+    for _ in 0..(exp + 1).saturating_sub(zeros) {
         divisor *= 10.0;
     }
     let mantissa = value / divisor;
@@ -326,7 +326,12 @@ pub fn format_compact(lang: &str, value: f64) -> String {
 /// ```
 #[must_use]
 pub fn parse_decimal(lang: &str, input: &str) -> Option<f64> {
-    let s = spec(lang);
+    parse_decimal_with(&spec(lang), input)
+}
+
+/// Inner parser for [`parse_decimal`], split out so the separator-progress guard
+/// can be exercised against a synthetic [`NumberSpec`] in unit tests.
+fn parse_decimal_with(s: &NumberSpec, input: &str) -> Option<f64> {
     let mut out = String::with_capacity(input.len());
     let mut rest = input.trim();
     if let Some(r) = rest
@@ -339,10 +344,18 @@ pub fn parse_decimal(lang: &str, input: &str) -> Option<f64> {
     // Walk the rest, dropping group separators and normalizing the decimal point.
     let mut seen_point = false;
     while !rest.is_empty() {
-        if let Some(r) = rest.strip_prefix(s.group) {
+        // Guard against empty separators: `str::strip_prefix("")` returns
+        // `Some` without consuming input, which would stall the loop forever.
+        if let Some(r) = (!s.group.is_empty())
+            .then(|| rest.strip_prefix(s.group))
+            .flatten()
+        {
             rest = r;
         } else if !seen_point {
-            if let Some(r) = rest.strip_prefix(s.decimal) {
+            if let Some(r) = (!s.decimal.is_empty())
+                .then(|| rest.strip_prefix(s.decimal))
+                .flatten()
+            {
                 out.push('.');
                 seen_point = true;
                 rest = r;
@@ -503,4 +516,63 @@ fn group_digits(digits: &str, primary: u8, secondary: u8, sep: &str) -> String {
         count += 1;
     }
     rev.iter().rev().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A `NumberSpec` with **empty** group/decimal separators — not producible by
+    /// the real (curated, non-empty-separator) data, used only to prove the
+    /// `parse_decimal` loop always makes progress and cannot hang.
+    fn empty_sep_spec() -> NumberSpec {
+        let pat = Pattern {
+            prefix: "",
+            suffix: "",
+            min_int: 1,
+            min_frac: 0,
+            max_frac: 3,
+            primary_group: 3,
+            secondary_group: 3,
+        };
+        NumberSpec {
+            decimal: "",
+            group: "",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            dec: pat,
+            pct: pat,
+        }
+    }
+
+    #[test]
+    fn parse_empty_separators_does_not_hang() {
+        // With empty separators the guard skips the (otherwise non-advancing)
+        // `strip_prefix("")` and consumes input one digit at a time. This must
+        // terminate and parse the bare digits.
+        let s = empty_sep_spec();
+        assert_eq!(parse_decimal_with(&s, "1234"), Some(1234.0));
+        assert_eq!(parse_decimal_with(&s, "-42"), Some(-42.0));
+        // A separator/non-digit it can't normalize: still terminates, returns None.
+        assert_eq!(parse_decimal_with(&s, "1.5"), None);
+        assert_eq!(parse_decimal_with(&s, "abc"), None);
+    }
+
+    #[test]
+    fn parse_real_locales_unchanged() {
+        // Real (non-empty-separator) behavior is preserved by the guard.
+        assert_eq!(parse_decimal("en", "1,234.5"), Some(1234.5));
+        assert_eq!(parse_decimal("de", "1.234,5"), Some(1234.5));
+        assert_eq!(parse_decimal("en", "-7.0"), Some(-7.0));
+        assert_eq!(parse_decimal("en", "abc"), None);
+    }
+
+    #[test]
+    fn compact_width_saturates() {
+        // Well-formed data: compact formatting is unchanged by the saturating sub.
+        assert_eq!(format_compact("en", 1500.0), "1.5K");
+        assert_eq!(format_compact("en", 2_300_000.0), "2.3M");
+        assert_eq!(format_compact("en", 999.0), "999");
+    }
 }
