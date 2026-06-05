@@ -107,7 +107,11 @@ pub fn spell_ordinal(lang: &str, value: i64) -> Option<String> {
 }
 
 /// Largest power of `radix` not exceeding `n` (the divisor of an RBNF rule).
+/// `radix < 2` would never make progress, so it is treated as no division.
 fn pow_le(n: i64, radix: i64) -> i64 {
+    if radix < 2 {
+        return 1;
+    }
     let mut p = 1;
     while p <= n / radix {
         p *= radix;
@@ -115,13 +119,35 @@ fn pow_le(n: i64, radix: i64) -> i64 {
     p
 }
 
+/// Recursion-depth cap. Bounds the call-stack so a non-reducing rule cannot
+/// overflow it (kept small enough for a ~1 MB stack, e.g. Windows). Real
+/// spell-out of an `i64` nests only ~50 deep.
+const MAX_DEPTH: u32 = 160;
+
 fn spell(sets: &[RuleSet], ruleset: &str, value: i64) -> String {
+    // Two guards make this total on adversarial input: `depth` bounds the call
+    // stack (a non-reducing rule can't overflow it), and `budget` bounds the
+    // total node count (a branching `←…→` rule can't explode combinatorially).
+    // Spelling any real `i64` stays well within both.
+    let mut budget: u32 = 50_000;
+    spell_d(sets, ruleset, value, 0, &mut budget)
+}
+
+fn spell_d(sets: &[RuleSet], ruleset: &str, value: i64, depth: u32, budget: &mut u32) -> String {
+    if depth >= MAX_DEPTH || *budget == 0 {
+        return value.to_string();
+    }
+    *budget -= 1;
     let Some(rs) = sets.iter().find(|s| s.name == ruleset) else {
         return value.to_string();
     };
     if value < 0 {
         if let Some((_, text)) = rs.rules.iter().find(|(k, _)| k == "-x") {
-            return render(sets, &rs.name, text, value.unsigned_abs() as i64, 0);
+            // `unsigned_abs()` is a u64; clamp before the i64 cast so i64::MIN
+            // (whose magnitude is i64::MAX + 1) cannot wrap back to a negative
+            // value and re-enter the `-x` rule forever.
+            let abs = value.unsigned_abs().min(i64::MAX as u64) as i64;
+            return render(sets, &rs.name, text, abs, 0, depth, budget);
         }
     }
     // The applicable rule has the greatest numeric base ≤ value. A rule key may
@@ -130,7 +156,7 @@ fn spell(sets: &[RuleSet], ruleset: &str, value: i64) -> String {
     let mut best: Option<(i64, i64, &str)> = None;
     for (k, t) in &rs.rules {
         let (base_str, radix) = match k.split_once('/') {
-            Some((b, r)) => (b, r.parse().unwrap_or(10)),
+            Some((b, r)) => (b, r.parse::<i64>().unwrap_or(10).max(2)),
             None => (k.as_str(), 10),
         };
         if let Ok(base) = base_str.parse::<i64>() {
@@ -143,7 +169,7 @@ fn spell(sets: &[RuleSet], ruleset: &str, value: i64) -> String {
         return value.to_string();
     };
     let divisor = if base >= 1 { pow_le(base, radix) } else { 1 };
-    render(sets, &rs.name, text, value, divisor)
+    render(sets, &rs.name, text, value, divisor, depth, budget)
 }
 
 /// Read an RBNF substitution token starting at `chars[i]` (a `←`, `→`, or `=`).
@@ -165,7 +191,15 @@ fn parse_token(chars: &[char], i: usize, delim: char, current: &str) -> (String,
     (current.to_string(), i + 1)
 }
 
-fn render(sets: &[RuleSet], current: &str, text: &str, value: i64, divisor: i64) -> String {
+fn render(
+    sets: &[RuleSet],
+    current: &str,
+    text: &str,
+    value: i64,
+    divisor: i64,
+    depth: u32,
+    budget: &mut u32,
+) -> String {
     let quot = if divisor == 0 { value } else { value / divisor };
     let rem = if divisor == 0 { value } else { value % divisor };
     let chars: Vec<char> = text.chars().collect();
@@ -188,17 +222,17 @@ fn render(sets: &[RuleSet], current: &str, text: &str, value: i64, divisor: i64)
             _ if skipping => i += 1,
             '←' => {
                 let (rs, ni) = parse_token(&chars, i, '←', current);
-                out.push_str(&spell(sets, &rs, quot));
+                out.push_str(&spell_d(sets, &rs, quot, depth + 1, budget));
                 i = ni;
             }
             '→' => {
                 let (rs, ni) = parse_token(&chars, i, '→', current);
-                out.push_str(&spell(sets, &rs, rem));
+                out.push_str(&spell_d(sets, &rs, rem, depth + 1, budget));
                 i = ni;
             }
             '=' => {
                 let (rs, ni) = parse_token(&chars, i, '=', current);
-                out.push_str(&spell(sets, &rs, value));
+                out.push_str(&spell_d(sets, &rs, value, depth + 1, budget));
                 i = ni;
             }
             _ => {

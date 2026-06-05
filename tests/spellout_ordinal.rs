@@ -18,3 +18,17 @@ fn ordinals() {
     assert_eq!(spell_ordinal("en-US", 2).as_deref(), Some("second"));
     assert_eq!(spell_ordinal("xx", 1), None);
 }
+
+#[test]
+fn ordinal_pathological_values_terminate() {
+    // Adversarial inputs must never hang or overflow the stack (the RBNF engine
+    // bounds recursion depth + total work). i64::MIN is the classic abs-overflow.
+    for l in ["en", "de", "fr", "nl", "es", "it", "pt", "sv"] {
+        for v in [i64::MIN, i64::MAX, i64::MIN + 1, -1, 1_000_000_000_000_000_000] {
+            let _ = spell_ordinal(l, v);
+            let _ = intl::spellout::spell_cardinal(l, v);
+        }
+    }
+    // And a correctness spot-check still holds after the guards.
+    assert_eq!(spell_ordinal("en", 100).as_deref(), Some("one hundredth"));
+}
