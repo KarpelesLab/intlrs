@@ -1,3 +1,4 @@
+#![cfg(feature = "segmentation")]
 //! Readable grapheme segmentation checks. The exhaustive UAX #29 run lives in
 //! `grapheme_conformance.rs`.
 

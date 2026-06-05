@@ -5,17 +5,24 @@
 #![allow(unused_parens)]
 #![allow(dead_code)]
 
+#[cfg(feature = "bidi")]
 pub(crate) mod bidi;
 pub(crate) mod binary_props;
+#[cfg(feature = "case")]
 pub(crate) mod case;
+#[cfg(feature = "collation")]
 pub(crate) mod collation;
+#[cfg(feature = "confusables")]
 pub(crate) mod confusables;
 pub(crate) mod east_asian_width;
 pub(crate) mod general_category;
+#[cfg(feature = "idna")]
 pub(crate) mod idna;
+#[cfg(feature = "normalization")]
 pub(crate) mod normalization;
 pub(crate) mod numeric;
 pub(crate) mod plurals;
 pub(crate) mod properties;
 pub(crate) mod script;
+#[cfg(feature = "segmentation")]
 pub(crate) mod segmentation;

@@ -1,5 +1,5 @@
 //! Context-sensitive lowercasing (Greek Final_Sigma).
-#![cfg(feature = "alloc")]
+#![cfg(all(feature = "case", feature = "alloc"))]
 use intl::unicode::lowercase_str;
 
 #[test]

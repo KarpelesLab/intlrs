@@ -14,8 +14,12 @@
 //! |----------|----------------------------|
 //! | `ascii`  | `U+0000..=U+007F`          |
 //! | `latin1` | `U+0000..=U+00FF`          |
-//! | `bmp`    | `U+0000..=U+FFFF` (default) |
-//! | `full`   | `U+0000..=U+10FFFF`        |
+//! | `bmp`    | `U+0000..=U+FFFF`          |
+//! | `full`   | `U+0000..=U+10FFFF` (default) |
+//!
+//! Individual algorithms (normalization, segmentation, bidi, case, collation,
+//! idna, confusables, identifiers) are each their own Cargo feature — all on by
+//! default, each independently disable-able with `default-features = false`.
 //!
 //! Any codepoint outside the compiled range — like a genuinely unassigned one —
 //! resolves to the neutral default: [`GeneralCategory::Unassigned`] / `false`.
@@ -31,42 +35,51 @@
 //! assert!(!'\u{0378}'.is_assigned()); // a reserved codepoint
 //! ```
 
+#[cfg(feature = "bidi")]
 pub mod bidi;
+#[cfg(feature = "case")]
 pub mod case;
 pub mod category;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "collation")]
 pub mod collate;
 pub(crate) mod generated;
+#[cfg(feature = "identifiers")]
 pub mod ident;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "idna")]
 pub mod idna;
 #[cfg(feature = "alloc")]
 pub mod names;
+#[cfg(feature = "normalization")]
 pub mod normalize;
 pub mod numeric;
 mod predicates;
 pub mod script;
+#[cfg(feature = "segmentation")]
 pub mod segment;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "confusables")]
 pub mod spoof;
 pub mod width;
 
+#[cfg(feature = "bidi")]
 pub use bidi::{base_direction, bidi_class, BidiClass, Direction};
+#[cfg(feature = "case")]
 pub use case::{
     case_fold, fold, lowercase, to_lowercase, to_titlecase, to_uppercase, uppercase, CaseMapIter,
     CaseMapping,
 };
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "case", feature = "alloc"))]
 pub use case::{lowercase_str, lowercase_str_lang, titlecase, uppercase_str_lang};
 pub use category::{GeneralCategory, Group};
-#[cfg(feature = "alloc")]
+#[cfg(feature = "collation")]
 pub use collate::{compare, sort_key, AlternateHandling, Collator, Strength, Tailoring};
 pub use generated::general_category::UNICODE_VERSION;
+#[cfg(feature = "identifiers")]
 pub use ident::{is_identifier, is_xid_continue, is_xid_start};
 #[cfg(feature = "names")]
 pub use names::name;
 #[cfg(feature = "alloc")]
 pub use names::{char_name, hangul_syllable_name};
+#[cfg(feature = "normalization")]
 pub use normalize::{
     canonical_combining_class, canonical_combining_class_u32, is_nfc, is_nfd, is_nfkc, is_nfkd,
     nfc, nfd, nfkc, nfkd, quick_check_nfc, quick_check_nfd, quick_check_nfkc, quick_check_nfkd,
@@ -86,6 +99,7 @@ pub use predicates::{
 pub use script::{
     script, script_extensions, script_extensions_u32, script_u32, Script, ScriptExtensions,
 };
+#[cfg(feature = "segmentation")]
 pub use segment::{
     graphemes, line_breaks, sentences, words, Graphemes, LineBreak, LineBreaks, Sentences, Words,
 };

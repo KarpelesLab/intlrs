@@ -1,5 +1,5 @@
 //! Official UAX #29 word boundary conformance (WordBreakTest.txt).
-#![cfg(feature = "full")]
+#![cfg(all(feature = "full", feature = "segmentation"))]
 
 use intl::unicode::words;
 use std::fs;

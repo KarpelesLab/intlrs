@@ -325,10 +325,29 @@ fn main() {
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian.json"));
 
     // ---- generated/mod.rs ----
+    // Gate the large per-component tables behind their Cargo feature so that
+    // disabling a component (e.g. `collation`, ~1.9 MB) drops its table from the
+    // build entirely. Foundational tables (general_category, binary_props,
+    // properties, numeric, script, east_asian_width, plurals) are always built.
+    let module_feature = |m: &str| -> Option<&'static str> {
+        match m {
+            "bidi" => Some("bidi"),
+            "case" => Some("case"),
+            "collation" => Some("collation"),
+            "confusables" => Some("confusables"),
+            "idna" => Some("idna"),
+            "normalization" => Some("normalization"),
+            "segmentation" => Some("segmentation"),
+            _ => None,
+        }
+    };
     modules.sort();
     let mut mod_out = String::new();
     write_header(&mut mod_out);
     for m in &modules {
+        if let Some(feat) = module_feature(m) {
+            let _ = write!(mod_out, "#[cfg(feature = \"{feat}\")]\n");
+        }
         let _ = write!(mod_out, "pub(crate) mod {m};\n");
     }
     fs::write(out_dir.join("mod.rs"), &mod_out).expect("write generated/mod.rs");

@@ -1,6 +1,6 @@
 //! Official UAX #29 grapheme cluster conformance (GraphemeBreakTest.txt).
 //! `÷` marks a boundary, `×` marks no boundary. Requires the `full` tier.
-#![cfg(feature = "full")]
+#![cfg(all(feature = "full", feature = "segmentation"))]
 
 use intl::unicode::graphemes;
 use std::fs;

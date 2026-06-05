@@ -2,7 +2,7 @@
 name = "intl"
 version = "0.2.0"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.86"
 description = "Pure-Rust, no_std internationalization primitives (a pure-Rust ICU analog). The `unicode` module provides General_Category, character predicates, scripts, East Asian Width, numeric values, case mapping/folding, UAX #15 normalization (NFC/NFD/NFKC/NFKD), and UTS #10 collation — property tables compiled into const-fn match lookups, with feature-selectable codepoint ranges."
 repository = "https://github.com/KarpelesLab/intlrs"
 license = "MIT"
@@ -21,13 +21,27 @@ include = [
 ]
 
 [features]
-# Batteries-included by default: the whole Unicode codepoint space (`full`), the
-# allocating APIs (`alloc`), and the full character-name database (`names`). All
-# pure-Rust, `no_std`, MSRV 1.70. To shrink the build, opt out with
-# `default-features = false` and select a smaller range tier (see below).
-# (`iana-tz` is the only thing not on by default — it adds a dependency.)
-default = ["names"] # names -> alloc -> full -> bmp -> latin1 -> ascii
+# Batteries-included by default: the whole Unicode codepoint space (`full`),
+# the allocating APIs (`alloc`), every Unicode algorithm component, the full
+# character-name database (`names`), and the IANA time-zone database (`iana-tz`).
+# All `no_std`. To shrink the build, opt out with `default-features = false` and
+# enable only the range tier + components you need (see below).
+default = [
+    "full",
+    "alloc",
+    "names",
+    "normalization",
+    "segmentation",
+    "bidi",
+    "case",
+    "identifiers",
+    "collation",
+    "idna",
+    "confusables",
+    "iana-tz",
+]
 
+# --- Range tiers (opt out for size) -----------------------------------------
 # Coarse, nested codepoint-range tiers. Selecting a tier compiles it and every
 # smaller tier; codepoints outside the compiled range resolve to `Unassigned` (Cn).
 ascii = []              # U+0000..=U+007F
@@ -36,21 +50,35 @@ bmp = ["latin1"]        # U+0100..=U+FFFF (rest of the Basic Multilingual Plane)
 full = ["bmp"]          # U+10000..=U+10FFFF (supplementary planes)
 
 # Allocation. Still `no_std`; enables APIs that need `alloc` (the formatters,
-# `unicode::collate`, …). Implies `full` because they operate over the whole
+# `collate`, `idna`, …). Implies `full` because they operate over the whole
 # codepoint space.
 alloc = ["full"]
 
-# Full IANA time-zone support via the embedded `timezone-data` crate (the IANA
-# tz database: historical transitions, DST, abbreviations). Implies `alloc` for
-# the `DateTime` bridge. NOTE: `timezone-data` raises the MSRV to 1.86 when this
-# feature is enabled; the rest of the crate stays at 1.70.
-iana-tz = ["dep:timezone-data", "alloc"]
+# --- Unicode algorithm components (opt out individually) --------------------
+# Each gates both its module and its (large) generated table. The foundational
+# property lookups — General_Category, predicates, scripts, East Asian Width,
+# numeric values — are always available. Dependencies between components are
+# expressed below (e.g. collation builds on case + normalization).
+normalization = []                          # UAX #15 NFC/NFD/NFKC/NFKD
+segmentation = []                           # UAX #29 grapheme/word/sentence + UAX #14 line
+bidi = []                                   # UAX #9 bidirectional algorithm
+identifiers = []                            # UAX #31 identifiers
+case = ["normalization", "segmentation"]    # case mapping/folding (needs NFD + word breaks)
+collation = ["case", "alloc"]               # UTS #10 collation (~1.9 MB table)
+idna = ["normalization", "alloc"]           # UTS #46 IDNA
+confusables = ["normalization", "alloc"]    # UTS #39 confusable/skeleton
 
 # The full tabulated character `Name` database (`unicode::name`). Implies
 # `alloc`. NOTE: embeds a ~1.3 MB name blob (`src/unicode/names.bin`) into the
 # binary when enabled; the algorithmic `char_name` (Hangul/CJK/…) needs no data
 # and is always available.
 names = ["alloc"]
+
+# --- Time zones -------------------------------------------------------------
+# Full IANA time-zone support via the embedded `timezone-data` crate (historical
+# transitions, DST, abbreviations). Implies `alloc` for the `DateTime` bridge.
+# POSIX `TZ` rules are available without this feature.
+iana-tz = ["dep:timezone-data", "alloc"]
 
 [dependencies]
 # Optional: only pulled in by the `iana-tz` feature. no_std / no-alloc itself.

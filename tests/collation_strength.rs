@@ -1,5 +1,5 @@
 //! Collation strength levels (case/accent-insensitive comparison).
-#![cfg(feature = "alloc")]
+#![cfg(feature = "collation")]
 use core::cmp::Ordering;
 use intl::unicode::collate::{AlternateHandling, Collator, Strength};
 

@@ -1,3 +1,4 @@
+#![cfg(feature = "case")]
 //! Full, unconditional case mapping and folding.
 
 use intl::unicode::{case_fold, to_lowercase, to_titlecase, to_uppercase};

@@ -1,5 +1,5 @@
 //! Official UAX #29 sentence boundary conformance (SentenceBreakTest.txt).
-#![cfg(feature = "full")]
+#![cfg(all(feature = "full", feature = "segmentation"))]
 
 use intl::unicode::sentences;
 use std::fs;

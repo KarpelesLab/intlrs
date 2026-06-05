@@ -116,7 +116,7 @@ Beyond the `unicode` module:
   feature it also loads the full **IANA tz database** (via the embedded
   `timezone-data` crate): `load_zone("America/New_York")` then `offset_at` /
   `abbrev_at` / `is_dst_at` / `to_local` for any instant, with historical
-  transitions. (`iana-tz` raises the MSRV to 1.86; the rest of the crate is 1.70.)
+  transitions (the `iana-tz` feature, on by default).
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
   civil (tabular) Islamic, Persian (Solar Hijri), Hebrew, and Chinese (lunisolar,
   1900–2099 via an embedded lunar table) calendars through the Julian Day Number,
@@ -138,23 +138,44 @@ under `src/cldr/` and embedded with `include_bytes!`, so the table layer is
 
 ## Features
 
-**Batteries included by default, opt out for size.** The default feature set is
-`["names"]`, which transitively enables everything pure-Rust:
+**Everything on by default, opt out for size.** Out of the box you get the
+**whole Unicode codepoint space** (`full`), every allocating API (`alloc`), every
+Unicode **algorithm component**, the **full character-name database** (`names`),
+and the **IANA time-zone database** (`iana-tz`) — all `no_std`. MSRV 1.86.
 
+To shrink the build, set `default-features = false` and enable only the range
+tier + the components you want.
+
+### Algorithm components (opt out individually)
+
+Each component gates its module *and* its (sometimes large) generated table, so
+disabling one removes it from the build entirely:
+
+| feature         | what it provides                         | gated table |
+|-----------------|------------------------------------------|-------------|
+| `normalization` | UAX #15 NFC/NFD/NFKC/NFKD                 | 659 KB |
+| `segmentation`  | UAX #29 grapheme/word/sentence + UAX #14 line | 429 KB |
+| `bidi`          | UAX #9 bidirectional algorithm           | 61 KB |
+| `case`          | case mapping/folding (→ normalization, segmentation) | 284 KB |
+| `collation`     | UTS #10 collation (→ case, alloc)        | **1.9 MB** |
+| `idna`          | UTS #46 IDNA (→ normalization, alloc)    | 464 KB |
+| `confusables`   | UTS #39 confusable/skeleton (→ normalization, alloc) | 369 KB |
+| `identifiers`   | UAX #31 identifiers                      | — |
+| `names`         | full character-name database (→ alloc)   | 1.3 MB |
+
+The foundational property lookups — `General_Category`, predicates, scripts,
+East Asian Width, numeric values — are always available and not gated.
+
+```toml
+# Just normalization, nothing else:
+intl = { version = "0.1", default-features = false, features = ["full", "normalization"] }
+# Just collation (pulls in case + normalization + alloc automatically):
+intl = { version = "0.1", default-features = false, features = ["collation"] }
+# Everything except the 1.9 MB collation table and IANA tz:
+intl = { version = "0.1", default-features = false, features = [
+    "names", "segmentation", "bidi", "case", "idna", "confusables", "identifiers",
+] }
 ```
-names → alloc → full → bmp → latin1 → ascii
-```
-
-So out of the box you get the **whole Unicode codepoint space** (`full`), every
-allocating API (`alloc`: the formatters, `collate`, `spoof`, `idna`, `locale`,
-…), and the **full character-name database** (`names`) — all `no_std`, MSRV 1.70.
-
-The one thing *not* in the default is **`iana-tz`** (the full IANA time-zone
-database via the embedded [`timezone-data`](https://crates.io/crates/timezone-data)
-crate): it adds a dependency and raises the MSRV to 1.86, so it stays opt-in.
-POSIX `TZ` rules are available by default.
-
-To shrink the build, disable the defaults and pick a smaller range tier.
 
 ## Range tiers (opt out for size)
 
@@ -175,8 +196,8 @@ intl = "0.1"
 intl = { version = "0.1", default-features = false, features = ["bmp"] }
 # Minimal: ASCII tables only:
 intl = { version = "0.1", default-features = false, features = ["ascii"] }
-# Add the full IANA time-zone database (raises MSRV to 1.86):
-intl = { version = "0.1", features = ["iana-tz"] }
+# iana-tz is already on by default; drop it (and pick what you need) to avoid the dep:
+intl = { version = "0.1", default-features = false, features = ["full", "alloc"] }
 ```
 
 A codepoint outside the compiled tier reports `GeneralCategory::Unassigned`

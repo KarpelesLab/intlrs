@@ -1,7 +1,7 @@
 //! Official UAX #15 conformance: every line of `NormalizationTest.txt` is
 //! checked against all four normalization forms. Requires the `full` tier (the
 //! test data spans all planes); run with `--features full` or `--all-features`.
-#![cfg(feature = "full")]
+#![cfg(all(feature = "full", feature = "normalization"))]
 
 use intl::unicode::{is_nfc, is_nfd, is_nfkc, is_nfkd, nfc, nfd, nfkc, nfkd};
 use std::fs;

@@ -107,7 +107,7 @@ fn spell(sets: &[RuleSet], ruleset: &str, value: i64) -> String {
             None => (k.as_str(), 10),
         };
         if let Ok(base) = base_str.parse::<i64>() {
-            if base <= value && best.map_or(true, |(b, ..)| base > b) {
+            if base <= value && best.is_none_or(|(b, ..)| base > b) {
                 best = Some((base, radix, t));
             }
         }

@@ -1,5 +1,5 @@
 //! UTS #46 / Punycode round-trips.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "idna")]
 
 use intl::unicode::idna::{to_ascii, to_unicode};
 

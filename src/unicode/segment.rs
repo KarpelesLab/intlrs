@@ -778,7 +778,7 @@ fn line_break_before(
     // is East_Asian_Width-tailorable: a closing quote followed by a wide
     // (East-Asian) character keeps the no-break too (so CJK "…汤”" stays joined).
     if c == QU && cur.pf() {
-        let ok = next.map_or(true, |n| {
+        let ok = next.is_none_or(|n| {
             matches!(
                 n.cls,
                 SP | GL | WJ | CL | QU | CP | EX | IS | SY | BK | CR | LF | NL | ZW
@@ -808,10 +808,10 @@ fn line_break_before(
     // LB19/LB19a: quotation marks, with the East-Asian-Width refinements.
     // (A few CJK opening/closing-quote edge cases against wide neighbours are
     // not yet exact — see the line-break conformance test.)
-    if c == QU && (!prev.wide() || next.map_or(true, |n| !n.wide())) {
+    if c == QU && (!prev.wide() || next.is_none_or(|n| !n.wide())) {
         return (false, false);
     }
-    if p == QU && (!cur.wide() || prev2.map_or(true, |n| !n.wide())) {
+    if p == QU && (!cur.wide() || prev2.is_none_or(|n| !n.wide())) {
         return (false, false);
     }
     if c == CB || p == CB {
@@ -821,9 +821,7 @@ fn line_break_before(
     // character immediately before the hyphen (so SP counts).
     if matches!(p, HY | HH)
         && al_hl(c)
-        && prev2.map_or(true, |u| {
-            matches!(u.cls, BK | CR | LF | NL | SP | ZW | CB | GL)
-        })
+        && prev2.is_none_or(|u| matches!(u.cls, BK | CR | LF | NL | SP | ZW | CB | GL))
     {
         return (false, false);
     }

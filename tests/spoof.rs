@@ -1,5 +1,5 @@
 //! UTS #39 confusable / spoof detection.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "confusables")]
 
 use intl::unicode::spoof::{confusable, is_single_script, skeleton};
 

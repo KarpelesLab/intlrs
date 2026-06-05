@@ -1,6 +1,6 @@
 //! Readable collation spot-checks. The exhaustive UCA conformance run lives in
 //! `collation_conformance.rs`.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "collation")]
 
 use core::cmp::Ordering;
 use intl::unicode::collate::{compare, AlternateHandling, Collator};

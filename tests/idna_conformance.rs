@@ -1,5 +1,5 @@
 //! UTS #46 conformance against IdnaTestV2.txt (nontransitional ToASCII column).
-#![cfg(feature = "alloc")]
+#![cfg(feature = "idna")]
 
 use intl::unicode::idna::to_ascii;
 use std::fs;

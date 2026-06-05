@@ -1,5 +1,5 @@
 //! Latin-ASCII transliteration.
-#![cfg(feature = "alloc")]
+#![cfg(all(feature = "alloc", feature = "normalization"))]
 use intl::translit::latin_ascii as t;
 
 #[test]

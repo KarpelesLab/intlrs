@@ -7,7 +7,7 @@
 //! Requires the `bmp` tier: the compared range reaches U+2FFF, so under a
 //! narrower tier those codepoints would (correctly) read their neutral default
 //! and not match `std`.
-#![cfg(feature = "bmp")]
+#![cfg(all(feature = "bmp", feature = "case"))]
 
 use intl::unicode::{
     is_alphabetic, is_control, is_lowercase, is_uppercase, to_lowercase, to_uppercase,

@@ -1,3 +1,4 @@
+#![cfg(feature = "normalization")]
 //! Readable normalization spot-checks. The exhaustive UAX #15 conformance run
 //! lives in `normalization_conformance.rs` (full tier).
 

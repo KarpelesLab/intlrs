@@ -2,7 +2,12 @@
 //! pseudo-random strings, asserting it never panics and that key invariants
 //! hold (round-trip, idempotence, ordering consistency). Deterministic, so it
 //! runs in normal CI; complements the official conformance suites.
-#![cfg(feature = "alloc")]
+#![cfg(all(
+    feature = "collation",
+    feature = "idna",
+    feature = "confusables",
+    feature = "bidi"
+))]
 
 use intl::unicode::{
     case_fold, collate, graphemes, line_breaks, nfc, nfd, nfkc, nfkd, sentences, to_lowercase,

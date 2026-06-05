@@ -1,6 +1,6 @@
 //! Official UAX #14 line-break conformance (LineBreakTest.txt). The ~3 MB file
 //! is fetched on demand (see the `conformance` CI job); skipped when absent.
-#![cfg(feature = "full")]
+#![cfg(all(feature = "full", feature = "segmentation"))]
 
 use intl::unicode::line_breaks;
 use std::fs;

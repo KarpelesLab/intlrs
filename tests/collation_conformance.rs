@@ -2,7 +2,7 @@
 //! list of strings in non-decreasing collation order. We verify that every
 //! consecutive pair compares as non-decreasing under the matching collator.
 //! Requires the `alloc` feature (which implies `full`).
-#![cfg(feature = "alloc")]
+#![cfg(feature = "collation")]
 
 use intl::unicode::collate::{AlternateHandling, Collator};
 use std::fs;

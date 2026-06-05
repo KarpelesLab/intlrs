@@ -183,24 +183,48 @@ jobs:
         run: cargo doc --no-deps --all-features
 
   msrv:
-    name: MSRV (Rust 1.70)
+    name: MSRV (Rust 1.86)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      # The crate declares rust-version = "1.70". Build it on exactly that
-      # toolchain so an accidental use of a newer-stable API fails CI rather than
-      # downstream. The `iana-tz` feature is excluded: its `timezone-data`
-      # dependency requires 1.86 (documented), so it is not part of the MSRV set.
-      - name: Install Rust 1.70
-        uses: dtolnay/rust-toolchain@1.70.0
+      # The crate declares rust-version = "1.86" (the floor set by the default
+      # `iana-tz` / `timezone-data` dependency). Build the default plus each tier
+      # on exactly that toolchain so an accidental use of a newer-stable API fails
+      # CI rather than downstream.
+      - name: Install Rust 1.86
+        uses: dtolnay/rust-toolchain@1.86.0
 
       - name: Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Build across feature tiers
+      - name: Build default + feature tiers
         run: |
+          cargo build
           for feat in ascii latin1 bmp full alloc names; do
+            echo "::group::features=$feat"
+            cargo build --no-default-features --features "$feat"
+            echo "::endgroup::"
+          done
+
+  components:
+    name: Component subsets build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      # Each Unicode algorithm component must build in isolation (disabling all
+      # the others), so opting out of one never breaks the rest.
+      - name: Build each component alone
+        run: |
+          for feat in "normalization full" segmentation bidi identifiers case \
+                      collation idna confusables names; do
             echo "::group::features=$feat"
             cargo build --no-default-features --features "$feat"
             echo "::endgroup::"

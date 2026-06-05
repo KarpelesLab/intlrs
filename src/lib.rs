@@ -60,7 +60,7 @@ pub mod relative;
 pub mod spellout;
 #[cfg(feature = "alloc")]
 pub mod timezone;
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", feature = "normalization"))]
 pub mod translit;
 pub mod unicode;
 #[cfg(feature = "alloc")]

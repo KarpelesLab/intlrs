@@ -1,3 +1,4 @@
+#![cfg(feature = "identifiers")]
 //! UAX #31 identifier checks.
 
 use intl::unicode::{is_identifier, is_xid_continue, is_xid_start};
