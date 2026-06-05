@@ -8,8 +8,7 @@ This document tracks what exists, what's missing for ICU feature parity, and the
 cross-cutting engineering work (fuzzing, benchmarks, profiling, and the
 table-representation optimization that profiling will drive).
 
-**Legend:** ✅ done & conformance-verified · 🟡 partial · ⬜ not started ·
-🧱 needs CLDR data · 🔬 needs a new conformance/test corpus.
+**Legend:** ✅ done & conformance-verified · 🟡 partial · ⬜ not started.
 
 ---
 
@@ -38,10 +37,10 @@ Infra: offline `codegen` (packaging-time), CI drift guard, deterministic output,
 Self-contained, driven by data we already vendor or can add; each has an official
 conformance corpus. Highest value, lowest risk — do these next.
 
-- ✅🔬 **Line breaking (UAX #14)** — `line_breaks(&str)` yielding break
+- ✅ **Line breaking (UAX #14)** — `line_breaks(&str)` yielding break
   opportunities (mandatory vs allowed). **19338/19338 LineBreakTest lines pass**
   (full conformance), including the LB15b/LB19a East-Asian-width quotation rules.
-- ✅🔬 **Bidirectional algorithm (UAX #9)** — `bidi::process` resolves embedding
+- ✅ **Bidirectional algorithm (UAX #9)** — `bidi::process` resolves embedding
   levels + visual order (X/W/N/I/L rules, isolates, paired brackets).
   **100% on `BidiCharacterTest` (91707/91707)**, including the override+isolate+
   embedding sos/eos boundary cases (eos skips deeper sibling embeddings).
@@ -52,7 +51,7 @@ conformance corpus. Highest value, lowest risk — do these next.
   mixed-script & restriction-level checks. Data: `confusables.txt`,
   `IdentifierStatus.txt`, `IdentifierType.txt`. Conformance: examples in the
   spec; cross-check vs ICU `uspoof`.
-- ✅🔬 **IDNA / UTS #46** — domain-name `to_ascii`/`to_unicode` (Punycode +
+- ✅ **IDNA / UTS #46** — domain-name `to_ascii`/`to_unicode` (Punycode +
   mapping + validation). Data: `IdnaMappingTable.txt`. Conformance:
   `IdnaTestV2.txt`. Depends on normalization (have) + Punycode (RFC 3492, small).
 - ✅ **Case completeness** — ✅ titlecasing (`titlecase`), ✅ Greek Final_Sigma
@@ -134,7 +133,7 @@ shaped data source than UCD. This phase is the gate for Phase 4.
 - ✅ **Locale identifiers (BCP 47 / UTS #35)** — parse/canonicalize `Locale`,
   language/script/region/variant/extensions (incl. `-u-`/`-t-`/`-x-`),
   likely-subtags (maximize/minimize), negotiation/matching.
-- ✅🔬 **Plural rules (CLDR)** — cardinal `PluralCategory` selection via
+- ✅ **Plural rules (CLDR)** — cardinal `PluralCategory` selection via
   `intl::plural` (rules compiled to a match; 224 locales, validated against the
   CLDR sample data). Cardinal + ordinal, including the compact `c`/`e` operand
   (`PluralOperands::parse("1.2c6")`). Phase 3 complete.
@@ -149,7 +148,7 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   scientific, compact, parsing (`parse_decimal`), and native digit systems
   (`to_numbering_system`). CLDR symbols + grouping/fraction patterns, curated
   locale set.
-- ✅🧱 **Rule-based number formatting (RBNF)** — `intl::spellout::spell_cardinal`
+- ✅ **Rule-based number formatting (RBNF)** — `intl::spellout::spell_cardinal`
   + `spell_ordinal` are a locale-driven CLDR RBNF engine: cardinal and ordinal
   spell-out for the curated locale set (en/de/fr/nl/es/it/pt/sv). ✅ ordinal
   *formatting* (`number::format_ordinal`, "21st"). Still: fractional/year forms.
@@ -167,9 +166,9 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 - ✅ **Relative date/time** (`intl::relative`, "3 days ago"), ✅ **duration**
   (`intl::unit::format_duration`), ✅ unit/measurement formatting (`intl::unit`),
   ✅ list formatting (`intl::list`), ✅ display names (`intl::display`).
-- 🧱 ✅ MessageFormat (`intl::message`, subset) — ICU MessageFormat (and/or MessageFormat 2.0):
+- ✅ MessageFormat (`intl::message`, subset) — ICU MessageFormat (and/or MessageFormat 2.0):
   select/plural/gender, nested args.
-- ✅🧱 **Collation tailoring** — ✅ strength levels (`Collator::with_strength`),
+- ✅ **Collation tailoring** — ✅ strength levels (`Collator::with_strength`),
   ✅ numeric ordering (`with_numeric`, natural sort), ✅ a locale-tailoring rule
   engine (`Tailoring::parse` for `<`/`<<`/`<<<`/`=` + expansions + multi-char
   digraph targets) with ✅ **unbounded weight allocation** (pair-encoded
