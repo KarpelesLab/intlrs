@@ -116,22 +116,57 @@ fn lookup_contraction(first: u32, suffix: &[char]) -> Option<&'static [u64]> {
 }
 
 /// Produce the collation element array for an NFD codepoint buffer (UCA S2.1).
-fn collation_elements(mut cv: Vec<char>) -> Vec<u64> {
+fn collation_elements(cv: Vec<char>) -> Vec<u64> {
     let mut cea = Vec::new();
+    each_collation_element(&cv, |ces, opt, _start| match ces {
+        Some(ces) => cea.extend_from_slice(ces),
+        None => push_implicit(opt, &mut cea),
+    });
+    cea
+}
+
+/// Core of [`collation_elements`]: walk the NFD buffer `cv` (UCA S2.1) and, for
+/// each collation step, invoke `emit(Some(ces), 0, start)` with the matched
+/// element slice, or `emit(None, s0, start)` when no mapping exists (caller
+/// derives the implicit weights for code point `s0`). `start` is the index in
+/// `cv` of the starter that began the step.
+///
+/// Discontiguous matching (S2.1.1–S2.1.3) consumes unblocked non-starters that
+/// lie *after* the contiguous match. The previous implementation removed each
+/// consumed char from `cv` with `Vec::remove` — an O(n) shift inside the loop,
+/// quadratic on long combining-mark runs. Here consumed positions are marked in
+/// a `consumed` bitmask instead (no shifting), and the discontiguous lookahead
+/// is capped at the longest registered contraction suffix for the starter, so a
+/// run of marks that forms no contraction is not rescanned repeatedly.
+fn each_collation_element<F: FnMut(Option<&'static [u64]>, u32, usize)>(cv: &[char], mut emit: F) {
+    let mut consumed = alloc::vec![false; cv.len()];
+    let mut suffix: Vec<char> = Vec::new(); // reused buffer (no per-step clone)
     let mut i = 0;
     while i < cv.len() {
+        if consumed[i] {
+            i += 1;
+            continue;
+        }
         let s0 = cv[i] as u32;
         let mut end = i + 1;
         let mut matched: Option<&'static [u64]> = gen::ce_singles(s0);
-        let mut suffix: Vec<char> = Vec::new();
+        suffix.clear();
+
+        // The longest registered contraction suffix for `s0` bounds how far the
+        // discontiguous scan can usefully look ahead.
+        let mut max_suf = 0usize;
 
         // Longest contiguous contraction (entries are sorted longest-first).
         if let Some(entries) = gen::contractions(s0) {
             for (suf, ces) in entries {
+                if suf.len() > max_suf {
+                    max_suf = suf.len();
+                }
                 let stop = i + 1 + suf.len();
                 if stop <= cv.len() && cv[i + 1..stop] == **suf {
                     matched = Some(ces);
-                    suffix = suf.to_vec();
+                    suffix.clear();
+                    suffix.extend_from_slice(suf);
                     end = stop;
                     break;
                 }
@@ -139,45 +174,56 @@ fn collation_elements(mut cv: Vec<char>) -> Vec<u64> {
         }
 
         // Discontiguous extension: pull in unblocked non-starters (S2.1.1–S2.1.3).
-        loop {
-            let mut last_ccc = 0u8;
-            let mut j = end;
-            let mut hit = None;
-            while j < cv.len() {
-                let cc = ccc(cv[j]);
-                if cc == 0 {
-                    break; // starter: stop
-                }
-                if last_ccc < cc {
-                    let mut trial = suffix.clone();
-                    trial.push(cv[j]);
-                    if let Some(ces) = lookup_contraction(s0, &trial) {
-                        hit = Some((j, ces, trial));
-                        break;
+        // Each successful pass appends one consumable non-starter to `suffix`; we
+        // cap the suffix length by `max_suf` (the longest registered contraction)
+        // so a long mark run that can't form a longer contraction stops at once
+        // instead of being rescanned.
+        if max_suf > suffix.len() {
+            loop {
+                let mut last_ccc = 0u8;
+                let mut j = end;
+                let mut hit: Option<usize> = None;
+                while j < cv.len() {
+                    if consumed[j] {
+                        j += 1;
+                        continue;
                     }
-                    last_ccc = cc;
-                } else {
-                    break; // blocked non-starter: stop
+                    let cc = ccc(cv[j]);
+                    if cc == 0 {
+                        break; // starter: stop
+                    }
+                    if last_ccc < cc {
+                        suffix.push(cv[j]);
+                        if let Some(ces) = lookup_contraction(s0, &suffix) {
+                            matched = Some(ces);
+                            hit = Some(j); // keep the pushed char in `suffix`
+                            break;
+                        }
+                        suffix.pop();
+                        last_ccc = cc;
+                    } else {
+                        break; // blocked non-starter: stop
+                    }
+                    j += 1;
                 }
-                j += 1;
-            }
-            match hit {
-                Some((j, ces, trial)) => {
-                    matched = Some(ces);
-                    suffix = trial;
-                    cv.remove(j);
+                match hit {
+                    Some(j) => {
+                        consumed[j] = true;
+                        if suffix.len() >= max_suf {
+                            break; // no longer contraction possible
+                        }
+                    }
+                    None => break,
                 }
-                None => break,
             }
         }
 
         match matched {
-            Some(ces) => cea.extend_from_slice(ces),
-            None => push_implicit(s0, &mut cea),
+            Some(ces) => emit(Some(ces), 0, i),
+            None => emit(None, s0, i),
         }
         i = end;
     }
-    cea
 }
 
 /// Emit synthetic collation elements for an ASCII-digit run so that numeric
@@ -914,4 +960,127 @@ fn build_tailored_sort_key(cea: &[u64]) -> Vec<u16> {
 /// The upper-case form of `c` (first char of its full mapping), or `c` itself.
 fn upper(c: char) -> char {
     super::case::to_uppercase(c).next().unwrap_or(c)
+}
+
+#[cfg(test)]
+mod dos_fix_tests {
+    use super::*;
+    use alloc::string::String;
+
+    /// Reference (pre-fix) collation-element generator, using `Vec::remove`, to
+    /// confirm the bitmask rewrite is byte-identical.
+    fn collation_elements_reference(mut cv: Vec<char>) -> Vec<u64> {
+        let mut cea = Vec::new();
+        let mut i = 0;
+        while i < cv.len() {
+            let s0 = cv[i] as u32;
+            let mut end = i + 1;
+            let mut matched: Option<&'static [u64]> = gen::ce_singles(s0);
+            let mut suffix: Vec<char> = Vec::new();
+            if let Some(entries) = gen::contractions(s0) {
+                for (suf, ces) in entries {
+                    let stop = i + 1 + suf.len();
+                    if stop <= cv.len() && cv[i + 1..stop] == **suf {
+                        matched = Some(ces);
+                        suffix = suf.to_vec();
+                        end = stop;
+                        break;
+                    }
+                }
+            }
+            loop {
+                let mut last_ccc = 0u8;
+                let mut j = end;
+                let mut hit = None;
+                while j < cv.len() {
+                    let cc = ccc(cv[j]);
+                    if cc == 0 {
+                        break;
+                    }
+                    if last_ccc < cc {
+                        let mut trial = suffix.clone();
+                        trial.push(cv[j]);
+                        if let Some(ces) = lookup_contraction(s0, &trial) {
+                            hit = Some((j, ces, trial));
+                            break;
+                        }
+                        last_ccc = cc;
+                    } else {
+                        break;
+                    }
+                    j += 1;
+                }
+                match hit {
+                    Some((j, ces, trial)) => {
+                        matched = Some(ces);
+                        suffix = trial;
+                        cv.remove(j);
+                    }
+                    None => break,
+                }
+            }
+            match matched {
+                Some(ces) => cea.extend_from_slice(ces),
+                None => push_implicit(s0, &mut cea),
+            }
+            i = end;
+        }
+        cea
+    }
+
+    // Tiny deterministic PRNG (xorshift) — no external deps.
+    struct Rng(u64);
+    impl Rng {
+        fn next(&mut self) -> u64 {
+            let mut x = self.0;
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            self.0 = x;
+            x
+        }
+        fn pick<'a, T>(&mut self, xs: &'a [T]) -> &'a T {
+            &xs[(self.next() as usize) % xs.len()]
+        }
+    }
+
+    /// Characters chosen to exercise contractions (`l·`, `ch`), discontiguous
+    /// non-starters (combining marks of varying ccc), expansions, CJK (implicit
+    /// weights), digits, and ASCII.
+    const ALPHABET: &[char] = &[
+        'a', 'b', 'c', 'e', 'h', 'l', 'z', 'A', 'C', 'H', 'L', 'ñ', 'Ñ', 'å', 'Ç', 'ç', '·',
+        '\u{0301}', '\u{0300}', '\u{0327}', '\u{0323}', '\u{0308}', 'é', 'É', '0', '1', '2', '中',
+        ' ', '!', '\u{00C6}', '\u{0153}',
+    ];
+
+    fn random_string(rng: &mut Rng, len: usize) -> String {
+        (0..len).map(|_| *rng.pick(ALPHABET)).collect()
+    }
+
+    #[test]
+    fn collation_elements_matches_reference_fuzz() {
+        let mut rng = Rng(0xD1B54A32D192ED03);
+        for _ in 0..4000 {
+            let len = (rng.next() as usize) % 16;
+            let s = random_string(&mut rng, len);
+            let cv: Vec<char> = nfd(s.chars()).collect();
+            assert_eq!(
+                collation_elements(cv.clone()),
+                collation_elements_reference(cv),
+                "CE mismatch: s={s:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn perf_smoke_long_combining_run() {
+        // Previously O(n^2) in `collation_elements` via `Vec::remove`: a long run
+        // of combining marks after a starter must collate quickly.
+        let mut s = String::from("e");
+        for _ in 0..200_000 {
+            s.push('\u{0301}');
+        }
+        let key = sort_key(&s);
+        assert!(!key.is_empty());
+    }
 }
