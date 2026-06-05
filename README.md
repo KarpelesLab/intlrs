@@ -15,10 +15,13 @@ character properties compiled directly into Rust `match` dispatch by an offline
 code generator — so every lookup is a `const fn`, allocates nothing, and needs
 no runtime initialization.
 
-- **`no_std`, no `alloc`** — usable in embedded, kernel, and WASM contexts.
+- **Everything by default** — the full Unicode range, the formatters, and the
+  character-name database are on out of the box; opt *out* for size.
+- **Always `no_std`** — and fully usable with no allocator (drop the default
+  features and pick a range tier) for embedded, kernel, and WASM contexts.
 - **Tables as code** — the UCD is converted into a two-level paged `match`
   ("switch/case") index, not parsed at runtime.
-- **Feature-selectable ranges** — compile only the slice of the codepoint space
+- **Feature-selectable ranges** — trim to only the slice of the codepoint space
   you need. Anything outside the compiled range resolves to the neutral default
   (`Unassigned` / `false`), so every lookup is total.
 - Targets **Unicode 17.0.0**.
@@ -135,28 +138,45 @@ under `src/cldr/` and embedded with `include_bytes!`, so the table layer is
 
 ## Features
 
-`default = ["bmp"]`. Range tiers are `ascii ⊂ latin1 ⊂ bmp ⊂ full` (below). The
-**`alloc`** feature (still `no_std`) enables the allocating APIs
-(`unicode::collate`, `unicode::spoof`, `unicode::idna`, `intl::locale`, …); it
-implies `full`.
+**Batteries included by default, opt out for size.** The default feature set is
+`["names"]`, which transitively enables everything pure-Rust:
 
-## Range tiers
+```
+names → alloc → full → bmp → latin1 → ascii
+```
 
-Cargo features select how much of the codepoint space is compiled in, trading
-coverage for binary size. The tiers are nested (each implies the smaller ones):
+So out of the box you get the **whole Unicode codepoint space** (`full`), every
+allocating API (`alloc`: the formatters, `collate`, `spoof`, `idna`, `locale`,
+…), and the **full character-name database** (`names`) — all `no_std`, MSRV 1.70.
 
-| feature  | codepoints compiled         |
-|----------|-----------------------------|
-| `ascii`  | `U+0000..=U+007F`           |
-| `latin1` | `U+0000..=U+00FF`           |
-| `bmp`    | `U+0000..=U+FFFF` (default)  |
-| `full`   | `U+0000..=U+10FFFF`         |
+The one thing *not* in the default is **`iana-tz`** (the full IANA time-zone
+database via the embedded [`timezone-data`](https://crates.io/crates/timezone-data)
+crate): it adds a dependency and raises the MSRV to 1.86, so it stays opt-in.
+POSIX `TZ` rules are available by default.
+
+To shrink the build, disable the defaults and pick a smaller range tier.
+
+## Range tiers (opt out for size)
+
+The range tiers select how much of the codepoint space is compiled in, trading
+coverage for binary size. They are nested (each implies the smaller ones):
+
+| feature  | codepoints compiled              |
+|----------|----------------------------------|
+| `ascii`  | `U+0000..=U+007F`                |
+| `latin1` | `U+0000..=U+00FF`                |
+| `bmp`    | `U+0000..=U+FFFF`                |
+| `full`   | `U+0000..=U+10FFFF` (default)    |
 
 ```toml
-# Latin-1 only, no default BMP tables:
-intl = { version = "0.1", default-features = false, features = ["latin1"] }
-# Everything, including supplementary planes:
-intl = { version = "0.1", default-features = false, features = ["full"] }
+# Everything, the default:
+intl = "0.1"
+# Trim to the BMP and drop alloc/names for a smaller no_std build:
+intl = { version = "0.1", default-features = false, features = ["bmp"] }
+# Minimal: ASCII tables only:
+intl = { version = "0.1", default-features = false, features = ["ascii"] }
+# Add the full IANA time-zone database (raises MSRV to 1.86):
+intl = { version = "0.1", features = ["iana-tz"] }
 ```
 
 A codepoint outside the compiled tier reports `GeneralCategory::Unassigned`

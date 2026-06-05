@@ -2,7 +2,7 @@
 
 Goal: a **pure-Rust, `#![no_std]` analog of ICU** — the Unicode/CLDR algorithms
 and formatters, with the same conformance guarantees, no C dependency, and
-feature-selectable footprint.
+feature-selectable footprint (everything on by default; opt out for size).
 
 This document tracks what exists, what's missing for ICU feature parity, and the
 cross-cutting engineering work (fuzzing, benchmarks, profiling, and the

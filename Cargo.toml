@@ -21,17 +21,23 @@ include = [
 ]
 
 [features]
+# Batteries-included by default: the whole Unicode codepoint space (`full`), the
+# allocating APIs (`alloc`), and the full character-name database (`names`). All
+# pure-Rust, `no_std`, MSRV 1.70. To shrink the build, opt out with
+# `default-features = false` and select a smaller range tier (see below).
+# (`iana-tz` is the only thing not on by default — it adds a dependency.)
+default = ["names"] # names -> alloc -> full -> bmp -> latin1 -> ascii
+
 # Coarse, nested codepoint-range tiers. Selecting a tier compiles it and every
 # smaller tier; codepoints outside the compiled range resolve to `Unassigned` (Cn).
-default = ["bmp"]
 ascii = []              # U+0000..=U+007F
 latin1 = ["ascii"]      # U+0080..=U+00FF
 bmp = ["latin1"]        # U+0100..=U+FFFF (rest of the Basic Multilingual Plane)
 full = ["bmp"]          # U+10000..=U+10FFFF (supplementary planes)
 
-# Opt-in allocation. Still `no_std`; enables APIs that need `alloc`, currently
-# the `unicode::collate` module (Unicode Collation Algorithm). Implies `full`
-# because collation operates over the whole codepoint space.
+# Allocation. Still `no_std`; enables APIs that need `alloc` (the formatters,
+# `unicode::collate`, …). Implies `full` because they operate over the whole
+# codepoint space.
 alloc = ["full"]
 
 # Full IANA time-zone support via the embedded `timezone-data` crate (the IANA

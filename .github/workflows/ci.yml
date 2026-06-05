@@ -200,7 +200,7 @@ jobs:
 
       - name: Build across feature tiers
         run: |
-          for feat in ascii latin1 bmp full alloc; do
+          for feat in ascii latin1 bmp full alloc names; do
             echo "::group::features=$feat"
             cargo build --no-default-features --features "$feat"
             echo "::endgroup::"
