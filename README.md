@@ -5,9 +5,10 @@
 [![CI](https://github.com/KarpelesLab/intlrs/actions/workflows/ci.yml/badge.svg)](https://github.com/KarpelesLab/intlrs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Pure-Rust, `#![no_std]` internationalization primitives — a long-term, pure-Rust
-analog of ICU (collation, number formatting, normalization, transliteration, …).
-See [ROADMAP.md](ROADMAP.md) for the plan toward ICU feature parity.
+Pure-Rust, `#![no_std]` internationalization primitives — a pure-Rust analog of
+ICU (collation, number formatting, normalization, transliteration, …). The core
+Unicode algorithms ship with their official conformance suites passing 100%
+(Normalization, Collation, Grapheme/Word/Sentence, Line break, Bidi).
 
 The foundational layer, available today, is the **`unicode`** module: Unicode
 rune analysis driven by the official Unicode Character Database (UCD), with
