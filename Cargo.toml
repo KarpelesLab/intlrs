@@ -65,7 +65,7 @@ bidi = []                                   # UAX #9 bidirectional algorithm
 identifiers = []                            # UAX #31 identifiers
 case = ["normalization", "segmentation"]    # case mapping/folding (needs NFD + word breaks)
 collation = ["case", "alloc"]               # UTS #10 collation (~1.9 MB table)
-idna = ["normalization", "alloc"]           # UTS #46 IDNA
+idna = ["normalization", "alloc", "bidi"]   # UTS #46 IDNA (bidi: CheckBidi / RFC 5893)
 confusables = ["normalization", "alloc"]    # UTS #39 confusable/skeleton
 
 # The full tabulated character `Name` database (`unicode::name`). Implies
