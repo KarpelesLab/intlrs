@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1](https://github.com/KarpelesLab/intlrs/compare/v0.3.0...v0.3.1) - 2026-06-05
+
+### Other
+
+- use unsigned_abs in format_gmt_offset (i32::MIN panic)
+- guard empty separator in parse_decimal (latent hang) and saturating compact width
+- cap U-label code points before Punycode encode (encoder DoS)
+- memoize SB8 sentence lookahead (quadratic DoS)
+- bound window_decision scan (quadratic find/contains DoS)
+
 ## [0.3.0](https://github.com/KarpelesLab/intlrs/compare/v0.2.3...v0.3.0) - 2026-06-05
 
 ### Other
