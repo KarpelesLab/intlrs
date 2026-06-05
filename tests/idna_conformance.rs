@@ -73,11 +73,22 @@ fn idna_test_v2_to_ascii() {
         valid_fail, 0,
         "IDNA clean-success regressed: {valid_fail} failed"
     );
-    // Of the must-reject lines, we catch the basic ones (empty/over-long labels,
-    // bad Punycode). The remainder need CheckBidi / CheckJoiners, which are not
-    // implemented (documented). Guard the count we *do* reject against regression.
+    // We reject the basic cases (empty/over-long labels, bad Punycode) plus the
+    // full IDNA2008 validity set: CheckBidi (B1–B6), CheckJoiners / ContextJ
+    // (C1/C2), CheckHyphens (V2/V3), leading combining mark (V5), NFC validity
+    // (V1), the IDNA valid-status check (V6), and xn-- re-canonicalization.
+    //
+    // The residual must-reject lines we intentionally do NOT cover:
+    //   * `[A4_2]` trailing-root lines (e.g. `a.b.c.d.`, `鱊.`): VerifyDnsLength
+    //     is an optional flag and this profile accepts the single trailing root
+    //     label, so these are not errors for us.
+    //   * Two `[V7, A3]` lines whose source carries a lone surrogate (`\uD900`):
+    //     `unescape` cannot represent a surrogate as a Rust `char`, so it is
+    //     dropped and the source reduces to the valid string "az" — a harness
+    //     artifact, not a real gap.
+    // Guard the count we *do* reject against regression.
     assert!(
-        reject_ok >= 330,
+        reject_ok >= 480,
         "IDNA rejection coverage regressed: only {reject_ok}/{reject_total}"
     );
 }

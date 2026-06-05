@@ -15,7 +15,7 @@ fn ascii_roundtrip() {
 
 #[test]
 fn unicode_roundtrip() {
-    assert_eq!(to_unicode("xn--bcher-kva.example"), "bücher.example");
-    assert_eq!(to_unicode("xn--wgv71a119e.jp"), "日本語.jp");
-    assert_eq!(to_unicode("example.com"), "example.com");
+    assert_eq!(to_unicode("xn--bcher-kva.example").unwrap(), "bücher.example");
+    assert_eq!(to_unicode("xn--wgv71a119e.jp").unwrap(), "日本語.jp");
+    assert_eq!(to_unicode("example.com").unwrap(), "example.com");
 }
