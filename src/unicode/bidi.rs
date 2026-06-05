@@ -233,6 +233,15 @@ mod resolve {
         };
 
         let match_pdi = match_isolates(&raw);
+        // O(1) "is this index a matched PDI?" lookup for X10 below (a matched
+        // PDI is the target of some isolate initiator in `match_pdi`). Avoids a
+        // per-run linear `match_pdi.contains(..)` scan (latent O(n^2)).
+        let mut is_matched_pdi = vec![false; n];
+        for &p in &match_pdi {
+            if p < n {
+                is_matched_pdi[p] = true;
+            }
+        }
 
         // ---- X1–X8: explicit levels and overrides. ----
         let mut classes = raw.clone();
@@ -363,7 +372,7 @@ mod resolve {
             }
             // A continuation run (starts with a matched PDI) is appended, not started.
             let first = runs[r][0];
-            if classes[first] == PDI && match_pdi.contains(&first) {
+            if classes[first] == PDI && is_matched_pdi[first] {
                 continue;
             }
             let mut seq = Vec::new();
@@ -718,6 +727,49 @@ mod resolve {
                         m += 1;
                     }
                 }
+            }
+        }
+    }
+}
+
+#[cfg(all(test, feature = "alloc", feature = "bmp"))]
+mod tests {
+    use super::process;
+
+    /// Regression for the X10 matched-PDI membership test (formerly an O(n)
+    /// `match_pdi.contains(..)` scan, now an O(1) `is_matched_pdi[..]` lookup).
+    /// An input with many isolate initiators and their matching PDIs exercises
+    /// the continuation-run assembly path that the lookup guards; the result
+    /// must be unchanged (correct levels and a valid visual permutation).
+    #[test]
+    fn matched_pdi_lookup_assembles_isolate_runs() {
+        // LRI Hebrew PDI repeated: each isolate initiator is matched to a PDI,
+        // so the per-run `is_matched_pdi[first]` test must hold for every PDI
+        // run, which previously hit the linear scan.
+        let mut s = alloc::string::String::new();
+        for _ in 0..200 {
+            s.push('\u{2066}'); // LRI
+            s.push('\u{05D0}'); // Hebrew alef (R)
+            s.push('\u{2069}'); // PDI
+        }
+        let info = process(&s, None);
+        let n = s.chars().count();
+
+        // LTR paragraph (no strong char outside the isolates).
+        assert_eq!(info.paragraph_level, 0);
+        // The visual order is a permutation of the non-removed indices: same
+        // length, no duplicates, all in range.
+        let mut seen = alloc::vec![false; n];
+        for &i in &info.visual_order {
+            assert!(i < n);
+            assert!(!seen[i], "duplicate index in visual order");
+            seen[i] = true;
+        }
+        // The Hebrew letters resolve to an odd (RTL) level inside their isolate.
+        let chars: alloc::vec::Vec<char> = s.chars().collect();
+        for (i, &c) in chars.iter().enumerate() {
+            if c == '\u{05D0}' {
+                assert_eq!(info.levels[i].map(|l| l % 2), Some(1));
             }
         }
     }
