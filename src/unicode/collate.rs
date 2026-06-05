@@ -125,6 +125,30 @@ fn collation_elements(cv: Vec<char>) -> Vec<u64> {
     cea
 }
 
+/// Like [`collation_elements`], but also returns, for each emitted element, the
+/// index into `cv` of the starter that produced it. [`find`] uses this to map a
+/// primary in the stream back to the source character offset.
+fn collation_elements_tagged(cv: Vec<char>) -> (Vec<u64>, Vec<usize>) {
+    let mut cea = Vec::new();
+    let mut src = Vec::new();
+    each_collation_element(&cv, |ces, opt, start| match ces {
+        Some(ces) => {
+            for &ce in ces {
+                cea.push(ce);
+                src.push(start);
+            }
+        }
+        None => {
+            let before = cea.len();
+            push_implicit(opt, &mut cea);
+            for _ in before..cea.len() {
+                src.push(start);
+            }
+        }
+    });
+    (cea, src)
+}
+
 /// Core of [`collation_elements`]: walk the NFD buffer `cv` (UCA S2.1) and, for
 /// each collation step, invoke `emit(Some(ces), 0, start)` with the matched
 /// element slice, or `emit(None, s0, start)` when no mapping exists (caller
@@ -298,23 +322,99 @@ pub fn find(text: &str, pattern: &str) -> Option<core::ops::Range<usize>> {
     if pat.is_empty() {
         return Some(0..0);
     }
-    // Char-boundary byte offsets, plus the end (so `bounds[k]..bounds[m]` is a
-    // valid slice for any k <= m).
-    let bounds: Vec<usize> = text
-        .char_indices()
-        .map(|(i, _)| i)
-        .chain(core::iter::once(text.len()))
-        .collect();
-    for a in 0..bounds.len() - 1 {
-        for b in a + 1..bounds.len() {
-            let pr = primaries(&text[bounds[a]..bounds[b]]);
-            if pr.len() < pat.len() {
-                continue; // not enough weights yet — extend the candidate
+    let need = pat.len();
+
+    // --- Build the full-text primary stream once, with source byte spans. ---
+    //
+    // NFD-expand the whole text. `start_of[k]` / `end_of[k]` are the byte offsets
+    // in `text` of the start and end of the ORIGINAL char that produced NFD char
+    // `k` (NFD never crosses an original-char boundary; an original char may
+    // expand to several NFD chars, all sharing its byte span).
+    let mut nfd_buf: Vec<char> = Vec::new();
+    let mut start_of: Vec<usize> = Vec::new();
+    let mut end_of: Vec<usize> = Vec::new();
+    for (b, c) in text.char_indices() {
+        for d in nfd(core::iter::once(c)) {
+            nfd_buf.push(d);
+            start_of.push(b);
+            end_of.push(b + c.len_utf8());
+        }
+    }
+
+    let (cea, src) = collation_elements_tagged(nfd_buf);
+    // For each non-zero primary, the original byte span of the source char.
+    // `prim_start` is non-decreasing. `group_starts` holds the byte offset of
+    // every collation-element group's starter (distinct `src` values), i.e. the
+    // starts at which the isolated and full-text views agree.
+    let mut prim: Vec<u16> = Vec::new();
+    let mut prim_start: Vec<usize> = Vec::new();
+    let mut prim_end: Vec<usize> = Vec::new();
+    let mut group_starts: alloc::collections::BTreeSet<usize> = alloc::collections::BTreeSet::new();
+    for (idx, &ce) in cea.iter().enumerate() {
+        group_starts.insert(start_of[src[idx]]);
+        let p = primary(ce);
+        if p != 0 {
+            prim.push(p);
+            prim_start.push(start_of[src[idx]]);
+            prim_end.push(end_of[src[idx]]);
+        }
+    }
+
+    // --- Scan every char-boundary start in order (leftmost wins). ---
+    //
+    // The original tested every char-boundary start `a`: it took the smallest
+    // window `text[a..b]` whose isolated primaries reach `need`, then returned it
+    // iff those primaries equal `pat`. Scanning starts ascending yields the
+    // leftmost match, and a leading-ignorable (zero-primary) start is preferred
+    // over the later non-ignorable one — both reproduced below.
+    //
+    // For a start `a` that begins a collation-element group, the isolated view of
+    // `text[a..]` equals the full-text view from that group on, so the decision
+    // window is just the next `need` primaries in the precomputed stream — found
+    // in O(need) via the cursor `k`, with no re-collation. This fast path covers
+    // essentially every start (including long combining-mark runs, whose marks
+    // are their own zero-primary groups), and is what removes the quadratic cost.
+    //
+    // A start that falls *inside* a group (a char folded into a contiguous
+    // contraction such as `l·`, or a discontiguously-consumed mark) can, in
+    // isolation, regain a leading primary the full-text stream doesn't show. Such
+    // starts are rare and confined to contraction-length windows; for them we fall
+    // back to the exact original decision (`window_decision`), bounded to the few
+    // chars needed to reach `need` primaries.
+    let mut k = 0usize; // cursor into the primary stream; advances with `a`
+    for (a, _) in text.char_indices() {
+        while k < prim_start.len() && prim_start[k] < a {
+            k += 1;
+        }
+        if group_starts.contains(&a) {
+            // Aligned: isolated == full-text view from here.
+            if k + need <= prim.len() && prim[k..k + need] == pat[..] {
+                let b = prim_end[k + need - 1];
+                if primaries(&text[a..b]) == pat {
+                    return Some(a..b);
+                }
             }
-            if pr == pat {
-                return Some(bounds[a]..bounds[b]);
+        } else if let Some((win, b)) = window_decision(&text[a..], need) {
+            // Unaligned (mid-contraction) start: exact isolated decision.
+            if win == pat {
+                return Some(a..a + b);
             }
-            break; // reached/passed the needed length without a match; advance start
+        }
+    }
+    None
+}
+
+/// The exact decision window the original [`find`] inner loop produces for a
+/// start: the isolated primaries of the shortest prefix of `s` that reaches
+/// `need` primaries, and that prefix's byte length. `None` if `s` has fewer than
+/// `need` primaries in total. Bounded to the prefix needed to reach `need`
+/// primaries (the loop stops as soon as the count is met), so it never scans the
+/// whole string for a short pattern.
+fn window_decision(s: &str, need: usize) -> Option<(Vec<u16>, usize)> {
+    for (b, _) in s.char_indices().skip(1).chain(core::iter::once((s.len(), '\0'))) {
+        let pr = primaries(&s[..b]);
+        if pr.len() >= need {
+            return Some((pr, b));
         }
     }
     None
@@ -967,6 +1067,34 @@ mod dos_fix_tests {
     use super::*;
     use alloc::string::String;
 
+    /// Reference implementation of `find`: the original O(n^2) algorithm, kept
+    /// here verbatim so the fast `find` can be checked against it for byte-for-
+    /// byte identical results.
+    fn find_reference(text: &str, pattern: &str) -> Option<core::ops::Range<usize>> {
+        let pat = primaries(pattern);
+        if pat.is_empty() {
+            return Some(0..0);
+        }
+        let bounds: Vec<usize> = text
+            .char_indices()
+            .map(|(i, _)| i)
+            .chain(core::iter::once(text.len()))
+            .collect();
+        for a in 0..bounds.len() - 1 {
+            for b in a + 1..bounds.len() {
+                let pr = primaries(&text[bounds[a]..bounds[b]]);
+                if pr.len() < pat.len() {
+                    continue;
+                }
+                if pr == pat {
+                    return Some(bounds[a]..bounds[b]);
+                }
+                break;
+            }
+        }
+        None
+    }
+
     /// Reference (pre-fix) collation-element generator, using `Vec::remove`, to
     /// confirm the bitmask rewrite is byte-identical.
     fn collation_elements_reference(mut cv: Vec<char>) -> Vec<u64> {
@@ -1058,6 +1186,37 @@ mod dos_fix_tests {
     }
 
     #[test]
+    fn find_matches_reference_fuzz() {
+        let mut rng = Rng(0x9E3779B97F4A7C15);
+        for _ in 0..4000 {
+            let tlen = (rng.next() as usize) % 14;
+            let plen = 1 + (rng.next() as usize) % 4;
+            let text = random_string(&mut rng, tlen);
+            let pat = random_string(&mut rng, plen);
+            assert_eq!(
+                find(&text, &pat),
+                find_reference(&text, &pat),
+                "find mismatch: text={text:?} pat={pat:?}"
+            );
+        }
+        // A few hand-picked structural cases.
+        for (t, p) in [
+            ("l·a", "la"),
+            ("L·", "l"),
+            ("e\u{0301}", "e"),
+            ("\u{0301}e", "e"),
+            ("  café", "cafe"),
+            ("ñ", "n"),
+            ("中文", "中"),
+            ("aaa", "aa"),
+            ("", "x"),
+            ("x", ""),
+        ] {
+            assert_eq!(find(t, p), find_reference(t, p), "case text={t:?} pat={p:?}");
+        }
+    }
+
+    #[test]
     fn collation_elements_matches_reference_fuzz() {
         let mut rng = Rng(0xD1B54A32D192ED03);
         for _ in 0..4000 {
@@ -1073,14 +1232,25 @@ mod dos_fix_tests {
     }
 
     #[test]
+    fn perf_smoke_large_nonmatching_find() {
+        // Previously O(n^2): a few hundred KB of non-matching text. Must finish
+        // quickly (this test would hang for seconds before the fix).
+        let text: String = core::iter::repeat('a').take(300_000).collect();
+        assert_eq!(find(&text, "qzx"), None);
+        assert_eq!(find(&text, "aaa"), Some(0..3));
+    }
+
+    #[test]
     fn perf_smoke_long_combining_run() {
         // Previously O(n^2) in `collation_elements` via `Vec::remove`: a long run
-        // of combining marks after a starter must collate quickly.
+        // of combining marks after a starter.
         let mut s = String::from("e");
         for _ in 0..200_000 {
             s.push('\u{0301}');
         }
         let key = sort_key(&s);
         assert!(!key.is_empty());
+        // `find` over the same pathological input must also stay fast.
+        assert_eq!(find(&s, "z"), None);
     }
 }
