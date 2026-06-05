@@ -118,9 +118,12 @@ fn lookup_contraction(first: u32, suffix: &[char]) -> Option<&'static [u64]> {
 /// Produce the collation element array for an NFD codepoint buffer (UCA S2.1).
 fn collation_elements(cv: Vec<char>) -> Vec<u64> {
     let mut cea = Vec::new();
-    each_collation_element(&cv, |ces, opt, _start| match ces {
-        Some(ces) => cea.extend_from_slice(ces),
-        None => push_implicit(opt, &mut cea),
+    each_collation_element(&cv, |ces, opt, _start| {
+        match ces {
+            Some(ces) => cea.extend_from_slice(ces),
+            None => push_implicit(opt, &mut cea),
+        }
+        Walk::Continue
     });
     cea
 }
@@ -131,20 +134,23 @@ fn collation_elements(cv: Vec<char>) -> Vec<u64> {
 fn collation_elements_tagged(cv: Vec<char>) -> (Vec<u64>, Vec<usize>) {
     let mut cea = Vec::new();
     let mut src = Vec::new();
-    each_collation_element(&cv, |ces, opt, start| match ces {
-        Some(ces) => {
-            for &ce in ces {
-                cea.push(ce);
-                src.push(start);
+    each_collation_element(&cv, |ces, opt, start| {
+        match ces {
+            Some(ces) => {
+                for &ce in ces {
+                    cea.push(ce);
+                    src.push(start);
+                }
+            }
+            None => {
+                let before = cea.len();
+                push_implicit(opt, &mut cea);
+                for _ in before..cea.len() {
+                    src.push(start);
+                }
             }
         }
-        None => {
-            let before = cea.len();
-            push_implicit(opt, &mut cea);
-            for _ in before..cea.len() {
-                src.push(start);
-            }
-        }
+        Walk::Continue
     });
     (cea, src)
 }
@@ -155,6 +161,11 @@ fn collation_elements_tagged(cv: Vec<char>) -> (Vec<u64>, Vec<usize>) {
 /// derives the implicit weights for code point `s0`). `start` is the index in
 /// `cv` of the starter that began the step.
 ///
+/// The closure returns a [`Walk`] verdict: [`Walk::Continue`] to keep going or
+/// [`Walk::Stop`] to end the walk immediately after this step (used by
+/// [`window_decision`] to bound the scan once enough primaries are seen — a
+/// trailing run of zero-primary code points is then never visited).
+///
 /// Discontiguous matching (S2.1.1–S2.1.3) consumes unblocked non-starters that
 /// lie *after* the contiguous match. The previous implementation removed each
 /// consumed char from `cv` with `Vec::remove` — an O(n) shift inside the loop,
@@ -162,7 +173,10 @@ fn collation_elements_tagged(cv: Vec<char>) -> (Vec<u64>, Vec<usize>) {
 /// a `consumed` bitmask instead (no shifting), and the discontiguous lookahead
 /// is capped at the longest registered contraction suffix for the starter, so a
 /// run of marks that forms no contraction is not rescanned repeatedly.
-fn each_collation_element<F: FnMut(Option<&'static [u64]>, u32, usize)>(cv: &[char], mut emit: F) {
+fn each_collation_element<F: FnMut(Option<&'static [u64]>, u32, usize) -> Walk>(
+    cv: &[char],
+    mut emit: F,
+) {
     let mut consumed = alloc::vec![false; cv.len()];
     let mut suffix: Vec<char> = Vec::new(); // reused buffer (no per-step clone)
     let mut i = 0;
@@ -242,12 +256,22 @@ fn each_collation_element<F: FnMut(Option<&'static [u64]>, u32, usize)>(cv: &[ch
             }
         }
 
-        match matched {
+        let verdict = match matched {
             Some(ces) => emit(Some(ces), 0, i),
             None => emit(None, s0, i),
+        };
+        if verdict == Walk::Stop {
+            return;
         }
         i = end;
     }
+}
+
+/// Whether [`each_collation_element`] should keep walking after a step.
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum Walk {
+    Continue,
+    Stop,
 }
 
 /// Emit synthetic collation elements for an ASCII-digit run so that numeric
@@ -404,17 +428,90 @@ pub fn find(text: &str, pattern: &str) -> Option<core::ops::Range<usize>> {
     None
 }
 
-/// The exact decision window the original [`find`] inner loop produces for a
-/// start: the isolated primaries of the shortest prefix of `s` that reaches
-/// `need` primaries, and that prefix's byte length. `None` if `s` has fewer than
-/// `need` primaries in total. Bounded to the prefix needed to reach `need`
-/// primaries (the loop stops as soon as the count is met), so it never scans the
-/// whole string for a short pattern.
+/// The exact decision window the original [`find`] inner loop produces for an
+/// unaligned start: the isolated primaries of the shortest prefix of `s` that
+/// reaches `need` primaries, and that prefix's byte length. `None` if `s` has
+/// fewer than `need` primaries in total.
+///
+/// Reference semantics (preserved byte-for-byte):
+/// ```ignore
+/// for b in char_boundaries(s).skip(1).chain([s.len()]) {
+///     let pr = primaries(&s[..b]);
+///     if pr.len() >= need { return Some((pr, b)); }
+/// }
+/// None
+/// ```
+/// That loop is O(W²) when the text after the start is a long run of zero-primary
+/// code points (combining marks / ignorables): `need` is never reached, so it
+/// re-collates an O(b) prefix at every one of the W boundaries to the end of the
+/// string — the algorithmic-complexity DoS.
+///
+/// The fix bounds the scan to the prefix that actually decides the result. A
+/// trailing run of zero-primary code points can never add a primary, so it can
+/// never change which boundary first reaches `need`; we therefore stream-collate
+/// `s` once, stopping as soon as `need` non-zero primaries are produced, to find
+/// an upper bound `cut` on the answer boundary (the byte where the collation
+/// group *after* the `need`-th-primary group starts, or `s.len()`). The reference
+/// loop is then replayed verbatim but only over `s[..=cut]` — identical results,
+/// but the zero-primary tail past `cut` is never collated. `cut` is bounded by
+/// the position of the `need`-th primary-bearing character, independent of the
+/// tail length, so the whole call is linear in that bounded prefix.
 fn window_decision(s: &str, need: usize) -> Option<(Vec<u16>, usize)> {
-    for (b, _) in s
+    debug_assert!(need > 0);
+
+    // NFD-expand `s`, mapping each NFD char back to the byte offset in `s` of the
+    // original char that produced it (NFD never crosses an original-char boundary).
+    let mut nfd_buf: Vec<char> = Vec::new();
+    let mut byte_of: Vec<usize> = Vec::new();
+    for (b, c) in s.char_indices() {
+        for d in nfd(core::iter::once(c)) {
+            nfd_buf.push(d);
+            byte_of.push(b);
+        }
+    }
+
+    // Stream the collation, counting non-zero primaries. Stop on the collation
+    // group that *follows* the one producing the `need`-th primary, recording its
+    // starter byte offset as the cut — everything decided lies before it. If `s`
+    // never reaches `need` primaries, the walk runs out and `cut` stays `None`.
+    let mut produced = 0usize;
+    let mut reached = false; // set once `need` primaries are produced
+    let mut cut: Option<usize> = None;
+    each_collation_element(&nfd_buf, |ces, opt, start| {
+        if reached {
+            // This is the group after the one that reached `need`: its start is
+            // the smallest possible boundary past the deciding prefix.
+            cut = Some(byte_of[start]);
+            return Walk::Stop;
+        }
+        let nonzero = match ces {
+            Some(ces) => ces.iter().any(|&ce| primary(ce) != 0),
+            // A derived (implicit) code point always carries a non-zero primary.
+            None => implicit_primaries(opt).0 != 0,
+        };
+        if nonzero {
+            produced += 1;
+            if produced >= need {
+                reached = true;
+            }
+        }
+        Walk::Continue
+    });
+
+    if !reached {
+        return None; // fewer than `need` primaries in all of `s`
+    }
+    // The deciding group reached `need` but no later group started (it was last):
+    // the cut is the whole string.
+    let cut = cut.unwrap_or(s.len());
+
+    // Replay the reference loop verbatim, bounded to `s[..=cut]`. The first char
+    // boundary `b <= cut` whose truncated primaries reach `need` is the answer; we
+    // know one exists by `cut` because the full collation reaches `need` there.
+    for (b, _) in s[..cut]
         .char_indices()
         .skip(1)
-        .chain(core::iter::once((s.len(), '\0')))
+        .chain(core::iter::once((cut, '\0')))
     {
         let pr = primaries(&s[..b]);
         if pr.len() >= need {
@@ -1260,5 +1357,31 @@ mod dos_fix_tests {
         assert!(!key.is_empty());
         // `find` over the same pathological input must also stay fast.
         assert_eq!(find(&s, "z"), None);
+    }
+
+    #[test]
+    fn perf_smoke_unaligned_start_zero_primary_tail() {
+        // The `window_decision` quadratic: `l·` forms the Catalan middle-dot
+        // contraction, making `·` an *unaligned* (mid-contraction) start, and the
+        // long acute-accent run after it is a zero-primary tail. Before the fix,
+        // the unaligned start re-collated growing prefixes to the end of the
+        // string — O(n^2): ~29s at 128 KB. After the fix it is linear; this test
+        // simply completing quickly proves termination/linearity.
+        let big: String = {
+            let mut s = String::from("l\u{00B7}");
+            for _ in 0..50_000 {
+                s.push('\u{0301}');
+            }
+            s
+        };
+        // Tiny reference input with the same structure (no long tail).
+        let small = "l\u{00B7}\u{0301}";
+        // "zz" is not present at primary strength → both must be `None`, and the
+        // big input must agree with the small one (and with the O(n^2) reference).
+        assert_eq!(find(&big, "zz"), None);
+        assert_eq!(find(small, "zz"), find_reference(small, "zz"));
+        assert_eq!(find(&big, "zz"), find_reference(small, "zz"));
+        // Sanity: a pattern that *is* present is still found in the big input.
+        assert_eq!(find(&big, "l"), Some(0..1));
     }
 }
