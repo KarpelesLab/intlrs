@@ -554,19 +554,25 @@ fn in_close_phase(t: Term) -> bool {
 
 /// SB8 lookahead: starting at byte `at`, is the first
 /// non-`(OLetter|Upper|Lower|Sep|CR|LF|STerm|ATerm)` "stopper" a `Lower`?
-fn sb8_lower_ahead(s: &str, mut at: usize) -> bool {
+///
+/// Returns the answer together with the byte index of the decisive character
+/// (the `Lower` or stopper that determined it), or `s.len()` if the scan ran
+/// off the end. The decisive index lets callers memoize: while the cursor is
+/// still strictly before it, the answer is invariant (every position in the
+/// skipped run scans through the same trailing chars to the same decision).
+fn sb8_lower_ahead_at(s: &str, mut at: usize) -> (bool, usize) {
     while at < s.len() {
         let (cat, end) = sb_unit(s, at);
         match cat {
-            Sb::Lower => return true,
+            Sb::Lower => return (true, at),
             Sb::OLetter | Sb::Upper | Sb::Sep | Sb::CR | Sb::LF | Sb::STerm | Sb::ATerm => {
-                return false
+                return (false, at)
             }
             _ => {}
         }
         at = end;
     }
-    false
+    (false, s.len())
 }
 
 /// Decide whether there is a sentence break before `cur`.
@@ -620,9 +626,24 @@ impl<'a> Iterator for Sentences<'a> {
         let (mut prev, mut at) = sb_unit(self.s, start);
         let mut prev2 = Sb::Other; // sot
         let mut term = term_next(Term::None, prev);
+        // Memoized SB8 lookahead: the answer and the byte index of the decisive
+        // character that produced it. The result is valid for any cursor still
+        // strictly before `cache_decisive` (a `Close*Sp*` tail scans through the
+        // same chars to the same decision), so we only recompute once `at`
+        // reaches it. This makes the aggregate lookahead cost linear rather than
+        // quadratic over a long ATerm-followed Sp/Close run (SB8 DoS).
+        let mut cache_lower = false;
+        let mut cache_decisive = 0usize; // forces a compute on first use (at >= 0)
         while at < self.s.len() {
             let (cur, end) = sb_unit(self.s, at);
-            let lower_ahead = in_aterm_seq(term) && sb8_lower_ahead(self.s, at);
+            let lower_ahead = in_aterm_seq(term) && {
+                if at >= cache_decisive {
+                    let (l, d) = sb8_lower_ahead_at(self.s, at);
+                    cache_lower = l;
+                    cache_decisive = d;
+                }
+                cache_lower
+            };
             if sentence_break(prev2, prev, term, cur, lower_ahead) {
                 break;
             }

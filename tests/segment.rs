@@ -27,6 +27,27 @@ fn sentence_boundaries() {
     assert_eq!(s, ["Hello world. ", "How are you? ", "I'm fine."]);
 }
 
+/// Regression for the SB8 lookahead quadratic-DoS: an ATerm followed by a long
+/// run of Sp (or Close) used to re-scan the whole remaining run per character
+/// (O(n²); 16k chars ≈ 5s). With the memoized lookahead it is linear, so a 50k
+/// input completes effectively instantly. Mere completion here proves linearity.
+#[test]
+fn sentence_sb8_lookahead_is_linear() {
+    // ATerm "." then n spaces: each space keeps `term` in the ATerm sequence,
+    // so the SB8 lookahead is invoked every iteration. There is no Lower/stopper
+    // ahead, so the whole run is a single sentence (no break before eot).
+    for filler in [' ', ')'] {
+        let small = format!(".{}", String::from(filler).repeat(8));
+        let small_out: Vec<&str> = sentences(&small).collect();
+        assert_eq!(small_out, [small.as_str()]); // one sentence, no interior break
+
+        let big = format!(".{}", String::from(filler).repeat(50_000));
+        let big_out: Vec<&str> = sentences(&big).collect();
+        assert_eq!(big_out.len(), 1);
+        assert_eq!(big_out[0].len(), big.len());
+    }
+}
+
 #[test]
 fn word_boundaries() {
     let w: Vec<&str> = words("The (quick) fox").collect();
