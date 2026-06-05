@@ -43,8 +43,8 @@ conformance corpus. Highest value, lowest risk — do these next.
   (full conformance), including the LB15b/LB19a East-Asian-width quotation rules.
 - ✅🔬 **Bidirectional algorithm (UAX #9)** — `bidi::process` resolves embedding
   levels + visual order (X/W/N/I/L rules, isolates, paired brackets).
-  ~99.996% on `BidiCharacterTest`; the residual handful are an override+isolate+
-  embedding sos/eos edge case.
+  **100% on `BidiCharacterTest` (91707/91707)**, including the override+isolate+
+  embedding sos/eos boundary cases (eos skips deeper sibling embeddings).
 - ✅ **Identifiers (UAX #31)** — `is_xid_start`/`is_xid_continue`, identifier
   validation, default identifier syntax. Data: XID_Start/Continue (already in
   `DerivedCoreProperties.txt`). Small.

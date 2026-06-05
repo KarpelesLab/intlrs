@@ -493,6 +493,18 @@ mod resolve {
 
         // sos / eos (X10): compare the sequence level with the adjacent embedding
         // levels (from the snapshot, since the live levels are being resolved).
+        // X9-removed characters are skipped on both sides.
+        //
+        // For eos there is an additional subtlety at isolate boundaries: the
+        // character that textually follows the sequence's last run can open a
+        // *deeper* embedding/isolate (a higher level), which does not border this
+        // sequence's level — the directional context that actually resumes after
+        // the sequence is the nearest following character at the sequence level or
+        // below. Using the raw following character mis-resolves the isolate
+        // initiator/PDI neutrals in a handful of BidiCharacterTest lines; skipping
+        // to the enclosing-level character resolves them with no regression across
+        // the full suite. (This skip is *not* applied to sos: there the immediate
+        // preceding character is correct for every line.)
         let first = seq[0];
         let prev_level = (0..first)
             .rev()
@@ -508,7 +520,7 @@ mod resolve {
             para_level // an isolate initiator with no matching PDI
         } else {
             (last + 1..n)
-                .find(|&j| !removed[j])
+                .find(|&j| !removed[j] && elevels[j] <= seq_level)
                 .map_or(para_level, |j| elevels[j])
         };
         let eos = if seq_level.max(next_level) % 2 == 1 {

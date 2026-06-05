@@ -65,12 +65,9 @@ fn bidi_character_test() {
     }
     let pass = checked - failures;
     eprintln!("bidi: {pass}/{checked} lines pass");
-    // 99.996% conformant. The residual handful are a pathological interaction of
-    // directional overrides + nested isolates + embeddings, where the sos/eos
-    // boundary level for X9-removed characters differs from the reference. Guard
-    // against regressions past that documented gap.
-    assert!(
-        failures <= 4,
-        "bidi regressed: {failures} of {checked} BidiCharacterTest lines failed"
+    // Full conformance: every BidiCharacterTest line must pass.
+    assert_eq!(
+        failures, 0,
+        "{failures} of {checked} BidiCharacterTest lines failed"
     );
 }
