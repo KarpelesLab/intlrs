@@ -72,7 +72,8 @@ pub use case::{lowercase_str, lowercase_str_lang, titlecase, uppercase_str_lang}
 pub use category::{GeneralCategory, Group};
 #[cfg(feature = "collation")]
 pub use collate::{
-    compare, contains, find, sort_key, AlternateHandling, Collator, Strength, Tailoring,
+    compare, contains, find, index_bucket, index_labels, sort_key, AlternateHandling, Collator,
+    Strength, Tailoring,
 };
 pub use generated::general_category::UNICODE_VERSION;
 #[cfg(feature = "identifiers")]

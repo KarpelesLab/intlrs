@@ -1363,6 +1363,8 @@ pub fn intl::unicode::collate::Tailoring::from(T) -> T
 pub fn intl::unicode::collate::compare(&str, &str) -> core::cmp::Ordering
 pub fn intl::unicode::collate::contains(&str, &str) -> bool
 pub fn intl::unicode::collate::find(&str, &str) -> core::option::Option<core::ops::range::Range<usize>>
+pub fn intl::unicode::collate::index_bucket(&str, &str) -> alloc::string::String
+pub fn intl::unicode::collate::index_labels(&str) -> alloc::vec::Vec<alloc::string::String>
 pub fn intl::unicode::collate::sort_key(&str) -> alloc::vec::Vec<u16>
 pub mod intl::unicode::ident
 pub fn intl::unicode::ident::is_identifier(&str) -> bool
@@ -3784,6 +3786,8 @@ pub const fn intl::unicode::general_category(char) -> intl::unicode::category::G
 pub const fn intl::unicode::general_category_u32(u32) -> intl::unicode::category::GeneralCategory
 pub fn intl::unicode::graphemes(&str) -> intl::unicode::segment::Graphemes<'_>
 pub fn intl::unicode::hangul_syllable_name(char) -> core::option::Option<alloc::string::String>
+pub fn intl::unicode::index_bucket(&str, &str) -> alloc::string::String
+pub fn intl::unicode::index_labels(&str) -> alloc::vec::Vec<alloc::string::String>
 pub const fn intl::unicode::indic_positional_category(char) -> intl::unicode::IndicPositionalCategory
 pub const fn intl::unicode::indic_syllabic_category(char) -> intl::unicode::IndicSyllabicCategory
 pub const fn intl::unicode::is_alphabetic(char) -> bool

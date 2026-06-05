@@ -265,6 +265,102 @@ pub fn contains(text: &str, pattern: &str) -> bool {
     find(text, pattern).is_some()
 }
 
+/// The first primary collation weight of `s` under `tail` (or root DUCET when
+/// `None`), or `0` if `s` starts with an ignorable/variable element (space,
+/// punctuation, digit) — the value used to place a string in an index bucket.
+fn first_primary(tail: Option<&Tailoring>, s: &str) -> u16 {
+    let key = match tail {
+        Some(t) => t.sort_key(s),
+        None => sort_key(s),
+    };
+    key.first().copied().unwrap_or(0)
+}
+
+/// The alphabetic-index bucket **labels** for `lang` — the headings under which
+/// strings are grouped, in collation order: `A`–`Z` plus the locale's extra
+/// letters (Swedish `Å Ä Ö`, Czech `Ch`, …). Latin-script locales only; an
+/// unknown or non-Latin locale yields just `A`–`Z`.
+///
+/// ```
+/// # #[cfg(feature = "alloc")] {
+/// use intl::unicode::collate::index_labels;
+/// assert_eq!(index_labels("sv").last().map(String::as_str), Some("Ö"));
+/// assert_eq!(index_labels("en").len(), 26);
+/// # }
+/// ```
+#[must_use]
+pub fn index_labels(lang: &str) -> Vec<alloc::string::String> {
+    use alloc::string::ToString;
+    let extra: &[&str] = match lang.split(['-', '_']).next().unwrap_or(lang) {
+        "sv" | "fi" => &["Å", "Ä", "Ö"],
+        "da" | "nb" | "nn" | "no" => &["Æ", "Ø", "Å"],
+        "is" => &["Þ", "Æ", "Ö"],
+        "es" | "gl" => &["Ñ"],
+        "et" => &["Š", "Ž", "Õ", "Ä", "Ö", "Ü"],
+        "cs" | "sk" => &["Č", "Ch", "Ř", "Š", "Ž"],
+        "pl" => &["Ą", "Ć", "Ę", "Ł", "Ń", "Ó", "Ś", "Ź", "Ż"],
+        "hu" => &["Cs", "Dz", "Dzs", "Gy", "Ly", "Ny", "Sz", "Ty", "Zs"],
+        "tr" | "az" => &["Ç", "Ğ", "Ö", "Ş", "Ü"],
+        "ro" => &["Ă", "Â", "Î", "Ș", "Ț"],
+        "sq" => &[
+            "Ç", "Dh", "Ë", "Gj", "Ll", "Nj", "Rr", "Sh", "Th", "Xh", "Zh",
+        ],
+        "cy" => &["Ch", "Dd", "Ff", "Ng", "Ll", "Ph", "Rh", "Th"],
+        _ => &[],
+    };
+    let tail = Tailoring::for_locale(lang);
+    let mut labels: Vec<alloc::string::String> = ('A'..='Z')
+        .map(|c| c.to_string())
+        .chain(extra.iter().map(|s| s.to_string()))
+        .collect();
+    // Order the labels by collation, so an inserted letter lands in its real
+    // place (Spanish `Ñ` after `N`, Swedish `Å Ä Ö` after `Z`).
+    labels.sort_by_key(|l| first_primary(tail.as_ref(), l));
+    labels
+}
+
+/// The alphabetic-index bucket that `s` sorts into for `lang` (the ICU
+/// `AlphabeticIndex` operation): one of [`index_labels`], or `"#"` for a string
+/// that sorts before `A` (digits, symbols) or past the last label (other
+/// scripts). A diacritic letter that sorts *between* two labels (like `á`) is
+/// grouped under the earlier one (`A`), matching ICU.
+///
+/// ```
+/// # #[cfg(feature = "alloc")] {
+/// use intl::unicode::collate::index_bucket;
+/// assert_eq!(index_bucket("en", "Apple"), "A");
+/// assert_eq!(index_bucket("en", "Ångström"), "A"); // root: å ≈ a
+/// assert_eq!(index_bucket("sv", "Ångström"), "Å"); // Swedish: å is its own letter
+/// assert_eq!(index_bucket("en", "123"), "#");
+/// # }
+/// ```
+#[must_use]
+pub fn index_bucket(lang: &str, s: &str) -> alloc::string::String {
+    use alloc::string::ToString;
+    let tail = Tailoring::for_locale(lang);
+    let sp = first_primary(tail.as_ref(), s);
+    if sp == 0 {
+        return "#".to_string(); // sorts before A (variable/ignorable lead)
+    }
+    let labels = index_labels(lang);
+    let mut chosen: Option<usize> = None;
+    for (i, label) in labels.iter().enumerate() {
+        if first_primary(tail.as_ref(), label) <= sp {
+            chosen = Some(i);
+        } else {
+            break;
+        }
+    }
+    match chosen {
+        // Past the last label and not equal to it → a later script: overflow.
+        Some(i) if i == labels.len() - 1 && first_primary(tail.as_ref(), &labels[i]) < sp => {
+            "#".to_string()
+        }
+        Some(i) => labels[i].clone(),
+        None => "#".to_string(),
+    }
+}
+
 /// Collation strength — the most significant weight level that is compared.
 /// Lower strengths ignore finer distinctions: [`Primary`](Strength::Primary)
 /// ignores accents and case, [`Secondary`](Strength::Secondary) ignores case

@@ -193,3 +193,26 @@ fn collation_search() {
     // no false match across accents-only difference is fine (primary ignores accents)
     assert!(contains("café au lait", "CAFE"));
 }
+
+#[test]
+fn alphabetic_index() {
+    use intl::unicode::collate::{index_bucket, index_labels};
+    assert_eq!(index_bucket("en", "Apple"), "A");
+    assert_eq!(index_bucket("en", "zebra"), "Z");
+    assert_eq!(index_bucket("en", "Ångström"), "A"); // root: å ≈ a
+    assert_eq!(index_bucket("en", "123"), "#");
+    assert_eq!(index_bucket("en", "  hi"), "H"); // leading ignorables skipped
+                                                 // Swedish: å/ä/ö are their own buckets after Z.
+    assert_eq!(index_bucket("sv", "Ångström"), "Å");
+    assert_eq!(index_bucket("sv", "Öl"), "Ö");
+    assert_eq!(index_bucket("sv", "Apple"), "A");
+    assert_eq!(index_labels("sv").last().map(String::as_str), Some("Ö"));
+    // Spanish ñ bucket.
+    assert_eq!(index_bucket("es", "Ñandú"), "Ñ");
+    assert_eq!(index_bucket("es", "Naranja"), "N");
+    // Czech digraph "Ch" bucket.
+    assert_eq!(index_bucket("cs", "Chata"), "Ch");
+    assert_eq!(index_bucket("cs", "Auto"), "A");
+    // Non-Latin overflow.
+    assert_eq!(index_bucket("en", "日本"), "#");
+}
