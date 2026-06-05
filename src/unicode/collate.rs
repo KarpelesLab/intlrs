@@ -560,6 +560,14 @@ pub fn sort_key(s: &str) -> Vec<u16> {
 /// the reserved gap just above its reset anchor; upper-case forms are added
 /// automatically. Characters not mentioned keep their DUCET order.
 ///
+/// **Capacity:** weights are allocated by gap-insertion into the DUCET primary
+/// space, so a single reset can be followed by up to roughly two dozen
+/// consecutive primary (`<`) reorderings before it would run into the next
+/// letter — comfortably more than any CLDR per-locale tailoring needs (the
+/// bundled [`Tailoring::for_locale`] rules use at most a handful). A synthetic
+/// rule with dozens of consecutive `<` after one anchor is the documented limit;
+/// supporting that would require ICU-style fractional weight allocation.
+///
 /// ```
 /// # #[cfg(feature = "alloc")] {
 /// use intl::unicode::collate::Tailoring;

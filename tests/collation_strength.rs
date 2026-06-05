@@ -216,3 +216,30 @@ fn alphabetic_index() {
     // Non-Latin overflow.
     assert_eq!(index_bucket("en", "日本"), "#");
 }
+
+#[test]
+fn tailoring_capacity() {
+    use intl::unicode::collate::Tailoring;
+    // The documented capacity comfortably covers any real CLDR tailoring: a reset
+    // followed by ~11 consecutive primary reorderings sorts correctly and in
+    // order, between the anchor and the next base letter.
+    let letters: Vec<char> = "ßçðøþæœłŋıĸ".chars().collect();
+    let mut rule = String::from("&a");
+    for c in &letters {
+        rule.push_str(" < ");
+        rule.push(*c);
+    }
+    let t = Tailoring::parse(&rule).unwrap();
+    assert!(t.compare("a", &letters[0].to_string()).is_lt());
+    for w in letters.windows(2) {
+        assert!(
+            t.compare(&w[0].to_string(), &w[1].to_string()).is_lt(),
+            "{} should sort before {}",
+            w[0],
+            w[1]
+        );
+    }
+    assert!(t
+        .compare(&letters[letters.len() - 1].to_string(), "b")
+        .is_lt());
+}
