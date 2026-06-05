@@ -58,11 +58,12 @@ pub fn confusable(a: &str, b: &str) -> bool {
 ///
 /// A `false` result flags a mixed-script string — a common spoofing signal.
 ///
-/// This implements only the core `Script_Extensions` intersection. The UTS #39
-/// *augmented* profile additionally treats certain CJK combinations
-/// (Han+Hiragana+Katakana, Han+Hangul, Han+Bopomofo) as mutually compatible;
-/// that augmentation is **not** applied here, so e.g. mixed Han/Kana text is
-/// reported as multi-script.
+/// Resolution uses the UTS #39 *augmented* script sets, so the CJK writing
+/// systems are handled: Han is treated as compatible with Japanese (Han +
+/// Hiragana + Katakana), Korean (Han + Hangul), and Chinese (Han + Bopomofo).
+/// Thus `日本語` (Han) mixed with kana stays single-script, and Han mixed with
+/// Hangul stays single-script — but Hiragana mixed with Hangul (Japanese vs
+/// Korean) is *not*, because those share no augmented script.
 ///
 /// ```
 /// use intl::unicode::spoof::is_single_script;
@@ -72,28 +73,78 @@ pub fn confusable(a: &str, b: &str) -> bool {
 /// assert!(is_single_script(""));
 /// // Shared punctuation and digits keep Latin text single-script.
 /// assert!(is_single_script("abc-123"));
+/// // Han + Hiragana is Japanese — single script.
+/// assert!(is_single_script("漢は"));
+/// // Hiragana + Hangul is Japanese vs Korean — mixed script.
+/// assert!(!is_single_script("は한"));
 /// ```
 #[must_use]
 pub fn is_single_script(s: &str) -> bool {
-    // Running intersection of Script_Extensions sets across the string.
+    // Running intersection of the augmented script sets across the string.
     // `None` means "still unconstrained" (compatible with every script).
-    let mut acc: Option<Vec<Script>> = None;
+    let mut acc: Option<Vec<ScriptTok>> = None;
     for c in s.chars() {
-        match script_extensions(c) {
-            // Exactly {Common} or {Inherited}: compatible with any script.
-            ScriptExtensions::Single(Script::Common)
-            | ScriptExtensions::Single(Script::Inherited) => continue,
-            sx => {
-                let set = sx.as_slice();
-                acc = Some(match acc {
-                    None => set.to_vec(),
-                    Some(prev) => prev.into_iter().filter(|s| set.contains(s)).collect(),
-                });
-                if acc.as_ref().is_some_and(Vec::is_empty) {
-                    return false; // empty intersection => mixed script
-                }
-            }
+        // A character whose Script_Extensions is exactly {Common} or {Inherited}
+        // (shared punctuation, digits, combining marks, …) is compatible with
+        // every script and imposes no constraint.
+        if matches!(
+            script_extensions(c),
+            ScriptExtensions::Single(Script::Common) | ScriptExtensions::Single(Script::Inherited)
+        ) {
+            continue;
+        }
+        let aug = augmented_scripts(c);
+        acc = Some(match acc {
+            None => aug,
+            Some(prev) => prev.into_iter().filter(|t| aug.contains(t)).collect(),
+        });
+        if acc.as_ref().is_some_and(Vec::is_empty) {
+            return false; // empty intersection => mixed script
         }
     }
     true
+}
+
+/// A token in an augmented script set (UTS #39 §5.1). Regular scripts are
+/// carried as [`ScriptTok::Scr`]; the three CJK "augmented" writing systems get
+/// their own tokens so that, e.g., Han + Hiragana resolves to a single script
+/// (both contain `Jpan`) while Hiragana + Hangul does not.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ScriptTok {
+    /// Japanese: Han, Hiragana, or Katakana.
+    Jpan,
+    /// Korean: Han or Hangul.
+    Kore,
+    /// Chinese (Han-Bopomofo): Han or Bopomofo.
+    Hanb,
+    /// Any other script, unaugmented.
+    Scr(Script),
+}
+
+/// The augmented script set of `c` (UTS #39 §5.1): its `Script_Extensions`, with
+/// Han mapped to {Japanese, Korean, Han-Bopomofo}, Hiragana/Katakana to
+/// Japanese, Hangul to Korean, and Bopomofo to Han-Bopomofo. Han thus stays
+/// compatible with each individual CJK system without making those systems
+/// compatible with each other.
+fn augmented_scripts(c: char) -> Vec<ScriptTok> {
+    let mut out: Vec<ScriptTok> = Vec::new();
+    let mut push = |t: ScriptTok| {
+        if !out.contains(&t) {
+            out.push(t);
+        }
+    };
+    for s in script_extensions(c).iter() {
+        match s {
+            Script::Han => {
+                push(ScriptTok::Jpan);
+                push(ScriptTok::Kore);
+                push(ScriptTok::Hanb);
+            }
+            Script::Hiragana | Script::Katakana => push(ScriptTok::Jpan),
+            Script::Hangul => push(ScriptTok::Kore),
+            Script::Bopomofo => push(ScriptTok::Hanb),
+            other => push(ScriptTok::Scr(other)),
+        }
+    }
+    out
 }
