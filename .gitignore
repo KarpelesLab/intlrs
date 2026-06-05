@@ -7,3 +7,4 @@ Cargo.lock
 data/uca/*/CollationTest/
 data/ucd/*/auxiliary/LineBreakTest.txt
 data/ucd/*/BidiCharacterTest.txt
+data/ucd/*/BidiTest.txt

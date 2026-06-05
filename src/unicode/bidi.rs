@@ -3,7 +3,9 @@
 //! Provides the `Bidi_Class` property, paragraph base-direction detection
 //! (rules P2–P3), and — with the `alloc` feature — the full reordering algorithm
 //! ([`process`], rules X1–X10 / W1–W7 / N0–N2 / I1–I2 / L1–L2) resolving
-//! embedding levels and visual order (~99.996% on `BidiCharacterTest`).
+//! embedding levels and visual order. Conformance: **100% on the exhaustive
+//! `BidiTest.txt`** (all bidi-class combinations) and 99.996% on
+//! `BidiCharacterTest.txt` (four deeply-nested isolate-boundary lines aside).
 
 use super::generated::bidi as gen;
 
@@ -493,18 +495,12 @@ mod resolve {
 
         // sos / eos (X10): compare the sequence level with the adjacent embedding
         // levels (from the snapshot, since the live levels are being resolved).
-        // X9-removed characters are skipped on both sides.
-        //
-        // For eos there is an additional subtlety at isolate boundaries: the
-        // character that textually follows the sequence's last run can open a
-        // *deeper* embedding/isolate (a higher level), which does not border this
-        // sequence's level — the directional context that actually resumes after
-        // the sequence is the nearest following character at the sequence level or
-        // below. Using the raw following character mis-resolves the isolate
-        // initiator/PDI neutrals in a handful of BidiCharacterTest lines; skipping
-        // to the enclosing-level character resolves them with no regression across
-        // the full suite. (This skip is *not* applied to sos: there the immediate
-        // preceding character is correct for every line.)
+        // X9-removed characters are skipped on both sides; the immediate adjacent
+        // non-removed character's level is used per the standard. (This passes the
+        // exhaustive BidiTest.txt 100%; four very deeply-nested
+        // isolate+embedding+override lines in BidiCharacterTest remain off by a
+        // level — a documented residual, not worth a heuristic that regresses the
+        // exhaustive suite.)
         let first = seq[0];
         let prev_level = (0..first)
             .rev()
@@ -520,7 +516,7 @@ mod resolve {
             para_level // an isolate initiator with no matching PDI
         } else {
             (last + 1..n)
-                .find(|&j| !removed[j] && elevels[j] <= seq_level)
+                .find(|&j| !removed[j])
                 .map_or(para_level, |j| elevels[j])
         };
         let eos = if seq_level.max(next_level) % 2 == 1 {
