@@ -446,10 +446,22 @@ pub fn to_ascii(domain: &str) -> Result<String, Error> {
         if label.is_empty() {
             return Err(Error::InvalidLabel); // A4_2: empty label (incl. trailing root)
         }
-        let (is_a_label, ulabel) = match label.strip_prefix("xn--") {
+        let (is_a_label, ulabel): (bool, Vec<char>) = match label.strip_prefix("xn--") {
+            // The decoder already caps its output at `MAX_LABEL_CODE_POINTS`.
             Some(rest) => (true, punycode_decode(rest).ok_or(Error::Punycode)?),
             None => (false, label.chars().collect()),
         };
+        // Cap the U-label code-point count *before* running the quadratic
+        // Punycode encoder. A valid A-label is ≤63 octets and Punycode output is
+        // never shorter than the code-point count it encodes, so a U-label of
+        // more than `MAX_LABEL_CODE_POINTS` code points can never yield a valid
+        // (≤63-octet) A-label. Rejecting it here is equivalent-or-stricter to the
+        // post-encode 63-octet check below, but avoids forcing O(distinct × len)
+        // work and a large interim allocation on a single dot-free hostile label
+        // (encoder DoS). The decode path is bounded separately above.
+        if ulabel.len() > MAX_LABEL_CODE_POINTS {
+            return Err(Error::InvalidLabel); // A4_1: label too long to be valid
+        }
         infos.push(LabelInfo {
             original: label,
             is_a_label,
