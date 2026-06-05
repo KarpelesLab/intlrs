@@ -39,9 +39,10 @@ Self-contained, driven by data we already vendor or can add; each has an officia
 conformance corpus. Highest value, lowest risk — do these next.
 
 - 🟡🔬 **Line breaking (UAX #14)** — `line_breaks(&str)` yielding break
-  opportunities (mandatory vs allowed). ~99.98% conformant against
-  `LineBreakTest`; remaining gap is the LB19 CJK-quotation / East_Asian_Width
-  sub-rules. *Done apart from those edge cases.*
+  opportunities (mandatory vs allowed). 19335/19338 LineBreakTest lines pass; the
+  residual 3 are the QU-closing-quote cases where an Ambiguous-width quote sits
+  between CJK ideographs (LB19a/LB15b + Ambiguous-EAW resolution). *Done apart
+  from those edge cases.*
 - ✅🔬 **Bidirectional algorithm (UAX #9)** — `bidi::process` resolves embedding
   levels + visual order (X/W/N/I/L rules, isolates, paired brackets).
   ~99.996% on `BidiCharacterTest`; the residual handful are an override+isolate+
