@@ -1,10 +1,12 @@
 //! Transliteration / transforms. Requires the `alloc` feature.
 //!
-//! Currently provides the **Latin → ASCII** fold ([`latin_ascii`]): strip
-//! diacritics and map the non-decomposing Latin letters and common typographic
-//! punctuation to plain ASCII. This is the ICU `Latin-ASCII` transform — the
-//! workhorse for slugs, ASCII fallbacks, and search-key folding. Characters
-//! outside the Latin script that have no ASCII form are left unchanged.
+//! Fixed transforms: the **Latin → ASCII** fold ([`latin_ascii`]),
+//! [`remove_diacritics`], and script romanizations — Cyrillic
+//! ([`cyrillic_to_latin`], ISO 9), Greek ([`greek_to_latin`], ELOT/ISO 843),
+//! Armenian ([`armenian_to_latin`]), Georgian ([`georgian_to_latin`]) — plus
+//! [`any_ascii`] which chains them for best-effort mixed-script ASCII. For custom
+//! rules there is a general [`Transform`] engine (`x > y` with context, character
+//! sets, quantifiers, and a `$0` match-reference).
 
 use crate::unicode::{general_category, nfd, Group};
 use alloc::string::String;
@@ -220,7 +222,9 @@ impl Transform {
 /// ```
 #[must_use]
 pub fn any_ascii(s: &str) -> String {
-    latin_ascii(&greek_to_latin(&cyrillic_to_latin(s)))
+    latin_ascii(&greek_to_latin(&cyrillic_to_latin(&armenian_to_latin(
+        &georgian_to_latin(s),
+    ))))
 }
 
 /// Transliterate Cyrillic script to Latin using **ISO 9:1995** — the single,
@@ -371,6 +375,142 @@ pub fn greek_to_latin(s: &str) -> String {
         } else {
             out.push(c);
         }
+    }
+    out
+}
+
+/// The ASCII-leaning Latin form of a lowercase Armenian letter, or `None`.
+fn armenian_letter(c: char) -> Option<&'static str> {
+    Some(match c {
+        'ա' => "a",
+        'բ' => "b",
+        'գ' => "g",
+        'դ' => "d",
+        'ե' => "e",
+        'զ' => "z",
+        'է' => "e",
+        'ը' => "e",
+        'թ' => "t",
+        'ժ' => "zh",
+        'ի' => "i",
+        'լ' => "l",
+        'խ' => "kh",
+        'ծ' => "ts",
+        'կ' => "k",
+        'հ' => "h",
+        'ձ' => "dz",
+        'ղ' => "gh",
+        'ճ' => "ch",
+        'մ' => "m",
+        'յ' => "y",
+        'ն' => "n",
+        'շ' => "sh",
+        'ո' => "o",
+        'չ' => "ch",
+        'պ' => "p",
+        'ջ' => "j",
+        'ռ' => "r",
+        'ս' => "s",
+        'վ' => "v",
+        'տ' => "t",
+        'ր' => "r",
+        'ց' => "ts",
+        'ւ' => "w",
+        'փ' => "p",
+        'ք' => "k",
+        'օ' => "o",
+        'ֆ' => "f",
+        'և' => "ev",
+        _ => return None,
+    })
+}
+
+/// Transliterate Armenian script to Latin (ASCII, BGN/PCGN-leaning): `ղ→gh`,
+/// `ծ→ts`, `ժ→zh`, ` խ→kh`. Non-Armenian characters pass through unchanged.
+///
+/// ```
+/// use intl::translit::armenian_to_latin;
+/// assert_eq!(armenian_to_latin("Երևան"), "Erevan");
+/// assert_eq!(armenian_to_latin("Հայաստան"), "Hayastan");
+/// ```
+#[must_use]
+pub fn armenian_to_latin(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        if let Some(latin) = armenian_letter(c) {
+            out.push_str(latin);
+        } else if let Some(lower) = c
+            .to_lowercase()
+            .next()
+            .filter(|&l| armenian_letter(l).is_some())
+        {
+            // Upper-case: title-case the (possibly multi-letter) romanization.
+            let latin = armenian_letter(lower).unwrap();
+            let mut it = latin.chars();
+            if let Some(f) = it.next() {
+                out.extend(f.to_uppercase());
+                out.push_str(it.as_str());
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// Transliterate Georgian (Mkhedruli, caseless) to Latin (ASCII, national
+/// system): `ღ→gh`, `შ→sh`, `ჩ→ch`, `ძ→dz`, `ხ→kh`. Non-Georgian characters pass
+/// through unchanged.
+///
+/// ```
+/// use intl::translit::georgian_to_latin;
+/// assert_eq!(georgian_to_latin("თბილისი"), "tbilisi");
+/// assert_eq!(georgian_to_latin("საქართველო"), "sakartvelo");
+/// ```
+#[must_use]
+pub fn georgian_to_latin(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        let latin: &str = match c {
+            'ა' => "a",
+            'ბ' => "b",
+            'გ' => "g",
+            'დ' => "d",
+            'ე' => "e",
+            'ვ' => "v",
+            'ზ' => "z",
+            'თ' => "t",
+            'ი' => "i",
+            'კ' => "k",
+            'ლ' => "l",
+            'მ' => "m",
+            'ნ' => "n",
+            'ო' => "o",
+            'პ' => "p",
+            'ჟ' => "zh",
+            'რ' => "r",
+            'ს' => "s",
+            'ტ' => "t",
+            'უ' => "u",
+            'ფ' => "p",
+            'ქ' => "k",
+            'ღ' => "gh",
+            'ყ' => "q",
+            'შ' => "sh",
+            'ჩ' => "ch",
+            'ც' => "ts",
+            'ძ' => "dz",
+            'წ' => "ts",
+            'ჭ' => "ch",
+            'ხ' => "kh",
+            'ჯ' => "j",
+            'ჰ' => "h",
+            other => {
+                out.push(other);
+                continue;
+            }
+        };
+        out.push_str(latin);
     }
     out
 }

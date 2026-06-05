@@ -152,3 +152,18 @@ fn transform_quantifiers_and_ref() {
         "<cat> dog <cat>"
     );
 }
+
+#[test]
+fn armenian_georgian() {
+    use intl::translit::{any_ascii, armenian_to_latin, georgian_to_latin};
+    assert_eq!(armenian_to_latin("Հայաստան"), "Hayastan");
+    assert_eq!(armenian_to_latin("Երևան"), "Erevan");
+    assert_eq!(armenian_to_latin("ԱԲԳ"), "ABG"); // all-caps
+    assert_eq!(georgian_to_latin("თბილისი"), "tbilisi");
+    assert_eq!(georgian_to_latin("ქართული"), "kartuli");
+    // any_ascii now routes Armenian/Georgian through too.
+    assert_eq!(any_ascii("Հայաստան"), "Hayastan");
+    assert_eq!(any_ascii("საქართველო"), "sakartvelo");
+    // non-target scripts pass through
+    assert_eq!(armenian_to_latin("hello"), "hello");
+}

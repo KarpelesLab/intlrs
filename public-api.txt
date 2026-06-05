@@ -812,7 +812,9 @@ pub unsafe fn intl::translit::Transform::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::translit::Transform
 pub fn intl::translit::Transform::from(T) -> T
 pub fn intl::translit::any_ascii(&str) -> alloc::string::String
+pub fn intl::translit::armenian_to_latin(&str) -> alloc::string::String
 pub fn intl::translit::cyrillic_to_latin(&str) -> alloc::string::String
+pub fn intl::translit::georgian_to_latin(&str) -> alloc::string::String
 pub fn intl::translit::greek_to_latin(&str) -> alloc::string::String
 pub fn intl::translit::latin_ascii(&str) -> alloc::string::String
 pub fn intl::translit::remove_diacritics(&str) -> alloc::string::String
