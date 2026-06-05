@@ -85,3 +85,20 @@ fn rule_transform() {
     // Unmatched chars pass through.
     assert_eq!(Transform::parse("a>b").unwrap().apply("cat"), "cbt");
 }
+
+#[test]
+fn transform_context() {
+    use intl::translit::Transform;
+    // After-context: n before g -> ŋ, n elsewhere unchanged.
+    let t = Transform::parse("n } g > ŋ").unwrap();
+    assert_eq!(t.apply("sing song no"), "siŋg soŋg no");
+    // Before-context: c after s -> k (matches converted output).
+    let b = Transform::parse("s { c > k").unwrap();
+    assert_eq!(b.apply("scat cat"), "skat cat");
+    // Both contexts: a between b and d -> X.
+    let bc = Transform::parse("b { a } d > X").unwrap();
+    assert_eq!(bc.apply("bad bar"), "bXd bar");
+    // Context-free still works.
+    let leet = Transform::parse("a > 4").unwrap();
+    assert_eq!(leet.apply("aaa"), "444");
+}

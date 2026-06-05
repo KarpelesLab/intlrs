@@ -27,57 +27,91 @@ pub fn remove_diacritics(s: &str) -> String {
     crate::unicode::nfc(stripped).collect()
 }
 
-/// A simple rule-based transform: an ordered set of `source > target` string
-/// rewrites, applied left-to-right with **longest-match-first** at each
-/// position. A lightweight subset of ICU transform rules (literal rewrites; no
-/// context, sets, or back-references). Build it once and reuse it.
+/// One transform rule: `before { source } after > target` — replace `source`
+/// with `target`, but only when preceded by `before` and followed by `after`
+/// (either context may be empty). The `before`/`after` markers are optional.
+#[derive(Debug, Clone)]
+struct Rule {
+    before: String,
+    source: String,
+    after: String,
+    target: String,
+}
+
+/// A rule-based transform: an ordered set of `source > target` string rewrites,
+/// applied left-to-right with **longest-source-first** at each position, with
+/// optional **context** (`before { source } after > target`, the ICU syntax).
+/// A lightweight subset of ICU transform rules (literal rewrites + context; no
+/// sets or back-references). Build it once and reuse it.
 ///
 /// ```
 /// use intl::translit::Transform;
 /// let leet = Transform::parse("a > 4; e > 3; o > 0; ck > k").unwrap();
 /// assert_eq!(leet.apply("rocket"), "r0k3t");   // "ck" wins over "c","k"
-/// assert_eq!(leet.apply("hello"), "h3ll0");
+///
+/// // Context: 'n' before 'g' becomes 'ŋ'; 'n' elsewhere is unchanged.
+/// let ctx = Transform::parse("n } g > ŋ").unwrap();
+/// assert_eq!(ctx.apply("sing song / no"), "siŋg soŋg / no");
 /// ```
 #[derive(Debug, Clone)]
 pub struct Transform {
-    rules: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>,
+    rules: alloc::vec::Vec<Rule>,
 }
 
 impl Transform {
-    /// Parse a rule string: rules are separated by `;`, each `source > target`
-    /// (whitespace around the parts is trimmed). Returns `None` if no valid rule
-    /// is found. Rules are matched longest-source-first.
+    /// Parse a rule string: rules are separated by `;`, each
+    /// `[before {] source [} after] > target` (whitespace around the parts is
+    /// trimmed). Returns `None` if no valid rule is found. Rules are matched
+    /// longest-source-first.
     #[must_use]
     pub fn parse(rules: &str) -> Option<Transform> {
-        let mut parsed: alloc::vec::Vec<(alloc::string::String, alloc::string::String)> =
-            alloc::vec::Vec::new();
+        let mut parsed: alloc::vec::Vec<Rule> = alloc::vec::Vec::new();
         for rule in rules.split(';') {
-            let Some((src, dst)) = rule.split_once('>') else {
+            let Some((lhs, target)) = rule.split_once('>') else {
                 continue;
             };
-            let (src, dst) = (src.trim(), dst.trim());
-            if !src.is_empty() {
-                parsed.push((src.into(), dst.into()));
+            // Split the left side into  before { source } after.
+            let (before, rest) = match lhs.split_once('{') {
+                Some((b, r)) => (b.trim(), r),
+                None => ("", lhs),
+            };
+            let (source, after) = match rest.split_once('}') {
+                Some((s, a)) => (s.trim(), a.trim()),
+                None => (rest.trim(), ""),
+            };
+            if !source.is_empty() {
+                parsed.push(Rule {
+                    before: before.into(),
+                    source: source.into(),
+                    after: after.into(),
+                    target: target.trim().into(),
+                });
             }
         }
         if parsed.is_empty() {
             return None;
         }
-        parsed.sort_by_key(|(s, _)| core::cmp::Reverse(s.chars().count()));
+        parsed.sort_by_key(|r| core::cmp::Reverse(r.source.chars().count()));
         Some(Transform { rules: parsed })
     }
 
-    /// Apply the transform to `s`.
+    /// Apply the transform to `s`. The `before` context matches the already-
+    /// converted output; `after` matches the remaining input.
     #[must_use]
     pub fn apply(&self, s: &str) -> String {
         let mut out = String::with_capacity(s.len());
         let mut rest = s;
         'outer: while !rest.is_empty() {
-            for (src, dst) in &self.rules {
-                if let Some(after) = rest.strip_prefix(src.as_str()) {
-                    out.push_str(dst);
-                    rest = after;
-                    continue 'outer;
+            for rule in &self.rules {
+                if !out.ends_with(rule.before.as_str()) {
+                    continue;
+                }
+                if let Some(after) = rest.strip_prefix(rule.source.as_str()) {
+                    if after.starts_with(rule.after.as_str()) {
+                        out.push_str(&rule.target);
+                        rest = after;
+                        continue 'outer;
+                    }
                 }
             }
             let c = rest.chars().next().unwrap();
