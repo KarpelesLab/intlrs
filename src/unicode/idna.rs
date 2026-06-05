@@ -118,6 +118,13 @@ fn punycode_encode(input: &[char]) -> Option<String> {
     Some(output)
 }
 
+/// Maximum number of code points a decoded U-label may contain. A valid A-label
+/// is ≤63 octets and each Punycode digit yields at most one output code point, so
+/// 63 is a generous upper bound. Capping the decode output bounds work and
+/// allocation, preventing a short `xn--` label from acting as a decompression
+/// bomb (CPU/allocation DoS).
+const MAX_LABEL_CODE_POINTS: usize = 63;
+
 /// Punycode-decode a label (the part after `xn--`).
 fn punycode_decode(input: &str) -> Option<Vec<char>> {
     let mut output: Vec<u32> = Vec::new();
@@ -133,6 +140,9 @@ fn punycode_decode(input: &str) -> Option<Vec<char>> {
     if has_basic {
         for &c in &bytes[..basic_end] {
             if (c as u32) >= 0x80 {
+                return None;
+            }
+            if output.len() >= MAX_LABEL_CODE_POINTS {
                 return None;
             }
             output.push(c as u32);
@@ -155,6 +165,11 @@ fn punycode_decode(input: &str) -> Option<Vec<char>> {
             }
             w = w.checked_mul(BASE - t)?;
             k += BASE;
+        }
+        // Cap the output length before the O(n) insert so a hostile label that
+        // would decode to a huge string bails out early instead of allocating.
+        if output.len() >= MAX_LABEL_CODE_POINTS {
+            return None;
         }
         let len = output.len() as u32 + 1;
         bias = adapt(i - old_i, len, old_i == 0);
@@ -251,6 +266,10 @@ pub fn to_ascii(domain: &str) -> Result<String, Error> {
     if result.is_empty() {
         return Err(Error::InvalidLabel);
     }
+    // A4_1: the assembled domain must not exceed the DNS 253-octet maximum.
+    if result.len() > 253 {
+        return Err(Error::InvalidLabel);
+    }
     Ok(result)
 }
 
@@ -270,4 +289,67 @@ pub fn to_unicode(domain: &str) -> String {
         out.push(String::from(label));
     }
     out.join(".")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn punycode_decode_rejects_over_long_output() {
+        // `tdaaaa…` (64 trailing 'a') is *valid* Punycode that decodes to 64
+        // copies of 'ü' — one more than the 63-code-point label cap. The decoder
+        // must bail out (None) rather than expand it, bounding work/allocation
+        // and preventing a decompression-bomb DoS.
+        let bomb = alloc::format!("td{}", "a".repeat(64));
+        assert!(punycode_decode(&bomb).is_none());
+        // A legitimate short label still decodes fine.
+        assert_eq!(
+            punycode_decode("bcher-kva"),
+            Some(alloc::vec!['b', 'ü', 'c', 'h', 'e', 'r'])
+        );
+    }
+
+    #[test]
+    fn punycode_decode_caps_output_length() {
+        // No successful decode may exceed the 63-code-point label cap.
+        for payload in ["wgv71a119e", "bcher-kva", "fa-hia"] {
+            if let Some(decoded) = punycode_decode(payload) {
+                assert!(decoded.len() <= MAX_LABEL_CODE_POINTS);
+            }
+        }
+    }
+
+    #[test]
+    fn to_ascii_rejects_over_long_domain() {
+        // Many short labels assemble into a domain longer than the DNS 253-octet
+        // maximum; the result must be rejected.
+        let label = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; // 30 octets
+        let mut domain = String::new();
+        for i in 0..10 {
+            if i > 0 {
+                domain.push('.');
+            }
+            domain.push_str(label);
+        }
+        // 10 * 30 + 9 dots = 309 octets > 253.
+        assert!(domain.len() > 253);
+        assert_eq!(to_ascii(&domain), Err(Error::InvalidLabel));
+    }
+
+    #[test]
+    fn to_ascii_accepts_domain_at_limit() {
+        // A domain at or below 253 octets is still accepted.
+        let label = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; // 30 octets
+        let mut domain = String::new();
+        for i in 0..8 {
+            if i > 0 {
+                domain.push('.');
+            }
+            domain.push_str(label);
+        }
+        // 8 * 30 + 7 dots = 247 octets <= 253.
+        assert!(domain.len() <= 253);
+        assert!(to_ascii(&domain).is_ok());
+    }
 }
