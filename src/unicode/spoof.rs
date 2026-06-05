@@ -3,7 +3,7 @@
 use super::generated::confusables as gen;
 use super::normalize::nfd;
 use super::predicates::is_default_ignorable;
-use super::script::{script, Script};
+use super::script::{script_extensions, Script, ScriptExtensions};
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -43,24 +43,56 @@ pub fn confusable(a: &str, b: &str) -> bool {
     a != b && skeleton(a) == skeleton(b)
 }
 
-/// `true` if every character of `s` could belong to a single script under
-/// `Script_Extensions` resolution (UTS #39 "Single Script"). Characters that are
-/// `Common` or `Inherited` are compatible with any script. An empty string is
-/// single-script.
+/// `true` if `s` is *single-script* under UTS #39 "Single Script" resolution:
+/// the intersection of the `Script_Extensions` sets of all its characters is
+/// non-empty, i.e. there exists at least one script every character can be
+/// written in.
+///
+/// Resolution uses each character's full `Script_Extensions` set, not just its
+/// primary `Script`. So U+30FC (KATAKANA-HIRAGANA PROLONGED SOUND MARK), whose
+/// primary `Script` is `Common` but whose `Script_Extensions` is `{Hira, Kana,
+/// ...}`, constrains the running script set rather than being ignored.
+/// Characters whose `Script_Extensions` is exactly `{Common}` or `{Inherited}`
+/// (shared punctuation, digits, combining marks, …) are compatible with every
+/// script and impose no constraint. An empty string is single-script.
 ///
 /// A `false` result flags a mixed-script string — a common spoofing signal.
+///
+/// This implements only the core `Script_Extensions` intersection. The UTS #39
+/// *augmented* profile additionally treats certain CJK combinations
+/// (Han+Hiragana+Katakana, Han+Hangul, Han+Bopomofo) as mutually compatible;
+/// that augmentation is **not** applied here, so e.g. mixed Han/Kana text is
+/// reported as multi-script.
+///
+/// ```
+/// use intl::unicode::spoof::is_single_script;
+/// assert!(is_single_script("hello"));
+/// // Latin + Cyrillic 'у' (U+0443) — mixed script.
+/// assert!(!is_single_script("paуpal"));
+/// assert!(is_single_script(""));
+/// // Shared punctuation and digits keep Latin text single-script.
+/// assert!(is_single_script("abc-123"));
+/// ```
 #[must_use]
 pub fn is_single_script(s: &str) -> bool {
-    let mut resolved: Option<Script> = None;
+    // Running intersection of Script_Extensions sets across the string.
+    // `None` means "still unconstrained" (compatible with every script).
+    let mut acc: Option<Vec<Script>> = None;
     for c in s.chars() {
-        let sc = script(c);
-        if matches!(sc, Script::Common | Script::Inherited) {
-            continue;
-        }
-        match resolved {
-            None => resolved = Some(sc),
-            Some(r) if r == sc => {}
-            Some(_) => return false,
+        match script_extensions(c) {
+            // Exactly {Common} or {Inherited}: compatible with any script.
+            ScriptExtensions::Single(Script::Common)
+            | ScriptExtensions::Single(Script::Inherited) => continue,
+            sx => {
+                let set = sx.as_slice();
+                acc = Some(match acc {
+                    None => set.to_vec(),
+                    Some(prev) => prev.into_iter().filter(|s| set.contains(s)).collect(),
+                });
+                if acc.as_ref().is_some_and(Vec::is_empty) {
+                    return false; // empty intersection => mixed script
+                }
+            }
         }
     }
     true
