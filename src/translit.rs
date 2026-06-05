@@ -39,6 +39,10 @@ struct Rule {
     /// If the source is a character set `[…]`, the inclusive ranges it matches
     /// (any one character). `None` for a literal source.
     set: Option<alloc::vec::Vec<(char, char)>>,
+    /// A quantifier on a character-set source: `'+'` (one or more), `'*'` (zero
+    /// or more — but a zero-width match never fires, to guarantee progress), or
+    /// `'?'` (at most one). `None` for an unquantified source.
+    quantifier: Option<char>,
 }
 
 /// Parse a `[abc x-z]` character set into inclusive ranges, or `None` if `s` is
@@ -68,8 +72,9 @@ fn parse_set(s: &str) -> Option<alloc::vec::Vec<(char, char)>> {
 /// applied left-to-right with **longest-source-first** at each position, with
 /// optional **context** (`before { source } after > target`, the ICU syntax).
 /// A lightweight subset of ICU transform rules: literal rewrites, **context**
-/// (`before { source } after`), and a single **character-set** source
-/// (`[abc x-z] > t`); no back-references. Build it once and reuse it.
+/// (`before { source } after`), **character-set** sources (`[abc x-z]`), set
+/// **quantifiers** (`[..]+`/`*`/`?`), and a `$0` **match-reference** in the
+/// target (the matched source text). Build it once and reuse it.
 ///
 /// ```
 /// use intl::translit::Transform;
@@ -83,6 +88,10 @@ fn parse_set(s: &str) -> Option<alloc::vec::Vec<(char, char)>> {
 /// // Character set: strip vowels.
 /// let devowel = Transform::parse("[aeiou] > ").unwrap();
 /// assert_eq!(devowel.apply("transliterate"), "trnsltrt");
+///
+/// // Quantifier + match-reference: collapse a digit run and bracket it.
+/// let t = Transform::parse("[0-9]+ > [$0]").unwrap();
+/// assert_eq!(t.apply("ab12cd345"), "ab[12]cd[345]");
 /// ```
 #[derive(Debug, Clone)]
 pub struct Transform {
@@ -110,13 +119,19 @@ impl Transform {
                 Some((s, a)) => (s.trim(), a.trim()),
                 None => (rest.trim(), ""),
             };
-            if !source.is_empty() {
+            // A trailing `+`/`*`/`?` on a `[…]` set source is a quantifier.
+            let (set_src, quantifier) = match source.strip_suffix(['+', '*', '?']) {
+                Some(prefix) if prefix.ends_with(']') => (prefix, source.chars().next_back()),
+                _ => (source, None),
+            };
+            if !set_src.is_empty() {
                 parsed.push(Rule {
                     before: before.into(),
-                    source: source.into(),
+                    source: set_src.into(),
                     after: after.into(),
                     target: target.trim().into(),
-                    set: parse_set(source),
+                    set: parse_set(set_src),
+                    quantifier,
                 });
             }
         }
@@ -127,8 +142,41 @@ impl Transform {
         Some(Transform { rules: parsed })
     }
 
+    /// The byte length of `rule`'s source match at the start of `rest`, or `None`
+    /// if it does not match here. Handles literal, character-set, and quantified
+    /// character-set sources.
+    fn match_len(rule: &Rule, rest: &str) -> Option<usize> {
+        let Some(ranges) = &rule.set else {
+            return rest
+                .starts_with(rule.source.as_str())
+                .then(|| rule.source.len());
+        };
+        let in_set = |c: char| ranges.iter().any(|&(lo, hi)| (lo..=hi).contains(&c));
+        match rule.quantifier {
+            None => {
+                let c = rest.chars().next()?;
+                in_set(c).then(|| c.len_utf8())
+            }
+            Some(q) => {
+                let mut len = 0;
+                for c in rest.chars() {
+                    if !in_set(c) {
+                        break;
+                    }
+                    len += c.len_utf8();
+                    if q == '?' {
+                        break; // at most one
+                    }
+                }
+                // `+` requires at least one; a zero-width match never fires.
+                (len > 0).then_some(len)
+            }
+        }
+    }
+
     /// Apply the transform to `s`. The `before` context matches the already-
-    /// converted output; `after` matches the remaining input.
+    /// converted output; `after` matches the remaining input. `$0` in a target
+    /// is replaced by the matched source text.
     #[must_use]
     pub fn apply(&self, s: &str) -> String {
         let mut out = String::with_capacity(s.len());
@@ -138,26 +186,19 @@ impl Transform {
                 if !out.ends_with(rule.before.as_str()) {
                     continue;
                 }
-                // Character-set source: match a single char in any range.
-                if let Some(ranges) = &rule.set {
-                    let c = rest.chars().next().unwrap();
-                    if ranges.iter().any(|&(lo, hi)| (lo..=hi).contains(&c)) {
-                        let after = &rest[c.len_utf8()..];
-                        if after.starts_with(rule.after.as_str()) {
-                            out.push_str(&rule.target);
-                            rest = after;
-                            continue 'outer;
-                        }
-                    }
+                let Some(mlen) = Self::match_len(rule, rest) else {
+                    continue;
+                };
+                if !rest[mlen..].starts_with(rule.after.as_str()) {
                     continue;
                 }
-                if let Some(after) = rest.strip_prefix(rule.source.as_str()) {
-                    if after.starts_with(rule.after.as_str()) {
-                        out.push_str(&rule.target);
-                        rest = after;
-                        continue 'outer;
-                    }
+                if rule.target.contains("$0") {
+                    out.push_str(&rule.target.replace("$0", &rest[..mlen]));
+                } else {
+                    out.push_str(&rule.target);
                 }
+                rest = &rest[mlen..];
+                continue 'outer;
             }
             let c = rest.chars().next().unwrap();
             out.push(c);

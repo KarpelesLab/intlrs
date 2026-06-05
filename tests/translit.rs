@@ -127,3 +127,28 @@ fn transform_sets() {
         "...d..Z"
     );
 }
+
+#[test]
+fn transform_quantifiers_and_ref() {
+    use intl::translit::Transform;
+    // '+' collapses a run; $0 echoes the matched text.
+    let t = Transform::parse("[0-9]+ > [$0]").unwrap();
+    assert_eq!(t.apply("ab12cd345"), "ab[12]cd[345]");
+    // '+' to a fixed target collapses runs.
+    assert_eq!(
+        Transform::parse("[aeiou]+ > V")
+            .unwrap()
+            .apply("beautiful queue"),
+        "bVtVfVl qV"
+    );
+    // '*' fires only on non-empty runs (guaranteed progress, no hang).
+    assert_eq!(
+        Transform::parse("[x]* > Y").unwrap().apply("axxxbx"),
+        "aYbY"
+    );
+    // $0 with a literal source.
+    assert_eq!(
+        Transform::parse("cat > <$0>").unwrap().apply("cat dog cat"),
+        "<cat> dog <cat>"
+    );
+}
