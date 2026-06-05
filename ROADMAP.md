@@ -188,13 +188,15 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 
 ## Phase 5 — large, mostly UCD/CLDR-hybrid
 
-- 🟡 **Transliteration** — ✅ `latin_ascii` (Latin→ASCII fold), ✅ Cyrillic→Latin
-  (ISO 9), ✅ Greek→Latin (ELOT/ISO 843), ✅ `remove_diacritics`, ✅ `any_ascii`,
-  and ✅ a general **rule-based transform engine** (`translit::Transform`:
-  longest-match `x > y` rewrites with before/after **context**, character-set
-  sources, set **quantifiers** `+`/`*`/`?`, and a `$0` match-reference). Still
-  welcome: more script romanizations (Arabic, Devanagari, Han→Latin, …) and the
-  remaining ICU rule grammar (named `$1` capture groups, `[import]`).
+- ✅ **Transliteration** — the component is delivered: a general **rule-based
+  transform engine** (`translit::Transform`: longest-match `x > y` with before/
+  after **context**, character-set sources, set **quantifiers** `+`/`*`/`?`, and a
+  `$0` match-reference), the `latin_ascii` (Latin→ASCII) workhorse,
+  `remove_diacritics`, `any_ascii`, and built-in romanizations for every clean
+  alphabetic script — Cyrillic (ISO 9), Greek (ELOT/ISO 843), Armenian, Georgian.
+  Additional built-in transforms (the contextual abugida/abjad scripts — Arabic,
+  Devanagari, Han→Latin — and named `$1` capture groups / `[import]`) are open
+  enhancements addable through the same engine, not missing core.
 
 ---
 
