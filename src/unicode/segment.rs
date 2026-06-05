@@ -774,13 +774,15 @@ fn line_break_before(
     if l == QU && st.r_pi && matches!(st.before, XX | OP | QU | GL | SP | ZW) {
         return (false, false);
     }
-    // LB15b: × (Pf&QU) (SP|GL|WJ|CL|QU|CP|EX|IS|SY|BK|CR|LF|NL|ZW|eot).
+    // LB15b: × (Pf&QU) (SP|GL|WJ|CL|QU|CP|EX|IS|SY|BK|CR|LF|NL|ZW|eot). The rule
+    // is East_Asian_Width-tailorable: a closing quote followed by a wide
+    // (East-Asian) character keeps the no-break too (so CJK "…汤”" stays joined).
     if c == QU && cur.pf() {
         let ok = next.map_or(true, |n| {
             matches!(
                 n.cls,
                 SP | GL | WJ | CL | QU | CP | EX | IS | SY | BK | CR | LF | NL | ZW
-            )
+            ) || n.wide()
         });
         if ok {
             return (false, false);

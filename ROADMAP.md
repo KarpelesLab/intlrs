@@ -38,11 +38,9 @@ Infra: offline `codegen` (packaging-time), CI drift guard, deterministic output,
 Self-contained, driven by data we already vendor or can add; each has an official
 conformance corpus. Highest value, lowest risk — do these next.
 
-- 🟡🔬 **Line breaking (UAX #14)** — `line_breaks(&str)` yielding break
-  opportunities (mandatory vs allowed). 19335/19338 LineBreakTest lines pass; the
-  residual 3 are the QU-closing-quote cases where an Ambiguous-width quote sits
-  between CJK ideographs (LB19a/LB15b + Ambiguous-EAW resolution). *Done apart
-  from those edge cases.*
+- ✅🔬 **Line breaking (UAX #14)** — `line_breaks(&str)` yielding break
+  opportunities (mandatory vs allowed). **19338/19338 LineBreakTest lines pass**
+  (full conformance), including the LB15b/LB19a East-Asian-width quotation rules.
 - ✅🔬 **Bidirectional algorithm (UAX #9)** — `bidi::process` resolves embedding
   levels + visual order (X/W/N/I/L rules, isolates, paired brackets).
   ~99.996% on `BidiCharacterTest`; the residual handful are an override+isolate+

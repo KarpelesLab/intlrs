@@ -53,12 +53,9 @@ fn line_break_test_conformance() {
         checked += 1;
     }
     eprintln!("line break: {}/{} lines pass", checked - failures, checked);
-    // The implementation is 99.98% conformant; a handful of CJK
-    // opening/closing-quotation edge cases against wide neighbours (the LB19 /
-    // East_Asian_Width sub-rules) are not yet exact. Guard against regressions
-    // while leaving the known gap documented.
-    assert!(
-        failures <= 6,
-        "{failures} of {checked} lines failed (expected ≤ 6 known QU/EAW edge cases)"
+    // Full conformance: every LineBreakTest line must pass.
+    assert_eq!(
+        failures, 0,
+        "{failures} of {checked} LineBreakTest lines failed"
     );
 }
