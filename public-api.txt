@@ -1337,6 +1337,7 @@ pub struct intl::unicode::collate::Tailoring
 impl intl::unicode::collate::Tailoring
 pub fn intl::unicode::collate::Tailoring::compare(&self, &str, &str) -> core::cmp::Ordering
 pub fn intl::unicode::collate::Tailoring::for_locale(&str) -> core::option::Option<intl::unicode::collate::Tailoring>
+pub fn intl::unicode::collate::Tailoring::identity() -> intl::unicode::collate::Tailoring
 pub fn intl::unicode::collate::Tailoring::parse(&str) -> core::option::Option<intl::unicode::collate::Tailoring>
 pub fn intl::unicode::collate::Tailoring::sort_key(&self, &str) -> alloc::vec::Vec<u16>
 impl core::marker::Freeze for intl::unicode::collate::Tailoring
@@ -3667,6 +3668,7 @@ pub struct intl::unicode::Tailoring
 impl intl::unicode::collate::Tailoring
 pub fn intl::unicode::collate::Tailoring::compare(&self, &str, &str) -> core::cmp::Ordering
 pub fn intl::unicode::collate::Tailoring::for_locale(&str) -> core::option::Option<intl::unicode::collate::Tailoring>
+pub fn intl::unicode::collate::Tailoring::identity() -> intl::unicode::collate::Tailoring
 pub fn intl::unicode::collate::Tailoring::parse(&str) -> core::option::Option<intl::unicode::collate::Tailoring>
 pub fn intl::unicode::collate::Tailoring::sort_key(&self, &str) -> alloc::vec::Vec<u16>
 impl core::marker::Freeze for intl::unicode::collate::Tailoring

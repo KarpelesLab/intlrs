@@ -220,10 +220,11 @@ fn alphabetic_index() {
 #[test]
 fn tailoring_capacity() {
     use intl::unicode::collate::Tailoring;
-    // The documented capacity comfortably covers any real CLDR tailoring: a reset
-    // followed by ~11 consecutive primary reorderings sorts correctly and in
-    // order, between the anchor and the next base letter.
-    let letters: Vec<char> = "ßçðøþæœłŋıĸ".chars().collect();
+    // Pair-encoded weights make consecutive reorderings unbounded: 40+ letters
+    // inserted after one anchor all sort correctly and in order, between the
+    // anchor and the next base letter.
+    // 40 distinct lowercase letters (no case-pair collisions in the rule).
+    let letters: Vec<char> = "āăąćĉċčďđēĕėęěĝğġģĥħĩīĭįĵķĺļľŀłńņňŋōŏőœŕ".chars().collect();
     let mut rule = String::from("&a");
     for c in &letters {
         rule.push_str(" < ");

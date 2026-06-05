@@ -173,16 +173,17 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   ✅ numeric ordering (`with_numeric`, natural sort), ✅ a locale-tailoring rule
   engine (`Tailoring::parse` for `<`/`<<`/`<<<`/`=` + expansions + multi-char
   digraph targets) with ✅ ~30 bundled locales via `Tailoring::for_locale`.
-  **Remaining boundary:** exhaustive CLDR per-locale tailoring (all ~700 locales)
-  is *not* "just data" — many CLDR rules use the full ICU syntax (`[import]`,
-  `[before N]`, `/extension`, logical reset positions) and need real ICU-style
-  **weight allocation** (this crate uses a conformance-verified gap-insertion
-  approximation that handles the common reorderings but cannot place arbitrarily
-  many letters). Shipping all locales through the approximate engine would yield
-  *incorrect* sort orders, so it is deliberately not done; the engine parses any
-  rule string a caller supplies. ✅ collation-based **string search**
-  (`collate::find`/`contains`) and ✅ a locale-tailored **alphabetic index**
-  (`collate::index_labels`/`index_bucket`).
+  ✅ **unbounded weight allocation** — tailored letters use a pair-encoded
+  `(base, sub)` primary, so `&a < x₁ < x₂ < … < x₅₀` (and any real CLDR rule's
+  reordering depth) sorts correctly with no gap exhaustion; the root
+  `compare`/`sort_key` path is unchanged (CollationTest stays 100%).
+  ✅ collation-based **string search** (`collate::find`/`contains`) and
+  ✅ a locale-tailored **alphabetic index** (`collate::index_labels`/`index_bucket`).
+  **Remaining:** *bundling* all ~700 CLDR locales out of the box — a data/parser
+  effort (full `[import]` resolution, `[before N]`, `/extension`, logical reset
+  positions, plus vendoring every locale's collation data), no longer an engine
+  limit. The engine now expresses any reordering a caller's rule string asks for;
+  ~30 locales are bundled and arbitrary rules are accepted.
 
 ---
 

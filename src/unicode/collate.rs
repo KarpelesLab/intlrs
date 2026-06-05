@@ -43,6 +43,21 @@ fn pack(p: u32, s: u32, t: u32) -> u64 {
     (p as u64) << 32 | (s as u64) << 16 | t as u64
 }
 
+// Tailoring sub-weight: a second primary component for tailored letters, stored
+// in the otherwise-unused high bits of the CE (bits 49–63, above the variable
+// bit). It lets the tailored sort key emit a `(base, sub)` pair per element, so
+// arbitrarily many letters can be inserted immediately after a reset anchor
+// (`&z < a < b < c < …`) without exhausting the DUCET inter-letter gap. Plain
+// DUCET CEs have `sub == 0`.
+#[inline]
+fn sub_weight(ce: u64) -> u16 {
+    ((ce >> 49) & 0x7FFF) as u16
+}
+#[inline]
+fn pack_tailored(base: u32, sub: u32, s: u32, t: u32) -> u64 {
+    ((sub as u64) << 49) | (base as u64) << 32 | (s as u64) << 16 | t as u64
+}
+
 /// How variable collation elements (spaces, punctuation, symbols) are handled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlternateHandling {
@@ -265,15 +280,19 @@ pub fn contains(text: &str, pattern: &str) -> bool {
     find(text, pattern).is_some()
 }
 
-/// The first primary collation weight of `s` under `tail` (or root DUCET when
-/// `None`), or `0` if `s` starts with an ignorable/variable element (space,
-/// punctuation, digit) — the value used to place a string in an index bucket.
-fn first_primary(tail: Option<&Tailoring>, s: &str) -> u16 {
-    let key = match tail {
-        Some(t) => t.sort_key(s),
-        None => sort_key(s),
-    };
-    key.first().copied().unwrap_or(0)
+/// The first primary collation weight of `s` under `tail`, as a `(base, sub)`
+/// pair packed into a `u32` (the pair-encoded primary), or `0` if `s` starts
+/// with an ignorable/variable element — the value used to place a string in an
+/// index bucket. Both the tailored and root (identity) tailorings emit the pair,
+/// so a tailored letter (`å` → `(z, sub)`) is distinguished from its anchor.
+fn first_primary(tail: &Tailoring, s: &str) -> u32 {
+    let key = tail.sort_key(s);
+    let base = key.first().copied().unwrap_or(0) as u32;
+    if base == 0 {
+        return 0;
+    }
+    let sub = key.get(1).copied().unwrap_or(0) as u32;
+    (base << 16) | sub
 }
 
 /// The alphabetic-index bucket **labels** for `lang` — the headings under which
@@ -308,14 +327,14 @@ pub fn index_labels(lang: &str) -> Vec<alloc::string::String> {
         "cy" => &["Ch", "Dd", "Ff", "Ng", "Ll", "Ph", "Rh", "Th"],
         _ => &[],
     };
-    let tail = Tailoring::for_locale(lang);
+    let tail = Tailoring::for_locale(lang).unwrap_or_else(Tailoring::identity);
     let mut labels: Vec<alloc::string::String> = ('A'..='Z')
         .map(|c| c.to_string())
         .chain(extra.iter().map(|s| s.to_string()))
         .collect();
     // Order the labels by collation, so an inserted letter lands in its real
     // place (Spanish `Ñ` after `N`, Swedish `Å Ä Ö` after `Z`).
-    labels.sort_by_key(|l| first_primary(tail.as_ref(), l));
+    labels.sort_by_key(|l| first_primary(&tail, l));
     labels
 }
 
@@ -337,15 +356,15 @@ pub fn index_labels(lang: &str) -> Vec<alloc::string::String> {
 #[must_use]
 pub fn index_bucket(lang: &str, s: &str) -> alloc::string::String {
     use alloc::string::ToString;
-    let tail = Tailoring::for_locale(lang);
-    let sp = first_primary(tail.as_ref(), s);
+    let tail = Tailoring::for_locale(lang).unwrap_or_else(Tailoring::identity);
+    let sp = first_primary(&tail, s);
     if sp == 0 {
         return "#".to_string(); // sorts before A (variable/ignorable lead)
     }
     let labels = index_labels(lang);
     let mut chosen: Option<usize> = None;
     for (i, label) in labels.iter().enumerate() {
-        if first_primary(tail.as_ref(), label) <= sp {
+        if first_primary(&tail, label) <= sp {
             chosen = Some(i);
         } else {
             break;
@@ -353,7 +372,7 @@ pub fn index_bucket(lang: &str, s: &str) -> alloc::string::String {
     }
     match chosen {
         // Past the last label and not equal to it → a later script: overflow.
-        Some(i) if i == labels.len() - 1 && first_primary(tail.as_ref(), &labels[i]) < sp => {
+        Some(i) if i == labels.len() - 1 && first_primary(&tail, &labels[i]) < sp => {
             "#".to_string()
         }
         Some(i) => labels[i].clone(),
@@ -560,13 +579,13 @@ pub fn sort_key(s: &str) -> Vec<u16> {
 /// the reserved gap just above its reset anchor; upper-case forms are added
 /// automatically. Characters not mentioned keep their DUCET order.
 ///
-/// **Capacity:** weights are allocated by gap-insertion into the DUCET primary
-/// space, so a single reset can be followed by up to roughly two dozen
-/// consecutive primary (`<`) reorderings before it would run into the next
-/// letter — comfortably more than any CLDR per-locale tailoring needs (the
-/// bundled [`Tailoring::for_locale`] rules use at most a handful). A synthetic
-/// rule with dozens of consecutive `<` after one anchor is the documented limit;
-/// supporting that would require ICU-style fractional weight allocation.
+/// **Capacity:** tailored letters share their anchor's DUCET primary as a *base*
+/// and are ordered by a second *sub-weight* component (the sort key emits a
+/// `(base, sub)` pair per element), so a single reset can be followed by an
+/// effectively unbounded number of consecutive primary (`<`) reorderings —
+/// `&a < x₁ < x₂ < … < x₅₀` sorts correctly, between the anchor and the next
+/// base letter, with no gap-exhaustion. This pair encoding is used only by the
+/// tailored sort key; the root [`compare`]/[`sort_key`] path is unchanged.
 ///
 /// ```
 /// # #[cfg(feature = "alloc")] {
@@ -691,10 +710,14 @@ impl Tailoring {
                             2 => (s_off, t_off) = (s_off + 1, 0),
                             _ => t_off += 1,
                         }
+                        // Tailored letters share the anchor's DUCET primary as
+                        // their base and are ordered by the sub-weight `p_off`,
+                        // so any number of them fit after the anchor.
                         Self::push_letter(
                             &mut entries,
                             target,
-                            anchor_primary + p_off,
+                            anchor_primary,
+                            p_off,
                             s_off,
                             t_off,
                         );
@@ -730,14 +753,16 @@ impl Tailoring {
     fn push_letter(
         entries: &mut Vec<(Vec<char>, Vec<u64>)>,
         target: &[char],
-        p: u32,
+        base: u32,
+        sub: u32,
         s_off: u32,
         t_off: u32,
     ) {
         for (form, case_t) in Self::case_variants(target) {
             let seq: Vec<char> = nfd(form.into_iter()).collect();
             if !seq.is_empty() {
-                entries.push((seq, alloc::vec![pack(p, 0x0020 + s_off, case_t + t_off)]));
+                let ce = pack_tailored(base, sub, 0x0020 + s_off, case_t + t_off);
+                entries.push((seq, alloc::vec![ce]));
             }
         }
     }
@@ -792,7 +817,7 @@ impl Tailoring {
         if !buf.is_empty() {
             cea.extend(collation_elements(buf));
         }
-        build_sort_key(&cea, AlternateHandling::Shifted, Strength::Tertiary)
+        build_tailored_sort_key(&cea)
     }
 
     /// Compare two strings in this tailored order.
@@ -800,6 +825,70 @@ impl Tailoring {
     pub fn compare(&self, a: &str, b: &str) -> Ordering {
         self.sort_key(a).cmp(&self.sort_key(b))
     }
+
+    /// An empty tailoring (DUCET root order), whose [`sort_key`](Self::sort_key)
+    /// uses the same pair-encoded primary level as any other tailoring — so the
+    /// alphabetic index can treat root and tailored locales uniformly.
+    #[must_use]
+    pub fn identity() -> Tailoring {
+        Tailoring {
+            entries: Vec::new(),
+        }
+    }
+}
+
+/// Build a tailored sort key (UCA `Shifted`, tertiary strength) whose **primary
+/// level emits a `(base, sub)` pair per element** — `sub` is the tailoring
+/// sub-weight (0 for plain DUCET letters). This places a tailored letter
+/// immediately after its anchor and after every word that merely *starts* with
+/// the anchor, with no bound on how many letters share one anchor.
+fn build_tailored_sort_key(cea: &[u64]) -> Vec<u16> {
+    let mut rows: Vec<(u16, u16, u16, u16, u16)> = Vec::with_capacity(cea.len());
+    let mut after_variable = false;
+    for &ce in cea {
+        let (p, sub, s, t) = (primary(ce), sub_weight(ce), secondary(ce), tertiary(ce));
+        if is_variable(ce) && p != 0 {
+            rows.push((0, 0, 0, 0, p)); // shifted to the quaternary level
+            after_variable = true;
+        } else if p == 0 && s == 0 && t == 0 {
+            rows.push((0, 0, 0, 0, 0)); // completely ignorable
+        } else if p == 0 {
+            if after_variable {
+                rows.push((0, 0, 0, 0, 0));
+            } else {
+                rows.push((0, 0, s, t, 0xFFFF));
+            }
+        } else {
+            rows.push((p, sub, s, t, 0xFFFF));
+            after_variable = false;
+        }
+    }
+    let mut key = Vec::new();
+    for &(p, sub, ..) in &rows {
+        if p != 0 {
+            key.push(p);
+            key.push(sub);
+        }
+    }
+    key.push(0);
+    for &(_, _, s, ..) in &rows {
+        if s != 0 {
+            key.push(s);
+        }
+    }
+    key.push(0);
+    for &(_, _, _, t, _) in &rows {
+        if t != 0 {
+            key.push(t);
+        }
+    }
+    key.push(0);
+    for &(.., q) in &rows {
+        if q != 0 {
+            key.push(q);
+        }
+    }
+    key
 }
 
 /// The upper-case form of `c` (first char of its full mapping), or `c` itself.
