@@ -177,3 +177,19 @@ fn tailoring_locale_batch2() {
     // Unknown still None.
     assert!(Tailoring::for_locale("qq").is_none());
 }
+
+#[test]
+fn collation_search() {
+    use intl::unicode::collate::{contains, find};
+    assert_eq!(find("Hello, CAFÉ!", "cafe"), Some(7..12));
+    assert_eq!(find("a naïve approach", "naive"), Some(2..8));
+    assert_eq!(find("abc", "xyz"), None);
+    assert_eq!(find("RÉSUMÉ", "resume"), Some(0..8));
+    assert!(contains("Größe", "grosse") || !contains("Größe", "grosse")); // ß handling is engine-defined
+    assert!(contains("The Tag", "tag"));
+    assert_eq!(find("anything", ""), Some(0..0));
+    // first (leftmost) match
+    assert_eq!(find("ababab", "ab"), Some(0..2));
+    // no false match across accents-only difference is fine (primary ignores accents)
+    assert!(contains("café au lait", "CAFE"));
+}

@@ -208,6 +208,63 @@ fn collation_elements_numeric(cv: Vec<char>) -> Vec<u64> {
     cea
 }
 
+/// The non-ignorable primary weights of `s` (root DUCET) — the sequence used
+/// for primary-strength (case- and accent-insensitive) matching.
+fn primaries(s: &str) -> Vec<u16> {
+    collation_elements(nfd(s.chars()).collect())
+        .into_iter()
+        .map(primary)
+        .filter(|&p| p != 0)
+        .collect()
+}
+
+/// Find the first substring of `text` that matches `pattern` at **primary
+/// strength** — i.e. case- and accent-insensitively (`"CAFÉ"` matches `"cafe"`)
+/// — and return its byte range, or `None`. Uses root (DUCET) collation. An empty
+/// pattern matches at `0..0`. This is the collation analog of `str::find`.
+///
+/// ```
+/// # #[cfg(feature = "alloc")] {
+/// use intl::unicode::collate::find;
+/// assert_eq!(find("Hello, CAFÉ!", "cafe"), Some(7..12));
+/// assert_eq!(find("a naïve approach", "naive"), Some(2..8));
+/// assert_eq!(find("abc", "xyz"), None);
+/// # }
+/// ```
+#[must_use]
+pub fn find(text: &str, pattern: &str) -> Option<core::ops::Range<usize>> {
+    let pat = primaries(pattern);
+    if pat.is_empty() {
+        return Some(0..0);
+    }
+    // Char-boundary byte offsets, plus the end (so `bounds[k]..bounds[m]` is a
+    // valid slice for any k <= m).
+    let bounds: Vec<usize> = text
+        .char_indices()
+        .map(|(i, _)| i)
+        .chain(core::iter::once(text.len()))
+        .collect();
+    for a in 0..bounds.len() - 1 {
+        for b in a + 1..bounds.len() {
+            let pr = primaries(&text[bounds[a]..bounds[b]]);
+            if pr.len() < pat.len() {
+                continue; // not enough weights yet — extend the candidate
+            }
+            if pr == pat {
+                return Some(bounds[a]..bounds[b]);
+            }
+            break; // reached/passed the needed length without a match; advance start
+        }
+    }
+    None
+}
+
+/// `true` if `text` contains `pattern` at primary strength (see [`find`]).
+#[must_use]
+pub fn contains(text: &str, pattern: &str) -> bool {
+    find(text, pattern).is_some()
+}
+
 /// Collation strength — the most significant weight level that is compared.
 /// Lower strengths ignore finer distinctions: [`Primary`](Strength::Primary)
 /// ignores accents and case, [`Secondary`](Strength::Secondary) ignores case

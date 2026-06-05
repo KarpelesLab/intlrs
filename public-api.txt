@@ -1361,6 +1361,8 @@ pub fn intl::unicode::collate::Tailoring::borrow_mut(&mut self) -> &mut T
 impl<T> core::convert::From<T> for intl::unicode::collate::Tailoring
 pub fn intl::unicode::collate::Tailoring::from(T) -> T
 pub fn intl::unicode::collate::compare(&str, &str) -> core::cmp::Ordering
+pub fn intl::unicode::collate::contains(&str, &str) -> bool
+pub fn intl::unicode::collate::find(&str, &str) -> core::option::Option<core::ops::range::Range<usize>>
 pub fn intl::unicode::collate::sort_key(&str) -> alloc::vec::Vec<u16>
 pub mod intl::unicode::ident
 pub fn intl::unicode::ident::is_identifier(&str) -> bool
@@ -3773,8 +3775,10 @@ pub const fn intl::unicode::changes_when_titlecased(char) -> bool
 pub const fn intl::unicode::changes_when_uppercased(char) -> bool
 pub fn intl::unicode::char_name(char) -> core::option::Option<alloc::string::String>
 pub fn intl::unicode::compare(&str, &str) -> core::cmp::Ordering
+pub fn intl::unicode::contains(&str, &str) -> bool
 pub const fn intl::unicode::east_asian_width(char) -> intl::unicode::width::EastAsianWidth
 pub const fn intl::unicode::east_asian_width_u32(u32) -> intl::unicode::width::EastAsianWidth
+pub fn intl::unicode::find(&str, &str) -> core::option::Option<core::ops::range::Range<usize>>
 pub fn intl::unicode::fold<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::case::CaseMapping<I>
 pub const fn intl::unicode::general_category(char) -> intl::unicode::category::GeneralCategory
 pub const fn intl::unicode::general_category_u32(u32) -> intl::unicode::category::GeneralCategory

@@ -177,8 +177,9 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   approximation that handles the common reorderings but cannot place arbitrarily
   many letters). Shipping all locales through the approximate engine would yield
   *incorrect* sort orders, so it is deliberately not done; the engine parses any
-  rule string a caller supplies. Also still open: collation-based **string
-  search** and **alphabetic index**.
+  rule string a caller supplies. ✅ collation-based **string search**
+  (`collate::find`/`contains`, primary-strength). Still open: locale-tailored
+  **alphabetic index**.
 
 ---
 
@@ -207,7 +208,7 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
 | IDNA (`uidna`) | ✅ |
 | Spoof/confusables (`uspoof`) | ✅ |
 | Collator root/DUCET (`ucol`) | ✅ 100% CollationTest (both modes) |
-| Collator tailored + search | 🟡 tailoring engine + ~30 locales (see below) |
+| Collator tailored + search | 🟡 tailoring engine + ~30 locales + primary-strength search (`find`) |
 | Locale / likely subtags (`uloc`) | ✅ |
 | Plural rules | ✅ (cardinal + ordinal) |
 | Number/decimal/RBNF format | ✅ (RBNF cardinal; ordinal spell-out partial) |
