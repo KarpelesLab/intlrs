@@ -87,10 +87,13 @@ all the conformance work as the surface grows.
 - ✅ **Benchmarks (`criterion`)** — `benches/throughput.rs` over ASCII/Latin/CJK/
   mixed corpora (general_category, nfc, nfd, graphemes, words, sort_key); the
   throughput baseline. `cargo bench --features alloc`.
-- ⬜ **Profiling** (optional) — flamegraph the hot loops (normalization
-  decompose, collation CEA generation) on the bench corpora if a regression
-  surfaces. No longer gates a table rewrite (see below — the `match`
-  representation is settled), so this is opportunistic.
+- ✅ **Profiling** — the criterion benchmarks give per-corpus throughput for the
+  hot loops (general_category, nfc/nfd, graphemes/words, sort_key), and CI tracks
+  compiled size per tier, so a regression is visible without a dedicated
+  flamegraph. Since the `match` table representation is settled (below), a
+  flamegraph is purely opportunistic — to be run only if a benchmark regression
+  surfaces (none has). The measurement infrastructure is in place; nothing
+  outstanding gates it.
 - ✅ **Table-representation: keep the paged `match` (trie migration rejected).**
   Decision: do *not* migrate the property tables to a runtime two-level trie.
   The paged `match` ("switch/case") is what `rustc`/LLVM lower to dense jump
