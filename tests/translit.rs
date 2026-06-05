@@ -102,3 +102,28 @@ fn transform_context() {
     let leet = Transform::parse("a > 4").unwrap();
     assert_eq!(leet.apply("aaa"), "444");
 }
+
+#[test]
+fn transform_sets() {
+    use intl::translit::Transform;
+    // Strip vowels.
+    assert_eq!(
+        Transform::parse("[aeiou] > ")
+            .unwrap()
+            .apply("transliterate"),
+        "trnsltrt"
+    );
+    // Range: digits -> '#'.
+    assert_eq!(
+        Transform::parse("[0-9] > #").unwrap().apply("a1b22c"),
+        "a#b##c"
+    );
+    // Set with context: a digit before '%' is dropped.
+    let t = Transform::parse("[0-9] } % > ").unwrap();
+    assert_eq!(t.apply("5% 5x"), "% 5x");
+    // Mixed ranges/literals in one set.
+    assert_eq!(
+        Transform::parse("[a-cXY] > .").unwrap().apply("abcdXYZ"),
+        "...d..Z"
+    );
+}

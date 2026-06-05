@@ -36,13 +36,40 @@ struct Rule {
     source: String,
     after: String,
     target: String,
+    /// If the source is a character set `[…]`, the inclusive ranges it matches
+    /// (any one character). `None` for a literal source.
+    set: Option<alloc::vec::Vec<(char, char)>>,
+}
+
+/// Parse a `[abc x-z]` character set into inclusive ranges, or `None` if `s` is
+/// not bracketed.
+fn parse_set(s: &str) -> Option<alloc::vec::Vec<(char, char)>> {
+    let inner = s.strip_prefix('[')?.strip_suffix(']')?;
+    let chars: alloc::vec::Vec<char> = inner.chars().collect();
+    let mut ranges = alloc::vec::Vec::new();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i].is_whitespace() {
+            i += 1;
+            continue;
+        }
+        if i + 2 < chars.len() && chars[i + 1] == '-' {
+            ranges.push((chars[i], chars[i + 2]));
+            i += 3;
+        } else {
+            ranges.push((chars[i], chars[i]));
+            i += 1;
+        }
+    }
+    Some(ranges)
 }
 
 /// A rule-based transform: an ordered set of `source > target` string rewrites,
 /// applied left-to-right with **longest-source-first** at each position, with
 /// optional **context** (`before { source } after > target`, the ICU syntax).
-/// A lightweight subset of ICU transform rules (literal rewrites + context; no
-/// sets or back-references). Build it once and reuse it.
+/// A lightweight subset of ICU transform rules: literal rewrites, **context**
+/// (`before { source } after`), and a single **character-set** source
+/// (`[abc x-z] > t`); no back-references. Build it once and reuse it.
 ///
 /// ```
 /// use intl::translit::Transform;
@@ -52,6 +79,10 @@ struct Rule {
 /// // Context: 'n' before 'g' becomes 'ŋ'; 'n' elsewhere is unchanged.
 /// let ctx = Transform::parse("n } g > ŋ").unwrap();
 /// assert_eq!(ctx.apply("sing song / no"), "siŋg soŋg / no");
+///
+/// // Character set: strip vowels.
+/// let devowel = Transform::parse("[aeiou] > ").unwrap();
+/// assert_eq!(devowel.apply("transliterate"), "trnsltrt");
 /// ```
 #[derive(Debug, Clone)]
 pub struct Transform {
@@ -85,6 +116,7 @@ impl Transform {
                     source: source.into(),
                     after: after.into(),
                     target: target.trim().into(),
+                    set: parse_set(source),
                 });
             }
         }
@@ -104,6 +136,19 @@ impl Transform {
         'outer: while !rest.is_empty() {
             for rule in &self.rules {
                 if !out.ends_with(rule.before.as_str()) {
+                    continue;
+                }
+                // Character-set source: match a single char in any range.
+                if let Some(ranges) = &rule.set {
+                    let c = rest.chars().next().unwrap();
+                    if ranges.iter().any(|&(lo, hi)| (lo..=hi).contains(&c)) {
+                        let after = &rest[c.len_utf8()..];
+                        if after.starts_with(rule.after.as_str()) {
+                            out.push_str(&rule.target);
+                            rest = after;
+                            continue 'outer;
+                        }
+                    }
                     continue;
                 }
                 if let Some(after) = rest.strip_prefix(rule.source.as_str()) {
