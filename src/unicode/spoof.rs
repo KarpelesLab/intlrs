@@ -2,23 +2,32 @@
 
 use super::generated::confusables as gen;
 use super::normalize::nfd;
+use super::predicates::is_default_ignorable;
 use super::script::{script, Script};
 use alloc::string::String;
 use alloc::vec::Vec;
 
-/// The UTS #39 *confusable skeleton* of `s`: NFD, then replace each character by
-/// its confusable prototype, then NFD again. Two strings are visually
-/// confusable iff their skeletons are equal — see [`confusable`].
+/// The UTS #39 *confusable skeleton* of `s`: drop `Default_Ignorable_Code_Point`
+/// characters, NFD, replace each character by its confusable prototype, then NFD
+/// again. Two strings are visually confusable iff their skeletons are equal — see
+/// [`confusable`].
+///
+/// Stripping default-ignorables (e.g. ZWSP U+200B, ZWJ/ZWNJ, variation selectors)
+/// is required by UTS #39: such characters are invisible in rendering, so an
+/// attacker could otherwise hide them inside a homograph (`"pay\u{200B}pal"`) to
+/// evade detection.
 ///
 /// ```
 /// use intl::unicode::spoof::skeleton;
 /// // Cyrillic "а" and Latin "a" share a skeleton.
 /// assert_eq!(skeleton("pаypal"), skeleton("paypal"));
+/// // An interspersed zero-width space is ignored.
+/// assert_eq!(skeleton("pay\u{200B}pal"), skeleton("paypal"));
 /// ```
 #[must_use]
 pub fn skeleton(s: &str) -> String {
     let mut mapped: Vec<char> = Vec::new();
-    for c in nfd(s.chars()) {
+    for c in nfd(s.chars().filter(|&c| !is_default_ignorable(c))) {
         match gen::confusable_prototype(c as u32) {
             Some(proto) => mapped.extend_from_slice(proto),
             None => mapped.push(c),
