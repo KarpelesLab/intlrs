@@ -106,7 +106,8 @@ all the conformance work as the surface grows.
 - 🟡 **`#![no_std]`/`no_alloc` CI matrix hardening** — CI builds on a bare-metal
   `thumbv7em-none-eabi` target (with and without `alloc`) to prove no `std`
   leakage. ✅ MSRV check
-  (builds all tiers on Rust 1.70). Still to add: `cargo-public-api` API guard.
+  (builds all tiers on Rust 1.70). ✅ `cargo-public-api`
+  surface guard (CI diffs against committed public-api.txt).
 - ✅ **Binary-size tracking** — CI reports the embedded-data footprint
   (generated tables + CLDR blobs) and the compiled `.text`/`.data` per feature
   tier via a `sizeprobe` example built in release and measured with `size` (the

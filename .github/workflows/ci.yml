@@ -223,3 +223,27 @@ jobs:
 
       - name: cargo check the fuzz harness
         run: cargo check --manifest-path fuzz/Cargo.toml
+
+  public-api:
+    name: Public API surface guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Guard the public API: regenerate the surface and diff it against the
+      # committed `public-api.txt`. A deliberate API change must update the
+      # snapshot (regenerate with `cargo public-api --all-features > public-api.txt`);
+      # an accidental one fails here. cargo-public-api needs nightly rustdoc.
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-public-api
+        run: cargo install cargo-public-api --version 0.52.0 --locked
+
+      - name: Public API unchanged
+        run: |
+          cargo public-api --all-features > /tmp/public-api.txt
+          diff -u public-api.txt /tmp/public-api.txt
