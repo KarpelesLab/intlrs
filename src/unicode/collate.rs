@@ -451,7 +451,13 @@ impl Tailoring {
             "lv" => "&c < č &g < ģ &i < ī &k < ķ &l < ļ &n < ņ &s < š &z < ž", // Latvian
             "lt" => "&c < č &s < š &z < ž",                // Lithuanian
             "hr" | "sr" | "bs" => "&c < č < ć &d < dž < đ &l < lj &n < nj &s < š &z < ž", // Serbo-Croatian
-            "es" => "&n < ñ", // Spanish (ñ after n)
+            "es" => "&n < ñ",                              // Spanish (ñ after n)
+            // Hungarian digraphs (dzs/dz longest-match first via the engine sort).
+            "hu" => "&c < cs &d < dz < dzs &g < gy &l < ly &n < ny &s < sz &t < ty &z < zs",
+            "ro" => "&a < ă < â &i < î &s < ș &t < ț",     // Romanian
+            "sq" => "&c < ç &d < dh &e < ë &g < gj &l < ll &n < nj &r < rr &s < sh &t < th &x < xh &z < zh", // Albanian
+            "uk" => "&г < ґ &е < є &и < і < ї",            // Ukrainian (Cyrillic)
+            "vi" => "&a < ă < â &d < đ &e < ê &o < ô < ơ &u < ư", // Vietnamese (base letters)
             _ => return None,
         };
         Tailoring::parse(rules)

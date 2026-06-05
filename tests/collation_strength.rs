@@ -130,3 +130,25 @@ fn tailoring_multichar_locales() {
     assert_eq!(es.compare("n", "ñ"), Ordering::Less);
     assert_eq!(es.compare("ñ", "o"), Ordering::Less);
 }
+
+#[test]
+fn tailoring_more_locales() {
+    use intl::unicode::collate::Tailoring;
+    // Hungarian digraphs: cs after c, and the 3-char "dzs" after "dz".
+    let hu = Tailoring::for_locale("hu").unwrap();
+    assert_eq!(hu.compare("cukor", "csak"), Ordering::Less); // c < cs
+    assert_eq!(hu.compare("dzem", "dzsungel"), Ordering::Less); // dz < dzs
+    assert_eq!(hu.compare("csak", "dolog"), Ordering::Less); // cs < d
+                                                             // Romanian.
+    let ro = Tailoring::for_locale("ro").unwrap();
+    assert_eq!(ro.compare("a", "ă"), Ordering::Less);
+    assert_eq!(ro.compare("ă", "â"), Ordering::Less);
+    assert_eq!(ro.compare("s", "ș"), Ordering::Less);
+    // Albanian digraph.
+    let sq = Tailoring::for_locale("sq").unwrap();
+    assert_eq!(sq.compare("d", "dh"), Ordering::Less);
+    assert_eq!(sq.compare("dh", "e"), Ordering::Less);
+    // Ukrainian Cyrillic.
+    let uk = Tailoring::for_locale("uk").unwrap();
+    assert_eq!(uk.compare("г", "ґ"), Ordering::Less);
+}
