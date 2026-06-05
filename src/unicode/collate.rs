@@ -445,6 +445,13 @@ impl Tailoring {
             "is" => "&y < ð < þ < æ < ö",                  // Icelandic
             "et" => "&s < š < z < ž < õ < ä < ö < ü",      // Estonian
             "de" => "&ae = ä &oe = ö &ue = ü &ss = ß",     // German phonebook (expansions)
+            "pl" => "&a < ą &c < ć &e < ę &l < ł &n < ń &o < ó &s < ś &z < ź < ż", // Polish
+            "cs" | "sk" => "&c < č &h < ch &r < ř &s < š &z < ž", // Czech/Slovak (ch digraph)
+            "tr" | "az" => "&c < ç &g < ğ &h < ı &i < i̇ &o < ö &s < ş &u < ü", // Turkish/Azeri
+            "lv" => "&c < č &g < ģ &i < ī &k < ķ &l < ļ &n < ņ &s < š &z < ž", // Latvian
+            "lt" => "&c < č &s < š &z < ž",                // Lithuanian
+            "hr" | "sr" | "bs" => "&c < č < ć &d < dž < đ &l < lj &n < nj &s < š &z < ž", // Serbo-Croatian
+            "es" => "&n < ñ", // Spanish (ñ after n)
             _ => return None,
         };
         Tailoring::parse(rules)
@@ -486,10 +493,15 @@ impl Tailoring {
                         }
                         i += 1;
                     }
-                    let target = *chars.get(i)?;
-                    i += 1;
-                    if anchor_primary == 0 {
-                        return None; // relation before a reset
+                    // The target may be a multi-character contraction (e.g.
+                    // Czech "ch"); read up to the next operator/reset.
+                    let tstart = i;
+                    while i < chars.len() && !matches!(chars[i], '<' | '=' | '&') {
+                        i += 1;
+                    }
+                    let target = &chars[tstart..i];
+                    if target.is_empty() || anchor_primary == 0 {
+                        return None;
                     }
                     if level == 0 {
                         // `=` identity / expansion: target collates as the anchor.
@@ -520,30 +532,50 @@ impl Tailoring {
         Some(Tailoring { entries })
     }
 
-    /// Map `target` (and its upper-case form) to a single synthetic collation
-    /// element at primary `p`, secondary/tertiary bumped by `s_off`/`t_off`.
+    /// Case variants of a tailored `target`: the lower form (tertiary `0x02`),
+    /// the all-upper form (`0x08`), and — for a multi-char target — the
+    /// title-case form (`0x08`), so `ch`/`CH`/`Ch` all match.
+    fn case_variants(target: &[char]) -> Vec<(Vec<char>, u32)> {
+        let upper_all: Vec<char> = target.iter().map(|&c| upper(c)).collect();
+        let mut v = alloc::vec![(target.to_vec(), 0x0002u32), (upper_all, 0x0008u32)];
+        if target.len() > 1 {
+            let mut title = target.to_vec();
+            title[0] = upper(target[0]);
+            v.push((title, 0x0008));
+        }
+        v
+    }
+
+    /// Map `target` (in each case form) to a single synthetic collation element
+    /// at primary `p`, secondary/tertiary bumped by `s_off`/`t_off`.
     fn push_letter(
         entries: &mut Vec<(Vec<char>, Vec<u64>)>,
-        target: char,
+        target: &[char],
         p: u32,
         s_off: u32,
         t_off: u32,
     ) {
-        for (ch, case_t) in [(target, 0x0002u32), (upper(target), 0x0008)] {
-            let seq: Vec<char> = nfd(core::iter::once(ch)).collect();
+        for (form, case_t) in Self::case_variants(target) {
+            let seq: Vec<char> = nfd(form.into_iter()).collect();
             if !seq.is_empty() {
                 entries.push((seq, alloc::vec![pack(p, 0x0020 + s_off, case_t + t_off)]));
             }
         }
     }
 
-    /// Map `target` (and its upper-case form) to the full collation-element
+    /// Map `target` (lower and upper forms) to the full collation-element
     /// sequence of the `anchor` string — an expansion (`ä` → CEs of `"ae"`).
-    fn push_expansion(entries: &mut Vec<(Vec<char>, Vec<u64>)>, target: char, anchor: &[char]) {
-        let upper_anchor: Vec<char> = anchor.iter().map(|&c| upper(c)).collect();
-        for (ch, anchor_form) in [(target, anchor.to_vec()), (upper(target), upper_anchor)] {
-            let seq: Vec<char> = nfd(core::iter::once(ch)).collect();
-            let ces = collation_elements(nfd(anchor_form.into_iter()).collect());
+    fn push_expansion(entries: &mut Vec<(Vec<char>, Vec<u64>)>, target: &[char], anchor: &[char]) {
+        let forms = [
+            (target.to_vec(), anchor.to_vec()),
+            (
+                target.iter().map(|&c| upper(c)).collect::<Vec<_>>(),
+                anchor.iter().map(|&c| upper(c)).collect::<Vec<_>>(),
+            ),
+        ];
+        for (t_form, a_form) in forms {
+            let seq: Vec<char> = nfd(t_form.into_iter()).collect();
+            let ces = collation_elements(nfd(a_form.into_iter()).collect());
             if !seq.is_empty() && !ces.is_empty() {
                 entries.push((seq, ces));
             }

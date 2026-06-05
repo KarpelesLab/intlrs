@@ -110,3 +110,23 @@ fn tailoring_expansion() {
     // "Bär" (Baer) sorts before "Bald" (e < l at the third letter).
     assert_eq!(de.compare("Bär", "Bald"), Ordering::Less);
 }
+
+#[test]
+fn tailoring_multichar_locales() {
+    use intl::unicode::collate::Tailoring;
+    // Czech "ch" is a digraph sorting after h (so after "h" words, before "i").
+    let cs = Tailoring::for_locale("cs").unwrap();
+    assert_eq!(cs.compare("h", "ch"), Ordering::Less);
+    assert_eq!(cs.compare("chata", "irok"), Ordering::Less); // ch < i
+    assert_eq!(cs.compare("cesta", "čaj"), Ordering::Less); // c < č
+                                                            // Uppercase digraph forms.
+    assert_eq!(cs.compare("Hugo", "Chrabr"), Ordering::Less);
+    // Polish accented letters after their base.
+    let pl = Tailoring::for_locale("pl").unwrap();
+    assert_eq!(pl.compare("z", "ż"), Ordering::Less);
+    assert_eq!(pl.compare("ź", "ż"), Ordering::Less);
+    // Spanish ñ after n, before o.
+    let es = Tailoring::for_locale("es").unwrap();
+    assert_eq!(es.compare("n", "ñ"), Ordering::Less);
+    assert_eq!(es.compare("ñ", "o"), Ordering::Less);
+}
