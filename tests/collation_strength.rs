@@ -267,5 +267,9 @@ fn tailoring_cldr_data_driven() {
         Ordering::Less
     );
     // Full-tag lookup (script subtag).
-    assert!(Tailoring::for_locale("ff-Adlm").is_some());
+    assert!(Tailoring::for_locale("bal-Latn").is_some());
+    // Locales whose official CLDR rule the parser mis-handles (decomposing
+    // letters / chained expansions) are excluded by the consistency gate and
+    // resolve to root rather than ship a wrong order: ff-Adlm has no fallback.
+    assert!(Tailoring::for_locale("ff-Adlm").is_none());
 }

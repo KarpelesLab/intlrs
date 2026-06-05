@@ -612,6 +612,12 @@ impl Tailoring {
     /// doesn't implement (`[before]`/`[import]`/extensions), e.g. the Nordic
     /// `&z < å < ä < ö`.
     ///
+    /// A self-consistency gate (`tests/collation_data_consistency`) excludes from
+    /// the generated table any locale whose rule the parser would mis-order
+    /// (decomposing-letter anchors, chained multi-char expansions), so this never
+    /// returns a tailoring that sorts against its own rule — it falls back to a
+    /// hand-written rule or to root DUCET instead.
+    ///
     /// ```
     /// # #[cfg(feature = "alloc")] {
     /// use intl::unicode::collate::Tailoring;
