@@ -239,6 +239,10 @@ enum RecompState {
     Composing,
     Purging,
     Finished,
+    // The ring filled mid-run: emit `composee` (if any) then drain the ring,
+    // re-buffering the stashed `overflow` mark once a slot frees, so a
+    // pathological run of >MAX_COMBINING blocked marks loses nothing.
+    Overflow,
 }
 
 /// Iterator yielding the NFC/NFKC form of an input char iterator.
@@ -255,6 +259,13 @@ pub struct Recompositions<I> {
     len: usize,
     composee: Option<char>,
     last_ccc: Option<u8>,
+    // A blocked combining mark that did not fit in `ring` (ring was full). It is
+    // held here, not dropped, and pushed once the ring has drained one slot.
+    // Within a single non-starter run the marks reaching the ring arrive in
+    // non-decreasing CCC order (the decomposition stream pre-orders them), so
+    // draining the front and appending this at the back preserves canonical
+    // order, and no later mark can compose with `composee` across the boundary.
+    overflow: Option<char>,
 }
 
 impl<I: Iterator<Item = char>> Recompositions<I> {
@@ -267,13 +278,21 @@ impl<I: Iterator<Item = char>> Recompositions<I> {
             len: 0,
             composee: None,
             last_ccc: None,
+            overflow: None,
         }
     }
 
-    fn push_back(&mut self, c: char) {
+    /// Append `c` to the FIFO ring of pending combining marks. Returns `false`
+    /// if the ring is full (the caller must drain before retrying) so that no
+    /// mark is ever silently dropped.
+    #[must_use]
+    fn push_back(&mut self, c: char) -> bool {
         if self.len < MAX_COMBINING {
             self.ring[(self.head + self.len) % MAX_COMBINING] = c;
             self.len += 1;
+            true
+        } else {
+            false
         }
     }
 
@@ -285,6 +304,34 @@ impl<I: Iterator<Item = char>> Recompositions<I> {
         self.head = (self.head + 1) % MAX_COMBINING;
         self.len -= 1;
         Some(c)
+    }
+
+    /// Buffer a blocked combining mark `ch` (CCC `ch_class`), tracking it as the
+    /// new last non-starter. If the ring is full, stash `ch` in `overflow` and
+    /// switch to the `Overflow` drain state instead of dropping it. Returns the
+    /// first char to emit when an overflow drain is started (the held
+    /// `composee`, or the oldest ring mark if there is no starter), else `None`.
+    fn block(&mut self, ch: char, ch_class: u8) -> Option<char> {
+        self.last_ccc = Some(ch_class);
+        if self.push_back(ch) {
+            return None;
+        }
+        // Ring full: begin draining. Emit the starter first (canonical order),
+        // then the ring will be drained by the `Overflow` state. The starter is
+        // leaving the composition window, so reset `last_ccc`: any later starter
+        // begins a fresh window. (Within this run the decomposition stream
+        // delivers marks in non-decreasing CCC order, so no already-passed mark
+        // could still have composed with this starter.)
+        self.overflow = Some(ch);
+        self.state = RecompState::Overflow;
+        self.last_ccc = None;
+        if let Some(k) = self.composee.take() {
+            return Some(k);
+        }
+        // No starter held (a run of marks with no leading starter): emit the
+        // oldest ring mark to free a slot; the stashed mark is pushed in the
+        // `Overflow` state once room exists.
+        self.pop_front()
     }
 }
 
@@ -318,8 +365,9 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                                         self.composee = Some(ch);
                                         return Some(k);
                                     }
-                                    self.push_back(ch);
-                                    self.last_ccc = Some(ch_class);
+                                    if let Some(out) = self.block(ch, ch_class) {
+                                        return Some(out);
+                                    }
                                 }
                             },
                             Some(l_class) => {
@@ -331,8 +379,9 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                                         self.state = RecompState::Purging;
                                         return Some(k);
                                     }
-                                    self.push_back(ch);
-                                    self.last_ccc = Some(ch_class);
+                                    if let Some(out) = self.block(ch, ch_class) {
+                                        return Some(out);
+                                    }
                                 } else {
                                     match compose(k, ch) {
                                         Some(r) => {
@@ -340,8 +389,9 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                                             continue;
                                         }
                                         None => {
-                                            self.push_back(ch);
-                                            self.last_ccc = Some(ch_class);
+                                            if let Some(out) = self.block(ch, ch_class) {
+                                                return Some(out);
+                                            }
                                         }
                                     }
                                 }
@@ -357,6 +407,22 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                     None => self.state = RecompState::Composing,
                     s => return s,
                 },
+                RecompState::Overflow => {
+                    // Re-buffer the stashed mark once the ring has room; it
+                    // arrived last in this non-decreasing-CCC run, so appending
+                    // it at the tail keeps canonical order.
+                    if self.overflow.is_some() && self.len < MAX_COMBINING {
+                        let m = self.overflow.take().unwrap();
+                        let _ = self.push_back(m);
+                    }
+                    match self.pop_front() {
+                        // Ring drained and the stashed mark re-buffered: the run
+                        // continues, so resume composing (composee already
+                        // emitted; `last_ccc` still reflects the run).
+                        None => self.state = RecompState::Composing,
+                        s => return s,
+                    }
+                }
                 RecompState::Finished => match self.pop_front() {
                     None => return self.composee.take(),
                     s => return s,
@@ -485,5 +551,85 @@ pub fn is_nfkd<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
         IsNormalized::Yes => true,
         IsNormalized::No => false,
         IsNormalized::Maybe => iter.clone().eq(nfkd(iter)),
+    }
+}
+
+#[cfg(all(test, feature = "alloc", feature = "bmp"))]
+mod tests {
+    use super::*;
+    use alloc::string::String;
+    use alloc::vec::Vec;
+
+    /// Regression for the recomposition ring overflow: a starter followed by a
+    /// run of *blocked* combining marks longer than `MAX_COMBINING` must NOT
+    /// silently drop the overflow marks (a normalization-stability / security
+    /// bug, since NFC underpins IDNA and identifier comparison). The run far
+    /// exceeds the Stream-Safe limit (30), so conformant text is unaffected, but
+    /// the output must still be correct NFC: all marks preserved, canonical
+    /// order. Uses a CJK starter (no composition with combining marks) so every
+    /// mark is blocked and reaches the ring.
+    #[test]
+    fn nfc_does_not_drop_marks_past_max_combining() {
+        // `中` (U+4E2D) + 65 combining acute accents (CCC 230, all blocked).
+        let mut input = String::from("\u{4E2D}");
+        for _ in 0..65 {
+            input.push('\u{0301}');
+        }
+        let out: Vec<char> = nfc(input.chars()).collect();
+
+        // Nothing dropped: 1 starter + all 65 marks.
+        assert_eq!(out.len(), 66, "overflow marks were dropped");
+        assert_eq!(out[0], '\u{4E2D}');
+        assert!(out[1..].iter().all(|&c| c == '\u{0301}'));
+        assert_eq!(out[1..].len(), 65);
+
+        // Idempotent and canonically ordered (equal CCC, so already ordered).
+        let out2: Vec<char> = nfc(out.iter().copied()).collect();
+        assert_eq!(out, out2);
+
+        // NFKC must behave identically here (no compatibility decomposition).
+        let outk: Vec<char> = nfkc(input.chars()).collect();
+        assert_eq!(outk, out);
+
+        // Also exercise the task's exact `a` + 65×acute case: the first acute
+        // composes into `á`, the remaining 64 are blocked; nothing is dropped.
+        let mut a_input = String::from("a");
+        for _ in 0..65 {
+            a_input.push('\u{0301}');
+        }
+        let a_out: Vec<char> = nfc(a_input.chars()).collect();
+        assert_eq!(a_out[0], '\u{00E1}'); // á (a + first acute)
+        assert_eq!(a_out[1..].iter().filter(|&&c| c == '\u{0301}').count(), 64);
+        assert_eq!(a_out.len(), 65); // no marks lost
+    }
+
+    /// Overflow with mixed CCC marks that do not compose: the marks must come
+    /// out in canonical (CCC-ascending) order with none lost. Uses 40 dot-below
+    /// (CCC 220) followed by 40 acute (CCC 230) on a CJK starter, exceeding the
+    /// ring.
+    #[test]
+    fn nfc_overflow_preserves_canonical_order() {
+        let mut input = String::from("\u{4E2D}");
+        for _ in 0..40 {
+            input.push('\u{0323}'); // CCC 220
+        }
+        for _ in 0..40 {
+            input.push('\u{0301}'); // CCC 230
+        }
+        let out: Vec<char> = nfc(input.chars()).collect();
+        assert_eq!(out.len(), 81); // starter + 80 marks, none dropped
+
+        // CCC is non-decreasing across the whole output (canonical order).
+        let mut prev = 0u8;
+        for &c in &out {
+            let cc = canonical_combining_class(c);
+            if cc != 0 {
+                assert!(cc >= prev, "canonical order violated");
+                prev = cc;
+            }
+        }
+        // Counts preserved per mark.
+        assert_eq!(out.iter().filter(|&&c| c == '\u{0323}').count(), 40);
+        assert_eq!(out.iter().filter(|&&c| c == '\u{0301}').count(), 40);
     }
 }
