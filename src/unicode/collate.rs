@@ -438,8 +438,12 @@ impl Tailoring {
     /// ```
     #[must_use]
     pub fn for_locale(lang: &str) -> Option<Tailoring> {
-        let lc = lang.get(..2).unwrap_or(lang);
-        let rules = match lc {
+        // Match on the primary language subtag (before any region/script),
+        // lower-cased — so "fil", "tl", "de-DE", "sr_Latn" all resolve correctly
+        // (a plain `[..2]` truncation would alias "fil" to "fi", i.e. Finnish).
+        let primary = lang.split(['-', '_']).next().unwrap_or(lang);
+        let lc = primary.to_ascii_lowercase();
+        let rules = match lc.as_str() {
             "sv" | "fi" => "&z < å < ä < ö",               // Swedish, Finnish
             "da" | "nb" | "nn" | "no" => "&z < æ < ø < å", // Danish, Norwegian
             "is" => "&y < ð < þ < æ < ö",                  // Icelandic
@@ -458,6 +462,14 @@ impl Tailoring {
             "sq" => "&c < ç &d < dh &e < ë &g < gj &l < ll &n < nj &r < rr &s < sh &t < th &x < xh &z < zh", // Albanian
             "uk" => "&г < ґ &е < є &и < і < ї",            // Ukrainian (Cyrillic)
             "vi" => "&a < ă < â &d < đ &e < ê &o < ô < ơ &u < ư", // Vietnamese (base letters)
+            // Welsh digraphs (ch/dd/ff/ng/ll/ph/rh/th), each after its base letter.
+            "cy" => "&c < ch &d < dd &f < ff &g < ng &l < ll &p < ph &r < rh &t < th",
+            "fil" | "tl" => "&n < ñ < ng",                 // Filipino/Tagalog (ng digraph)
+            "fo" => "&a < á &d < ð &i < í &o < ó &u < ú &y < ý &z < æ < ø", // Faroese
+            "kl" => "&z < æ < ø < å",                      // Greenlandic (Danish-style)
+            "gl" => "&n < ñ",                              // Galician (ñ after n)
+            "ga" => "&a < á &e < é &i < í &o < ó &u < ú",  // Irish (long-vowel accents)
+            "ha" => "&b < ɓ &d < ɗ &k < ƙ &s < sh &t < ts &y < ƴ", // Hausa (hooked letters)
             _ => return None,
         };
         Tailoring::parse(rules)

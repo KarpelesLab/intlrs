@@ -152,3 +152,28 @@ fn tailoring_more_locales() {
     let uk = Tailoring::for_locale("uk").unwrap();
     assert_eq!(uk.compare("г", "ґ"), Ordering::Less);
 }
+
+#[test]
+fn tailoring_locale_batch2() {
+    use intl::unicode::collate::Tailoring;
+    // Welsh: "ch" sorts after "c", before "d".
+    let cy = Tailoring::for_locale("cy").unwrap();
+    assert_eq!(cy.compare("cwm", "chwe"), Ordering::Less); // c < ch
+    assert_eq!(cy.compare("chwe", "dewr"), Ordering::Less); // ch < d
+    assert_eq!(cy.compare("llan", "mawr"), Ordering::Less); // ll < m
+                                                            // Filipino: ñ then "ng".
+    let fil = Tailoring::for_locale("fil").unwrap();
+    assert_eq!(fil.compare("nota", "ñino"), Ordering::Less); // n < ñ
+    assert_eq!(fil.compare("ñino", "ngipin"), Ordering::Less); // ñ < ng
+                                                               // Faroese ð after d.
+    let fo = Tailoring::for_locale("fo").unwrap();
+    assert_eq!(fo.compare("dagur", "ðegar"), Ordering::Less);
+    assert_eq!(fo.compare("z", "æ"), Ordering::Less);
+    // Greenlandic Danish-style.
+    assert!(Tailoring::for_locale("kl")
+        .unwrap()
+        .compare("z", "å")
+        .is_lt());
+    // Unknown still None.
+    assert!(Tailoring::for_locale("qq").is_none());
+}
