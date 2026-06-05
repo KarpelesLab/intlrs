@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2](https://github.com/KarpelesLab/intlrs/compare/v0.2.1...v0.2.2) - 2026-06-05
+
+### Other
+
+- Collation for_locale: data-driven from official CLDR rules
+- Collation tailoring: unbounded weight allocation (pair-encoded primaries)
+- transliteration component delivered (mark done)
+- profiling addressed via benchmarks + size tracking
+- add Armenian + Georgian romanizations
+- Document collation tailoring capacity (gap-insertion limit)
+- add alphabetic index (index_labels / index_bucket)
+- Format spellout_ordinal regression test (rustfmt)
+- Fix RBNF stack overflow / runaway on adversarial input
+- add primary-strength string search (find/contains)
+- add ordinal spell-out (spell_ordinal)
+
 ## [0.2.1](https://github.com/KarpelesLab/intlrs/compare/v0.2.0...v0.2.1) - 2026-06-05
 
 ### Other
