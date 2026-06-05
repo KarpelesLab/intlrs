@@ -10,10 +10,12 @@
 //! **CheckHyphens (V2/V3)**, the **leading combining mark** rule (V5), per-label
 //! **NFC validity** (V1) and IDNA **valid**-status checking (V6), and `xn--`
 //! label **re-canonicalization** (a decoded A-label must re-encode to exactly
-//! the supplied Punycode, rejecting non-canonical encodings). It can therefore
-//! be relied on as a strict validator for adversarial RTL/ZWJ input. The
-//! optional CONTEXTO rules and UseSTD3ASCIIRules (U1) are intentionally not
-//! applied (this is a non-STD3 profile).
+//! the supplied Punycode, rejecting non-canonical encodings), and
+//! **VerifyDnsLength** (every label 1–63 octets and the whole name ≤253, with
+//! empty labels — including a trailing root dot like `example.com.` — rejected
+//! as A4_2). It can therefore be relied on as a strict validator for adversarial
+//! RTL/ZWJ input. The optional CONTEXTO rules and UseSTD3ASCIIRules (U1) are
+//! intentionally not applied (this is a non-STD3 profile).
 
 use super::bidi::{bidi_class, BidiClass};
 use super::generated::idna as gen;
@@ -418,43 +420,41 @@ fn last_non_nsm(label: &[char]) -> Option<BidiClass> {
 /// use intl::unicode::idna::to_ascii;
 /// assert_eq!(to_ascii("Bücher.example").unwrap(), "xn--bcher-kva.example");
 /// assert_eq!(to_ascii("faß.de").unwrap(), "xn--fa-hia.de"); // ß stays (nontransitional)
+/// // VerifyDnsLength: a trailing root dot leaves an empty label and is rejected.
+/// assert!(to_ascii("example.com.").is_err());
 /// ```
 pub fn to_ascii(domain: &str) -> Result<String, Error> {
     let processed = map_and_normalize(domain)?;
     let labels: Vec<&str> = processed.split('.').collect();
-    let last = labels.len() - 1;
 
     // First pass: derive each label's U-label form (decoding `xn--` labels), so
     // CheckBidi — a *whole-domain* property — can be decided before any label is
-    // validated. `None` marks an empty (root) label carried through unchanged.
+    // validated. Under VerifyDnsLength, every label must be non-empty: an empty
+    // label anywhere (a leading/repeated dot *or* the trailing root dot) is an
+    // A4_2 error, so `domain.` / `a..b` / `` are all rejected.
     struct LabelInfo<'a> {
         original: &'a str,
         is_a_label: bool,
         ulabel: Vec<char>,
     }
-    let mut infos: Vec<Option<LabelInfo>> = Vec::with_capacity(labels.len());
-    for (i, label) in labels.iter().enumerate() {
+    let mut infos: Vec<LabelInfo> = Vec::with_capacity(labels.len());
+    for label in &labels {
         if label.is_empty() {
-            // An empty label is only valid as the single trailing root.
-            if i == last && labels.len() > 1 {
-                infos.push(None);
-                continue;
-            }
-            return Err(Error::InvalidLabel); // A4_2: empty / repeated dot
+            return Err(Error::InvalidLabel); // A4_2: empty label (incl. trailing root)
         }
         let (is_a_label, ulabel) = match label.strip_prefix("xn--") {
             Some(rest) => (true, punycode_decode(rest).ok_or(Error::Punycode)?),
             None => (false, label.chars().collect()),
         };
-        infos.push(Some(LabelInfo {
+        infos.push(LabelInfo {
             original: label,
             is_a_label,
             ulabel,
-        }));
+        });
     }
 
     // The domain is a Bidi domain if any label contains an R, AL, or AN char.
-    let is_bidi_domain = infos.iter().flatten().any(|info| {
+    let is_bidi_domain = infos.iter().any(|info| {
         info.ulabel
             .iter()
             .any(|&c| matches!(bidi_class(c), BidiClass::R | BidiClass::AL | BidiClass::AN))
@@ -462,10 +462,6 @@ pub fn to_ascii(domain: &str) -> Result<String, Error> {
 
     let mut out: Vec<String> = Vec::with_capacity(infos.len());
     for info in &infos {
-        let Some(info) = info else {
-            out.push(String::new());
-            continue;
-        };
         validate_label(&info.ulabel, is_bidi_domain)?;
 
         let ascii = if info.is_a_label {
@@ -611,6 +607,19 @@ mod tests {
         // Leading/trailing hyphen (V3).
         assert_eq!(to_ascii("-abc.example"), Err(Error::Hyphen));
         assert_eq!(to_ascii("abc-.example"), Err(Error::Hyphen));
+    }
+
+    #[test]
+    fn verify_dns_length_rejects_empty_labels() {
+        // VerifyDnsLength: a trailing root dot leaves an empty final label (A4_2).
+        assert_eq!(to_ascii("example.com."), Err(Error::InvalidLabel));
+        // Ideographic full stop U+3002 maps to '.', so this is also a trailing
+        // empty label after mapping.
+        assert_eq!(to_ascii("鱊。"), Err(Error::InvalidLabel));
+        // A repeated/internal empty label is likewise rejected.
+        assert_eq!(to_ascii("a..b"), Err(Error::InvalidLabel));
+        // The same name without the trailing dot is fine.
+        assert_eq!(to_ascii("example.com").unwrap(), "example.com");
     }
 
     #[test]
