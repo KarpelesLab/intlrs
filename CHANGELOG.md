@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/KarpelesLab/intlrs/compare/v0.2.0...v0.2.1) - 2026-06-05
+
+### Other
+
+- use then_some over then(||...) (clippy)
+- set quantifiers ([..]+/*/?) and $0 match-reference
+- Bundle more collation locales + fix 3-letter subtag resolution
+- full conformance (91707/91707) via isolate-boundary eos fix
+- Per-component Unicode features + iana-tz/full/names default (MSRV 1.86)
+- Default to everything: full + alloc + names (opt out for size)
+- Line breaking: full conformance (19338/19338) via LB15b EAW tailoring
+- Bundle more locale collation tailorings (hu, ro, sq, uk, vi)
+- add character-set sources ([abc x-z] > t)
+- add before/after context (ICU `b { src } a > tgt` syntax)
+- Add the full tabulated character Name database (names feature)
+- line-break now 19335/19338 after LB21a fix
+- Fix line-break LB21a: Hebrew-letter rule is HY-only, not HY|BA
+- Add cargo-public-api surface guard (CI)
+- multi-char targets (digraphs) + many more locale rules
+
 ## [0.2.0](https://github.com/KarpelesLab/intlrs/compare/v0.1.4...v0.2.0) - 2026-06-04
 
 ### Other
