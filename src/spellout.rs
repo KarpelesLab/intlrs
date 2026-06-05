@@ -50,11 +50,9 @@ fn parse_payload(b: &[u8]) -> (String, Vec<RuleSet>) {
     (start, sets)
 }
 
-/// Spell `value` out as a cardinal number in `lang`, e.g.
-/// `spell_cardinal("en", 1234)` → `"one thousand two hundred thirty-four"`.
-/// Returns `None` for an unsupported locale.
-#[must_use]
-pub fn spell_cardinal(lang: &str, value: i64) -> Option<String> {
+/// Resolve `lang` (with `pt-BR` → `pt` fallback) to its RBNF rule sets and the
+/// default (`_start`) rule-set name.
+fn resolve(lang: &str) -> Option<(String, alloc::vec::Vec<RuleSet>)> {
     let norm: String = lang
         .chars()
         .map(|c| {
@@ -75,8 +73,37 @@ pub fn spell_cardinal(lang: &str, value: i64) -> Option<String> {
             None => return None,
         }
     };
-    let (start, sets) = parse_payload(bytes);
+    Some(parse_payload(bytes))
+}
+
+/// Spell `value` out as a cardinal number in `lang`, e.g.
+/// `spell_cardinal("en", 1234)` → `"one thousand two hundred thirty-four"`.
+/// Returns `None` for an unsupported locale.
+#[must_use]
+pub fn spell_cardinal(lang: &str, value: i64) -> Option<String> {
+    let (start, sets) = resolve(lang)?;
     Some(spell(&sets, &start, value))
+}
+
+/// Spell `value` out as an ordinal number in `lang`, e.g.
+/// `spell_ordinal("en", 21)` → `"twenty-first"`. Where a language defines only
+/// gendered ordinals (Spanish, Italian, …), the masculine form is used. Returns
+/// `None` for a locale without ordinal spell-out rules.
+///
+/// ```
+/// use intl::spellout::spell_ordinal;
+/// assert_eq!(spell_ordinal("en", 1).as_deref(), Some("first"));
+/// assert_eq!(spell_ordinal("en", 23).as_deref(), Some("twenty-third"));
+/// assert_eq!(spell_ordinal("es", 1).as_deref(), Some("primero"));
+/// assert_eq!(spell_ordinal("xx", 1), None); // unsupported locale
+/// ```
+#[must_use]
+pub fn spell_ordinal(lang: &str, value: i64) -> Option<String> {
+    let (_, sets) = resolve(lang)?;
+    let ruleset = ["spellout-ordinal", "spellout-ordinal-masculine"]
+        .into_iter()
+        .find(|r| sets.iter().any(|s| s.name == *r))?;
+    Some(spell(&sets, ruleset, value))
 }
 
 /// Largest power of `radix` not exceeding `n` (the divisor of an RBNF rule).

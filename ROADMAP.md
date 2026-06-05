@@ -146,10 +146,10 @@ Each needs Phase 3. These are where "ICU parity" mostly lives.
   scientific, compact, parsing (`parse_decimal`), and native digit systems
   (`to_numbering_system`). CLDR symbols + grouping/fraction patterns, curated
   locale set.
-- 🟡🧱 **Rule-based number formatting (RBNF)** — `intl::spellout::spell_cardinal`
-  is a locale-driven CLDR RBNF engine; cardinal spell-out for a curated locale
-  set. ✅ ordinal *formatting* (`number::format_ordinal`, "21st"/"1er"/"2.").
-  Still: ordinal spell-out words and fractional/year forms.
+- ✅🧱 **Rule-based number formatting (RBNF)** — `intl::spellout::spell_cardinal`
+  + `spell_ordinal` are a locale-driven CLDR RBNF engine: cardinal and ordinal
+  spell-out for the curated locale set (en/de/fr/nl/es/it/pt/sv). ✅ ordinal
+  *formatting* (`number::format_ordinal`, "21st"). Still: fractional/year forms.
 - ✅ **Calendars** — `intl::calendar`: Gregorian, civil Islamic, Persian (Solar
   Hijri), Hebrew, **Chinese** (lunisolar, 1900–2099 via an embedded lunar table),
   Japanese (era/year), and ISO week dates / day-of-week, all via a Julian-Day-

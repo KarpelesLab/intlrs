@@ -696,6 +696,7 @@ pub fn intl::relative::RelativeSpec::from(T) -> T
 pub fn intl::relative::format_relative(&str, i64, intl::relative::RelativeUnit) -> alloc::string::String
 pub mod intl::spellout
 pub fn intl::spellout::spell_cardinal(&str, i64) -> core::option::Option<alloc::string::String>
+pub fn intl::spellout::spell_ordinal(&str, i64) -> core::option::Option<alloc::string::String>
 pub mod intl::timezone
 pub struct intl::timezone::IanaZone(_)
 impl intl::timezone::IanaZone

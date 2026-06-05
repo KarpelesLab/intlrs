@@ -110,7 +110,7 @@ Beyond the `unicode` module:
   → `"Ramadan 1, 1445 AH"`; `format_persian_date` likewise).
 - `intl::spellout` spells integers out in words via the CLDR RBNF rules
   (locale-driven) — `spell_cardinal("en", 1234)` → `"one thousand two hundred
-  thirty-four"`, `spell_cardinal("fr", 80)` → `"quatre-vingts"`. *(alloc)*
+  thirty-four"`, `spell_cardinal("fr", 80)` → `"quatre-vingts"`, and ordinals via `spell_ordinal("en", 21)` → `"twenty-first"`. *(alloc)*
 - `intl::timezone` parses a POSIX `TZ` string (`"PST8PDT,M3.2.0,M11.1.0/2"`)
   and computes the UTC offset / DST state for any date. With the **`iana-tz`**
   feature it also loads the full **IANA tz database** (via the embedded

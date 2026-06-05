@@ -203,6 +203,7 @@ fn fuzz_locale_apis() {
         let _ = intl::number::to_numbering_system(&lang, &nstr);
         let _ = intl::number::format_ordinal(&lang, rng.next() as i64);
         let _ = intl::spellout::spell_cardinal(&lang, rng.next() as i64);
+        let _ = intl::spellout::spell_ordinal(&lang, rng.next() as i64);
         let _ = intl::unit::format_duration(&lang, rng.next() as i64, intl::unit::UnitWidth::Long);
 
         // Locale parsing/negotiation on random (often malformed) tags.
