@@ -158,7 +158,10 @@ fn parse_offset(s: &str) -> Option<(i32, usize)> {
     if i == start {
         return None;
     }
-    let secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
+    let secs = parts[0]
+        .checked_mul(3600)?
+        .checked_add(parts[1].checked_mul(60)?)?
+        .checked_add(parts[2])?;
     // POSIX offsets are seconds *west* of UTC, so negate for an east-positive value.
     Some((if neg { secs } else { -secs }, i))
 }
@@ -168,7 +171,10 @@ fn parse_rule(s: &str) -> Option<Rule> {
     let s = s.strip_prefix('M')?;
     let (spec, time) = match s.split_once('/') {
         // The time after '/' is an unsigned h[:mm[:ss]]; take its magnitude.
-        Some((a, b)) => (a, parse_offset(b)?.0.unsigned_abs() as i32),
+        // `parse_offset` returns the east-positive value (the negated magnitude for
+        // an unsigned input), so negate once more to recover the original magnitude
+        // as an i32 directly, avoiding a u32->i32 wrap.
+        Some((a, b)) => (a, parse_offset(b)?.0.checked_neg()?),
         None => (s, 2 * 3600),
     };
     let mut it = spec.split('.');
@@ -205,7 +211,7 @@ impl PosixTz {
         let after_dst_name = skip_name(rest)?;
         let dst_off_str = &rest[after_dst_name..];
         let (dst_offset, used) = if dst_off_str.starts_with(',') {
-            (std_offset + 3600, 0)
+            (std_offset.checked_add(3600)?, 0)
         } else {
             parse_offset(dst_off_str)?
         };
@@ -293,4 +299,24 @@ fn days_in_month(year: i64, month: i64) -> i64 {
         1,
     );
     next - crate::calendar::gregorian_to_jdn(year, month, 1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn offset_overflow_returns_none() {
+        // `parts[0] * 3600` overflows i32 for values > ~596523; checked arithmetic
+        // must yield `None` rather than panicking (debug) or silently wrapping.
+        assert!(parse_offset("600000").is_none());
+        assert!(PosixTz::parse("X600000").is_none());
+    }
+
+    #[test]
+    fn default_dst_offset_overflow_returns_none() {
+        // A near-i32::MAX std offset with an implicit DST offset (default std+1h)
+        // must not overflow when adding 3600.
+        assert!(PosixTz::parse("STD-596523DST,M3.2.0,M11.1.0").is_none());
+    }
 }
