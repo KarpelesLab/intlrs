@@ -26,7 +26,11 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 /// An IDNA processing error.
+///
+/// Marked `#[non_exhaustive]`: more specific error variants may be added in
+/// future versions, so downstream `match`es must include a wildcard arm.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Error {
     /// A disallowed code point was present.
     Disallowed,

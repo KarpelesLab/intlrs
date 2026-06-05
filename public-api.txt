@@ -1374,7 +1374,7 @@ pub fn intl::unicode::ident::is_identifier(&str) -> bool
 pub const fn intl::unicode::ident::is_xid_continue(char) -> bool
 pub const fn intl::unicode::ident::is_xid_start(char) -> bool
 pub mod intl::unicode::idna
-pub enum intl::unicode::idna::Error
+#[non_exhaustive] pub enum intl::unicode::idna::Error
 pub intl::unicode::idna::Error::Bidi
 pub intl::unicode::idna::Error::ContextJ
 pub intl::unicode::idna::Error::Disallowed
