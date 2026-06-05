@@ -316,7 +316,11 @@ mod tests {
         let pat = "{g,select,female {She has {n,plural,one {# cat} other {# cats}}} \
                    other {They have {n,plural,one {# cat} other {# cats}}}}";
         assert_eq!(
-            format_message("en", pat, &[("g", Arg::Str("female")), ("n", Arg::Num(1.0))]),
+            format_message(
+                "en",
+                pat,
+                &[("g", Arg::Str("female")), ("n", Arg::Num(1.0))]
+            ),
             "She has 1 cat"
         );
         assert_eq!(

@@ -315,7 +315,10 @@ fn has_joining_context(label: &[char], pos: usize) -> bool {
             }
         }
     }
-    let before = matches!(left, Some(JoiningType::LeftJoining | JoiningType::DualJoining));
+    let before = matches!(
+        left,
+        Some(JoiningType::LeftJoining | JoiningType::DualJoining)
+    );
     if !before {
         return false;
     }
@@ -330,7 +333,10 @@ fn has_joining_context(label: &[char], pos: usize) -> bool {
             }
         }
     }
-    matches!(right, Some(JoiningType::RightJoining | JoiningType::DualJoining))
+    matches!(
+        right,
+        Some(JoiningType::RightJoining | JoiningType::DualJoining)
+    )
 }
 
 /// CheckBidi (RFC 5893) for a single label, given that the enclosing domain is a
@@ -511,7 +517,6 @@ pub fn to_ascii(domain: &str) -> Result<String, Error> {
 /// use intl::unicode::idna::to_unicode;
 /// assert_eq!(to_unicode("xn--bcher-kva.example").unwrap(), "bücher.example");
 /// ```
-#[must_use]
 pub fn to_unicode(domain: &str) -> Result<String, Error> {
     let processed = map_and_normalize(domain)?;
     let mut out: Vec<String> = Vec::new();
@@ -583,10 +588,7 @@ mod tests {
         // `other` is a valid-but-different payload, so the guard fails.
         assert_ne!(other, reencoded);
         // A malformed Punycode payload is rejected outright by `to_ascii`.
-        assert_eq!(
-            to_ascii("xn--bcher-kva0.example"),
-            Err(Error::Punycode)
-        );
+        assert_eq!(to_ascii("xn--bcher-kva0.example"), Err(Error::Punycode));
         // The genuine canonical form is accepted and round-trips unchanged.
         assert_eq!(
             to_ascii("xn--bcher-kva.example").unwrap(),

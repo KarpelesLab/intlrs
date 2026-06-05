@@ -411,7 +411,11 @@ pub fn find(text: &str, pattern: &str) -> Option<core::ops::Range<usize>> {
 /// primaries (the loop stops as soon as the count is met), so it never scans the
 /// whole string for a short pattern.
 fn window_decision(s: &str, need: usize) -> Option<(Vec<u16>, usize)> {
-    for (b, _) in s.char_indices().skip(1).chain(core::iter::once((s.len(), '\0'))) {
+    for (b, _) in s
+        .char_indices()
+        .skip(1)
+        .chain(core::iter::once((s.len(), '\0')))
+    {
         let pr = primaries(&s[..b]);
         if pr.len() >= need {
             return Some((pr, b));
@@ -1212,7 +1216,11 @@ mod dos_fix_tests {
             ("", "x"),
             ("x", ""),
         ] {
-            assert_eq!(find(t, p), find_reference(t, p), "case text={t:?} pat={p:?}");
+            assert_eq!(
+                find(t, p),
+                find_reference(t, p),
+                "case text={t:?} pat={p:?}"
+            );
         }
     }
 
@@ -1235,7 +1243,7 @@ mod dos_fix_tests {
     fn perf_smoke_large_nonmatching_find() {
         // Previously O(n^2): a few hundred KB of non-matching text. Must finish
         // quickly (this test would hang for seconds before the fix).
-        let text: String = core::iter::repeat('a').take(300_000).collect();
+        let text: String = "a".repeat(300_000);
         assert_eq!(find(&text, "qzx"), None);
         assert_eq!(find(&text, "aaa"), Some(0..3));
     }

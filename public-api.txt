@@ -1375,8 +1375,12 @@ pub const fn intl::unicode::ident::is_xid_continue(char) -> bool
 pub const fn intl::unicode::ident::is_xid_start(char) -> bool
 pub mod intl::unicode::idna
 pub enum intl::unicode::idna::Error
+pub intl::unicode::idna::Error::Bidi
+pub intl::unicode::idna::Error::ContextJ
 pub intl::unicode::idna::Error::Disallowed
+pub intl::unicode::idna::Error::Hyphen
 pub intl::unicode::idna::Error::InvalidLabel
+pub intl::unicode::idna::Error::LeadingMark
 pub intl::unicode::idna::Error::Punycode
 impl core::clone::Clone for intl::unicode::idna::Error
 pub fn intl::unicode::idna::Error::clone(&self) -> intl::unicode::idna::Error
@@ -1417,7 +1421,7 @@ pub unsafe fn intl::unicode::idna::Error::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::unicode::idna::Error
 pub fn intl::unicode::idna::Error::from(T) -> T
 pub fn intl::unicode::idna::to_ascii(&str) -> core::result::Result<alloc::string::String, intl::unicode::idna::Error>
-pub fn intl::unicode::idna::to_unicode(&str) -> alloc::string::String
+pub fn intl::unicode::idna::to_unicode(&str) -> core::result::Result<alloc::string::String, intl::unicode::idna::Error>
 pub mod intl::unicode::names
 pub fn intl::unicode::names::char_name(char) -> core::option::Option<alloc::string::String>
 pub fn intl::unicode::names::hangul_syllable_name(char) -> core::option::Option<alloc::string::String>
