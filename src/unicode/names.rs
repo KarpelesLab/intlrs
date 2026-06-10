@@ -79,26 +79,55 @@ pub fn char_name(c: char) -> Option<String> {
 const NAMES: &[u8] = include_bytes!("names.bin");
 
 /// Look up the tabulated `Name` of a codepoint in `names.bin` (binary search).
+///
+/// `names.bin` is a trusted compile-time constant, but every read here is bounds-
+/// checked anyway: a truncated, regenerated, or otherwise internally inconsistent
+/// blob fails gracefully with `None` rather than panicking. The untrusted `cp`
+/// argument only drives binary-search comparisons and never indexes the blob.
 #[cfg(feature = "names")]
 fn tabulated_name(cp: u32) -> Option<&'static str> {
-    let rd = |o: usize| u32::from_le_bytes([NAMES[o], NAMES[o + 1], NAMES[o + 2], NAMES[o + 3]]);
-    let count = rd(0) as usize;
-    let cp_base = 4;
-    let off_base = cp_base + count * 4;
-    let data_base = off_base + (count + 1) * 4;
+    // Read a little-endian u32 at byte offset `o`, returning `None` if the
+    // 4-byte window falls outside the blob.
+    let rd = |o: usize| -> Option<u32> {
+        let end = o.checked_add(4)?;
+        let bytes = NAMES.get(o..end)?;
+        Some(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
+    };
+
+    // Header: [count][count cp keys][count+1 offsets][name bytes].
+    let count = rd(0)? as usize;
+    let cp_base = 4usize;
+    // off_base = cp_base + count * 4
+    let off_base = count.checked_mul(4)?.checked_add(cp_base)?;
+    // data_base = off_base + (count + 1) * 4
+    let data_base = count
+        .checked_add(1)?
+        .checked_mul(4)?
+        .checked_add(off_base)?;
+    // Validate that the entire offset table lies within the blob before searching.
+    if data_base > NAMES.len() {
+        return None;
+    }
+
     let (mut lo, mut hi) = (0usize, count);
     while lo < hi {
         let mid = (lo + hi) / 2;
-        let key = rd(cp_base + mid * 4);
+        let key = rd(cp_base + mid * 4)?;
         match key.cmp(&cp) {
             core::cmp::Ordering::Less => lo = mid + 1,
             core::cmp::Ordering::Greater => hi = mid,
             core::cmp::Ordering::Equal => {
-                let (o0, o1) = (
-                    rd(off_base + mid * 4) as usize,
-                    rd(off_base + (mid + 1) * 4) as usize,
-                );
-                return core::str::from_utf8(&NAMES[data_base + o0..data_base + o1]).ok();
+                let o0 = rd(off_base + mid * 4)? as usize;
+                let o1 = rd(off_base + (mid + 1) * 4)? as usize;
+                // The name spans data_base + o0 .. data_base + o1; reject any
+                // inconsistent range so the slice below cannot panic.
+                if o0 > o1 {
+                    return None;
+                }
+                let start = data_base.checked_add(o0)?;
+                let stop = data_base.checked_add(o1)?;
+                let slice = NAMES.get(start..stop)?;
+                return core::str::from_utf8(slice).ok();
             }
         }
     }
@@ -124,4 +153,21 @@ pub fn name(c: char) -> Option<String> {
         return Some(n);
     }
     tabulated_name(c as u32).map(String::from)
+}
+
+#[cfg(all(test, feature = "names"))]
+mod tests {
+    use super::name;
+
+    #[test]
+    fn known_names_resolve() {
+        // Tabulated (blob) names.
+        assert_eq!(name('A').as_deref(), Some("LATIN CAPITAL LETTER A"));
+        assert_eq!(name('€').as_deref(), Some("EURO SIGN"));
+        // Algorithmic names (CJK ideograph + Hangul syllable) must be unaffected.
+        assert_eq!(name('一').as_deref(), Some("CJK UNIFIED IDEOGRAPH-4E00"));
+        assert_eq!(name('한').as_deref(), Some("HANGUL SYLLABLE HAN"));
+        // Unnamed codepoint (control char) yields None.
+        assert_eq!(name('\u{0007}'), None);
+    }
 }
