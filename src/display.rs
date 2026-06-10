@@ -15,12 +15,25 @@
 //! ```
 
 /// Lowercase + `_`→`-` normalize a tag into a stack buffer (no alloc).
+///
+/// Truncates on a char boundary so an over-long, multibyte-prefixed tag keeps a
+/// valid (shorter) prefix instead of failing UTF-8 validation and falling back
+/// to "" (which would silently resolve to the wrong display locale).
 fn norm_into<'a>(buf: &'a mut [u8; 40], tag: &str) -> &'a str {
-    let bytes = tag.as_bytes();
-    let len = bytes.len().min(buf.len());
-    for k in 0..len {
-        let b = bytes[k].to_ascii_lowercase();
-        buf[k] = if b == b'_' { b'-' } else { b };
+    let cap = buf.len();
+    let mut len = 0;
+    for ch in tag.chars() {
+        let w = ch.len_utf8();
+        if len + w > cap {
+            break;
+        }
+        ch.encode_utf8(&mut buf[len..len + w]);
+        if ch == '_' {
+            buf[len] = b'-';
+        } else {
+            buf[len..len + w].make_ascii_lowercase();
+        }
+        len += w;
     }
     core::str::from_utf8(&buf[..len]).unwrap_or("")
 }

@@ -27,6 +27,22 @@ fn cardinal_categories() {
 }
 
 #[test]
+fn multibyte_overlong_tag_falls_back_to_prefix() {
+    // A tag whose first subtag is a known language ("pl") followed by a very
+    // long subtag containing multibyte chars that overflow the 40-byte stack
+    // normalization buffer. The buffer truncation point splits a 2-byte char;
+    // truncating on a char boundary keeps a valid prefix so the `-` strip
+    // still finds "pl" (Polish rules: 2 -> few), instead of the buffer
+    // failing UTF-8 validation and silently resolving to Other.
+    let tag = format!("pl-{}", "à".repeat(40));
+    assert_eq!(pc(&tag, &Op::from_int(2)), Few);
+    assert_eq!(pc(&tag, &Op::from_int(5)), Many);
+    // Sanity: the all-multibyte garbage subtag itself (no known prefix) is Other.
+    let garbage = "à".repeat(40);
+    assert_eq!(pc(&garbage, &Op::from_int(2)), Other);
+}
+
+#[test]
 fn ordinal_categories() {
     use intl::plural::ordinal_category as oc;
     // English ordinals: 1st (one), 2nd (two), 3rd (few), 4th (other).

@@ -218,12 +218,23 @@ fn select(
     lookup: fn(&str, &PluralOperands) -> Option<PluralCategory>,
 ) -> PluralCategory {
     // Case-fold and normalize separators into a small stack buffer (no alloc).
+    // Truncate on a char boundary so an over-long, multibyte-prefixed tag keeps
+    // a valid (shorter) prefix instead of failing UTF-8 validation and falling
+    // back to "" (which would silently resolve to the wrong/root locale).
     let mut buf = [0u8; 40];
-    let bytes = lang.as_bytes();
-    let len = bytes.len().min(buf.len());
-    for k in 0..len {
-        let b = bytes[k].to_ascii_lowercase();
-        buf[k] = if b == b'_' { b'-' } else { b };
+    let mut len = 0;
+    for ch in lang.chars() {
+        let w = ch.len_utf8();
+        if len + w > buf.len() {
+            break;
+        }
+        ch.encode_utf8(&mut buf[len..len + w]);
+        if ch == '_' {
+            buf[len] = b'-';
+        } else {
+            buf[len..len + w].make_ascii_lowercase();
+        }
+        len += w;
     }
     let norm = core::str::from_utf8(&buf[..len]).unwrap_or("");
 
