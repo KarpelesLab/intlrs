@@ -154,9 +154,19 @@ impl<I: Iterator<Item = char>> Decompositions<I> {
     }
 
     fn push_pend(&mut self, cp: u32) {
-        let c = char::from_u32(cp).unwrap_or('\u{FFFD}');
-        self.pend[self.pend_len as usize] = (gen::canonical_combining_class(cp), c);
-        self.pend_len += 1;
+        // Defense-in-depth: shipped decomposition tables never exceed length 6,
+        // so this bound is never hit for real data. Guard against a future UCD
+        // regen / codegen bug emitting a decomposition longer than the buffer,
+        // which would otherwise index out of bounds (or wrap the u8 counter).
+        debug_assert!(
+            (self.pend_len as usize) < MAX_DECOMP,
+            "push_pend overflow: decomposition exceeds MAX_DECOMP",
+        );
+        if (self.pend_len as usize) < MAX_DECOMP {
+            let c = char::from_u32(cp).unwrap_or('\u{FFFD}');
+            self.pend[self.pend_len as usize] = (gen::canonical_combining_class(cp), c);
+            self.pend_len += 1;
+        }
     }
 
     /// Pull the next decomposed `(ccc, char)`.
