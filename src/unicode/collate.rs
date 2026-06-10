@@ -456,54 +456,19 @@ pub fn find(text: &str, pattern: &str) -> Option<core::ops::Range<usize>> {
 /// but the zero-primary tail past `cut` is never collated. `cut` is bounded by
 /// the position of the `need`-th primary-bearing character, independent of the
 /// tail length, so the whole call is linear in that bounded prefix.
+///
+/// To keep each call's *setup* (NFD expansion + the per-walk `consumed` bitmask
+/// inside [`each_collation_element`]) bounded by the deciding prefix rather than
+/// by `s.len()`, the cut search ([`find_cut`]) runs over a growing **prefix** of
+/// `s`, doubling its length until the prefix produces `need` primaries or `s` is
+/// exhausted. Without this, [`find`] is again quadratic: it calls
+/// `window_decision` at every unaligned (mid-contraction) start, and each call
+/// expanded/allocated over the whole O(n) remaining suffix before the early
+/// `Walk::Stop` could fire — so `m` such starts over O(n) suffixes cost O(n·m).
 fn window_decision(s: &str, need: usize) -> Option<(Vec<u16>, usize)> {
     debug_assert!(need > 0);
 
-    // NFD-expand `s`, mapping each NFD char back to the byte offset in `s` of the
-    // original char that produced it (NFD never crosses an original-char boundary).
-    let mut nfd_buf: Vec<char> = Vec::new();
-    let mut byte_of: Vec<usize> = Vec::new();
-    for (b, c) in s.char_indices() {
-        for d in nfd(core::iter::once(c)) {
-            nfd_buf.push(d);
-            byte_of.push(b);
-        }
-    }
-
-    // Stream the collation, counting non-zero primaries. Stop on the collation
-    // group that *follows* the one producing the `need`-th primary, recording its
-    // starter byte offset as the cut — everything decided lies before it. If `s`
-    // never reaches `need` primaries, the walk runs out and `cut` stays `None`.
-    let mut produced = 0usize;
-    let mut reached = false; // set once `need` primaries are produced
-    let mut cut: Option<usize> = None;
-    each_collation_element(&nfd_buf, |ces, opt, start| {
-        if reached {
-            // This is the group after the one that reached `need`: its start is
-            // the smallest possible boundary past the deciding prefix.
-            cut = Some(byte_of[start]);
-            return Walk::Stop;
-        }
-        let nonzero = match ces {
-            Some(ces) => ces.iter().any(|&ce| primary(ce) != 0),
-            // A derived (implicit) code point always carries a non-zero primary.
-            None => implicit_primaries(opt).0 != 0,
-        };
-        if nonzero {
-            produced += 1;
-            if produced >= need {
-                reached = true;
-            }
-        }
-        Walk::Continue
-    });
-
-    if !reached {
-        return None; // fewer than `need` primaries in all of `s`
-    }
-    // The deciding group reached `need` but no later group started (it was last):
-    // the cut is the whole string.
-    let cut = cut.unwrap_or(s.len());
+    let cut = find_cut(s, need)?; // fewer than `need` primaries in all of `s`
 
     // Replay the reference loop verbatim, bounded to `s[..=cut]`. The first char
     // boundary `b <= cut` whose truncated primaries reach `need` is the answer; we
@@ -519,6 +484,88 @@ fn window_decision(s: &str, need: usize) -> Option<(Vec<u16>, usize)> {
         }
     }
     None
+}
+
+/// Upper bound on the answer boundary for [`window_decision`]: the byte offset of
+/// the collation group that *follows* the one producing the `need`-th non-zero
+/// primary of `s` (or `s.len()` if that group is the last). `None` if all of `s`
+/// has fewer than `need` primaries.
+///
+/// The search is bounded to a growing prefix `s[..end]`, doubled until it reaches
+/// `need` primaries or covers all of `s`. NFD expansion and the per-walk bitmask
+/// in [`each_collation_element`] only ever touch this bounded prefix, so a long
+/// zero-primary (combining-mark / ignorable) tail past the deciding prefix is
+/// never expanded — the per-start cost that keeps [`find`]/[`contains`] linear.
+/// The doubling sums geometrically, so total work stays O(deciding prefix).
+fn find_cut(s: &str, need: usize) -> Option<usize> {
+    // Start with a prefix generous enough to clear most short patterns in one
+    // pass, then double. `cap` is a *byte* length, snapped up to a char boundary.
+    let mut cap = need.saturating_mul(8).max(16);
+    loop {
+        let mut end = cap.min(s.len());
+        while end < s.len() && !s.is_char_boundary(end) {
+            end += 1;
+        }
+        let prefix = &s[..end];
+
+        // NFD-expand only this prefix, mapping each NFD char back to the byte
+        // offset in `s` of the original char that produced it (NFD never crosses
+        // an original-char boundary).
+        let mut nfd_buf: Vec<char> = Vec::new();
+        let mut byte_of: Vec<usize> = Vec::new();
+        for (b, c) in prefix.char_indices() {
+            for d in nfd(core::iter::once(c)) {
+                nfd_buf.push(d);
+                byte_of.push(b);
+            }
+        }
+
+        // Stream the collation over the prefix, counting non-zero primaries. Stop
+        // on the collation group that *follows* the one producing the `need`-th
+        // primary, recording its starter byte offset as the cut.
+        let mut produced = 0usize;
+        let mut reached = false; // set once `need` primaries are produced
+        let mut cut: Option<usize> = None;
+        each_collation_element(&nfd_buf, |ces, opt, start| {
+            if reached {
+                // The group after the one that reached `need`: its start is the
+                // smallest possible boundary past the deciding prefix.
+                cut = Some(byte_of[start]);
+                return Walk::Stop;
+            }
+            let nonzero = match ces {
+                Some(ces) => ces.iter().any(|&ce| primary(ce) != 0),
+                // A derived (implicit) code point always carries a non-zero primary.
+                None => implicit_primaries(opt).0 != 0,
+            };
+            if nonzero {
+                produced += 1;
+                if produced >= need {
+                    reached = true;
+                }
+            }
+            Walk::Continue
+        });
+
+        if reached {
+            // A later group started within the prefix → its start is the cut.
+            if let Some(cut) = cut {
+                return Some(cut);
+            }
+            // The deciding group was the prefix's last. If the prefix is all of
+            // `s`, the cut is the whole string. Otherwise the following group lies
+            // just past `end`; grow so it (and any discontiguous tail it absorbs)
+            // is actually walked rather than cut off by truncation — truncation
+            // must not invent or hide the following-group boundary.
+            if end == s.len() {
+                return Some(s.len());
+            }
+        } else if end == s.len() {
+            return None; // fewer than `need` primaries in all of `s`
+        }
+
+        cap = cap.saturating_mul(2);
+    }
 }
 
 /// `true` if `text` contains `pattern` at primary strength (see [`find`]).
@@ -1383,5 +1430,31 @@ mod dos_fix_tests {
         assert_eq!(find(&big, "zz"), find_reference(small, "zz"));
         // Sanity: a pattern that *is* present is still found in the big input.
         assert_eq!(find(&big, "l"), Some(0..1));
+    }
+
+    #[test]
+    fn perf_smoke_repeated_contraction_nonmatching() {
+        // The remaining `find`/`contains` quadratic: a *repeated* contraction.
+        // Every `·` of the Catalan `l·` middle-dot contraction is an unaligned
+        // (mid-contraction) start, so `find` falls back to `window_decision` at
+        // each one. Before this fix each fallback NFD-expanded the whole O(n)
+        // remaining suffix and allocated a `consumed` bitmask of that length
+        // *before* the early `Walk::Stop` could bound the walk — so `m` such
+        // starts over O(n) suffixes were O(n·m) ≈ O(n^2). Measured release:
+        // 60 KB → 11 s, 120 KB → 62 s. After the fix each fallback's setup is
+        // bounded to the deciding prefix (proportional to `need`), so this large
+        // input completes near-instantly; the test would hang under the old code.
+        let n = 50_000;
+        let big: String = "l\u{00B7}".repeat(n); // ~150 KB
+                                                 // "zz" never matches at primary strength → full scan over every start.
+        assert_eq!(find(&big, "zz"), None);
+        assert!(!contains(&big, "zz"));
+        // Correctness against the O(n^2) reference on a small same-structure input.
+        let small = "l\u{00B7}l\u{00B7}l\u{00B7}";
+        assert_eq!(find(small, "zz"), find_reference(small, "zz"));
+        assert_eq!(find(&big, "zz"), find_reference(small, "zz"));
+        // A present pattern is still found at the expected (leftmost) offset.
+        assert_eq!(find(&big, "l"), Some(0..1));
+        assert!(contains(&big, "l"));
     }
 }
