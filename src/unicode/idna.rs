@@ -525,6 +525,13 @@ pub fn to_ascii(domain: &str) -> Result<String, Error> {
 /// the contextual (Bidi/Joiner) rules, so those are not applied here — only the
 /// hard mapping/decoding failures are surfaced.
 ///
+/// **Security:** the returned string is *not* validated. None of the UTS #46
+/// validity criteria (CheckBidi, ContextJ/ContextO, CheckHyphens, V5/V6) are
+/// applied, and decoded `xn--` labels are not re-canonicalized, so the result
+/// may contain spoofy, mixed-script, or Bidi-reordered text. Do **not** make
+/// security decisions (origin/identity comparison, access control, allow-listing)
+/// on this output. Callers that need a validated form must use [`to_ascii`].
+///
 /// ```
 /// use intl::unicode::idna::to_unicode;
 /// assert_eq!(to_unicode("xn--bcher-kva.example").unwrap(), "bücher.example");
