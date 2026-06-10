@@ -25,6 +25,12 @@ pub enum ListStyle {
 /// Substitute `{0}`→`a` and `{1}`→`b` in a connector pattern (single pass).
 fn fmt2(pat: &str, a: &str, b: &str) -> String {
     let mut out = String::with_capacity(pat.len() + a.len() + b.len());
+    push_fmt2(&mut out, pat, a, b);
+    out
+}
+
+/// Append `pat` with `{0}`→`a` and `{1}`→`b` to `out` (single pass, no alloc).
+fn push_fmt2(out: &mut String, pat: &str, a: &str, b: &str) {
     let mut rest = pat;
     while !rest.is_empty() {
         if let Some(r) = rest.strip_prefix("{0}") {
@@ -39,7 +45,22 @@ fn fmt2(pat: &str, a: &str, b: &str) -> String {
             rest = &rest[ch.len_utf8()..];
         }
     }
-    out
+}
+
+/// Split a connector pattern into the literal text before `{0}`, between `{0}`
+/// and `{1}`, and after `{1}`. If a placeholder is absent the corresponding
+/// slot is empty and its text is folded into an adjacent segment, which keeps
+/// the linear assembly byte-identical to substituting it with an empty string.
+fn split2(pat: &str) -> (&str, &str, &str) {
+    let (pre, after0) = match pat.find("{0}") {
+        Some(i) => (&pat[..i], &pat[i + 3..]),
+        None => ("", pat),
+    };
+    let (mid, post) = match after0.find("{1}") {
+        Some(i) => (&after0[..i], &after0[i + 3..]),
+        None => (after0, ""),
+    };
+    (pre, mid, post)
 }
 
 fn spec(lang: &str) -> ListSpec {
@@ -79,11 +100,55 @@ pub fn format_list(lang: &str, items: &[&str], style: ListStyle) -> String {
         1 => items[0].to_string(),
         2 => fmt2(p.two, items[0], items[1]),
         n => {
-            let mut acc = fmt2(p.start, items[0], items[1]);
-            for item in &items[2..n - 1] {
-                acc = fmt2(p.middle, &acc, item);
+            // Decompose each connector pattern into the literal segments around
+            // its `{0}` (accumulated head) and `{1}` (next item) placeholders:
+            //   pat = pre + "{0}" + mid + "{1}" + post
+            // The recursive `fmt2(pattern, acc, item)` fold nests each head
+            // inside the next pattern's `{0}` slot, so the final string is:
+            //   pre_end · pre_mid·(n-3) · [start with i0,i1]
+            //     · (mid_mid · i_k · post_mid for k=2..=n-2)
+            //     · mid_end · i_{n-1} · post_end
+            // We emit it left-to-right in a single pre-sized buffer (linear),
+            // byte-identical to the previous O(N²) accumulator fold.
+            let (pre_s, mid_s, post_s) = split2(p.start);
+            let (pre_m, mid_m, post_m) = split2(p.middle);
+            let (pre_e, mid_e, post_e) = split2(p.end);
+
+            // Pre-size: every literal once, the per-middle literals (n-3 times),
+            // and every item exactly once.
+            let items_len: usize = items.iter().map(|s| s.len()).sum();
+            let cap = pre_e.len()
+                + post_e.len()
+                + mid_e.len()
+                + pre_s.len()
+                + mid_s.len()
+                + post_s.len()
+                + (pre_m.len() + mid_m.len() + post_m.len()) * n.saturating_sub(3)
+                + items_len;
+            let mut out = String::with_capacity(cap);
+
+            // Leading nested prefixes: end, then one per middle iteration.
+            out.push_str(pre_e);
+            for _ in 0..n - 3 {
+                out.push_str(pre_m);
             }
-            fmt2(p.end, &acc, items[n - 1])
+            // Innermost head: the `start` pattern over the first two items.
+            out.push_str(pre_s);
+            out.push_str(items[0]);
+            out.push_str(mid_s);
+            out.push_str(items[1]);
+            out.push_str(post_s);
+            // Each middle item, in order, closing one nesting level at a time.
+            for item in &items[2..n - 1] {
+                out.push_str(mid_m);
+                out.push_str(item);
+                out.push_str(post_m);
+            }
+            // Final item via the `end` pattern.
+            out.push_str(mid_e);
+            out.push_str(items[n - 1]);
+            out.push_str(post_e);
+            out
         }
     }
 }
