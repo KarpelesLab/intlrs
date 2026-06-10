@@ -89,6 +89,45 @@ fn hebrew() {
 }
 
 #[test]
+fn forward_extremes_do_not_panic() {
+    use intl::calendar::*;
+    // These inputs previously overflowed the internal integer arithmetic and
+    // panicked in debug builds ("attempt to multiply/add with overflow"). After
+    // clamping the components they must return a finite value without panicking.
+    for &(y, m, d) in &[
+        (i64::MAX, 1, 1),
+        (2026, i64::MAX, 1),
+        (2026, 1, i64::MAX),
+        (i64::MIN, 1, 1),
+        (2026, i64::MIN, 1),
+        (i64::MIN, i64::MIN, i64::MIN),
+        (i64::MAX, i64::MAX, i64::MAX),
+    ] {
+        // Each forward (date -> JDN) function must not panic.
+        let _ = gregorian_to_jdn(y, m, d);
+        let _ = islamic_to_jdn(y, m, d);
+        let _ = persian_to_jdn(y, m, d);
+        let _ = hebrew_to_jdn(y, m, d);
+        // High-level wrappers and weekday/iso helpers too.
+        let _ = gregorian_to_islamic(y, m, d);
+        let _ = gregorian_to_persian(y, m, d);
+        let _ = gregorian_to_hebrew(y, m, d);
+        let _ = day_of_week(y, m, d);
+        let _ = iso_week(y, m, d);
+        let _ = japanese_era(y, m, d);
+        // Chinese forward is range-checked and returns None out of range.
+        let _ = gregorian_to_chinese(y, m, d);
+        let _ = chinese_to_jdn(y, m, d, false);
+    }
+
+    // Normal in-range results must remain byte-for-byte identical to before.
+    assert_eq!(gregorian_to_jdn(2000, 1, 1), 2451545);
+    assert_eq!(islamic_to_jdn(1, 1, 1), 1948440);
+    assert_eq!(persian_to_jdn(1, 1, 1), 1948321);
+    assert_eq!(gregorian_to_hebrew(2024, 10, 3), (5785, 7, 1));
+}
+
+#[test]
 fn chinese() {
     use intl::calendar::*;
     // Chinese New Year anchors (lunar 1/1) -> Gregorian.

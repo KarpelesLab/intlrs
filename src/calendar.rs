@@ -16,9 +16,28 @@
 /// JDN of 1 Muharram 1 AH in the civil (tabular) Islamic calendar.
 const ISLAMIC_EPOCH: i64 = 1_948_440;
 
+/// Bound for the raw `year`/`month`/`day` components of forward (date → JDN)
+/// conversions. The internal arithmetic multiplies these inputs by small
+/// constants (the largest effective factor is ≈ 1.7·10⁵ in the Hebrew code:
+/// `13753 · months` with `months ≈ 12.4 · year`); clamping every component to
+/// ±10⁹ keeps all intermediate products and sums well within `i64`
+/// (≈9.2·10¹⁸), so out-of-range inputs saturate to a finite JDN instead of
+/// overflowing (a debug panic) or silently wrapping (release). The bound is far
+/// larger than any real-world calendar date, so normal-range results are
+/// unchanged.
+const FWD_LIMIT: i64 = 1_000_000_000;
+
+#[inline]
+fn clamp_component(v: i64) -> i64 {
+    v.clamp(-FWD_LIMIT, FWD_LIMIT)
+}
+
 /// The Julian Day Number of a proleptic Gregorian date.
 #[must_use]
 pub fn gregorian_to_jdn(year: i64, month: i64, day: i64) -> i64 {
+    let year = clamp_component(year);
+    let month = clamp_component(month);
+    let day = clamp_component(day);
     let a = (14 - month) / 12;
     let y = year + 4800 - a;
     let m = month + 12 * a - 3;
@@ -43,6 +62,9 @@ pub fn jdn_to_gregorian(jdn: i64) -> (i64, i64, i64) {
 /// The Julian Day Number of a civil (tabular) Islamic date.
 #[must_use]
 pub fn islamic_to_jdn(year: i64, month: i64, day: i64) -> i64 {
+    let year = clamp_component(year);
+    let month = clamp_component(month);
+    let day = clamp_component(day);
     // Days before `month`: months alternate 30/29 (ceil(29.5·(m−1))).
     let before = 29 * (month - 1) + month / 2;
     day + before + (year - 1) * 354 + (3 + 11 * year) / 30 + ISLAMIC_EPOCH - 1
@@ -51,15 +73,18 @@ pub fn islamic_to_jdn(year: i64, month: i64, day: i64) -> i64 {
 /// The civil (tabular) Islamic `(year, month, day)` of a Julian Day Number.
 #[must_use]
 pub fn jdn_to_islamic(jdn: i64) -> (i64, i64, i64) {
-    // Estimate the year, then correct using the exact forward function.
-    let mut year = (30 * (jdn - ISLAMIC_EPOCH) + 10646) / 10631;
-    if year < 1 {
-        year = 1;
-    }
-    while islamic_to_jdn(year, 1, 1) > jdn {
+    // Estimate the year, then correct using the exact forward function. The
+    // estimate is accurate to ±1 for any in-domain JDN, so the correction loops
+    // below run O(1) times. Keep the estimate itself (rather than forcing it up
+    // to 1) so an extreme, pre-epoch JDN does not trigger a linear walk of up to
+    // `FWD_LIMIT` steps; the loops are also bounded by `±FWD_LIMIT` as a final
+    // backstop. For any real (≥ epoch) JDN the estimate is ≥ 1, so the result is
+    // unchanged.
+    let mut year = ((30 * (jdn - ISLAMIC_EPOCH) + 10646) / 10631).clamp(-FWD_LIMIT, FWD_LIMIT);
+    while year > -FWD_LIMIT && islamic_to_jdn(year, 1, 1) > jdn {
         year -= 1;
     }
-    while islamic_to_jdn(year + 1, 1, 1) <= jdn {
+    while year < FWD_LIMIT && islamic_to_jdn(year + 1, 1, 1) <= jdn {
         year += 1;
     }
     let mut month = 1;
@@ -77,6 +102,9 @@ const PERSIAN_EPOCH: i64 = 1_948_321;
 /// cycle).
 #[must_use]
 pub fn persian_to_jdn(year: i64, month: i64, day: i64) -> i64 {
+    let year = clamp_component(year);
+    let month = clamp_component(month);
+    let day = clamp_component(day);
     let epbase = if year >= 0 { year - 474 } else { year - 473 };
     let epyear = 474 + epbase.rem_euclid(2820);
     let month_days = if month <= 7 {
@@ -96,10 +124,10 @@ pub fn persian_to_jdn(year: i64, month: i64, day: i64) -> i64 {
 pub fn jdn_to_persian(jdn: i64) -> (i64, i64, i64) {
     // The Persian year of a Gregorian date is roughly `gregorian - 621`.
     let mut year = jdn_to_gregorian(jdn).0 - 621;
-    while persian_to_jdn(year, 1, 1) > jdn {
+    while year > -FWD_LIMIT && persian_to_jdn(year, 1, 1) > jdn {
         year -= 1;
     }
-    while persian_to_jdn(year + 1, 1, 1) <= jdn {
+    while year < FWD_LIMIT && persian_to_jdn(year + 1, 1, 1) <= jdn {
         year += 1;
     }
     let mut month = 1;
@@ -210,17 +238,22 @@ fn hebrew_month_days(year: i64, month: i64) -> i64 {
 }
 fn hebrew_to_rd(year: i64, month: i64, day: i64) -> i64 {
     // The Hebrew year begins at Tishrei (month 7); months 1..6 (Nisan..Elul)
-    // fall after the year-number rollover.
+    // fall after the year-number rollover. A Hebrew year has at most 13 months,
+    // so cap the second accumulation loop's bound at the real month count: every
+    // valid `month` (1..=13) is unaffected, while an out-of-range `month` can no
+    // longer drive a billion-iteration loop.
     let mut rd = hebrew_new_year_rd(year) + day - 1;
     if month < 7 {
         for m in 7..=hebrew_year_months(year) {
             rd += hebrew_month_days(year, m);
         }
-        for m in 1..month {
+        let upper = month.min(hebrew_year_months(year) + 1);
+        for m in 1..upper {
             rd += hebrew_month_days(year, m);
         }
     } else {
-        for m in 7..month {
+        let upper = month.min(hebrew_year_months(year) + 1);
+        for m in 7..upper {
             rd += hebrew_month_days(year, m);
         }
     }
@@ -230,6 +263,15 @@ fn hebrew_to_rd(year: i64, month: i64, day: i64) -> i64 {
 /// The Julian Day Number of a Hebrew (Anno Mundi) date.
 #[must_use]
 pub fn hebrew_to_jdn(year: i64, month: i64, day: i64) -> i64 {
+    // Clamp before any arithmetic: `hebrew_elapsed_days` multiplies the year by
+    // ≈1.7·10⁵ (`13753 · months`, `months ≈ 12.4 · year`), and `hebrew_to_rd`
+    // iterates month-by-month, so an extreme `month` would otherwise spin for a
+    // very long time. A Hebrew month is always 1..=13, so clamping `month` to
+    // the `FWD_LIMIT` band leaves every valid month untouched while bounding the
+    // loop. `year`/`day` use the same wide band as the other calendars.
+    let year = clamp_component(year);
+    let month = clamp_component(month);
+    let day = clamp_component(day);
     hebrew_to_rd(year, month, day) + RD_TO_JDN
 }
 
@@ -238,16 +280,19 @@ pub fn hebrew_to_jdn(year: i64, month: i64, day: i64) -> i64 {
 #[must_use]
 pub fn jdn_to_hebrew(jdn: i64) -> (i64, i64, i64) {
     let rd = jdn - RD_TO_JDN;
-    let mut year = (rd - HEBREW_EPOCH_RD) * 98496 / 35_975_351 + 1;
-    while hebrew_new_year_rd(year + 1) <= rd {
+    let mut year = ((rd - HEBREW_EPOCH_RD) * 98496 / 35_975_351 + 1).clamp(-FWD_LIMIT, FWD_LIMIT);
+    while year < FWD_LIMIT && hebrew_new_year_rd(year + 1) <= rd {
         year += 1;
     }
-    while hebrew_new_year_rd(year) > rd {
+    while year > -FWD_LIMIT && hebrew_new_year_rd(year) > rd {
         year -= 1;
     }
     let start = if rd < hebrew_to_rd(year, 1, 1) { 7 } else { 1 };
     let mut month = start;
-    while rd > hebrew_to_rd(year, month, hebrew_month_days(year, month)) {
+    // Hebrew month numbers never exceed 13, so `month < 13` is a backstop that an
+    // in-range `rd` reaches naturally (the loop stops earlier on real dates) but
+    // that prevents an out-of-domain, clamped `rd` from spinning forever.
+    while month < 13 && rd > hebrew_to_rd(year, month, hebrew_month_days(year, month)) {
         month += 1;
     }
     let day = rd - hebrew_to_rd(year, month, 1) + 1;
@@ -342,6 +387,11 @@ pub fn chinese_to_jdn(year: i64, month: i64, day: i64, leap: bool) -> Option<i64
     if leap && (info % 16) as i64 != month {
         return None;
     }
+    // `year` is already range-checked by `cn_info`, but `day` is added to the
+    // accumulated JDN unguarded (`jdn + day - 1`); an extreme `day` would
+    // overflow. A valid Chinese day is 1..=30, so clamping to the `FWD_LIMIT`
+    // band leaves every real date unchanged while preventing the overflow.
+    let day = clamp_component(day);
     let mut jdn = CHINESE_EPOCH_JDN;
     let mut y = CHINESE_FIRST_YEAR;
     while y < year {
