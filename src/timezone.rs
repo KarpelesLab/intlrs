@@ -184,6 +184,11 @@ fn parse_rule(s: &str) -> Option<Rule> {
     if it.next().is_some() {
         return None;
     }
+    // POSIX requires month 1–12, week 1–5, and day-of-week 0–6. Reject
+    // out-of-range fields rather than silently producing wrong transitions.
+    if !((1..=12).contains(&month) && (1..=5).contains(&week) && dow <= 6) {
+        return None;
+    }
     Some(Rule {
         month,
         week,
@@ -318,5 +323,24 @@ mod tests {
         // A near-i32::MAX std offset with an implicit DST offset (default std+1h)
         // must not overflow when adding 3600.
         assert!(PosixTz::parse("STD-596523DST,M3.2.0,M11.1.0").is_none());
+    }
+
+    #[test]
+    fn rule_field_ranges_are_validated() {
+        // The common US DST rules (month 1–12, week 1–5, dow 0–6) must parse.
+        assert!(parse_rule("M3.2.0").is_some());
+        assert!(parse_rule("M11.1.0").is_some());
+        assert!(parse_rule("M12.5.6").is_some());
+        // Out-of-range month/week/dow must be rejected rather than yielding a
+        // silently-wrong DST transition.
+        assert!(parse_rule("M0.0.0").is_none());
+        assert!(parse_rule("M13.9.9").is_none());
+        assert!(parse_rule("M99.99.255").is_none());
+        assert!(parse_rule("M3.0.0").is_none()); // week 0
+        assert!(parse_rule("M3.6.0").is_none()); // week 6
+        assert!(parse_rule("M3.2.7").is_none()); // dow 7
+                                                 // A full TZ string carrying a malformed rule must fail to parse.
+        assert!(PosixTz::parse("PST8PDT,M13.2.0,M11.1.0/2").is_none());
+        assert!(PosixTz::parse("PST8PDT,M3.2.0,M11.1.0/2").is_some());
     }
 }
