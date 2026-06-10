@@ -206,7 +206,7 @@ impl State {
     /// Fold the next consumed character into the state.
     fn advance(&mut self, c: char) {
         self.ri = if gcb(c) == Gcb::RegionalIndicator {
-            self.ri + 1
+            self.ri.wrapping_add(1)
         } else {
             0
         };
@@ -463,7 +463,7 @@ impl<'a> Iterator for Words<'a> {
                 break;
             }
             ri = if cur.cat == Wb::RegionalIndicator {
-                ri + 1
+                ri.wrapping_add(1)
             } else {
                 0
             };
@@ -986,7 +986,11 @@ impl<'a> Iterator for LineBreaks<'a> {
                 st.r_pi = cur.pi();
                 st.sp = false;
             }
-            st.open_ri = if cur.cls == Lb::RI { st.open_ri + 1 } else { 0 };
+            st.open_ri = if cur.cls == Lb::RI {
+                st.open_ri.wrapping_add(1)
+            } else {
+                0
+            };
             st.num = match cur.cls {
                 Lb::NU => true,
                 Lb::SY | Lb::IS | Lb::CL | Lb::CP => st.num,
