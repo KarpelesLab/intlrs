@@ -65,6 +65,314 @@ impl<T> core::clone::CloneToUninit for intl::datetime::DateStyle where T: core::
 pub unsafe fn intl::datetime::DateStyle::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::datetime::DateStyle
 pub fn intl::datetime::DateStyle::from(T) -> T
+#[non_exhaustive] pub enum intl::datetime::DateTimeFormatError
+pub intl::datetime::DateTimeFormatError::ConflictingOptions
+impl core::clone::Clone for intl::datetime::DateTimeFormatError
+pub fn intl::datetime::DateTimeFormatError::clone(&self) -> intl::datetime::DateTimeFormatError
+impl core::cmp::Eq for intl::datetime::DateTimeFormatError
+impl core::cmp::PartialEq for intl::datetime::DateTimeFormatError
+pub fn intl::datetime::DateTimeFormatError::eq(&self, &intl::datetime::DateTimeFormatError) -> bool
+impl core::fmt::Debug for intl::datetime::DateTimeFormatError
+pub fn intl::datetime::DateTimeFormatError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::DateTimeFormatError
+impl core::marker::StructuralPartialEq for intl::datetime::DateTimeFormatError
+impl core::marker::Freeze for intl::datetime::DateTimeFormatError
+impl core::marker::Send for intl::datetime::DateTimeFormatError
+impl core::marker::Sync for intl::datetime::DateTimeFormatError
+impl core::marker::Unpin for intl::datetime::DateTimeFormatError
+impl core::marker::UnsafeUnpin for intl::datetime::DateTimeFormatError
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::DateTimeFormatError
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimeFormatError
+impl<T, U> core::convert::Into<U> for intl::datetime::DateTimeFormatError where U: core::convert::From<T>
+pub fn intl::datetime::DateTimeFormatError::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimeFormatError where U: core::convert::Into<T>
+pub type intl::datetime::DateTimeFormatError::Error = core::convert::Infallible
+pub fn intl::datetime::DateTimeFormatError::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimeFormatError where U: core::convert::TryFrom<T>
+pub type intl::datetime::DateTimeFormatError::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::DateTimeFormatError::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::DateTimeFormatError where T: core::clone::Clone
+pub type intl::datetime::DateTimeFormatError::Owned = T
+pub fn intl::datetime::DateTimeFormatError::clone_into(&self, &mut T)
+pub fn intl::datetime::DateTimeFormatError::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::DateTimeFormatError where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::DateTimeFormatError::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::DateTimeFormatError where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimeFormatError::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::DateTimeFormatError where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimeFormatError::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::DateTimeFormatError where T: core::clone::Clone
+pub unsafe fn intl::datetime::DateTimeFormatError::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::DateTimeFormatError
+pub fn intl::datetime::DateTimeFormatError::from(T) -> T
+pub enum intl::datetime::DateTimePartType
+pub intl::datetime::DateTimePartType::Day
+pub intl::datetime::DateTimePartType::DayPeriod
+pub intl::datetime::DateTimePartType::Era
+pub intl::datetime::DateTimePartType::FractionalSecond
+pub intl::datetime::DateTimePartType::Hour
+pub intl::datetime::DateTimePartType::Literal
+pub intl::datetime::DateTimePartType::Minute
+pub intl::datetime::DateTimePartType::Month
+pub intl::datetime::DateTimePartType::Second
+pub intl::datetime::DateTimePartType::TimeZoneName
+pub intl::datetime::DateTimePartType::Weekday
+pub intl::datetime::DateTimePartType::Year
+impl intl::datetime::DateTimePartType
+pub fn intl::datetime::DateTimePartType::as_str(&self) -> &'static str
+impl core::clone::Clone for intl::datetime::DateTimePartType
+pub fn intl::datetime::DateTimePartType::clone(&self) -> intl::datetime::DateTimePartType
+impl core::cmp::Eq for intl::datetime::DateTimePartType
+impl core::cmp::PartialEq for intl::datetime::DateTimePartType
+pub fn intl::datetime::DateTimePartType::eq(&self, &intl::datetime::DateTimePartType) -> bool
+impl core::fmt::Debug for intl::datetime::DateTimePartType
+pub fn intl::datetime::DateTimePartType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::DateTimePartType
+impl core::marker::StructuralPartialEq for intl::datetime::DateTimePartType
+impl core::marker::Freeze for intl::datetime::DateTimePartType
+impl core::marker::Send for intl::datetime::DateTimePartType
+impl core::marker::Sync for intl::datetime::DateTimePartType
+impl core::marker::Unpin for intl::datetime::DateTimePartType
+impl core::marker::UnsafeUnpin for intl::datetime::DateTimePartType
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::DateTimePartType
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimePartType
+impl<T, U> core::convert::Into<U> for intl::datetime::DateTimePartType where U: core::convert::From<T>
+pub fn intl::datetime::DateTimePartType::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimePartType where U: core::convert::Into<T>
+pub type intl::datetime::DateTimePartType::Error = core::convert::Infallible
+pub fn intl::datetime::DateTimePartType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimePartType where U: core::convert::TryFrom<T>
+pub type intl::datetime::DateTimePartType::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::DateTimePartType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::DateTimePartType where T: core::clone::Clone
+pub type intl::datetime::DateTimePartType::Owned = T
+pub fn intl::datetime::DateTimePartType::clone_into(&self, &mut T)
+pub fn intl::datetime::DateTimePartType::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::DateTimePartType where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::DateTimePartType::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::DateTimePartType where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimePartType::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::DateTimePartType where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimePartType::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::DateTimePartType where T: core::clone::Clone
+pub unsafe fn intl::datetime::DateTimePartType::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::DateTimePartType
+pub fn intl::datetime::DateTimePartType::from(T) -> T
+pub enum intl::datetime::HourCycle
+pub intl::datetime::HourCycle::H11
+pub intl::datetime::HourCycle::H12
+pub intl::datetime::HourCycle::H23
+pub intl::datetime::HourCycle::H24
+impl core::clone::Clone for intl::datetime::HourCycle
+pub fn intl::datetime::HourCycle::clone(&self) -> intl::datetime::HourCycle
+impl core::cmp::Eq for intl::datetime::HourCycle
+impl core::cmp::PartialEq for intl::datetime::HourCycle
+pub fn intl::datetime::HourCycle::eq(&self, &intl::datetime::HourCycle) -> bool
+impl core::fmt::Debug for intl::datetime::HourCycle
+pub fn intl::datetime::HourCycle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::HourCycle
+impl core::marker::StructuralPartialEq for intl::datetime::HourCycle
+impl core::marker::Freeze for intl::datetime::HourCycle
+impl core::marker::Send for intl::datetime::HourCycle
+impl core::marker::Sync for intl::datetime::HourCycle
+impl core::marker::Unpin for intl::datetime::HourCycle
+impl core::marker::UnsafeUnpin for intl::datetime::HourCycle
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::HourCycle
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::HourCycle
+impl<T, U> core::convert::Into<U> for intl::datetime::HourCycle where U: core::convert::From<T>
+pub fn intl::datetime::HourCycle::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::HourCycle where U: core::convert::Into<T>
+pub type intl::datetime::HourCycle::Error = core::convert::Infallible
+pub fn intl::datetime::HourCycle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::HourCycle where U: core::convert::TryFrom<T>
+pub type intl::datetime::HourCycle::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::HourCycle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::HourCycle where T: core::clone::Clone
+pub type intl::datetime::HourCycle::Owned = T
+pub fn intl::datetime::HourCycle::clone_into(&self, &mut T)
+pub fn intl::datetime::HourCycle::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::HourCycle where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::HourCycle::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::HourCycle where T: ?core::marker::Sized
+pub fn intl::datetime::HourCycle::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::HourCycle where T: ?core::marker::Sized
+pub fn intl::datetime::HourCycle::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::HourCycle where T: core::clone::Clone
+pub unsafe fn intl::datetime::HourCycle::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::HourCycle
+pub fn intl::datetime::HourCycle::from(T) -> T
+pub enum intl::datetime::MonthStyle
+pub intl::datetime::MonthStyle::Long
+pub intl::datetime::MonthStyle::Narrow
+pub intl::datetime::MonthStyle::Numeric
+pub intl::datetime::MonthStyle::Short
+pub intl::datetime::MonthStyle::TwoDigit
+impl core::clone::Clone for intl::datetime::MonthStyle
+pub fn intl::datetime::MonthStyle::clone(&self) -> intl::datetime::MonthStyle
+impl core::cmp::Eq for intl::datetime::MonthStyle
+impl core::cmp::PartialEq for intl::datetime::MonthStyle
+pub fn intl::datetime::MonthStyle::eq(&self, &intl::datetime::MonthStyle) -> bool
+impl core::fmt::Debug for intl::datetime::MonthStyle
+pub fn intl::datetime::MonthStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::MonthStyle
+impl core::marker::StructuralPartialEq for intl::datetime::MonthStyle
+impl core::marker::Freeze for intl::datetime::MonthStyle
+impl core::marker::Send for intl::datetime::MonthStyle
+impl core::marker::Sync for intl::datetime::MonthStyle
+impl core::marker::Unpin for intl::datetime::MonthStyle
+impl core::marker::UnsafeUnpin for intl::datetime::MonthStyle
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::MonthStyle
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::MonthStyle
+impl<T, U> core::convert::Into<U> for intl::datetime::MonthStyle where U: core::convert::From<T>
+pub fn intl::datetime::MonthStyle::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::MonthStyle where U: core::convert::Into<T>
+pub type intl::datetime::MonthStyle::Error = core::convert::Infallible
+pub fn intl::datetime::MonthStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::MonthStyle where U: core::convert::TryFrom<T>
+pub type intl::datetime::MonthStyle::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::MonthStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::MonthStyle where T: core::clone::Clone
+pub type intl::datetime::MonthStyle::Owned = T
+pub fn intl::datetime::MonthStyle::clone_into(&self, &mut T)
+pub fn intl::datetime::MonthStyle::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::MonthStyle where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::MonthStyle::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::MonthStyle where T: ?core::marker::Sized
+pub fn intl::datetime::MonthStyle::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::MonthStyle where T: ?core::marker::Sized
+pub fn intl::datetime::MonthStyle::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::MonthStyle where T: core::clone::Clone
+pub unsafe fn intl::datetime::MonthStyle::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::MonthStyle
+pub fn intl::datetime::MonthStyle::from(T) -> T
+pub enum intl::datetime::NameStyle
+pub intl::datetime::NameStyle::Long
+pub intl::datetime::NameStyle::Narrow
+pub intl::datetime::NameStyle::Short
+impl core::clone::Clone for intl::datetime::NameStyle
+pub fn intl::datetime::NameStyle::clone(&self) -> intl::datetime::NameStyle
+impl core::cmp::Eq for intl::datetime::NameStyle
+impl core::cmp::PartialEq for intl::datetime::NameStyle
+pub fn intl::datetime::NameStyle::eq(&self, &intl::datetime::NameStyle) -> bool
+impl core::fmt::Debug for intl::datetime::NameStyle
+pub fn intl::datetime::NameStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::NameStyle
+impl core::marker::StructuralPartialEq for intl::datetime::NameStyle
+impl core::marker::Freeze for intl::datetime::NameStyle
+impl core::marker::Send for intl::datetime::NameStyle
+impl core::marker::Sync for intl::datetime::NameStyle
+impl core::marker::Unpin for intl::datetime::NameStyle
+impl core::marker::UnsafeUnpin for intl::datetime::NameStyle
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::NameStyle
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::NameStyle
+impl<T, U> core::convert::Into<U> for intl::datetime::NameStyle where U: core::convert::From<T>
+pub fn intl::datetime::NameStyle::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::NameStyle where U: core::convert::Into<T>
+pub type intl::datetime::NameStyle::Error = core::convert::Infallible
+pub fn intl::datetime::NameStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::NameStyle where U: core::convert::TryFrom<T>
+pub type intl::datetime::NameStyle::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::NameStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::NameStyle where T: core::clone::Clone
+pub type intl::datetime::NameStyle::Owned = T
+pub fn intl::datetime::NameStyle::clone_into(&self, &mut T)
+pub fn intl::datetime::NameStyle::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::NameStyle where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::NameStyle::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::NameStyle where T: ?core::marker::Sized
+pub fn intl::datetime::NameStyle::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::NameStyle where T: ?core::marker::Sized
+pub fn intl::datetime::NameStyle::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::NameStyle where T: core::clone::Clone
+pub unsafe fn intl::datetime::NameStyle::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::NameStyle
+pub fn intl::datetime::NameStyle::from(T) -> T
+pub enum intl::datetime::Numeric2Digit
+pub intl::datetime::Numeric2Digit::Numeric
+pub intl::datetime::Numeric2Digit::TwoDigit
+impl core::clone::Clone for intl::datetime::Numeric2Digit
+pub fn intl::datetime::Numeric2Digit::clone(&self) -> intl::datetime::Numeric2Digit
+impl core::cmp::Eq for intl::datetime::Numeric2Digit
+impl core::cmp::PartialEq for intl::datetime::Numeric2Digit
+pub fn intl::datetime::Numeric2Digit::eq(&self, &intl::datetime::Numeric2Digit) -> bool
+impl core::fmt::Debug for intl::datetime::Numeric2Digit
+pub fn intl::datetime::Numeric2Digit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::Numeric2Digit
+impl core::marker::StructuralPartialEq for intl::datetime::Numeric2Digit
+impl core::marker::Freeze for intl::datetime::Numeric2Digit
+impl core::marker::Send for intl::datetime::Numeric2Digit
+impl core::marker::Sync for intl::datetime::Numeric2Digit
+impl core::marker::Unpin for intl::datetime::Numeric2Digit
+impl core::marker::UnsafeUnpin for intl::datetime::Numeric2Digit
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::Numeric2Digit
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::Numeric2Digit
+impl<T, U> core::convert::Into<U> for intl::datetime::Numeric2Digit where U: core::convert::From<T>
+pub fn intl::datetime::Numeric2Digit::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::Numeric2Digit where U: core::convert::Into<T>
+pub type intl::datetime::Numeric2Digit::Error = core::convert::Infallible
+pub fn intl::datetime::Numeric2Digit::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::Numeric2Digit where U: core::convert::TryFrom<T>
+pub type intl::datetime::Numeric2Digit::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::Numeric2Digit::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::Numeric2Digit where T: core::clone::Clone
+pub type intl::datetime::Numeric2Digit::Owned = T
+pub fn intl::datetime::Numeric2Digit::clone_into(&self, &mut T)
+pub fn intl::datetime::Numeric2Digit::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::Numeric2Digit where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::Numeric2Digit::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::Numeric2Digit where T: ?core::marker::Sized
+pub fn intl::datetime::Numeric2Digit::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::Numeric2Digit where T: ?core::marker::Sized
+pub fn intl::datetime::Numeric2Digit::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::Numeric2Digit where T: core::clone::Clone
+pub unsafe fn intl::datetime::Numeric2Digit::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::Numeric2Digit
+pub fn intl::datetime::Numeric2Digit::from(T) -> T
+pub enum intl::datetime::TimeZoneNameStyle
+pub intl::datetime::TimeZoneNameStyle::Long
+pub intl::datetime::TimeZoneNameStyle::LongGeneric
+pub intl::datetime::TimeZoneNameStyle::LongOffset
+pub intl::datetime::TimeZoneNameStyle::Short
+pub intl::datetime::TimeZoneNameStyle::ShortGeneric
+pub intl::datetime::TimeZoneNameStyle::ShortOffset
+impl core::clone::Clone for intl::datetime::TimeZoneNameStyle
+pub fn intl::datetime::TimeZoneNameStyle::clone(&self) -> intl::datetime::TimeZoneNameStyle
+impl core::cmp::Eq for intl::datetime::TimeZoneNameStyle
+impl core::cmp::PartialEq for intl::datetime::TimeZoneNameStyle
+pub fn intl::datetime::TimeZoneNameStyle::eq(&self, &intl::datetime::TimeZoneNameStyle) -> bool
+impl core::fmt::Debug for intl::datetime::TimeZoneNameStyle
+pub fn intl::datetime::TimeZoneNameStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::TimeZoneNameStyle
+impl core::marker::StructuralPartialEq for intl::datetime::TimeZoneNameStyle
+impl core::marker::Freeze for intl::datetime::TimeZoneNameStyle
+impl core::marker::Send for intl::datetime::TimeZoneNameStyle
+impl core::marker::Sync for intl::datetime::TimeZoneNameStyle
+impl core::marker::Unpin for intl::datetime::TimeZoneNameStyle
+impl core::marker::UnsafeUnpin for intl::datetime::TimeZoneNameStyle
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::TimeZoneNameStyle
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::TimeZoneNameStyle
+impl<T, U> core::convert::Into<U> for intl::datetime::TimeZoneNameStyle where U: core::convert::From<T>
+pub fn intl::datetime::TimeZoneNameStyle::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::TimeZoneNameStyle where U: core::convert::Into<T>
+pub type intl::datetime::TimeZoneNameStyle::Error = core::convert::Infallible
+pub fn intl::datetime::TimeZoneNameStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::TimeZoneNameStyle where U: core::convert::TryFrom<T>
+pub type intl::datetime::TimeZoneNameStyle::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::TimeZoneNameStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::TimeZoneNameStyle where T: core::clone::Clone
+pub type intl::datetime::TimeZoneNameStyle::Owned = T
+pub fn intl::datetime::TimeZoneNameStyle::clone_into(&self, &mut T)
+pub fn intl::datetime::TimeZoneNameStyle::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::TimeZoneNameStyle where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::TimeZoneNameStyle::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::TimeZoneNameStyle where T: ?core::marker::Sized
+pub fn intl::datetime::TimeZoneNameStyle::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::TimeZoneNameStyle where T: ?core::marker::Sized
+pub fn intl::datetime::TimeZoneNameStyle::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::TimeZoneNameStyle where T: core::clone::Clone
+pub unsafe fn intl::datetime::TimeZoneNameStyle::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::TimeZoneNameStyle
+pub fn intl::datetime::TimeZoneNameStyle::from(T) -> T
 pub struct intl::datetime::DateTime
 pub intl::datetime::DateTime::day: u8
 pub intl::datetime::DateTime::hour: u8
@@ -119,13 +427,113 @@ impl<T> core::clone::CloneToUninit for intl::datetime::DateTime where T: core::c
 pub unsafe fn intl::datetime::DateTime::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::datetime::DateTime
 pub fn intl::datetime::DateTime::from(T) -> T
+pub struct intl::datetime::DateTimeFormatOptions
+pub intl::datetime::DateTimeFormatOptions::date_style: core::option::Option<intl::datetime::DateStyle>
+pub intl::datetime::DateTimeFormatOptions::day: core::option::Option<intl::datetime::Numeric2Digit>
+pub intl::datetime::DateTimeFormatOptions::day_period: core::option::Option<intl::datetime::NameStyle>
+pub intl::datetime::DateTimeFormatOptions::era: core::option::Option<intl::datetime::NameStyle>
+pub intl::datetime::DateTimeFormatOptions::fractional_second_digits: core::option::Option<u8>
+pub intl::datetime::DateTimeFormatOptions::hour: core::option::Option<intl::datetime::Numeric2Digit>
+pub intl::datetime::DateTimeFormatOptions::hour12: core::option::Option<bool>
+pub intl::datetime::DateTimeFormatOptions::hour_cycle: core::option::Option<intl::datetime::HourCycle>
+pub intl::datetime::DateTimeFormatOptions::minute: core::option::Option<intl::datetime::Numeric2Digit>
+pub intl::datetime::DateTimeFormatOptions::month: core::option::Option<intl::datetime::MonthStyle>
+pub intl::datetime::DateTimeFormatOptions::second: core::option::Option<intl::datetime::Numeric2Digit>
+pub intl::datetime::DateTimeFormatOptions::time_style: core::option::Option<intl::datetime::DateStyle>
+pub intl::datetime::DateTimeFormatOptions::time_zone_name: core::option::Option<intl::datetime::TimeZoneNameStyle>
+pub intl::datetime::DateTimeFormatOptions::tz_offset_minutes: core::option::Option<i32>
+pub intl::datetime::DateTimeFormatOptions::weekday: core::option::Option<intl::datetime::NameStyle>
+pub intl::datetime::DateTimeFormatOptions::year: core::option::Option<intl::datetime::Numeric2Digit>
+impl core::clone::Clone for intl::datetime::DateTimeFormatOptions
+pub fn intl::datetime::DateTimeFormatOptions::clone(&self) -> intl::datetime::DateTimeFormatOptions
+impl core::cmp::Eq for intl::datetime::DateTimeFormatOptions
+impl core::cmp::PartialEq for intl::datetime::DateTimeFormatOptions
+pub fn intl::datetime::DateTimeFormatOptions::eq(&self, &intl::datetime::DateTimeFormatOptions) -> bool
+impl core::default::Default for intl::datetime::DateTimeFormatOptions
+pub fn intl::datetime::DateTimeFormatOptions::default() -> intl::datetime::DateTimeFormatOptions
+impl core::fmt::Debug for intl::datetime::DateTimeFormatOptions
+pub fn intl::datetime::DateTimeFormatOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::DateTimeFormatOptions
+impl core::marker::StructuralPartialEq for intl::datetime::DateTimeFormatOptions
+impl core::marker::Freeze for intl::datetime::DateTimeFormatOptions
+impl core::marker::Send for intl::datetime::DateTimeFormatOptions
+impl core::marker::Sync for intl::datetime::DateTimeFormatOptions
+impl core::marker::Unpin for intl::datetime::DateTimeFormatOptions
+impl core::marker::UnsafeUnpin for intl::datetime::DateTimeFormatOptions
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::DateTimeFormatOptions
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimeFormatOptions
+impl<T, U> core::convert::Into<U> for intl::datetime::DateTimeFormatOptions where U: core::convert::From<T>
+pub fn intl::datetime::DateTimeFormatOptions::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimeFormatOptions where U: core::convert::Into<T>
+pub type intl::datetime::DateTimeFormatOptions::Error = core::convert::Infallible
+pub fn intl::datetime::DateTimeFormatOptions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimeFormatOptions where U: core::convert::TryFrom<T>
+pub type intl::datetime::DateTimeFormatOptions::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::DateTimeFormatOptions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::DateTimeFormatOptions where T: core::clone::Clone
+pub type intl::datetime::DateTimeFormatOptions::Owned = T
+pub fn intl::datetime::DateTimeFormatOptions::clone_into(&self, &mut T)
+pub fn intl::datetime::DateTimeFormatOptions::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::DateTimeFormatOptions where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::DateTimeFormatOptions::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::DateTimeFormatOptions where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimeFormatOptions::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::DateTimeFormatOptions where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimeFormatOptions::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::DateTimeFormatOptions where T: core::clone::Clone
+pub unsafe fn intl::datetime::DateTimeFormatOptions::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::DateTimeFormatOptions
+pub fn intl::datetime::DateTimeFormatOptions::from(T) -> T
+pub struct intl::datetime::DateTimePart
+pub intl::datetime::DateTimePart::kind: intl::datetime::DateTimePartType
+pub intl::datetime::DateTimePart::value: alloc::string::String
+impl core::clone::Clone for intl::datetime::DateTimePart
+pub fn intl::datetime::DateTimePart::clone(&self) -> intl::datetime::DateTimePart
+impl core::cmp::Eq for intl::datetime::DateTimePart
+impl core::cmp::PartialEq for intl::datetime::DateTimePart
+pub fn intl::datetime::DateTimePart::eq(&self, &intl::datetime::DateTimePart) -> bool
+impl core::fmt::Debug for intl::datetime::DateTimePart
+pub fn intl::datetime::DateTimePart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for intl::datetime::DateTimePart
+impl core::marker::Freeze for intl::datetime::DateTimePart
+impl core::marker::Send for intl::datetime::DateTimePart
+impl core::marker::Sync for intl::datetime::DateTimePart
+impl core::marker::Unpin for intl::datetime::DateTimePart
+impl core::marker::UnsafeUnpin for intl::datetime::DateTimePart
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::DateTimePart
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimePart
+impl<T, U> core::convert::Into<U> for intl::datetime::DateTimePart where U: core::convert::From<T>
+pub fn intl::datetime::DateTimePart::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimePart where U: core::convert::Into<T>
+pub type intl::datetime::DateTimePart::Error = core::convert::Infallible
+pub fn intl::datetime::DateTimePart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimePart where U: core::convert::TryFrom<T>
+pub type intl::datetime::DateTimePart::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::DateTimePart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::DateTimePart where T: core::clone::Clone
+pub type intl::datetime::DateTimePart::Owned = T
+pub fn intl::datetime::DateTimePart::clone_into(&self, &mut T)
+pub fn intl::datetime::DateTimePart::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::DateTimePart where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::DateTimePart::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::DateTimePart where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimePart::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::DateTimePart where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimePart::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::DateTimePart where T: core::clone::Clone
+pub unsafe fn intl::datetime::DateTimePart::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::DateTimePart
+pub fn intl::datetime::DateTimePart::from(T) -> T
 pub fn intl::datetime::format_date(&str, &intl::datetime::DateTime, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_datetime(&str, &intl::datetime::DateTime, intl::datetime::DateStyle, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_gmt_offset(&str, i32) -> alloc::string::String
 pub fn intl::datetime::format_islamic_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
+pub fn intl::datetime::format_options(&str, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::string::String, intl::datetime::DateTimeFormatError>
 pub fn intl::datetime::format_persian_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_skeleton(&str, &intl::datetime::DateTime, &str) -> alloc::string::String
+pub fn intl::datetime::format_skeleton_to_parts(&str, &intl::datetime::DateTime, &str) -> alloc::vec::Vec<intl::datetime::DateTimePart>
 pub fn intl::datetime::format_time(&str, &intl::datetime::DateTime, intl::datetime::DateStyle) -> alloc::string::String
+pub fn intl::datetime::format_to_parts(&str, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::vec::Vec<intl::datetime::DateTimePart>, intl::datetime::DateTimeFormatError>
 pub mod intl::display
 pub fn intl::display::language_name(&str, &str) -> core::option::Option<&'static str>
 pub fn intl::display::region_name(&str, &str) -> core::option::Option<&'static str>

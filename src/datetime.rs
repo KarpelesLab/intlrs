@@ -186,6 +186,66 @@ impl DateTime {
     }
 }
 
+/// The kind of a [`DateTimePart`] produced by [`format_to_parts`], matching the
+/// ECMA-402 `Intl.DateTimeFormat.prototype.formatToParts` part `type` values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DateTimePartType {
+    /// Weekday name.
+    Weekday,
+    /// Era name.
+    Era,
+    /// Year.
+    Year,
+    /// Month (number or name).
+    Month,
+    /// Day of month.
+    Day,
+    /// Hour.
+    Hour,
+    /// Minute.
+    Minute,
+    /// Second.
+    Second,
+    /// Fractional second digits.
+    FractionalSecond,
+    /// Day period (AM/PM).
+    DayPeriod,
+    /// Time-zone name or offset.
+    TimeZoneName,
+    /// Literal text (separators, glue).
+    Literal,
+}
+
+impl DateTimePartType {
+    /// The ECMA-402 part `type` string for this kind.
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DateTimePartType::Weekday => "weekday",
+            DateTimePartType::Era => "era",
+            DateTimePartType::Year => "year",
+            DateTimePartType::Month => "month",
+            DateTimePartType::Day => "day",
+            DateTimePartType::Hour => "hour",
+            DateTimePartType::Minute => "minute",
+            DateTimePartType::Second => "second",
+            DateTimePartType::FractionalSecond => "fractionalSecond",
+            DateTimePartType::DayPeriod => "dayPeriod",
+            DateTimePartType::TimeZoneName => "timeZoneName",
+            DateTimePartType::Literal => "literal",
+        }
+    }
+}
+
+/// One tagged segment of a formatted date-time (see [`format_to_parts`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DateTimePart {
+    /// What this segment represents.
+    pub kind: DateTimePartType,
+    /// The literal text of this segment.
+    pub value: String,
+}
+
 /// One of the four CLDR length styles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DateStyle {
@@ -248,6 +308,7 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
             1 => m.to_string(),
             2 => two(m as i64),
             3 => s.months_abbr[mi].to_string(),
+            5 => s.months_narrow[mi].to_string(),
             _ => s.months_wide[mi].to_string(),
         },
         'd' => {
@@ -259,11 +320,25 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
         }
         'E' | 'e' | 'c' => {
             let w = weekday(dt);
-            if n >= 4 {
+            if n == 5 {
+                s.days_narrow[w].to_string()
+            } else if n >= 4 {
                 s.days_wide[w].to_string()
             } else {
                 s.days_abbr[w].to_string()
             }
+        }
+        'G' => {
+            // Gregorian era: index 0 = BCE (year ≤ 0), 1 = CE.
+            let idx = usize::from(dt.year > 0);
+            if n >= 5 {
+                s.eras_narrow[idx]
+            } else if n == 4 {
+                s.eras_wide[idx]
+            } else {
+                s.eras_abbr[idx]
+            }
+            .to_string()
         }
         'h' => {
             // Widen first: `dt.hour + 11` would overflow u8 for hour > 244.
@@ -295,40 +370,110 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
                 dt.second.to_string()
             }
         }
-        'a' | 'b' => if dt.hour < 12 { s.am } else { s.pm }.to_string(),
+        'a' | 'b' | 'B' => if dt.hour < 12 { s.am } else { s.pm }.to_string(),
+        'S' => {
+            // Fractional second: `n` digits from the millisecond field.
+            let ms = dt.millisecond.min(999);
+            let base = alloc::format!("{ms:03}");
+            if n <= 3 {
+                base[..n].to_string()
+            } else {
+                let mut out = base;
+                for _ in 0..(n - 3) {
+                    out.push('0');
+                }
+                out
+            }
+        }
         _ => String::new(), // unsupported field (e.g. time zone) -> nothing
     }
 }
 
-/// Interpret a CLDR date/time pattern, handling quoted literals.
-fn render(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> String {
+/// Map a CLDR field letter to its ECMA-402 `formatToParts` part type.
+fn part_type(ch: char) -> DateTimePartType {
+    use DateTimePartType::*;
+    match ch {
+        'y' | 'Y' | 'u' | 'U' | 'r' => Year,
+        'M' | 'L' => Month,
+        'd' | 'D' | 'F' | 'g' => Day,
+        'E' | 'e' | 'c' => Weekday,
+        'h' | 'H' | 'k' | 'K' => Hour,
+        'm' => Minute,
+        's' => Second,
+        'S' | 'A' => FractionalSecond,
+        'a' | 'b' | 'B' => DayPeriod,
+        'G' => Era,
+        'z' | 'Z' | 'O' | 'v' | 'V' | 'X' | 'x' => TimeZoneName,
+        _ => Literal,
+    }
+}
+
+/// Parts-producing core of [`render`]: interprets a CLDR pattern into tagged
+/// [`DateTimePart`]s. Adjacent literals are coalesced and empty field outputs
+/// (unsupported letters) are dropped, so joining the part values reproduces
+/// [`render`]'s string exactly.
+fn render_parts(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> Vec<DateTimePart> {
+    fn push_lit(parts: &mut Vec<DateTimePart>, text: &str) {
+        if text.is_empty() {
+            return;
+        }
+        if let Some(last) = parts.last_mut() {
+            if last.kind == DateTimePartType::Literal {
+                last.value.push_str(text);
+                return;
+            }
+        }
+        parts.push(DateTimePart {
+            kind: DateTimePartType::Literal,
+            value: String::from(text),
+        });
+    }
+
     let c: Vec<char> = pattern.chars().collect();
-    let mut out = String::new();
+    let mut parts: Vec<DateTimePart> = Vec::new();
     let mut i = 0;
     while i < c.len() {
         let ch = c[i];
         if ch == '\'' {
             i += 1;
             if i < c.len() && c[i] == '\'' {
-                out.push('\'');
+                push_lit(&mut parts, "'");
                 i += 1;
                 continue;
             }
+            let mut lit = String::new();
             while i < c.len() && c[i] != '\'' {
-                out.push(c[i]);
+                lit.push(c[i]);
                 i += 1;
             }
             i += 1; // closing quote
+            push_lit(&mut parts, &lit);
         } else if ch.is_ascii_alphabetic() {
             let start = i;
             while i < c.len() && c[i] == ch {
                 i += 1;
             }
-            out.push_str(&field(ch, i - start, dt, s));
+            let val = field(ch, i - start, dt, s);
+            if !val.is_empty() {
+                parts.push(DateTimePart {
+                    kind: part_type(ch),
+                    value: val,
+                });
+            }
         } else {
-            out.push(ch);
+            let mut buf = [0u8; 4];
+            push_lit(&mut parts, ch.encode_utf8(&mut buf));
             i += 1;
         }
+    }
+    parts
+}
+
+/// Interpret a CLDR date/time pattern, handling quoted literals.
+fn render(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> String {
+    let mut out = String::new();
+    for part in render_parts(pattern, dt, s) {
+        out.push_str(&part.value);
     }
     out
 }
@@ -581,4 +726,624 @@ pub fn format_datetime(
     s.datetime[date_style.idx()]
         .replace("{1}", &date)
         .replace("{0}", &time)
+}
+
+// ---------------------------------------------------------------------------
+// ECMA-402-style component options + formatToParts
+// ---------------------------------------------------------------------------
+
+/// Width for a numeric field (ECMA-402 `"numeric"` / `"2-digit"`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Numeric2Digit {
+    /// `"numeric"` — no padding.
+    Numeric,
+    /// `"2-digit"` — zero-padded to two digits.
+    TwoDigit,
+}
+
+/// Month presentation (ECMA-402 `month`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MonthStyle {
+    /// Numeric (`6`).
+    Numeric,
+    /// Two-digit (`06`).
+    TwoDigit,
+    /// Wide name (`June`).
+    Long,
+    /// Abbreviated name (`Jun`).
+    Short,
+    /// Narrow name (`J`).
+    Narrow,
+}
+
+/// Name width for weekday / era / day period (ECMA-402 `"long"`/`"short"`/`"narrow"`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NameStyle {
+    /// Wide.
+    Long,
+    /// Abbreviated.
+    Short,
+    /// Narrow.
+    Narrow,
+}
+
+/// Time-zone-name presentation (ECMA-402 `timeZoneName`). Only the offset forms
+/// are rendered today (from a caller-supplied offset); named/generic forms fall
+/// back to the offset (no metazone data).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TimeZoneNameStyle {
+    /// Long specific name; falls back to the long offset.
+    Long,
+    /// Short specific name; falls back to the short offset.
+    Short,
+    /// Short localized GMT offset.
+    ShortOffset,
+    /// Long localized GMT offset.
+    LongOffset,
+    /// Short generic name; falls back to the short offset.
+    ShortGeneric,
+    /// Long generic name; falls back to the long offset.
+    LongGeneric,
+}
+
+/// Hour cycle (ECMA-402 `hourCycle`). `H11`/`H12` use the 12-hour clock,
+/// `H23`/`H24` the 24-hour clock (the 0-vs-1 origin is approximated).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HourCycle {
+    /// 0–11 with day period.
+    H11,
+    /// 1–12 with day period.
+    H12,
+    /// 0–23.
+    H23,
+    /// 1–24.
+    H24,
+}
+
+/// Per-component options for [`format_options`] / [`format_to_parts`], modeled on
+/// `Intl.DateTimeFormat`. [`Default`] is all-`None` (which formats a numeric
+/// year/month/day). `date_style`/`time_style` are a shortcut that is mutually
+/// exclusive with the component fields.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DateTimeFormatOptions {
+    /// Weekday name width.
+    pub weekday: Option<NameStyle>,
+    /// Era name width.
+    pub era: Option<NameStyle>,
+    /// Year width.
+    pub year: Option<Numeric2Digit>,
+    /// Month presentation.
+    pub month: Option<MonthStyle>,
+    /// Day width.
+    pub day: Option<Numeric2Digit>,
+    /// Hour width.
+    pub hour: Option<Numeric2Digit>,
+    /// Minute width.
+    pub minute: Option<Numeric2Digit>,
+    /// Second width.
+    pub second: Option<Numeric2Digit>,
+    /// Fractional-second digits (1–3).
+    pub fractional_second_digits: Option<u8>,
+    /// Day-period width (only affects 12-hour formatting).
+    pub day_period: Option<NameStyle>,
+    /// Time-zone-name presentation (requires `tz_offset_minutes`).
+    pub time_zone_name: Option<TimeZoneNameStyle>,
+    /// Hour cycle (overrides `hour12`).
+    pub hour_cycle: Option<HourCycle>,
+    /// 12-hour clock toggle.
+    pub hour12: Option<bool>,
+    /// Date-style shortcut (mutually exclusive with components).
+    pub date_style: Option<DateStyle>,
+    /// Time-style shortcut (mutually exclusive with components).
+    pub time_style: Option<DateStyle>,
+    /// Caller-supplied UTC offset in minutes, used for `time_zone_name`.
+    pub tz_offset_minutes: Option<i32>,
+}
+
+/// Error returned by [`format_options`] / [`format_to_parts`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum DateTimeFormatError {
+    /// `date_style`/`time_style` were combined with component options.
+    ConflictingOptions,
+}
+
+fn normalize_lang(lang: &str) -> String {
+    lang.chars()
+        .map(|c| if c == '_' { '-' } else { c.to_ascii_lowercase() })
+        .collect()
+}
+
+/// The 12- vs 24-hour clock letter implied by the cycle / `hour12` options
+/// (defaulting to 24-hour, since per-locale hour preference is not in the data).
+fn hour_letter(o: &DateTimeFormatOptions) -> char {
+    match (o.hour_cycle, o.hour12) {
+        (Some(HourCycle::H11 | HourCycle::H12), _) => 'h',
+        (Some(HourCycle::H23 | HourCycle::H24), _) => 'H',
+        (None, Some(true)) => 'h',
+        (None, Some(false)) => 'H',
+        (None, None) => 'H',
+    }
+}
+
+/// Build the canonical date-field skeleton (`G y M… E d`) and whether any date
+/// component was requested.
+fn build_date_skeleton(o: &DateTimeFormatOptions) -> (String, bool) {
+    let mut sk = String::new();
+    if o.era.is_some() {
+        sk.push('G');
+    }
+    if o.year.is_some() {
+        sk.push('y');
+    }
+    if let Some(m) = o.month {
+        let c = match m {
+            MonthStyle::Numeric | MonthStyle::TwoDigit => 1,
+            MonthStyle::Short => 3,
+            MonthStyle::Long => 4,
+            MonthStyle::Narrow => 5,
+        };
+        for _ in 0..c {
+            sk.push('M');
+        }
+    }
+    if o.weekday.is_some() {
+        sk.push('E');
+    }
+    if o.day.is_some() {
+        sk.push('d');
+    }
+    let any = o.era.is_some()
+        || o.year.is_some()
+        || o.month.is_some()
+        || o.weekday.is_some()
+        || o.day.is_some();
+    (sk, any)
+}
+
+/// Build the canonical time-field skeleton (`h/H m s`) and whether any time
+/// component was requested.
+fn build_time_skeleton(o: &DateTimeFormatOptions) -> (String, bool) {
+    let mut sk = String::new();
+    if o.hour.is_some() {
+        sk.push(hour_letter(o));
+    }
+    if o.minute.is_some() {
+        sk.push('m');
+    }
+    if o.second.is_some() {
+        sk.push('s');
+    }
+    let any = o.hour.is_some() || o.minute.is_some() || o.second.is_some();
+    (sk, any)
+}
+
+/// Resolve a skeleton to a locale pattern through the fallback chain.
+fn resolve_one(lang: &str, s: &CalendarSpec, skeleton: &str) -> String {
+    let norm = normalize_lang(lang);
+    let mut end = norm.len();
+    loop {
+        if let Some(p) = crate::cldr::skeleton_pattern(&norm[..end], skeleton) {
+            return String::from(p);
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => {
+                return crate::cldr::skeleton_pattern("en", skeleton)
+                    .map_or_else(|| String::from(s.date[2]), String::from)
+            }
+        }
+    }
+}
+
+/// Replace each run of a field letter (in `from`) with `to` repeated `count`,
+/// skipping quoted literals.
+fn set_field(pattern: &str, from: &[char], to: char, count: usize) -> String {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            out.push(ch);
+            i += 1;
+            if i < chars.len() && chars[i] == '\'' {
+                out.push('\'');
+                i += 1;
+                continue;
+            }
+            while i < chars.len() && chars[i] != '\'' {
+                out.push(chars[i]);
+                i += 1;
+            }
+            if i < chars.len() {
+                out.push('\'');
+                i += 1;
+            }
+        } else if from.contains(&ch) {
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+            for _ in 0..count {
+                out.push(to);
+            }
+        } else {
+            out.push(ch);
+            i += 1;
+        }
+    }
+    out
+}
+
+/// Apply the requested component widths to a resolved pattern.
+fn patch_widths(pattern: &str, o: &DateTimeFormatOptions) -> String {
+    let mut p = String::from(pattern);
+    if let Some(y) = o.year {
+        p = set_field(&p, &['y'], 'y', if y == Numeric2Digit::TwoDigit { 2 } else { 1 });
+    }
+    if let Some(m) = o.month {
+        let c = match m {
+            MonthStyle::Numeric => 1,
+            MonthStyle::TwoDigit => 2,
+            MonthStyle::Short => 3,
+            MonthStyle::Long => 4,
+            MonthStyle::Narrow => 5,
+        };
+        p = set_field(&p, &['M', 'L'], 'M', c);
+    }
+    if let Some(d) = o.day {
+        p = set_field(&p, &['d'], 'd', if d == Numeric2Digit::TwoDigit { 2 } else { 1 });
+    }
+    if let Some(w) = o.weekday {
+        let c = match w {
+            NameStyle::Long => 4,
+            NameStyle::Short => 3,
+            NameStyle::Narrow => 5,
+        };
+        p = set_field(&p, &['E', 'e', 'c'], 'E', c);
+    }
+    if let Some(e) = o.era {
+        let c = match e {
+            NameStyle::Long => 4,
+            NameStyle::Short => 1,
+            NameStyle::Narrow => 5,
+        };
+        p = set_field(&p, &['G'], 'G', c);
+    }
+    if let Some(h) = o.hour {
+        let letter = hour_letter(o);
+        let c = if h == Numeric2Digit::TwoDigit { 2 } else { 1 };
+        p = set_field(&p, &['h', 'H', 'k', 'K'], letter, c);
+    }
+    if let Some(mi) = o.minute {
+        p = set_field(&p, &['m'], 'm', if mi == Numeric2Digit::TwoDigit { 2 } else { 1 });
+    }
+    if let Some(se) = o.second {
+        p = set_field(&p, &['s'], 's', if se == Numeric2Digit::TwoDigit { 2 } else { 1 });
+    }
+    p
+}
+
+/// Inject a locale decimal separator + `n` `S` digits right after the seconds
+/// run (skeletons carry no `S`), for `fractionalSecondDigits`.
+fn inject_fractional(pattern: &str, lang: &str, n: u8) -> String {
+    let dec = crate::cldr::number_spec(lang).map_or(".", |s| s.decimal);
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    let mut done = false;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            out.push(ch);
+            i += 1;
+            while i < chars.len() && chars[i] != '\'' {
+                out.push(chars[i]);
+                i += 1;
+            }
+            if i < chars.len() {
+                out.push('\'');
+                i += 1;
+            }
+        } else if ch == 's' && !done {
+            while i < chars.len() && chars[i] == 's' {
+                out.push('s');
+                i += 1;
+            }
+            out.push_str(dec);
+            for _ in 0..n {
+                out.push('S');
+            }
+            done = true;
+        } else {
+            out.push(ch);
+            i += 1;
+        }
+    }
+    out
+}
+
+/// Remove field runs whose letter is not in `keep`, then tidy separators: drop
+/// leading/trailing literal tokens and merge adjacent literals. Quoted literals
+/// are unwrapped into plain text. Keeps the common CLDR patterns clean when a
+/// best-fit skeleton carried extra fields.
+fn strip_fields(pattern: &str, keep: &[char]) -> String {
+    enum Tok {
+        Field(String),
+        Lit(String),
+    }
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut toks: Vec<Tok> = Vec::new();
+    let mut i = 0;
+    let mut lit = String::new();
+    let flush = |lit: &mut String, toks: &mut Vec<Tok>| {
+        if !lit.is_empty() {
+            toks.push(Tok::Lit(core::mem::take(lit)));
+        }
+    };
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            i += 1;
+            if i < chars.len() && chars[i] == '\'' {
+                lit.push('\'');
+                i += 1;
+                continue;
+            }
+            while i < chars.len() && chars[i] != '\'' {
+                lit.push(chars[i]);
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            flush(&mut lit, &mut toks);
+            let start = i;
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+            let run: String = chars[start..i].iter().collect();
+            if keep.contains(&ch) {
+                toks.push(Tok::Field(run));
+            }
+            // else: dropped
+        } else {
+            lit.push(ch);
+            i += 1;
+        }
+    }
+    flush(&mut lit, &mut toks);
+
+    // Drop leading/trailing literals.
+    while matches!(toks.first(), Some(Tok::Lit(_))) {
+        toks.remove(0);
+    }
+    while matches!(toks.last(), Some(Tok::Lit(_))) {
+        toks.pop();
+    }
+    // Merge adjacent literals and reassemble.
+    let mut out = String::new();
+    let mut prev_lit = false;
+    for t in toks {
+        match t {
+            Tok::Field(f) => {
+                out.push_str(&f);
+                prev_lit = false;
+            }
+            Tok::Lit(l) => {
+                if prev_lit {
+                    // collapse a doubled separator left by a removed middle field
+                    continue;
+                }
+                out.push_str(&l);
+                prev_lit = true;
+            }
+        }
+    }
+    out
+}
+
+/// Resolve a full pattern string for the requested options.
+fn resolve_pattern(lang: &str, s: &CalendarSpec, o: &DateTimeFormatOptions) -> Result<String, DateTimeFormatError> {
+    let has_components = o.weekday.is_some()
+        || o.era.is_some()
+        || o.year.is_some()
+        || o.month.is_some()
+        || o.day.is_some()
+        || o.hour.is_some()
+        || o.minute.is_some()
+        || o.second.is_some()
+        || o.fractional_second_digits.is_some()
+        || o.day_period.is_some();
+
+    if o.date_style.is_some() || o.time_style.is_some() {
+        if has_components {
+            return Err(DateTimeFormatError::ConflictingOptions);
+        }
+        let pat = match (o.date_style, o.time_style) {
+            (Some(d), Some(t)) => s.datetime[d.idx()]
+                .replace("{1}", s.date[d.idx()])
+                .replace("{0}", s.time[t.idx()]),
+            (Some(d), None) => String::from(s.date[d.idx()]),
+            (None, Some(t)) => String::from(s.time[t.idx()]),
+            (None, None) => unreachable!(),
+        };
+        return Ok(pat);
+    }
+
+    let (date_sk, mut want_date) = build_date_skeleton(o);
+    let (time_sk, want_time) = build_time_skeleton(o);
+    // ECMA-402 default when nothing is requested: numeric year/month/day.
+    let date_sk = if !want_date && !want_time {
+        want_date = true;
+        String::from("yMd")
+    } else {
+        date_sk
+    };
+
+    let date_pat = if want_date {
+        Some(resolve_one(lang, s, &date_sk))
+    } else {
+        None
+    };
+    let time_pat = if want_time {
+        Some(resolve_one(lang, s, &time_sk))
+    } else {
+        None
+    };
+
+    let mut combined = match (date_pat, time_pat) {
+        (Some(d), Some(t)) => s.datetime[2].replace("{1}", &d).replace("{0}", &t),
+        (Some(d), None) => d,
+        (None, Some(t)) => t,
+        (None, None) => String::from(s.date[2]),
+    };
+
+    // When explicit components were given, drop any extra fields a best-fit
+    // pattern carried (the defaulted "yMd" path resolves exactly, so skip it).
+    if has_components {
+        let mut keep: Vec<char> = Vec::new();
+        if o.year.is_some() {
+            keep.extend(['y', 'Y', 'u', 'U', 'r']);
+        }
+        if o.month.is_some() {
+            keep.extend(['M', 'L']);
+        }
+        if o.day.is_some() {
+            keep.extend(['d', 'D', 'F', 'g']);
+        }
+        if o.weekday.is_some() {
+            keep.extend(['E', 'e', 'c']);
+        }
+        if o.era.is_some() {
+            keep.push('G');
+        }
+        if o.hour.is_some() {
+            keep.extend(['h', 'H', 'k', 'K']);
+        }
+        if o.minute.is_some() {
+            keep.push('m');
+        }
+        if o.second.is_some() {
+            keep.push('s');
+        }
+        // Keep the day period when explicitly asked or implied by a 12-hour clock.
+        if o.day_period.is_some() || (o.hour.is_some() && hour_letter(o) == 'h') {
+            keep.extend(['a', 'b', 'B']);
+        }
+        combined = strip_fields(&combined, &keep);
+    }
+
+    combined = patch_widths(&combined, o);
+    if let Some(n) = o.fractional_second_digits {
+        combined = inject_fractional(&combined, lang, n);
+    }
+    Ok(combined)
+}
+
+/// The time-zone-name string for an offset and presentation style.
+fn zone_string(lang: &str, style: TimeZoneNameStyle, offset: i32) -> String {
+    // Long offset = zero-padded GMT form; short offset trims leading zero in the
+    // hour. Named/generic styles fall back to the offset (no metazone data).
+    let long = format_gmt_offset(lang, offset);
+    match style {
+        TimeZoneNameStyle::LongOffset | TimeZoneNameStyle::Long | TimeZoneNameStyle::LongGeneric => long,
+        TimeZoneNameStyle::ShortOffset | TimeZoneNameStyle::Short | TimeZoneNameStyle::ShortGeneric => {
+            // "GMT-08:00" -> "GMT-8:00": drop a single leading zero after the sign.
+            if let Some(pos) = long.find(['+', '-', '\u{2212}']) {
+                let (head, tail) = long.split_at(pos + 1);
+                let trimmed = tail.strip_prefix('0').unwrap_or(tail);
+                alloc::format!("{head}{trimmed}")
+            } else {
+                long
+            }
+        }
+    }
+}
+
+/// Format `dt` in `lang` with ECMA-402-style component options, returning the
+/// tagged parts (`Intl.DateTimeFormat.prototype.formatToParts`).
+///
+/// ```
+/// use intl::datetime::{DateTime, DateTimeFormatOptions, MonthStyle, Numeric2Digit, format_to_parts};
+/// let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5, millisecond: 0 };
+/// let opts = DateTimeFormatOptions {
+///     year: Some(Numeric2Digit::Numeric),
+///     month: Some(MonthStyle::Short),
+///     day: Some(Numeric2Digit::Numeric),
+///     ..Default::default()
+/// };
+/// let parts = format_to_parts("en", &dt, &opts).unwrap();
+/// let joined: String = parts.iter().map(|p| p.value.as_str()).collect();
+/// assert_eq!(joined, "Jun 4, 2026");
+/// ```
+///
+/// # Errors
+/// Returns [`DateTimeFormatError::ConflictingOptions`] if `date_style`/`time_style`
+/// are combined with component fields.
+pub fn format_to_parts(
+    lang: &str,
+    dt: &DateTime,
+    opts: &DateTimeFormatOptions,
+) -> Result<Vec<DateTimePart>, DateTimeFormatError> {
+    let s = spec(lang);
+    let pattern = resolve_pattern(lang, &s, opts)?;
+    let mut parts = render_parts(&pattern, dt, &s);
+    if let (Some(style), Some(off)) = (opts.time_zone_name, opts.tz_offset_minutes) {
+        parts.push(DateTimePart {
+            kind: DateTimePartType::Literal,
+            value: String::from(" "),
+        });
+        parts.push(DateTimePart {
+            kind: DateTimePartType::TimeZoneName,
+            value: zone_string(lang, style, off),
+        });
+    }
+    Ok(parts)
+}
+
+/// Format `dt` in `lang` with ECMA-402-style component options.
+///
+/// ```
+/// use intl::datetime::{DateTime, DateTimeFormatOptions, DateStyle, format_options};
+/// let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5, millisecond: 0 };
+/// let opts = DateTimeFormatOptions { date_style: Some(DateStyle::Long), ..Default::default() };
+/// assert_eq!(format_options("en", &dt, &opts).unwrap(), "June 4, 2026");
+/// ```
+///
+/// # Errors
+/// Returns [`DateTimeFormatError::ConflictingOptions`] if `date_style`/`time_style`
+/// are combined with component fields.
+pub fn format_options(
+    lang: &str,
+    dt: &DateTime,
+    opts: &DateTimeFormatOptions,
+) -> Result<String, DateTimeFormatError> {
+    let parts = format_to_parts(lang, dt, opts)?;
+    let mut out = String::new();
+    for p in parts {
+        out.push_str(&p.value);
+    }
+    Ok(out)
+}
+
+/// Format `dt` with a CLDR skeleton, returning tagged parts (see
+/// [`format_skeleton`] and [`format_to_parts`]).
+#[must_use]
+pub fn format_skeleton_to_parts(lang: &str, dt: &DateTime, skeleton: &str) -> Vec<DateTimePart> {
+    let s = spec(lang);
+    let norm = normalize_lang(lang);
+    let mut end = norm.len();
+    let pattern = loop {
+        if let Some(p) = crate::cldr::skeleton_pattern(&norm[..end], skeleton) {
+            break String::from(p);
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => {
+                break crate::cldr::skeleton_pattern("en", skeleton)
+                    .map_or_else(|| String::from(s.date[2]), String::from)
+            }
+        }
+    };
+    render_parts(&pattern, dt, &s)
 }

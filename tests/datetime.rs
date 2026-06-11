@@ -201,3 +201,116 @@ fn persian_dates() {
     assert_eq!(fp("en", 1403, 12, 30, Medium), "Esfand 30, 1403 AP");
     assert!(fp("fr", 1404, 1, 1, Long).contains("1404"));
 }
+
+#[test]
+fn component_options() {
+    use intl::datetime::{
+        format_options as fo, format_to_parts as ftp, DateTimeFormatError, DateTimeFormatOptions,
+        DateTimePartType, HourCycle, MonthStyle, NameStyle, Numeric2Digit, TimeZoneNameStyle,
+    };
+    let n = Some(Numeric2Digit::Numeric);
+    let td = Some(Numeric2Digit::TwoDigit);
+
+    // year/month/day numeric + short month.
+    let o = DateTimeFormatOptions {
+        year: n,
+        month: Some(MonthStyle::Short),
+        day: n,
+        ..Default::default()
+    };
+    assert_eq!(fo("en", &DT, &o).unwrap(), "Jun 4, 2026");
+    let kinds: Vec<_> = ftp("en", &DT, &o)
+        .unwrap()
+        .iter()
+        .map(|p| p.kind.as_str().to_string())
+        .collect();
+    assert_eq!(kinds, ["month", "literal", "day", "literal", "year"]);
+
+    // 24-hour time.
+    let t = DateTimeFormatOptions {
+        hour: n,
+        minute: td,
+        hour_cycle: Some(HourCycle::H23),
+        ..Default::default()
+    };
+    assert_eq!(fo("en", &DT, &t).unwrap(), "14:30");
+
+    // 12-hour time.
+    let t12 = DateTimeFormatOptions {
+        hour: n,
+        minute: td,
+        hour12: Some(true),
+        ..Default::default()
+    };
+    assert_eq!(fo("en", &DT, &t12).unwrap(), "2:30\u{202f}PM");
+
+    // dateStyle shortcut.
+    let ds = DateTimeFormatOptions {
+        date_style: Some(Long),
+        ..Default::default()
+    };
+    assert_eq!(fo("en", &DT, &ds).unwrap(), "June 4, 2026");
+
+    // Conflicting options.
+    let bad = DateTimeFormatOptions {
+        date_style: Some(Long),
+        year: n,
+        ..Default::default()
+    };
+    assert_eq!(fo("en", &DT, &bad), Err(DateTimeFormatError::ConflictingOptions));
+
+    // Narrow month (asserted on the part, robust to surrounding fields).
+    let narrow = DateTimeFormatOptions {
+        month: Some(MonthStyle::Narrow),
+        day: n,
+        ..Default::default()
+    };
+    let parts = ftp("en", &DT, &narrow).unwrap();
+    let mon = parts.iter().find(|p| p.kind == DateTimePartType::Month).unwrap();
+    assert_eq!(mon.value, "J");
+
+    // Era + narrow weekday via skeleton/field wiring.
+    assert_eq!(
+        intl::datetime::format_skeleton("en", &DT, "GyMMMd"),
+        "Jun 4, 2026 AD"
+    );
+
+    // Fractional seconds.
+    let frac = DateTimeFormatOptions {
+        hour: n,
+        minute: td,
+        second: td,
+        fractional_second_digits: Some(3),
+        hour_cycle: Some(HourCycle::H23),
+        ..Default::default()
+    };
+    let ms = DateTime {
+        millisecond: 50,
+        ..DT
+    };
+    assert_eq!(fo("en", &ms, &frac).unwrap(), "14:30:05.050");
+
+    // timeZoneName offset.
+    let tz = DateTimeFormatOptions {
+        hour: n,
+        minute: td,
+        hour_cycle: Some(HourCycle::H23),
+        time_zone_name: Some(TimeZoneNameStyle::LongOffset),
+        tz_offset_minutes: Some(-480),
+        ..Default::default()
+    };
+    let parts = ftp("en", &DT, &tz).unwrap();
+    assert_eq!(parts.last().unwrap().kind, DateTimePartType::TimeZoneName);
+    assert_eq!(parts.last().unwrap().value, "GMT-08:00");
+
+    // Default (no options) → numeric y/M/d.
+    assert_eq!(fo("en", &DT, &DateTimeFormatOptions::default()).unwrap(), "6/4/2026");
+
+    // weekday:Narrow part value.
+    let wd = DateTimeFormatOptions {
+        weekday: Some(NameStyle::Narrow),
+        ..Default::default()
+    };
+    let parts = ftp("en", &DT, &wd).unwrap();
+    assert_eq!(parts[0].value, "T"); // Thursday narrow
+}
