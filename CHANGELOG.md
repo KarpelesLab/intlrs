@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/KarpelesLab/intlrs/compare/v0.4.0...v0.4.1) - 2026-06-11
+
+### Other
+
+- implement h11/h12/h23/h24 hour cycles (0-vs-1 origin)
+- derive default hour cycle from locale data; keep weekday in date combos
+
 ## [0.4.0](https://github.com/KarpelesLab/intlrs/compare/v0.3.1...v0.4.0) - 2026-06-11
 
 ### Other
