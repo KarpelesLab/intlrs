@@ -323,3 +323,32 @@ fn component_options() {
     let parts = ftp("en", &DT, &wd).unwrap();
     assert_eq!(parts[0].value, "T"); // Thursday narrow
 }
+
+#[test]
+fn component_locale_defaults_and_field_keep() {
+    use intl::datetime::{
+        format_options as fo, DateTimeFormatOptions, MonthStyle, NameStyle, Numeric2Digit,
+    };
+    let n = Some(Numeric2Digit::Numeric);
+    let td = Some(Numeric2Digit::TwoDigit);
+
+    // Default hour cycle is derived from the locale's CLDR time pattern:
+    // en-US is 12-hour, de is 24-hour (no explicit hourCycle/hour12).
+    let hm = DateTimeFormatOptions {
+        hour: n,
+        minute: td,
+        ..Default::default()
+    };
+    assert_eq!(fo("en", &DT, &hm).unwrap(), "2:30\u{202f}PM");
+    assert_eq!(fo("de", &DT, &hm).unwrap(), "14:30");
+
+    // Weekday must survive when combined with a wide month + day (the exact
+    // skeleton MMMMEd is absent, but MMMEd matches and the width is patched).
+    let wmd = DateTimeFormatOptions {
+        weekday: Some(NameStyle::Long),
+        month: Some(MonthStyle::Long),
+        day: n,
+        ..Default::default()
+    };
+    assert_eq!(fo("en", &DT, &wmd).unwrap(), "Thursday, June 4");
+}

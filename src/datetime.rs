@@ -860,15 +860,40 @@ fn normalize_lang(lang: &str) -> String {
         .collect()
 }
 
-/// The 12- vs 24-hour clock letter implied by the cycle / `hour12` options
-/// (defaulting to 24-hour, since per-locale hour preference is not in the data).
-fn hour_letter(o: &DateTimeFormatOptions) -> char {
+/// The locale's default clock letter (`h` = 12-hour, `H` = 24-hour), read from
+/// its CLDR time patterns: the first hour field letter found outside quotes.
+/// `K`/`k` collapse to `h`/`H`. Defaults to `H` if none is found.
+fn locale_hour_letter(s: &CalendarSpec) -> char {
+    for pat in s.time {
+        let chars: Vec<char> = pat.chars().collect();
+        let mut i = 0;
+        while i < chars.len() {
+            match chars[i] {
+                '\'' => {
+                    i += 1;
+                    while i < chars.len() && chars[i] != '\'' {
+                        i += 1;
+                    }
+                    i += 1;
+                }
+                'h' | 'K' => return 'h',
+                'H' | 'k' => return 'H',
+                _ => i += 1,
+            }
+        }
+    }
+    'H'
+}
+
+/// The 12- vs 24-hour clock letter implied by the cycle / `hour12` options,
+/// falling back to the locale default (`loc`) when neither is set.
+fn hour_letter(o: &DateTimeFormatOptions, loc: char) -> char {
     match (o.hour_cycle, o.hour12) {
         (Some(HourCycle::H11 | HourCycle::H12), _) => 'h',
         (Some(HourCycle::H23 | HourCycle::H24), _) => 'H',
         (None, Some(true)) => 'h',
         (None, Some(false)) => 'H',
-        (None, None) => 'H',
+        (None, None) => loc,
     }
 }
 
@@ -883,11 +908,15 @@ fn build_date_skeleton(o: &DateTimeFormatOptions) -> (String, bool) {
         sk.push('y');
     }
     if let Some(m) = o.month {
+        // Use a representative width for *lookup* only — numeric (`M`) vs name
+        // (`MMM`); the requested width is applied later by `patch_widths`. CLDR
+        // availableFormats key combos use `M` or `MMM`, so collapsing the name
+        // widths to `MMM` maximizes exact-match hits (e.g. a wide-month +
+        // weekday request matches `MMMEd` instead of falling back and losing the
+        // weekday).
         let c = match m {
             MonthStyle::Numeric | MonthStyle::TwoDigit => 1,
-            MonthStyle::Short => 3,
-            MonthStyle::Long => 4,
-            MonthStyle::Narrow => 5,
+            MonthStyle::Short | MonthStyle::Long | MonthStyle::Narrow => 3,
         };
         for _ in 0..c {
             sk.push('M');
@@ -908,11 +937,11 @@ fn build_date_skeleton(o: &DateTimeFormatOptions) -> (String, bool) {
 }
 
 /// Build the canonical time-field skeleton (`h/H m s`) and whether any time
-/// component was requested.
-fn build_time_skeleton(o: &DateTimeFormatOptions) -> (String, bool) {
+/// component was requested. `loc` is the locale default hour letter.
+fn build_time_skeleton(o: &DateTimeFormatOptions, loc: char) -> (String, bool) {
     let mut sk = String::new();
     if o.hour.is_some() {
-        sk.push(hour_letter(o));
+        sk.push(hour_letter(o, loc));
     }
     if o.minute.is_some() {
         sk.push('m');
@@ -982,7 +1011,7 @@ fn set_field(pattern: &str, from: &[char], to: char, count: usize) -> String {
 }
 
 /// Apply the requested component widths to a resolved pattern.
-fn patch_widths(pattern: &str, o: &DateTimeFormatOptions) -> String {
+fn patch_widths(pattern: &str, o: &DateTimeFormatOptions, loc: char) -> String {
     let mut p = String::from(pattern);
     if let Some(y) = o.year {
         p = set_field(
@@ -1027,7 +1056,7 @@ fn patch_widths(pattern: &str, o: &DateTimeFormatOptions) -> String {
         p = set_field(&p, &['G'], 'G', c);
     }
     if let Some(h) = o.hour {
-        let letter = hour_letter(o);
+        let letter = hour_letter(o, loc);
         let c = if h == Numeric2Digit::TwoDigit { 2 } else { 1 };
         p = set_field(&p, &['h', 'H', 'k', 'K'], letter, c);
     }
@@ -1200,8 +1229,9 @@ fn resolve_pattern(
         return Ok(pat);
     }
 
+    let loc_hour = locale_hour_letter(s);
     let (date_sk, mut want_date) = build_date_skeleton(o);
-    let (time_sk, want_time) = build_time_skeleton(o);
+    let (time_sk, want_time) = build_time_skeleton(o, loc_hour);
     // ECMA-402 default when nothing is requested: numeric year/month/day.
     let date_sk = if !want_date && !want_time {
         want_date = true;
@@ -1257,13 +1287,13 @@ fn resolve_pattern(
             keep.push('s');
         }
         // Keep the day period when explicitly asked or implied by a 12-hour clock.
-        if o.day_period.is_some() || (o.hour.is_some() && hour_letter(o) == 'h') {
+        if o.day_period.is_some() || (o.hour.is_some() && hour_letter(o, loc_hour) == 'h') {
             keep.extend(['a', 'b', 'B']);
         }
         combined = strip_fields(&combined, &keep);
     }
 
-    combined = patch_widths(&combined, o);
+    combined = patch_widths(&combined, o, loc_hour);
     if let Some(n) = o.fractional_second_digits {
         combined = inject_fractional(&combined, lang, n);
     }
