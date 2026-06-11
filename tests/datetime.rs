@@ -352,3 +352,41 @@ fn component_locale_defaults_and_field_keep() {
     };
     assert_eq!(fo("en", &DT, &wmd).unwrap(), "Thursday, June 4");
 }
+
+#[test]
+fn hour_cycles() {
+    use intl::datetime::{format_options as fo, DateTimeFormatOptions, HourCycle, Numeric2Digit};
+    let n = Some(Numeric2Digit::Numeric);
+    let td = Some(Numeric2Digit::TwoDigit);
+    let at = |h: u8, c: HourCycle| {
+        let dt = DateTime {
+            hour: h,
+            minute: 0,
+            ..DT
+        };
+        fo(
+            "en",
+            &dt,
+            &DateTimeFormatOptions {
+                hour: n,
+                minute: td,
+                hour_cycle: Some(c),
+                ..Default::default()
+            },
+        )
+        .unwrap()
+    };
+    // Midnight (00:00): the four cycles diverge.
+    assert_eq!(at(0, HourCycle::H11), "0:00\u{202f}AM");
+    assert_eq!(at(0, HourCycle::H12), "12:00\u{202f}AM");
+    assert_eq!(at(0, HourCycle::H23), "0:00");
+    assert_eq!(at(0, HourCycle::H24), "24:00");
+    // Noon (12:00).
+    assert_eq!(at(12, HourCycle::H11), "0:00\u{202f}PM");
+    assert_eq!(at(12, HourCycle::H12), "12:00\u{202f}PM");
+    assert_eq!(at(12, HourCycle::H23), "12:00");
+    assert_eq!(at(12, HourCycle::H24), "12:00");
+    // Afternoon (13:00).
+    assert_eq!(at(13, HourCycle::H11), "1:00\u{202f}PM");
+    assert_eq!(at(13, HourCycle::H23), "13:00");
+}

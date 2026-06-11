@@ -341,8 +341,18 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
             .to_string()
         }
         'h' => {
-            // Widen first: `dt.hour + 11` would overflow u8 for hour > 244.
-            let h = ((dt.hour as u16 + 11) % 12) + 1; // 12-hour clock
+            // h12: 1–12 (12-hour clock). Widen first: `dt.hour + 11` would
+            // overflow u8 for hour > 244.
+            let h = ((dt.hour as u16 + 11) % 12) + 1;
+            if n >= 2 {
+                two(h as i64)
+            } else {
+                h.to_string()
+            }
+        }
+        'K' => {
+            // h11: 0–11 (12-hour clock, midnight/noon = 0).
+            let h = (dt.hour as u16) % 12;
             if n >= 2 {
                 two(h as i64)
             } else {
@@ -350,10 +360,20 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
             }
         }
         'H' => {
+            // h23: 0–23.
             if n >= 2 {
                 two(dt.hour as i64)
             } else {
                 dt.hour.to_string()
+            }
+        }
+        'k' => {
+            // h24: 1–24 (midnight = 24).
+            let h = if dt.hour == 0 { 24 } else { dt.hour as u16 };
+            if n >= 2 {
+                two(h as i64)
+            } else {
+                h.to_string()
             }
         }
         'm' => {
@@ -885,12 +905,29 @@ fn locale_hour_letter(s: &CalendarSpec) -> char {
     'H'
 }
 
-/// The 12- vs 24-hour clock letter implied by the cycle / `hour12` options,
-/// falling back to the locale default (`loc`) when neither is set.
+/// The 12- vs 24-hour clock **family** letter (`h` or `H`) implied by the cycle
+/// / `hour12` options, falling back to the locale default (`loc`). Used for
+/// skeleton lookup (availableFormats keys only use `h`/`H`) and the day-period
+/// decision.
 fn hour_letter(o: &DateTimeFormatOptions, loc: char) -> char {
     match (o.hour_cycle, o.hour12) {
         (Some(HourCycle::H11 | HourCycle::H12), _) => 'h',
         (Some(HourCycle::H23 | HourCycle::H24), _) => 'H',
+        (None, Some(true)) => 'h',
+        (None, Some(false)) => 'H',
+        (None, None) => loc,
+    }
+}
+
+/// The exact CLDR hour field letter for the requested cycle: `h` = h12 (1–12),
+/// `K` = h11 (0–11), `H` = h23 (0–23), `k` = h24 (1–24). With no explicit cycle,
+/// uses the locale default family (`loc`, always `h`/`H`).
+fn hour_exact_letter(o: &DateTimeFormatOptions, loc: char) -> char {
+    match (o.hour_cycle, o.hour12) {
+        (Some(HourCycle::H11), _) => 'K',
+        (Some(HourCycle::H12), _) => 'h',
+        (Some(HourCycle::H23), _) => 'H',
+        (Some(HourCycle::H24), _) => 'k',
         (None, Some(true)) => 'h',
         (None, Some(false)) => 'H',
         (None, None) => loc,
@@ -1056,7 +1093,7 @@ fn patch_widths(pattern: &str, o: &DateTimeFormatOptions, loc: char) -> String {
         p = set_field(&p, &['G'], 'G', c);
     }
     if let Some(h) = o.hour {
-        let letter = hour_letter(o, loc);
+        let letter = hour_exact_letter(o, loc);
         let c = if h == Numeric2Digit::TwoDigit { 2 } else { 1 };
         p = set_field(&p, &['h', 'H', 'k', 'K'], letter, c);
     }
