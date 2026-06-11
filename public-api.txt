@@ -384,6 +384,523 @@ impl<T> core::convert::From<T> for intl::message::Arg<'a>
 pub fn intl::message::Arg<'a>::from(T) -> T
 pub fn intl::message::format_message(&str, &str, &[(&str, intl::message::Arg<'_>)]) -> alloc::string::String
 pub mod intl::number
+pub enum intl::number::CompactDisplay
+pub intl::number::CompactDisplay::Long
+pub intl::number::CompactDisplay::Short
+impl core::clone::Clone for intl::number::CompactDisplay
+pub fn intl::number::CompactDisplay::clone(&self) -> intl::number::CompactDisplay
+impl core::cmp::Eq for intl::number::CompactDisplay
+impl core::cmp::PartialEq for intl::number::CompactDisplay
+pub fn intl::number::CompactDisplay::eq(&self, &intl::number::CompactDisplay) -> bool
+impl core::default::Default for intl::number::CompactDisplay
+pub fn intl::number::CompactDisplay::default() -> intl::number::CompactDisplay
+impl core::fmt::Debug for intl::number::CompactDisplay
+pub fn intl::number::CompactDisplay::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::CompactDisplay
+impl core::marker::StructuralPartialEq for intl::number::CompactDisplay
+impl core::marker::Freeze for intl::number::CompactDisplay
+impl core::marker::Send for intl::number::CompactDisplay
+impl core::marker::Sync for intl::number::CompactDisplay
+impl core::marker::Unpin for intl::number::CompactDisplay
+impl core::marker::UnsafeUnpin for intl::number::CompactDisplay
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::CompactDisplay
+impl core::panic::unwind_safe::UnwindSafe for intl::number::CompactDisplay
+impl<T, U> core::convert::Into<U> for intl::number::CompactDisplay where U: core::convert::From<T>
+pub fn intl::number::CompactDisplay::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::CompactDisplay where U: core::convert::Into<T>
+pub type intl::number::CompactDisplay::Error = core::convert::Infallible
+pub fn intl::number::CompactDisplay::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::CompactDisplay where U: core::convert::TryFrom<T>
+pub type intl::number::CompactDisplay::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::CompactDisplay::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::CompactDisplay where T: core::clone::Clone
+pub type intl::number::CompactDisplay::Owned = T
+pub fn intl::number::CompactDisplay::clone_into(&self, &mut T)
+pub fn intl::number::CompactDisplay::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::CompactDisplay where T: 'static + ?core::marker::Sized
+pub fn intl::number::CompactDisplay::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::CompactDisplay where T: ?core::marker::Sized
+pub fn intl::number::CompactDisplay::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::CompactDisplay where T: ?core::marker::Sized
+pub fn intl::number::CompactDisplay::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::CompactDisplay where T: core::clone::Clone
+pub unsafe fn intl::number::CompactDisplay::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::CompactDisplay
+pub fn intl::number::CompactDisplay::from(T) -> T
+pub enum intl::number::CurrencyDisplay
+pub intl::number::CurrencyDisplay::Code
+pub intl::number::CurrencyDisplay::Name
+pub intl::number::CurrencyDisplay::NarrowSymbol
+pub intl::number::CurrencyDisplay::Symbol
+impl core::clone::Clone for intl::number::CurrencyDisplay
+pub fn intl::number::CurrencyDisplay::clone(&self) -> intl::number::CurrencyDisplay
+impl core::cmp::Eq for intl::number::CurrencyDisplay
+impl core::cmp::PartialEq for intl::number::CurrencyDisplay
+pub fn intl::number::CurrencyDisplay::eq(&self, &intl::number::CurrencyDisplay) -> bool
+impl core::default::Default for intl::number::CurrencyDisplay
+pub fn intl::number::CurrencyDisplay::default() -> intl::number::CurrencyDisplay
+impl core::fmt::Debug for intl::number::CurrencyDisplay
+pub fn intl::number::CurrencyDisplay::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::CurrencyDisplay
+impl core::marker::StructuralPartialEq for intl::number::CurrencyDisplay
+impl core::marker::Freeze for intl::number::CurrencyDisplay
+impl core::marker::Send for intl::number::CurrencyDisplay
+impl core::marker::Sync for intl::number::CurrencyDisplay
+impl core::marker::Unpin for intl::number::CurrencyDisplay
+impl core::marker::UnsafeUnpin for intl::number::CurrencyDisplay
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::CurrencyDisplay
+impl core::panic::unwind_safe::UnwindSafe for intl::number::CurrencyDisplay
+impl<T, U> core::convert::Into<U> for intl::number::CurrencyDisplay where U: core::convert::From<T>
+pub fn intl::number::CurrencyDisplay::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::CurrencyDisplay where U: core::convert::Into<T>
+pub type intl::number::CurrencyDisplay::Error = core::convert::Infallible
+pub fn intl::number::CurrencyDisplay::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::CurrencyDisplay where U: core::convert::TryFrom<T>
+pub type intl::number::CurrencyDisplay::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::CurrencyDisplay::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::CurrencyDisplay where T: core::clone::Clone
+pub type intl::number::CurrencyDisplay::Owned = T
+pub fn intl::number::CurrencyDisplay::clone_into(&self, &mut T)
+pub fn intl::number::CurrencyDisplay::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::CurrencyDisplay where T: 'static + ?core::marker::Sized
+pub fn intl::number::CurrencyDisplay::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::CurrencyDisplay where T: ?core::marker::Sized
+pub fn intl::number::CurrencyDisplay::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::CurrencyDisplay where T: ?core::marker::Sized
+pub fn intl::number::CurrencyDisplay::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::CurrencyDisplay where T: core::clone::Clone
+pub unsafe fn intl::number::CurrencyDisplay::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::CurrencyDisplay
+pub fn intl::number::CurrencyDisplay::from(T) -> T
+pub enum intl::number::Notation
+pub intl::number::Notation::Compact
+pub intl::number::Notation::Engineering
+pub intl::number::Notation::Scientific
+pub intl::number::Notation::Standard
+impl core::clone::Clone for intl::number::Notation
+pub fn intl::number::Notation::clone(&self) -> intl::number::Notation
+impl core::cmp::Eq for intl::number::Notation
+impl core::cmp::PartialEq for intl::number::Notation
+pub fn intl::number::Notation::eq(&self, &intl::number::Notation) -> bool
+impl core::default::Default for intl::number::Notation
+pub fn intl::number::Notation::default() -> intl::number::Notation
+impl core::fmt::Debug for intl::number::Notation
+pub fn intl::number::Notation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::Notation
+impl core::marker::StructuralPartialEq for intl::number::Notation
+impl core::marker::Freeze for intl::number::Notation
+impl core::marker::Send for intl::number::Notation
+impl core::marker::Sync for intl::number::Notation
+impl core::marker::Unpin for intl::number::Notation
+impl core::marker::UnsafeUnpin for intl::number::Notation
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::Notation
+impl core::panic::unwind_safe::UnwindSafe for intl::number::Notation
+impl<T, U> core::convert::Into<U> for intl::number::Notation where U: core::convert::From<T>
+pub fn intl::number::Notation::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::Notation where U: core::convert::Into<T>
+pub type intl::number::Notation::Error = core::convert::Infallible
+pub fn intl::number::Notation::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::Notation where U: core::convert::TryFrom<T>
+pub type intl::number::Notation::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::Notation::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::Notation where T: core::clone::Clone
+pub type intl::number::Notation::Owned = T
+pub fn intl::number::Notation::clone_into(&self, &mut T)
+pub fn intl::number::Notation::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::Notation where T: 'static + ?core::marker::Sized
+pub fn intl::number::Notation::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::Notation where T: ?core::marker::Sized
+pub fn intl::number::Notation::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::Notation where T: ?core::marker::Sized
+pub fn intl::number::Notation::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::Notation where T: core::clone::Clone
+pub unsafe fn intl::number::Notation::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::Notation
+pub fn intl::number::Notation::from(T) -> T
+pub enum intl::number::NumberPartType
+pub intl::number::NumberPartType::Compact
+pub intl::number::NumberPartType::Currency
+pub intl::number::NumberPartType::Decimal
+pub intl::number::NumberPartType::ExponentInteger
+pub intl::number::NumberPartType::ExponentMinusSign
+pub intl::number::NumberPartType::ExponentSeparator
+pub intl::number::NumberPartType::Fraction
+pub intl::number::NumberPartType::Group
+pub intl::number::NumberPartType::Infinity
+pub intl::number::NumberPartType::Integer
+pub intl::number::NumberPartType::Literal
+pub intl::number::NumberPartType::MinusSign
+pub intl::number::NumberPartType::Nan
+pub intl::number::NumberPartType::PercentSign
+pub intl::number::NumberPartType::PlusSign
+pub intl::number::NumberPartType::Unit
+impl intl::number::NumberPartType
+pub fn intl::number::NumberPartType::as_str(&self) -> &'static str
+impl core::clone::Clone for intl::number::NumberPartType
+pub fn intl::number::NumberPartType::clone(&self) -> intl::number::NumberPartType
+impl core::cmp::Eq for intl::number::NumberPartType
+impl core::cmp::PartialEq for intl::number::NumberPartType
+pub fn intl::number::NumberPartType::eq(&self, &intl::number::NumberPartType) -> bool
+impl core::fmt::Debug for intl::number::NumberPartType
+pub fn intl::number::NumberPartType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::NumberPartType
+impl core::marker::StructuralPartialEq for intl::number::NumberPartType
+impl core::marker::Freeze for intl::number::NumberPartType
+impl core::marker::Send for intl::number::NumberPartType
+impl core::marker::Sync for intl::number::NumberPartType
+impl core::marker::Unpin for intl::number::NumberPartType
+impl core::marker::UnsafeUnpin for intl::number::NumberPartType
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::NumberPartType
+impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberPartType
+impl<T, U> core::convert::Into<U> for intl::number::NumberPartType where U: core::convert::From<T>
+pub fn intl::number::NumberPartType::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::NumberPartType where U: core::convert::Into<T>
+pub type intl::number::NumberPartType::Error = core::convert::Infallible
+pub fn intl::number::NumberPartType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::NumberPartType where U: core::convert::TryFrom<T>
+pub type intl::number::NumberPartType::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::NumberPartType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::NumberPartType where T: core::clone::Clone
+pub type intl::number::NumberPartType::Owned = T
+pub fn intl::number::NumberPartType::clone_into(&self, &mut T)
+pub fn intl::number::NumberPartType::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::NumberPartType where T: 'static + ?core::marker::Sized
+pub fn intl::number::NumberPartType::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::NumberPartType where T: ?core::marker::Sized
+pub fn intl::number::NumberPartType::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::NumberPartType where T: ?core::marker::Sized
+pub fn intl::number::NumberPartType::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::NumberPartType where T: core::clone::Clone
+pub unsafe fn intl::number::NumberPartType::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::NumberPartType
+pub fn intl::number::NumberPartType::from(T) -> T
+pub enum intl::number::NumberStyle
+pub intl::number::NumberStyle::Currency
+pub intl::number::NumberStyle::Decimal
+pub intl::number::NumberStyle::Percent
+pub intl::number::NumberStyle::Unit
+impl core::clone::Clone for intl::number::NumberStyle
+pub fn intl::number::NumberStyle::clone(&self) -> intl::number::NumberStyle
+impl core::cmp::Eq for intl::number::NumberStyle
+impl core::cmp::PartialEq for intl::number::NumberStyle
+pub fn intl::number::NumberStyle::eq(&self, &intl::number::NumberStyle) -> bool
+impl core::default::Default for intl::number::NumberStyle
+pub fn intl::number::NumberStyle::default() -> intl::number::NumberStyle
+impl core::fmt::Debug for intl::number::NumberStyle
+pub fn intl::number::NumberStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::NumberStyle
+impl core::marker::StructuralPartialEq for intl::number::NumberStyle
+impl core::marker::Freeze for intl::number::NumberStyle
+impl core::marker::Send for intl::number::NumberStyle
+impl core::marker::Sync for intl::number::NumberStyle
+impl core::marker::Unpin for intl::number::NumberStyle
+impl core::marker::UnsafeUnpin for intl::number::NumberStyle
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::NumberStyle
+impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberStyle
+impl<T, U> core::convert::Into<U> for intl::number::NumberStyle where U: core::convert::From<T>
+pub fn intl::number::NumberStyle::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::NumberStyle where U: core::convert::Into<T>
+pub type intl::number::NumberStyle::Error = core::convert::Infallible
+pub fn intl::number::NumberStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::NumberStyle where U: core::convert::TryFrom<T>
+pub type intl::number::NumberStyle::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::NumberStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::NumberStyle where T: core::clone::Clone
+pub type intl::number::NumberStyle::Owned = T
+pub fn intl::number::NumberStyle::clone_into(&self, &mut T)
+pub fn intl::number::NumberStyle::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::NumberStyle where T: 'static + ?core::marker::Sized
+pub fn intl::number::NumberStyle::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::NumberStyle where T: ?core::marker::Sized
+pub fn intl::number::NumberStyle::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::NumberStyle where T: ?core::marker::Sized
+pub fn intl::number::NumberStyle::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::NumberStyle where T: core::clone::Clone
+pub unsafe fn intl::number::NumberStyle::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::NumberStyle
+pub fn intl::number::NumberStyle::from(T) -> T
+pub enum intl::number::RoundingMode
+pub intl::number::RoundingMode::Ceil
+pub intl::number::RoundingMode::Expand
+pub intl::number::RoundingMode::Floor
+pub intl::number::RoundingMode::HalfCeil
+pub intl::number::RoundingMode::HalfEven
+pub intl::number::RoundingMode::HalfExpand
+pub intl::number::RoundingMode::HalfFloor
+pub intl::number::RoundingMode::HalfTrunc
+pub intl::number::RoundingMode::Trunc
+impl core::clone::Clone for intl::number::RoundingMode
+pub fn intl::number::RoundingMode::clone(&self) -> intl::number::RoundingMode
+impl core::cmp::Eq for intl::number::RoundingMode
+impl core::cmp::PartialEq for intl::number::RoundingMode
+pub fn intl::number::RoundingMode::eq(&self, &intl::number::RoundingMode) -> bool
+impl core::default::Default for intl::number::RoundingMode
+pub fn intl::number::RoundingMode::default() -> intl::number::RoundingMode
+impl core::fmt::Debug for intl::number::RoundingMode
+pub fn intl::number::RoundingMode::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::RoundingMode
+impl core::marker::StructuralPartialEq for intl::number::RoundingMode
+impl core::marker::Freeze for intl::number::RoundingMode
+impl core::marker::Send for intl::number::RoundingMode
+impl core::marker::Sync for intl::number::RoundingMode
+impl core::marker::Unpin for intl::number::RoundingMode
+impl core::marker::UnsafeUnpin for intl::number::RoundingMode
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::RoundingMode
+impl core::panic::unwind_safe::UnwindSafe for intl::number::RoundingMode
+impl<T, U> core::convert::Into<U> for intl::number::RoundingMode where U: core::convert::From<T>
+pub fn intl::number::RoundingMode::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::RoundingMode where U: core::convert::Into<T>
+pub type intl::number::RoundingMode::Error = core::convert::Infallible
+pub fn intl::number::RoundingMode::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::RoundingMode where U: core::convert::TryFrom<T>
+pub type intl::number::RoundingMode::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::RoundingMode::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::RoundingMode where T: core::clone::Clone
+pub type intl::number::RoundingMode::Owned = T
+pub fn intl::number::RoundingMode::clone_into(&self, &mut T)
+pub fn intl::number::RoundingMode::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::RoundingMode where T: 'static + ?core::marker::Sized
+pub fn intl::number::RoundingMode::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::RoundingMode where T: ?core::marker::Sized
+pub fn intl::number::RoundingMode::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::RoundingMode where T: ?core::marker::Sized
+pub fn intl::number::RoundingMode::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::RoundingMode where T: core::clone::Clone
+pub unsafe fn intl::number::RoundingMode::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::RoundingMode
+pub fn intl::number::RoundingMode::from(T) -> T
+pub enum intl::number::SignDisplay
+pub intl::number::SignDisplay::Always
+pub intl::number::SignDisplay::Auto
+pub intl::number::SignDisplay::ExceptZero
+pub intl::number::SignDisplay::Negative
+pub intl::number::SignDisplay::Never
+impl core::clone::Clone for intl::number::SignDisplay
+pub fn intl::number::SignDisplay::clone(&self) -> intl::number::SignDisplay
+impl core::cmp::Eq for intl::number::SignDisplay
+impl core::cmp::PartialEq for intl::number::SignDisplay
+pub fn intl::number::SignDisplay::eq(&self, &intl::number::SignDisplay) -> bool
+impl core::default::Default for intl::number::SignDisplay
+pub fn intl::number::SignDisplay::default() -> intl::number::SignDisplay
+impl core::fmt::Debug for intl::number::SignDisplay
+pub fn intl::number::SignDisplay::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::SignDisplay
+impl core::marker::StructuralPartialEq for intl::number::SignDisplay
+impl core::marker::Freeze for intl::number::SignDisplay
+impl core::marker::Send for intl::number::SignDisplay
+impl core::marker::Sync for intl::number::SignDisplay
+impl core::marker::Unpin for intl::number::SignDisplay
+impl core::marker::UnsafeUnpin for intl::number::SignDisplay
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::SignDisplay
+impl core::panic::unwind_safe::UnwindSafe for intl::number::SignDisplay
+impl<T, U> core::convert::Into<U> for intl::number::SignDisplay where U: core::convert::From<T>
+pub fn intl::number::SignDisplay::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::SignDisplay where U: core::convert::Into<T>
+pub type intl::number::SignDisplay::Error = core::convert::Infallible
+pub fn intl::number::SignDisplay::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::SignDisplay where U: core::convert::TryFrom<T>
+pub type intl::number::SignDisplay::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::SignDisplay::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::SignDisplay where T: core::clone::Clone
+pub type intl::number::SignDisplay::Owned = T
+pub fn intl::number::SignDisplay::clone_into(&self, &mut T)
+pub fn intl::number::SignDisplay::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::SignDisplay where T: 'static + ?core::marker::Sized
+pub fn intl::number::SignDisplay::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::SignDisplay where T: ?core::marker::Sized
+pub fn intl::number::SignDisplay::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::SignDisplay where T: ?core::marker::Sized
+pub fn intl::number::SignDisplay::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::SignDisplay where T: core::clone::Clone
+pub unsafe fn intl::number::SignDisplay::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::SignDisplay
+pub fn intl::number::SignDisplay::from(T) -> T
+pub enum intl::number::UnitDisplay
+pub intl::number::UnitDisplay::Long
+pub intl::number::UnitDisplay::Narrow
+pub intl::number::UnitDisplay::Short
+impl core::clone::Clone for intl::number::UnitDisplay
+pub fn intl::number::UnitDisplay::clone(&self) -> intl::number::UnitDisplay
+impl core::cmp::Eq for intl::number::UnitDisplay
+impl core::cmp::PartialEq for intl::number::UnitDisplay
+pub fn intl::number::UnitDisplay::eq(&self, &intl::number::UnitDisplay) -> bool
+impl core::default::Default for intl::number::UnitDisplay
+pub fn intl::number::UnitDisplay::default() -> intl::number::UnitDisplay
+impl core::fmt::Debug for intl::number::UnitDisplay
+pub fn intl::number::UnitDisplay::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::UnitDisplay
+impl core::marker::StructuralPartialEq for intl::number::UnitDisplay
+impl core::marker::Freeze for intl::number::UnitDisplay
+impl core::marker::Send for intl::number::UnitDisplay
+impl core::marker::Sync for intl::number::UnitDisplay
+impl core::marker::Unpin for intl::number::UnitDisplay
+impl core::marker::UnsafeUnpin for intl::number::UnitDisplay
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::UnitDisplay
+impl core::panic::unwind_safe::UnwindSafe for intl::number::UnitDisplay
+impl<T, U> core::convert::Into<U> for intl::number::UnitDisplay where U: core::convert::From<T>
+pub fn intl::number::UnitDisplay::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::UnitDisplay where U: core::convert::Into<T>
+pub type intl::number::UnitDisplay::Error = core::convert::Infallible
+pub fn intl::number::UnitDisplay::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::UnitDisplay where U: core::convert::TryFrom<T>
+pub type intl::number::UnitDisplay::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::UnitDisplay::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::UnitDisplay where T: core::clone::Clone
+pub type intl::number::UnitDisplay::Owned = T
+pub fn intl::number::UnitDisplay::clone_into(&self, &mut T)
+pub fn intl::number::UnitDisplay::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::UnitDisplay where T: 'static + ?core::marker::Sized
+pub fn intl::number::UnitDisplay::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::UnitDisplay where T: ?core::marker::Sized
+pub fn intl::number::UnitDisplay::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::UnitDisplay where T: ?core::marker::Sized
+pub fn intl::number::UnitDisplay::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::UnitDisplay where T: core::clone::Clone
+pub unsafe fn intl::number::UnitDisplay::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::UnitDisplay
+pub fn intl::number::UnitDisplay::from(T) -> T
+pub enum intl::number::UseGrouping
+pub intl::number::UseGrouping::Always
+pub intl::number::UseGrouping::Auto
+pub intl::number::UseGrouping::Min2
+pub intl::number::UseGrouping::Never
+impl core::clone::Clone for intl::number::UseGrouping
+pub fn intl::number::UseGrouping::clone(&self) -> intl::number::UseGrouping
+impl core::cmp::Eq for intl::number::UseGrouping
+impl core::cmp::PartialEq for intl::number::UseGrouping
+pub fn intl::number::UseGrouping::eq(&self, &intl::number::UseGrouping) -> bool
+impl core::default::Default for intl::number::UseGrouping
+pub fn intl::number::UseGrouping::default() -> intl::number::UseGrouping
+impl core::fmt::Debug for intl::number::UseGrouping
+pub fn intl::number::UseGrouping::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::UseGrouping
+impl core::marker::StructuralPartialEq for intl::number::UseGrouping
+impl core::marker::Freeze for intl::number::UseGrouping
+impl core::marker::Send for intl::number::UseGrouping
+impl core::marker::Sync for intl::number::UseGrouping
+impl core::marker::Unpin for intl::number::UseGrouping
+impl core::marker::UnsafeUnpin for intl::number::UseGrouping
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::UseGrouping
+impl core::panic::unwind_safe::UnwindSafe for intl::number::UseGrouping
+impl<T, U> core::convert::Into<U> for intl::number::UseGrouping where U: core::convert::From<T>
+pub fn intl::number::UseGrouping::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::UseGrouping where U: core::convert::Into<T>
+pub type intl::number::UseGrouping::Error = core::convert::Infallible
+pub fn intl::number::UseGrouping::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::UseGrouping where U: core::convert::TryFrom<T>
+pub type intl::number::UseGrouping::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::UseGrouping::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::UseGrouping where T: core::clone::Clone
+pub type intl::number::UseGrouping::Owned = T
+pub fn intl::number::UseGrouping::clone_into(&self, &mut T)
+pub fn intl::number::UseGrouping::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::UseGrouping where T: 'static + ?core::marker::Sized
+pub fn intl::number::UseGrouping::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::UseGrouping where T: ?core::marker::Sized
+pub fn intl::number::UseGrouping::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::UseGrouping where T: ?core::marker::Sized
+pub fn intl::number::UseGrouping::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::UseGrouping where T: core::clone::Clone
+pub unsafe fn intl::number::UseGrouping::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::UseGrouping
+pub fn intl::number::UseGrouping::from(T) -> T
+pub struct intl::number::NumberFormatOptions
+pub intl::number::NumberFormatOptions::compact_display: intl::number::CompactDisplay
+pub intl::number::NumberFormatOptions::currency: core::option::Option<&'static str>
+pub intl::number::NumberFormatOptions::currency_display: intl::number::CurrencyDisplay
+pub intl::number::NumberFormatOptions::maximum_fraction_digits: core::option::Option<u8>
+pub intl::number::NumberFormatOptions::maximum_significant_digits: core::option::Option<u8>
+pub intl::number::NumberFormatOptions::minimum_fraction_digits: core::option::Option<u8>
+pub intl::number::NumberFormatOptions::minimum_integer_digits: u8
+pub intl::number::NumberFormatOptions::minimum_significant_digits: core::option::Option<u8>
+pub intl::number::NumberFormatOptions::notation: intl::number::Notation
+pub intl::number::NumberFormatOptions::numbering_system: core::option::Option<&'static str>
+pub intl::number::NumberFormatOptions::rounding_mode: intl::number::RoundingMode
+pub intl::number::NumberFormatOptions::sign_display: intl::number::SignDisplay
+pub intl::number::NumberFormatOptions::style: intl::number::NumberStyle
+pub intl::number::NumberFormatOptions::unit: core::option::Option<&'static str>
+pub intl::number::NumberFormatOptions::unit_display: intl::number::UnitDisplay
+pub intl::number::NumberFormatOptions::use_grouping: intl::number::UseGrouping
+impl core::clone::Clone for intl::number::NumberFormatOptions
+pub fn intl::number::NumberFormatOptions::clone(&self) -> intl::number::NumberFormatOptions
+impl core::cmp::Eq for intl::number::NumberFormatOptions
+impl core::cmp::PartialEq for intl::number::NumberFormatOptions
+pub fn intl::number::NumberFormatOptions::eq(&self, &intl::number::NumberFormatOptions) -> bool
+impl core::default::Default for intl::number::NumberFormatOptions
+pub fn intl::number::NumberFormatOptions::default() -> intl::number::NumberFormatOptions
+impl core::fmt::Debug for intl::number::NumberFormatOptions
+pub fn intl::number::NumberFormatOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::NumberFormatOptions
+impl core::marker::StructuralPartialEq for intl::number::NumberFormatOptions
+impl core::marker::Freeze for intl::number::NumberFormatOptions
+impl core::marker::Send for intl::number::NumberFormatOptions
+impl core::marker::Sync for intl::number::NumberFormatOptions
+impl core::marker::Unpin for intl::number::NumberFormatOptions
+impl core::marker::UnsafeUnpin for intl::number::NumberFormatOptions
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::NumberFormatOptions
+impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberFormatOptions
+impl<T, U> core::convert::Into<U> for intl::number::NumberFormatOptions where U: core::convert::From<T>
+pub fn intl::number::NumberFormatOptions::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::NumberFormatOptions where U: core::convert::Into<T>
+pub type intl::number::NumberFormatOptions::Error = core::convert::Infallible
+pub fn intl::number::NumberFormatOptions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::NumberFormatOptions where U: core::convert::TryFrom<T>
+pub type intl::number::NumberFormatOptions::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::NumberFormatOptions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::NumberFormatOptions where T: core::clone::Clone
+pub type intl::number::NumberFormatOptions::Owned = T
+pub fn intl::number::NumberFormatOptions::clone_into(&self, &mut T)
+pub fn intl::number::NumberFormatOptions::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::NumberFormatOptions where T: 'static + ?core::marker::Sized
+pub fn intl::number::NumberFormatOptions::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::NumberFormatOptions where T: ?core::marker::Sized
+pub fn intl::number::NumberFormatOptions::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::NumberFormatOptions where T: ?core::marker::Sized
+pub fn intl::number::NumberFormatOptions::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::NumberFormatOptions where T: core::clone::Clone
+pub unsafe fn intl::number::NumberFormatOptions::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::NumberFormatOptions
+pub fn intl::number::NumberFormatOptions::from(T) -> T
+pub struct intl::number::NumberPart
+pub intl::number::NumberPart::kind: intl::number::NumberPartType
+pub intl::number::NumberPart::value: alloc::string::String
+impl core::clone::Clone for intl::number::NumberPart
+pub fn intl::number::NumberPart::clone(&self) -> intl::number::NumberPart
+impl core::cmp::Eq for intl::number::NumberPart
+impl core::cmp::PartialEq for intl::number::NumberPart
+pub fn intl::number::NumberPart::eq(&self, &intl::number::NumberPart) -> bool
+impl core::fmt::Debug for intl::number::NumberPart
+pub fn intl::number::NumberPart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for intl::number::NumberPart
+impl core::marker::Freeze for intl::number::NumberPart
+impl core::marker::Send for intl::number::NumberPart
+impl core::marker::Sync for intl::number::NumberPart
+impl core::marker::Unpin for intl::number::NumberPart
+impl core::marker::UnsafeUnpin for intl::number::NumberPart
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::NumberPart
+impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberPart
+impl<T, U> core::convert::Into<U> for intl::number::NumberPart where U: core::convert::From<T>
+pub fn intl::number::NumberPart::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::NumberPart where U: core::convert::Into<T>
+pub type intl::number::NumberPart::Error = core::convert::Infallible
+pub fn intl::number::NumberPart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::NumberPart where U: core::convert::TryFrom<T>
+pub type intl::number::NumberPart::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::NumberPart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::NumberPart where T: core::clone::Clone
+pub type intl::number::NumberPart::Owned = T
+pub fn intl::number::NumberPart::clone_into(&self, &mut T)
+pub fn intl::number::NumberPart::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::NumberPart where T: 'static + ?core::marker::Sized
+pub fn intl::number::NumberPart::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::NumberPart where T: ?core::marker::Sized
+pub fn intl::number::NumberPart::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::NumberPart where T: ?core::marker::Sized
+pub fn intl::number::NumberPart::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::NumberPart where T: core::clone::Clone
+pub unsafe fn intl::number::NumberPart::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::NumberPart
+pub fn intl::number::NumberPart::from(T) -> T
 pub struct intl::number::NumberSpec
 pub intl::number::NumberSpec::dec: intl::number::Pattern
 pub intl::number::NumberSpec::decimal: &'static str
@@ -468,6 +985,7 @@ impl<T> core::clone::CloneToUninit for intl::number::Pattern where T: core::clon
 pub unsafe fn intl::number::Pattern::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::Pattern
 pub fn intl::number::Pattern::from(T) -> T
+pub fn intl::number::format(&str, f64, &intl::number::NumberFormatOptions) -> alloc::string::String
 pub fn intl::number::format_compact(&str, f64) -> alloc::string::String
 pub fn intl::number::format_currency(&str, f64, &str) -> alloc::string::String
 pub fn intl::number::format_decimal(&str, f64) -> alloc::string::String
@@ -475,6 +993,7 @@ pub fn intl::number::format_decimal_native(&str, f64) -> alloc::string::String
 pub fn intl::number::format_ordinal(&str, i64) -> alloc::string::String
 pub fn intl::number::format_percent(&str, f64) -> alloc::string::String
 pub fn intl::number::format_scientific(&str, f64, usize) -> alloc::string::String
+pub fn intl::number::format_to_parts(&str, f64, &intl::number::NumberFormatOptions) -> alloc::vec::Vec<intl::number::NumberPart>
 pub fn intl::number::parse_decimal(&str, &str) -> core::option::Option<f64>
 pub fn intl::number::to_numbering_system(&str, &str) -> alloc::string::String
 pub mod intl::plural
