@@ -11,6 +11,7 @@ fn dt(m: u8, d: u8, h: u8) -> DateTime {
         hour: h,
         minute: 0,
         second: 0,
+        millisecond: 0,
     }
 }
 

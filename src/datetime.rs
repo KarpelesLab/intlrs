@@ -8,7 +8,7 @@
 //!
 //! ```
 //! use intl::datetime::{DateTime, format_date, format_time, DateStyle};
-//! let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5 };
+//! let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5, millisecond: 0 };
 //! assert_eq!(format_date("en", &dt, DateStyle::Long), "June 4, 2026");
 //! assert_eq!(format_date("en", &dt, DateStyle::Medium), "Jun 4, 2026");
 //! assert_eq!(format_time("en", &dt, DateStyle::Short), "2:30\u{202f}PM");
@@ -33,14 +33,33 @@ pub struct DateTime {
     pub minute: u8,
     /// Second, 0–59.
     pub second: u8,
+    /// Millisecond, 0–999 (sub-second precision; 0 when unused).
+    pub millisecond: u16,
+}
+
+impl Default for DateTime {
+    /// The Unix epoch, `1970-01-01T00:00:00.000`.
+    fn default() -> Self {
+        DateTime {
+            year: 1970,
+            month: 1,
+            day: 1,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            millisecond: 0,
+        }
+    }
 }
 
 impl DateTime {
     /// Render as a machine-readable ISO-8601 timestamp
-    /// (`YYYY-MM-DDTHH:MM:SS`), independent of locale.
+    /// (`YYYY-MM-DDTHH:MM:SS`), independent of locale. A non-zero
+    /// [`millisecond`](Self::millisecond) is appended as `.SSS`; it is omitted
+    /// entirely when zero.
     #[must_use]
     pub fn to_iso8601(&self) -> String {
-        alloc::format!(
+        let base = alloc::format!(
             "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
             self.year,
             self.month,
@@ -48,7 +67,12 @@ impl DateTime {
             self.hour,
             self.minute,
             self.second
-        )
+        );
+        if self.millisecond == 0 {
+            base
+        } else {
+            alloc::format!("{base}.{:03}", self.millisecond)
+        }
     }
 
     /// The ISO-8601 weekday: 1 = Monday … 7 = Sunday.
@@ -62,9 +86,9 @@ impl DateTime {
     ///
     /// ```
     /// use intl::datetime::DateTime;
-    /// let dt = DateTime { year: 2026, month: 12, day: 31, hour: 23, minute: 59, second: 30 };
+    /// let dt = DateTime { year: 2026, month: 12, day: 31, hour: 23, minute: 59, second: 30, millisecond: 0 };
     /// let next = dt.add_seconds(90); // crosses into the new year
-    /// assert_eq!(next, DateTime { year: 2027, month: 1, day: 1, hour: 0, minute: 1, second: 0 });
+    /// assert_eq!(next, DateTime { year: 2027, month: 1, day: 1, hour: 0, minute: 1, second: 0, millisecond: 0 });
     /// ```
     #[must_use]
     pub fn add_seconds(&self, delta: i64) -> DateTime {
@@ -87,6 +111,7 @@ impl DateTime {
             hour: (sod / 3600) as u8,
             minute: (sod % 3600 / 60) as u8,
             second: (sod % 60) as u8,
+            millisecond: self.millisecond,
         }
     }
 
@@ -96,9 +121,11 @@ impl DateTime {
         self.add_seconds(delta * 86_400)
     }
 
-    /// Parse an ISO-8601 timestamp such as `"2026-06-04T14:30:05"`. Accepts a
-    /// space instead of `T`, an omitted time or seconds, and a trailing `Z`.
-    /// Returns `None` if malformed. (A time-zone offset, if present, is ignored.)
+    /// Parse an ISO-8601 timestamp such as `"2026-06-04T14:30:05"` or
+    /// `"2026-06-04T14:30:05.250"`. Accepts a space instead of `T`, an omitted
+    /// time or seconds, optional fractional seconds (`.S`–`.SSS…`, truncated to
+    /// millisecond precision), and a trailing `Z`. Returns `None` if malformed.
+    /// (A time-zone offset, if present, is ignored.)
     #[must_use]
     pub fn parse_iso8601(s: &str) -> Option<DateTime> {
         let s = s.trim().trim_end_matches('Z');
@@ -113,19 +140,38 @@ impl DateTime {
         if dp.next().is_some() || !(1..=12).contains(&month) || !(1..=31).contains(&day) {
             return None;
         }
-        let (hour, minute, second) = match time {
-            None => (0, 0, 0),
+        let (hour, minute, second, millisecond) = match time {
+            None => (0, 0, 0, 0),
             Some(t) => {
                 // Drop any zone offset on the time component.
                 let t = t.split(['+', '-']).next().unwrap_or(t);
                 let mut tp = t.split(':');
                 let h: u8 = tp.next()?.parse().ok()?;
                 let mi: u8 = tp.next()?.parse().ok()?;
-                let se: u8 = match tp.next() {
-                    Some(x) => x.parse().ok()?,
-                    None => 0,
+                let (se, ms) = match tp.next() {
+                    Some(x) => {
+                        let (whole, frac) = match x.split_once(['.', ',']) {
+                            Some((w, f)) => (w, Some(f)),
+                            None => (x, None),
+                        };
+                        let se: u8 = whole.parse().ok()?;
+                        let ms = match frac {
+                            None | Some("") => 0u16,
+                            Some(f) => {
+                                if !f.bytes().all(|b| b.is_ascii_digit()) {
+                                    return None;
+                                }
+                                // First up-to-3 fractional digits, scaled to ms.
+                                let take = &f[..f.len().min(3)];
+                                let v: u16 = take.parse().ok()?;
+                                v * 10u16.pow(3 - take.len() as u32)
+                            }
+                        };
+                        (se, ms)
+                    }
+                    None => (0, 0),
                 };
-                (h, mi, se)
+                (h, mi, se, ms)
             }
         };
         Some(DateTime {
@@ -135,6 +181,7 @@ impl DateTime {
             hour,
             minute,
             second,
+            millisecond,
         })
     }
 }
@@ -331,7 +378,7 @@ pub fn format_time(lang: &str, dt: &DateTime, style: DateStyle) -> String {
 ///
 /// ```
 /// use intl::datetime::{DateTime, format_skeleton};
-/// let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5 };
+/// let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5, millisecond: 0 };
 /// assert_eq!(format_skeleton("en", &dt, "yMMMd"), "Jun 4, 2026");
 /// assert_eq!(format_skeleton("de", &dt, "yMMMd"), "4. Juni 2026");
 /// assert_eq!(format_skeleton("en", &dt, "Hm"), "14:30");

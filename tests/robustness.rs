@@ -224,6 +224,7 @@ fn fuzz_locale_apis() {
             hour: rng.next() as u8,
             minute: rng.next() as u8,
             second: rng.next() as u8,
+            millisecond: rng.next() as u16,
         };
         let _ = format_date(&lang, &dt, DateStyle::Long);
         let _ = intl::datetime::format_time(&lang, &dt, DateStyle::Medium);

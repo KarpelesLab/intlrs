@@ -11,6 +11,7 @@ const DT: DateTime = DateTime {
     hour: 14,
     minute: 30,
     second: 5,
+    millisecond: 0,
 };
 
 #[test]
@@ -45,6 +46,7 @@ fn weekday_correct() {
         hour: 0,
         minute: 0,
         second: 0,
+        millisecond: 0,
     };
     assert!(fd("en", &y2k, Full).starts_with("Saturday"));
 }
@@ -74,6 +76,7 @@ fn iso8601() {
         hour: 0,
         minute: 0,
         second: 0,
+        millisecond: 0,
     };
     assert_eq!(DateTime::parse_iso8601("2026-06-04"), Some(midnight));
     assert_eq!(DateTime::parse_iso8601("2026-06-04T00:00"), Some(midnight));
@@ -82,6 +85,34 @@ fn iso8601() {
     // Malformed.
     assert_eq!(DateTime::parse_iso8601("not-a-date"), None);
     assert_eq!(DateTime::parse_iso8601("2026-13-01"), None); // bad month
+    // Fractional seconds round-trip through millisecond precision.
+    let ms = DateTime {
+        millisecond: 250,
+        ..DT
+    };
+    assert_eq!(ms.to_iso8601(), "2026-06-04T14:30:05.250");
+    assert_eq!(DateTime::parse_iso8601("2026-06-04T14:30:05.250"), Some(ms));
+    // Fewer fractional digits scale to milliseconds; extra digits truncate.
+    assert_eq!(
+        DateTime::parse_iso8601("2026-06-04T14:30:05.5")
+            .unwrap()
+            .millisecond,
+        500
+    );
+    assert_eq!(
+        DateTime::parse_iso8601("2026-06-04T14:30:05.05")
+            .unwrap()
+            .millisecond,
+        50
+    );
+    assert_eq!(
+        DateTime::parse_iso8601("2026-06-04T14:30:05.123456")
+            .unwrap()
+            .millisecond,
+        123
+    );
+    // A zero millisecond omits the fraction (byte-identical to before).
+    assert_eq!(DT.to_iso8601(), "2026-06-04T14:30:05");
 }
 
 #[test]
@@ -133,6 +164,7 @@ fn arithmetic() {
         hour: 23,
         minute: 59,
         second: 30,
+        millisecond: 0,
     };
     assert_eq!(
         nye.add_seconds(90),
@@ -142,7 +174,8 @@ fn arithmetic() {
             day: 1,
             hour: 0,
             minute: 1,
-            second: 0
+            second: 0,
+            millisecond: 0,
         }
     );
     // Subtract a day, leap-year aware (2024 is leap, so day before Mar 1 is Feb 29).
@@ -153,6 +186,7 @@ fn arithmetic() {
         hour: 12,
         minute: 0,
         second: 0,
+        millisecond: 0,
     };
     assert_eq!(mar1.add_days(-1).day, 29);
     assert_eq!(mar1.add_days(-1).month, 2);

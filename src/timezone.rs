@@ -8,8 +8,8 @@
 //! use intl::datetime::DateTime;
 //! let tz = PosixTz::parse("PST8PDT,M3.2.0,M11.1.0/2").unwrap();
 //! // July is daylight time (UTC−7); January is standard time (UTC−8).
-//! let jul = DateTime { year: 2026, month: 7, day: 1, hour: 12, minute: 0, second: 0 };
-//! let jan = DateTime { year: 2026, month: 1, day: 1, hour: 12, minute: 0, second: 0 };
+//! let jul = DateTime { year: 2026, month: 7, day: 1, hour: 12, minute: 0, second: 0, millisecond: 0 };
+//! let jan = DateTime { year: 2026, month: 1, day: 1, hour: 12, minute: 0, second: 0, millisecond: 0 };
 //! assert_eq!(tz.offset_seconds(&jul), -7 * 3600);
 //! assert_eq!(tz.offset_seconds(&jan), -8 * 3600);
 //! ```
@@ -46,6 +46,7 @@ mod iana {
             hour: (sod / 3600) as u8,
             minute: (sod % 3600 / 60) as u8,
             second: (sod % 60) as u8,
+            millisecond: 0,
         }
     }
 

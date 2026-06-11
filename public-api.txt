@@ -68,6 +68,7 @@ pub fn intl::datetime::DateStyle::from(T) -> T
 pub struct intl::datetime::DateTime
 pub intl::datetime::DateTime::day: u8
 pub intl::datetime::DateTime::hour: u8
+pub intl::datetime::DateTime::millisecond: u16
 pub intl::datetime::DateTime::minute: u8
 pub intl::datetime::DateTime::month: u8
 pub intl::datetime::DateTime::second: u8
@@ -83,6 +84,8 @@ pub fn intl::datetime::DateTime::clone(&self) -> intl::datetime::DateTime
 impl core::cmp::Eq for intl::datetime::DateTime
 impl core::cmp::PartialEq for intl::datetime::DateTime
 pub fn intl::datetime::DateTime::eq(&self, &intl::datetime::DateTime) -> bool
+impl core::default::Default for intl::datetime::DateTime
+pub fn intl::datetime::DateTime::default() -> Self
 impl core::fmt::Debug for intl::datetime::DateTime
 pub fn intl::datetime::DateTime::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::DateTime
