@@ -308,13 +308,7 @@ fn main() {
     emit_currency(&cldr_dir, &cldr.join("currency.json"));
     emit_display(&cldr_dir, &cldr.join("display.json"));
     emit_units(&cldr_dir, &cldr.join("units.json"));
-    emit_calendar(&cldr_dir, &cldr.join("calendar.json"));
-    emit_nested(
-        &cldr_dir,
-        "skeletons",
-        &cldr.join("skeletons.json"),
-        "locales",
-    );
+    emit_dates(&cldr_dir, &cldr.join("dates"));
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
@@ -2072,29 +2066,133 @@ fn emit_currency(cldr_dir: &Path, path: &Path) {
 /// date/time/combining patterns. Payload (all required strings): months_wide(12),
 /// months_abbr(12), days_wide(7), days_abbr(7), am, pm, date(4), time(4),
 /// datetime(4) — styles in full/long/medium/short order.
-fn emit_calendar(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read calendar.json");
-    let json = json_parse(&text);
-    let mut records = Vec::new();
-    for (lang, loc) in json.get("locales").expect("locales").entries() {
-        let mut p = Vec::new();
-        let push_arr = |p: &mut Vec<u8>, key: &str| {
-            for v in loc.get(key).map(Json::array).unwrap_or(&[]) {
-                enc_str(p, v.as_str().unwrap_or(""));
+/// Write `cldr/calendar.bin` and `cldr/skeletons.bin` from the raw, verbatim
+/// Unicode CLDR `cldr-dates-full` `ca-gregorian.json` files vendored under
+/// `data/cldr/48/dates/<locale>/` (see that dir's README for provenance).
+///
+/// `calendar.bin` payload order (the leading block is unchanged from the prior
+/// trimmed layout so the runtime reader's existing reads stay valid; the narrow
+/// and era blocks are appended):
+///   months_wide[12], months_abbr[12], days_wide[7], days_abbr[7], am, pm,
+///   date[4], time[4], datetime[4],
+///   months_narrow[12], days_narrow[7], eras_wide[2], eras_abbr[2], eras_narrow[2]
+/// (date/time/datetime are full, long, medium, short; eras are indexed 0 = BCE,
+/// 1 = CE.)
+///
+/// `skeletons.bin` payload: the locale's `availableFormats` map (canonical keys
+/// only — the `-alt-ascii` and `-count-*` variant keys are dropped), as
+/// `[u16 count]` then `(skeleton, pattern)` string pairs.
+fn emit_dates(cldr_dir: &Path, dates_dir: &Path) {
+    let mut locales: Vec<String> = fs::read_dir(dates_dir)
+        .expect("read dates dir")
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_dir())
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    locales.sort();
+
+    let mut cal_records = Vec::new();
+    let mut skel_records = Vec::new();
+
+    for locale in locales {
+        let path = dates_dir.join(&locale).join("ca-gregorian.json");
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        // main -> <locale> -> dates -> calendars -> gregorian
+        let main = json.get("main").expect("main");
+        let (_, loc_obj) = main.entries().first().expect("locale entry");
+        let greg = loc_obj
+            .get("dates")
+            .and_then(|d| d.get("calendars"))
+            .and_then(|c| c.get("gregorian"))
+            .expect("gregorian");
+
+        let months = greg
+            .get("months")
+            .and_then(|m| m.get("format"))
+            .expect("months.format");
+        let days = greg
+            .get("days")
+            .and_then(|d| d.get("format"))
+            .expect("days.format");
+        let day_keys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+        let push_months = |p: &mut Vec<u8>, width: &str| {
+            let w = months.get(width).unwrap_or_else(|| panic!("months.{width}"));
+            for m in 1..=12u8 {
+                enc_str(p, w.get(&m.to_string()).and_then(Json::as_str).unwrap_or(""));
             }
         };
-        push_arr(&mut p, "months_wide");
-        push_arr(&mut p, "months_abbr");
-        push_arr(&mut p, "days_wide");
-        push_arr(&mut p, "days_abbr");
-        enc_str(&mut p, loc.get("am").and_then(Json::as_str).unwrap_or("AM"));
-        enc_str(&mut p, loc.get("pm").and_then(Json::as_str).unwrap_or("PM"));
-        push_arr(&mut p, "date");
-        push_arr(&mut p, "time");
-        push_arr(&mut p, "datetime");
-        records.push((lang.to_ascii_lowercase(), p));
+        let push_days = |p: &mut Vec<u8>, width: &str| {
+            let w = days.get(width).unwrap_or_else(|| panic!("days.{width}"));
+            for k in day_keys {
+                enc_str(p, w.get(k).and_then(Json::as_str).unwrap_or(""));
+            }
+        };
+
+        // ---- calendar.bin payload ----
+        let mut p = Vec::new();
+        push_months(&mut p, "wide");
+        push_months(&mut p, "abbreviated");
+        push_days(&mut p, "wide");
+        push_days(&mut p, "abbreviated");
+
+        let dp = greg
+            .get("dayPeriods")
+            .and_then(|d| d.get("format"))
+            .and_then(|f| f.get("abbreviated"));
+        enc_str(
+            &mut p,
+            dp.and_then(|d| d.get("am")).and_then(Json::as_str).unwrap_or("AM"),
+        );
+        enc_str(
+            &mut p,
+            dp.and_then(|d| d.get("pm")).and_then(Json::as_str).unwrap_or("PM"),
+        );
+
+        let order = ["full", "long", "medium", "short"];
+        let push_patterns = |p: &mut Vec<u8>, group: &str| {
+            let g = greg.get(group).unwrap_or_else(|| panic!("{group}"));
+            for k in order {
+                enc_str(p, g.get(k).and_then(Json::as_str).unwrap_or(""));
+            }
+        };
+        push_patterns(&mut p, "dateFormats");
+        push_patterns(&mut p, "timeFormats");
+        push_patterns(&mut p, "dateTimeFormats");
+
+        // appended blocks: narrow widths + eras
+        push_months(&mut p, "narrow");
+        push_days(&mut p, "narrow");
+        let eras = greg.get("eras").expect("eras");
+        for variant in ["eraNames", "eraAbbr", "eraNarrow"] {
+            let e = eras.get(variant).unwrap_or_else(|| panic!("eras.{variant}"));
+            enc_str(&mut p, e.get("0").and_then(Json::as_str).unwrap_or(""));
+            enc_str(&mut p, e.get("1").and_then(Json::as_str).unwrap_or(""));
+        }
+        cal_records.push((locale.to_ascii_lowercase(), p));
+
+        // ---- skeletons.bin payload ----
+        let avail = greg
+            .get("dateTimeFormats")
+            .and_then(|d| d.get("availableFormats"))
+            .expect("availableFormats");
+        let kept: Vec<(&str, &str)> = avail
+            .entries()
+            .iter()
+            .filter(|(k, _)| !k.contains('-'))
+            .filter_map(|(k, v)| v.as_str().map(|s| (k.as_str(), s)))
+            .collect();
+        let mut sk = Vec::new();
+        sk.extend_from_slice(&(kept.len() as u16).to_le_bytes());
+        for (k, v) in kept {
+            enc_str(&mut sk, k);
+            enc_str(&mut sk, v);
+        }
+        skel_records.push((locale.to_ascii_lowercase(), sk));
     }
-    write_blob(cldr_dir, "calendar", &records);
+
+    write_blob(cldr_dir, "calendar", &cal_records);
+    write_blob(cldr_dir, "skeletons", &skel_records);
 }
 
 /// The curated measurement units, in the order the runtime `Unit` enum expects.
@@ -2313,26 +2411,6 @@ fn emit_likely(cldr_dir: &Path, path: &Path) {
         records.push((key.clone(), p));
     }
     write_blob(cldr_dir, "likely", &records);
-}
-
-/// Write a nested blob `<blob>.bin`: outer key (lowercased) -> a `[u16 count]`
-/// inner table of `key -> value` (inner keys are kept verbatim, case-sensitive).
-fn emit_nested(cldr_dir: &Path, blob: &str, path: &Path, section: &str) {
-    let text = fs::read_to_string(path).expect("read nested json");
-    let json = json_parse(&text);
-    let table = json.get(section).expect("section");
-    let mut records = Vec::new();
-    for (outer, inner) in table.entries() {
-        let entries = inner.entries();
-        let mut payload = Vec::new();
-        payload.extend_from_slice(&(entries.len() as u16).to_le_bytes());
-        for (k, v) in entries {
-            enc_str(&mut payload, k);
-            enc_str(&mut payload, v.as_str().unwrap_or(""));
-        }
-        records.push((outer.to_ascii_lowercase(), payload));
-    }
-    write_blob(cldr_dir, blob, &records);
 }
 
 /// Write `cldr/display_languages.bin` and `cldr/display_territories.bin`: for

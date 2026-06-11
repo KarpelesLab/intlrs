@@ -116,6 +116,16 @@ pub struct CalendarSpec {
     pub time: [&'static str; 4],
     /// Date+time combining patterns by style (`{1}` date, `{0}` time).
     pub datetime: [&'static str; 4],
+    /// Narrow month names (J, F, M…), indexed by month−1.
+    pub months_narrow: [&'static str; 12],
+    /// Narrow weekday names (S, M, T…), indexed Sun..Sat.
+    pub days_narrow: [&'static str; 7],
+    /// Wide era names (Before Christ, Anno Domini), indexed 0 = BCE, 1 = CE.
+    pub eras_wide: [&'static str; 2],
+    /// Abbreviated era names (BC, AD).
+    pub eras_abbr: [&'static str; 2],
+    /// Narrow era names (B, A).
+    pub eras_narrow: [&'static str; 2],
 }
 
 /// CLDR relative-time strings for all units of one locale.
@@ -482,6 +492,11 @@ pub(crate) fn calendar_spec(lang: &str) -> Option<CalendarSpec> {
         date: core::array::from_fn(|_| c.str()),
         time: core::array::from_fn(|_| c.str()),
         datetime: core::array::from_fn(|_| c.str()),
+        months_narrow: core::array::from_fn(|_| c.str()),
+        days_narrow: core::array::from_fn(|_| c.str()),
+        eras_wide: core::array::from_fn(|_| c.str()),
+        eras_abbr: core::array::from_fn(|_| c.str()),
+        eras_narrow: core::array::from_fn(|_| c.str()),
     })
 }
 
