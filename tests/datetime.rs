@@ -85,7 +85,7 @@ fn iso8601() {
     // Malformed.
     assert_eq!(DateTime::parse_iso8601("not-a-date"), None);
     assert_eq!(DateTime::parse_iso8601("2026-13-01"), None); // bad month
-    // Fractional seconds round-trip through millisecond precision.
+                                                             // Fractional seconds round-trip through millisecond precision.
     let ms = DateTime {
         millisecond: 250,
         ..DT
@@ -257,7 +257,10 @@ fn component_options() {
         year: n,
         ..Default::default()
     };
-    assert_eq!(fo("en", &DT, &bad), Err(DateTimeFormatError::ConflictingOptions));
+    assert_eq!(
+        fo("en", &DT, &bad),
+        Err(DateTimeFormatError::ConflictingOptions)
+    );
 
     // Narrow month (asserted on the part, robust to surrounding fields).
     let narrow = DateTimeFormatOptions {
@@ -266,7 +269,10 @@ fn component_options() {
         ..Default::default()
     };
     let parts = ftp("en", &DT, &narrow).unwrap();
-    let mon = parts.iter().find(|p| p.kind == DateTimePartType::Month).unwrap();
+    let mon = parts
+        .iter()
+        .find(|p| p.kind == DateTimePartType::Month)
+        .unwrap();
     assert_eq!(mon.value, "J");
 
     // Era + narrow weekday via skeleton/field wiring.
@@ -304,7 +310,10 @@ fn component_options() {
     assert_eq!(parts.last().unwrap().value, "GMT-08:00");
 
     // Default (no options) → numeric y/M/d.
-    assert_eq!(fo("en", &DT, &DateTimeFormatOptions::default()).unwrap(), "6/4/2026");
+    assert_eq!(
+        fo("en", &DT, &DateTimeFormatOptions::default()).unwrap(),
+        "6/4/2026"
+    );
 
     // weekday:Narrow part value.
     let wd = DateTimeFormatOptions {

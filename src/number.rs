@@ -756,7 +756,12 @@ fn format_with_parts(
     if !p.prefix.is_empty() {
         parts.push(NumberPart::new(NumberPartType::Literal, p.prefix));
     }
-    parts.extend(group_parts(int_str, p.primary_group, p.secondary_group, group));
+    parts.extend(group_parts(
+        int_str,
+        p.primary_group,
+        p.secondary_group,
+        group,
+    ));
     if !frac.is_empty() {
         parts.push(NumberPart::new(NumberPartType::Decimal, decimal));
         parts.push(NumberPart::new(NumberPartType::Fraction, frac));
@@ -858,11 +863,7 @@ fn round_digits(
     let work = max_frac.max(min_frac).saturating_add(2).clamp(40, 320);
     let s = alloc::format!("{abs:.work$}");
     let (ip, fp) = s.split_once('.').unwrap_or((s.as_str(), ""));
-    let mut digits: Vec<u8> = ip
-        .bytes()
-        .chain(fp.bytes())
-        .map(|b| b - b'0')
-        .collect();
+    let mut digits: Vec<u8> = ip.bytes().chain(fp.bytes()).map(|b| b - b'0').collect();
     let mut point = ip.len(); // number of integer digits
 
     // Rounding boundary (number of leading digits kept).
@@ -901,8 +902,14 @@ fn round_digits(
         }
     }
 
-    let mut int_digits: String = digits[..point].iter().map(|&d| (b'0' + d) as char).collect();
-    let mut frac_digits: String = digits[point..].iter().map(|&d| (b'0' + d) as char).collect();
+    let mut int_digits: String = digits[..point]
+        .iter()
+        .map(|&d| (b'0' + d) as char)
+        .collect();
+    let mut frac_digits: String = digits[point..]
+        .iter()
+        .map(|&d| (b'0' + d) as char)
+        .collect();
 
     // Finalize precision constraints.
     if max_sig.is_some() {
@@ -944,7 +951,12 @@ fn round_digits(
 }
 
 /// The sign part for a value, given its sign/zero-ness and the sign-display mode.
-fn sign_part(negative: bool, is_zero: bool, opts: &NumberFormatOptions, s: &NumberSpec) -> Option<NumberPart> {
+fn sign_part(
+    negative: bool,
+    is_zero: bool,
+    opts: &NumberFormatOptions,
+    s: &NumberSpec,
+) -> Option<NumberPart> {
     let (show, plus) = match opts.sign_display {
         SignDisplay::Auto | SignDisplay::Negative => (negative, false),
         SignDisplay::Always => (true, !negative),
@@ -1011,7 +1023,10 @@ fn core_parts(
     }
     if !frac_digits.is_empty() {
         parts.push(NumberPart::new(NumberPartType::Decimal, s.decimal));
-        parts.push(NumberPart::new(NumberPartType::Fraction, map_digits(frac_digits, opts)));
+        parts.push(NumberPart::new(
+            NumberPartType::Fraction,
+            map_digits(frac_digits, opts),
+        ));
     }
     parts
 }
@@ -1050,7 +1065,12 @@ fn affix_parts(text: &str, style: NumberStyle, s: &NumberSpec, currency: &str) -
 }
 
 /// Resolve the base pattern, scaled value, and currency symbol for `style`.
-fn resolve_style(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOptions) -> (Pattern, f64, String) {
+fn resolve_style(
+    lang: &str,
+    value: f64,
+    s: &NumberSpec,
+    opts: &NumberFormatOptions,
+) -> (Pattern, f64, String) {
     match opts.style {
         NumberStyle::Decimal | NumberStyle::Unit => (s.dec, value, String::new()),
         NumberStyle::Percent => (s.pct, value * 100.0, String::new()),
@@ -1058,7 +1078,13 @@ fn resolve_style(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOpti
             let code = opts.currency.unwrap_or("XXX");
             let norm: String = lang
                 .chars()
-                .map(|c| if c == '_' { '-' } else { c.to_ascii_lowercase() })
+                .map(|c| {
+                    if c == '_' {
+                        '-'
+                    } else {
+                        c.to_ascii_lowercase()
+                    }
+                })
                 .collect();
             let mut pat = crate::cldr::currency_pattern("en").expect("root currency pattern");
             let mut symbol = String::from(code);
@@ -1104,9 +1130,16 @@ fn resolve_style(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOpti
 }
 
 /// Standard (positional) notation.
-fn standard_parts(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOptions) -> Vec<NumberPart> {
+fn standard_parts(
+    lang: &str,
+    value: f64,
+    s: &NumberSpec,
+    opts: &NumberFormatOptions,
+) -> Vec<NumberPart> {
     let (pattern, scaled, currency) = resolve_style(lang, value, s, opts);
-    let min_frac = opts.minimum_fraction_digits.map_or(pattern.min_frac as usize, usize::from);
+    let min_frac = opts
+        .minimum_fraction_digits
+        .map_or(pattern.min_frac as usize, usize::from);
     let max_frac = opts
         .maximum_fraction_digits
         .map_or(pattern.max_frac as usize, usize::from)
@@ -1117,7 +1150,16 @@ fn standard_parts(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOpt
 
     let negative = scaled.is_sign_negative() && scaled != 0.0;
     let abs = if scaled < 0.0 { -scaled } else { scaled };
-    let (int_d, frac_d) = round_digits(abs, min_int, min_frac, max_frac, min_sig, max_sig, opts.rounding_mode, negative);
+    let (int_d, frac_d) = round_digits(
+        abs,
+        min_int,
+        min_frac,
+        max_frac,
+        min_sig,
+        max_sig,
+        opts.rounding_mode,
+        negative,
+    );
     let is_zero = int_d.bytes().all(|b| b == b'0') && frac_d.bytes().all(|b| b == b'0');
     let (pri, sec) = effective_grouping(opts, &pattern, int_d.len());
 
@@ -1126,7 +1168,10 @@ fn standard_parts(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOpt
     // The sign (first core part, if any) precedes the prefix affix.
     let mut core_iter = core.into_iter().peekable();
     if let Some(first) = core_iter.peek() {
-        if matches!(first.kind, NumberPartType::MinusSign | NumberPartType::PlusSign) {
+        if matches!(
+            first.kind,
+            NumberPartType::MinusSign | NumberPartType::PlusSign
+        ) {
             parts.push(core_iter.next().unwrap());
         }
     }
@@ -1137,7 +1182,12 @@ fn standard_parts(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOpt
 }
 
 /// Scientific (`base = 1`) or engineering (`base = 3`) notation.
-fn exponent_parts(value: f64, s: &NumberSpec, opts: &NumberFormatOptions, base: i32) -> Vec<NumberPart> {
+fn exponent_parts(
+    value: f64,
+    s: &NumberSpec,
+    opts: &NumberFormatOptions,
+    base: i32,
+) -> Vec<NumberPart> {
     let negative = value.is_sign_negative() && value != 0.0;
     let abs = if value < 0.0 { -value } else { value };
     let mut exp = 0i32;
@@ -1161,10 +1211,22 @@ fn exponent_parts(value: f64, s: &NumberSpec, opts: &NumberFormatOptions, base: 
     }
 
     let min_frac = opts.minimum_fraction_digits.map_or(0usize, usize::from);
-    let max_frac = opts.maximum_fraction_digits.map_or(6usize, usize::from).max(min_frac);
+    let max_frac = opts
+        .maximum_fraction_digits
+        .map_or(6usize, usize::from)
+        .max(min_frac);
     let min_sig = opts.minimum_significant_digits.map(usize::from);
     let max_sig = opts.maximum_significant_digits.map(usize::from);
-    let (mut int_d, mut frac_d) = round_digits(m, 1, min_frac, max_frac, min_sig, max_sig, opts.rounding_mode, negative);
+    let (mut int_d, mut frac_d) = round_digits(
+        m,
+        1,
+        min_frac,
+        max_frac,
+        min_sig,
+        max_sig,
+        opts.rounding_mode,
+        negative,
+    );
 
     // A rounding carry can push the mantissa to ≥ 10^base (e.g. 9.99 → 10);
     // shift the point back so the integer part is the expected width.
@@ -1182,10 +1244,16 @@ fn exponent_parts(value: f64, s: &NumberSpec, opts: &NumberFormatOptions, base: 
     if let Some(sign) = sign_part(negative, is_zero, opts, s) {
         parts.push(sign);
     }
-    parts.push(NumberPart::new(NumberPartType::Integer, map_digits(&int_d, opts)));
+    parts.push(NumberPart::new(
+        NumberPartType::Integer,
+        map_digits(&int_d, opts),
+    ));
     if !frac_d.is_empty() {
         parts.push(NumberPart::new(NumberPartType::Decimal, s.decimal));
-        parts.push(NumberPart::new(NumberPartType::Fraction, map_digits(&frac_d, opts)));
+        parts.push(NumberPart::new(
+            NumberPartType::Fraction,
+            map_digits(&frac_d, opts),
+        ));
     }
     parts.push(NumberPart::new(NumberPartType::ExponentSeparator, "E"));
     if exp < 0 {
@@ -1199,14 +1267,25 @@ fn exponent_parts(value: f64, s: &NumberSpec, opts: &NumberFormatOptions, base: 
 }
 
 /// Compact notation (short suffixes), for the decimal style.
-fn compact_parts(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOptions) -> Vec<NumberPart> {
+fn compact_parts(
+    lang: &str,
+    value: f64,
+    s: &NumberSpec,
+    opts: &NumberFormatOptions,
+) -> Vec<NumberPart> {
     let abs = if value < 0.0 { -value } else { value };
     if !abs.is_finite() || abs < 1000.0 {
         return standard_parts(lang, value, s, opts);
     }
     let norm: String = lang
         .chars()
-        .map(|c| if c == '_' { '-' } else { c.to_ascii_lowercase() })
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
         .collect();
     let mut end = norm.len();
     let table = loop {
@@ -1240,8 +1319,20 @@ fn compact_parts(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOpti
     let negative = mantissa.is_sign_negative() && mantissa != 0.0;
     let mabs = if mantissa < 0.0 { -mantissa } else { mantissa };
     let min_frac = opts.minimum_fraction_digits.map_or(0usize, usize::from);
-    let max_frac = opts.maximum_fraction_digits.map_or(1usize, usize::from).max(min_frac);
-    let (int_d, frac_d) = round_digits(mabs, 1, min_frac, max_frac, None, None, opts.rounding_mode, negative);
+    let max_frac = opts
+        .maximum_fraction_digits
+        .map_or(1usize, usize::from)
+        .max(min_frac);
+    let (int_d, frac_d) = round_digits(
+        mabs,
+        1,
+        min_frac,
+        max_frac,
+        None,
+        None,
+        opts.rounding_mode,
+        negative,
+    );
     let is_zero = false;
 
     // Render the pattern, substituting the numeric core for the `0`-run and
@@ -1255,7 +1346,10 @@ fn compact_parts(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOpti
     let mut lit = String::new();
     let flush_lit = |lit: &mut String, parts: &mut Vec<NumberPart>| {
         if !lit.is_empty() {
-            parts.push(NumberPart::new(NumberPartType::Compact, core::mem::take(lit)));
+            parts.push(NumberPart::new(
+                NumberPartType::Compact,
+                core::mem::take(lit),
+            ));
         }
     };
     while let Some(c) = chars.next() {
@@ -1266,10 +1360,16 @@ fn compact_parts(lang: &str, value: f64, s: &NumberSpec, opts: &NumberFormatOpti
                 }
                 if !wrote {
                     flush_lit(&mut lit, &mut parts);
-                    parts.push(NumberPart::new(NumberPartType::Integer, map_digits(&int_d, opts)));
+                    parts.push(NumberPart::new(
+                        NumberPartType::Integer,
+                        map_digits(&int_d, opts),
+                    ));
                     if !frac_d.is_empty() {
                         parts.push(NumberPart::new(NumberPartType::Decimal, s.decimal));
-                        parts.push(NumberPart::new(NumberPartType::Fraction, map_digits(&frac_d, opts)));
+                        parts.push(NumberPart::new(
+                            NumberPartType::Fraction,
+                            map_digits(&frac_d, opts),
+                        ));
                     }
                     wrote = true;
                 }
@@ -1497,7 +1597,9 @@ mod tests {
         };
         assert_eq!(format("en", 1234.5, &cur), "$1,234.50");
         let parts = format_to_parts("en", 1234.5, &cur);
-        assert!(parts.iter().any(|p| p.kind == NumberPartType::Currency && p.value == "$"));
+        assert!(parts
+            .iter()
+            .any(|p| p.kind == NumberPartType::Currency && p.value == "$"));
         // currencyDisplay: code
         let code = NumberFormatOptions {
             currency_display: CurrencyDisplay::Code,

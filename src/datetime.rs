@@ -850,7 +850,13 @@ pub enum DateTimeFormatError {
 
 fn normalize_lang(lang: &str) -> String {
     lang.chars()
-        .map(|c| if c == '_' { '-' } else { c.to_ascii_lowercase() })
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
         .collect()
 }
 
@@ -979,7 +985,12 @@ fn set_field(pattern: &str, from: &[char], to: char, count: usize) -> String {
 fn patch_widths(pattern: &str, o: &DateTimeFormatOptions) -> String {
     let mut p = String::from(pattern);
     if let Some(y) = o.year {
-        p = set_field(&p, &['y'], 'y', if y == Numeric2Digit::TwoDigit { 2 } else { 1 });
+        p = set_field(
+            &p,
+            &['y'],
+            'y',
+            if y == Numeric2Digit::TwoDigit { 2 } else { 1 },
+        );
     }
     if let Some(m) = o.month {
         let c = match m {
@@ -992,7 +1003,12 @@ fn patch_widths(pattern: &str, o: &DateTimeFormatOptions) -> String {
         p = set_field(&p, &['M', 'L'], 'M', c);
     }
     if let Some(d) = o.day {
-        p = set_field(&p, &['d'], 'd', if d == Numeric2Digit::TwoDigit { 2 } else { 1 });
+        p = set_field(
+            &p,
+            &['d'],
+            'd',
+            if d == Numeric2Digit::TwoDigit { 2 } else { 1 },
+        );
     }
     if let Some(w) = o.weekday {
         let c = match w {
@@ -1016,10 +1032,20 @@ fn patch_widths(pattern: &str, o: &DateTimeFormatOptions) -> String {
         p = set_field(&p, &['h', 'H', 'k', 'K'], letter, c);
     }
     if let Some(mi) = o.minute {
-        p = set_field(&p, &['m'], 'm', if mi == Numeric2Digit::TwoDigit { 2 } else { 1 });
+        p = set_field(
+            &p,
+            &['m'],
+            'm',
+            if mi == Numeric2Digit::TwoDigit { 2 } else { 1 },
+        );
     }
     if let Some(se) = o.second {
-        p = set_field(&p, &['s'], 's', if se == Numeric2Digit::TwoDigit { 2 } else { 1 });
+        p = set_field(
+            &p,
+            &['s'],
+            's',
+            if se == Numeric2Digit::TwoDigit { 2 } else { 1 },
+        );
     }
     p
 }
@@ -1143,7 +1169,11 @@ fn strip_fields(pattern: &str, keep: &[char]) -> String {
 }
 
 /// Resolve a full pattern string for the requested options.
-fn resolve_pattern(lang: &str, s: &CalendarSpec, o: &DateTimeFormatOptions) -> Result<String, DateTimeFormatError> {
+fn resolve_pattern(
+    lang: &str,
+    s: &CalendarSpec,
+    o: &DateTimeFormatOptions,
+) -> Result<String, DateTimeFormatError> {
     let has_components = o.weekday.is_some()
         || o.era.is_some()
         || o.year.is_some()
@@ -1246,8 +1276,12 @@ fn zone_string(lang: &str, style: TimeZoneNameStyle, offset: i32) -> String {
     // hour. Named/generic styles fall back to the offset (no metazone data).
     let long = format_gmt_offset(lang, offset);
     match style {
-        TimeZoneNameStyle::LongOffset | TimeZoneNameStyle::Long | TimeZoneNameStyle::LongGeneric => long,
-        TimeZoneNameStyle::ShortOffset | TimeZoneNameStyle::Short | TimeZoneNameStyle::ShortGeneric => {
+        TimeZoneNameStyle::LongOffset
+        | TimeZoneNameStyle::Long
+        | TimeZoneNameStyle::LongGeneric => long,
+        TimeZoneNameStyle::ShortOffset
+        | TimeZoneNameStyle::Short
+        | TimeZoneNameStyle::ShortGeneric => {
             // "GMT-08:00" -> "GMT-8:00": drop a single leading zero after the sign.
             if let Some(pos) = long.find(['+', '-', '\u{2212}']) {
                 let (head, tail) = long.split_at(pos + 1);

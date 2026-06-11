@@ -2117,9 +2117,14 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path) {
             .expect("days.format");
         let day_keys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
         let push_months = |p: &mut Vec<u8>, width: &str| {
-            let w = months.get(width).unwrap_or_else(|| panic!("months.{width}"));
+            let w = months
+                .get(width)
+                .unwrap_or_else(|| panic!("months.{width}"));
             for m in 1..=12u8 {
-                enc_str(p, w.get(&m.to_string()).and_then(Json::as_str).unwrap_or(""));
+                enc_str(
+                    p,
+                    w.get(&m.to_string()).and_then(Json::as_str).unwrap_or(""),
+                );
             }
         };
         let push_days = |p: &mut Vec<u8>, width: &str| {
@@ -2142,11 +2147,15 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path) {
             .and_then(|f| f.get("abbreviated"));
         enc_str(
             &mut p,
-            dp.and_then(|d| d.get("am")).and_then(Json::as_str).unwrap_or("AM"),
+            dp.and_then(|d| d.get("am"))
+                .and_then(Json::as_str)
+                .unwrap_or("AM"),
         );
         enc_str(
             &mut p,
-            dp.and_then(|d| d.get("pm")).and_then(Json::as_str).unwrap_or("PM"),
+            dp.and_then(|d| d.get("pm"))
+                .and_then(Json::as_str)
+                .unwrap_or("PM"),
         );
 
         let order = ["full", "long", "medium", "short"];
@@ -2165,7 +2174,9 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path) {
         push_days(&mut p, "narrow");
         let eras = greg.get("eras").expect("eras");
         for variant in ["eraNames", "eraAbbr", "eraNarrow"] {
-            let e = eras.get(variant).unwrap_or_else(|| panic!("eras.{variant}"));
+            let e = eras
+                .get(variant)
+                .unwrap_or_else(|| panic!("eras.{variant}"));
             enc_str(&mut p, e.get("0").and_then(Json::as_str).unwrap_or(""));
             enc_str(&mut p, e.get("1").and_then(Json::as_str).unwrap_or(""));
         }
