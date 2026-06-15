@@ -1,21 +1,21 @@
 //! The Unicode `Script` and `Script_Extensions` properties (UAX #24).
 
-use super::generated::script as gen;
+use super::generated::script as tables;
 
-pub use gen::Script;
+pub use tables::Script;
 
 /// The [`Script`] of `c`.
 #[inline]
 #[must_use]
 pub const fn script(c: char) -> Script {
-    gen::script(c as u32)
+    tables::script(c as u32)
 }
 
 /// The [`Script`] of an arbitrary Unicode scalar value.
 #[inline]
 #[must_use]
 pub const fn script_u32(cp: u32) -> Script {
-    gen::script(cp)
+    tables::script(cp)
 }
 
 /// The set of scripts a codepoint is used with — its `Script_Extensions`.
@@ -69,8 +69,8 @@ pub const fn script_extensions(c: char) -> ScriptExtensions {
 #[inline]
 #[must_use]
 pub const fn script_extensions_u32(cp: u32) -> ScriptExtensions {
-    match gen::script_extensions(cp) {
+    match tables::script_extensions(cp) {
         Some(set) => ScriptExtensions::Multiple(set),
-        None => ScriptExtensions::Single(gen::script(cp)),
+        None => ScriptExtensions::Single(tables::script(cp)),
     }
 }

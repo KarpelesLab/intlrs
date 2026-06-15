@@ -1,7 +1,7 @@
 //! Property lookups across the codepoint tiers. Tier-specific assertions are
 //! `#[cfg]`-gated so the suite passes under any feature selection.
 
-use intl::unicode::{general_category, CharExt, GeneralCategory as GC, Group, UNICODE_VERSION};
+use intl::unicode::{CharExt, GeneralCategory as GC, Group, UNICODE_VERSION, general_category};
 
 #[test]
 fn ascii_categories() {

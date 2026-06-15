@@ -67,7 +67,7 @@ fn maximize_minimize() {
 
 #[test]
 fn negotiation() {
-    use intl::locale::{negotiate, Locale};
+    use intl::locale::{Locale, negotiate};
     let avail = [
         Locale::parse("en").unwrap(),
         Locale::parse("fr").unwrap(),

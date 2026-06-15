@@ -17,7 +17,7 @@
 //! ```
 
 use crate::number::format_decimal;
-use crate::plural::{ordinal_category, plural_category, PluralCategory, PluralOperands};
+use crate::plural::{PluralCategory, PluralOperands, ordinal_category, plural_category};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 

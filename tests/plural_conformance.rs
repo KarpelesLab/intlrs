@@ -2,7 +2,7 @@
 //! sample numbers embedded in CLDR's plurals.json (every sample must select the
 //! category it is listed under).
 
-use intl::plural::{ordinal_category, plural_category, PluralCategory, PluralOperands};
+use intl::plural::{PluralCategory, PluralOperands, ordinal_category, plural_category};
 
 fn cat(name: &str) -> PluralCategory {
     match name {

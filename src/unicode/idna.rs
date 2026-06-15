@@ -17,8 +17,8 @@
 //! RTL/ZWJ input. The optional CONTEXTO rules and UseSTD3ASCIIRules (U1) are
 //! intentionally not applied (this is a non-STD3 profile).
 
-use super::bidi::{bidi_class, BidiClass};
-use super::generated::idna as gen;
+use super::bidi::{BidiClass, bidi_class};
+use super::generated::idna as tables;
 use super::generated::properties::JoiningType;
 use super::normalize::{canonical_combining_class, nfc};
 use super::predicates::{is_mark, joining_type};
@@ -212,7 +212,7 @@ fn punycode_decode(input: &str) -> Option<Vec<char>> {
 fn map_and_normalize(domain: &str) -> Result<String, Error> {
     let mut mapped: Vec<char> = Vec::new();
     for c in domain.chars() {
-        match gen::idna_status(c as u32) {
+        match tables::idna_status(c as u32) {
             0 => mapped.push(c),                        // valid
             1 => mapped.extend_from_slice(idna_map(c)), // mapped
             2 => {}                                     // ignored
@@ -223,7 +223,7 @@ fn map_and_normalize(domain: &str) -> Result<String, Error> {
 }
 
 fn idna_map(c: char) -> &'static [char] {
-    gen::idna_mapped(c as u32).unwrap_or(&[])
+    tables::idna_mapped(c as u32).unwrap_or(&[])
 }
 
 /// Apply the IDNA2008 Validity Criteria to a decoded (Unicode) U-label.
@@ -241,7 +241,7 @@ fn validate_label(label: &[char], is_bidi_domain: bool) -> Result<(), Error> {
 
     // V6: every code point must have IDNA status "valid".
     for &c in label {
-        if gen::idna_status(c as u32) != 0 {
+        if tables::idna_status(c as u32) != 0 {
             return Err(Error::InvalidLabel);
         }
     }

@@ -44,7 +44,7 @@ fn unix_lookups_and_names() {
     // Round-trip a UTC instant to local and back is consistent.
     let local = ny.to_local(1625140800);
     assert_eq!(local.hour, 8); // 12:00 UTC - 4h = 08:00 EDT
-                               // The database has the usual canonical zones.
+    // The database has the usual canonical zones.
     let count = zone_names().count();
     assert!(count > 300, "expected many zones, got {count}");
     assert!(load_zone("Bogus/Nowhere").is_none());

@@ -35,7 +35,7 @@ fn supplementary() {
 #[cfg(feature = "bmp")]
 #[test]
 fn joining_types() {
-    use intl::unicode::{joining_type, JoiningType::*};
+    use intl::unicode::{JoiningType::*, joining_type};
     assert_eq!(joining_type('\u{0628}'), DualJoining); // ARABIC BEH
     assert_eq!(joining_type('\u{0627}'), RightJoining); // ARABIC ALEF
     assert_eq!(joining_type('\u{0640}'), JoinCausing); // ARABIC TATWEEL
@@ -47,7 +47,7 @@ fn joining_types() {
 #[cfg(feature = "bmp")]
 #[test]
 fn indic_categories() {
-    use intl::unicode::{indic_syllabic_category as isc, IndicSyllabicCategory::*};
+    use intl::unicode::{IndicSyllabicCategory::*, indic_syllabic_category as isc};
     assert_eq!(isc('\u{0915}'), Consonant); // DEVANAGARI KA
     assert_eq!(isc('\u{094D}'), Virama); // DEVANAGARI VIRAMA
     assert_eq!(isc('\u{0905}'), VowelIndependent); // DEVANAGARI A
@@ -57,7 +57,7 @@ fn indic_categories() {
 #[cfg(feature = "bmp")]
 #[test]
 fn indic_positional() {
-    use intl::unicode::{indic_positional_category as ipc, IndicPositionalCategory::*};
+    use intl::unicode::{IndicPositionalCategory::*, indic_positional_category as ipc};
     assert_eq!(ipc('\u{093F}'), Left); // DEVANAGARI VOWEL SIGN I (pre-base)
     assert_eq!(ipc('\u{0940}'), Right); // DEVANAGARI VOWEL SIGN II
     assert_eq!(ipc('A'), NotApplicable);
@@ -106,7 +106,7 @@ fn char_names() {
 #[cfg(feature = "bmp")]
 #[test]
 fn joining_groups() {
-    use intl::unicode::{joining_group, JoiningGroup::*};
+    use intl::unicode::{JoiningGroup::*, joining_group};
     assert_eq!(joining_group('\u{0628}'), Beh); // ARABIC BEH
     assert_eq!(joining_group('\u{0627}'), Alef); // ARABIC ALEF
     assert_eq!(joining_group('\u{0641}'), Feh); // ARABIC FEH

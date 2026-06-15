@@ -1,7 +1,7 @@
 //! Locale-aware list formatting.
 #![cfg(feature = "alloc")]
 
-use intl::list::{format_list as fl, ListStyle::*};
+use intl::list::{ListStyle::*, format_list as fl};
 
 #[test]
 fn english_lists() {

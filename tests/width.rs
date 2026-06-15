@@ -1,6 +1,6 @@
 //! East Asian Width lookups.
 
-use intl::unicode::{east_asian_width as eaw, EastAsianWidth as W};
+use intl::unicode::{EastAsianWidth as W, east_asian_width as eaw};
 
 #[test]
 fn ascii_width() {

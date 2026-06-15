@@ -1,9 +1,9 @@
 //! Confusable / spoof detection (UTS #39). Requires the `alloc` feature.
 
-use super::generated::confusables as gen;
+use super::generated::confusables as tables;
 use super::normalize::nfd;
 use super::predicates::is_default_ignorable;
-use super::script::{script_extensions, Script, ScriptExtensions};
+use super::script::{Script, ScriptExtensions, script_extensions};
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -28,7 +28,7 @@ use alloc::vec::Vec;
 pub fn skeleton(s: &str) -> String {
     let mut mapped: Vec<char> = Vec::new();
     for c in nfd(s.chars().filter(|&c| !is_default_ignorable(c))) {
-        match gen::confusable_prototype(c as u32) {
+        match tables::confusable_prototype(c as u32) {
             Some(proto) => mapped.extend_from_slice(proto),
             None => mapped.push(c),
         }

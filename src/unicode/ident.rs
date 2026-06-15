@@ -1,12 +1,12 @@
 //! Unicode identifier properties and syntax (UAX #31).
 
-use super::generated::binary_props as gen;
+use super::generated::binary_props as tables;
 
 /// `XID_Start`: characters that can begin a default Unicode identifier.
 #[inline]
 #[must_use]
 pub const fn is_xid_start(c: char) -> bool {
-    gen::xid_start(c as u32)
+    tables::xid_start(c as u32)
 }
 
 /// `XID_Continue`: characters that can continue a default Unicode identifier
@@ -14,7 +14,7 @@ pub const fn is_xid_start(c: char) -> bool {
 #[inline]
 #[must_use]
 pub const fn is_xid_continue(c: char) -> bool {
-    gen::xid_continue(c as u32)
+    tables::xid_continue(c as u32)
 }
 
 /// `true` if `s` is a default Unicode identifier (UAX #31 R1): a non-empty

@@ -2,7 +2,7 @@
 //! `cargo bench --features alloc`. These establish the baseline for the planned
 //! table-representation (two-level trie) optimization.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{Criterion, Throughput, black_box, criterion_group, criterion_main};
 use intl::unicode::{collate, general_category, graphemes, nfc, nfd, words};
 
 const ASCII: &str = "The quick brown fox jumps over the lazy dog. ";

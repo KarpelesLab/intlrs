@@ -2633,7 +2633,9 @@ fn write_module(out_dir: &Path, modules: &mut Vec<String>, name: &str, content: 
 fn rustfmt(path: &Path) {
     match Command::new("rustfmt")
         .arg("--edition")
-        .arg("2021")
+        // Match the `intl` crate edition so regenerated files stay fmt-clean
+        // under the crate's style (e.g. 2024 import ordering).
+        .arg("2024")
         .arg(path)
         .status()
     {

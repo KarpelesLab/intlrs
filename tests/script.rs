@@ -1,6 +1,6 @@
 //! Script and Script_Extensions lookups.
 
-use intl::unicode::{script, script_extensions, Script, ScriptExtensions};
+use intl::unicode::{Script, ScriptExtensions, script, script_extensions};
 
 #[test]
 fn ascii_script() {

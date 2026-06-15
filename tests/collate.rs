@@ -3,7 +3,7 @@
 #![cfg(feature = "collation")]
 
 use core::cmp::Ordering;
-use intl::unicode::collate::{compare, AlternateHandling, Collator};
+use intl::unicode::collate::{AlternateHandling, Collator, compare};
 
 #[test]
 fn basic_order() {

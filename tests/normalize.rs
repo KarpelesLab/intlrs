@@ -54,7 +54,7 @@ fn hangul() {
 #[cfg(feature = "bmp")]
 #[test]
 fn quick_check() {
-    use intl::unicode::{is_nfc, is_nfd, quick_check_nfc, IsNormalized};
+    use intl::unicode::{IsNormalized, is_nfc, is_nfd, quick_check_nfc};
     assert!(is_nfc("é".chars())); // precomposed
     assert!(!is_nfc("e\u{0301}".chars())); // decomposed -> not NFC
     assert!(is_nfd("e\u{0301}".chars()));
@@ -70,6 +70,6 @@ fn compatibility() {
     assert_eq!(s(nfkd("\u{FB01}".chars())), "fi"); // ﬁ ligature
     assert_eq!(s(nfkc("\u{FB01}".chars())), "fi");
     assert_eq!(s(nfkc("\u{00B2}".chars())), "2"); // superscript two
-                                                  // NFC leaves the ligature intact (compatibility-only decomposition).
+    // NFC leaves the ligature intact (compatibility-only decomposition).
     assert_eq!(s(nfc("\u{FB01}".chars())), "\u{FB01}");
 }

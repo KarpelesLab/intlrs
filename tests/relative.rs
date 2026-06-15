@@ -1,7 +1,7 @@
 //! Locale-aware relative time formatting.
 #![cfg(feature = "alloc")]
 
-use intl::relative::{format_relative as fr, RelativeUnit::*};
+use intl::relative::{RelativeUnit::*, format_relative as fr};
 
 #[test]
 fn english_relative() {

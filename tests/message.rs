@@ -1,6 +1,6 @@
 //! ICU MessageFormat subset.
 #![cfg(feature = "alloc")]
-use intl::message::{format_message as fm, Arg};
+use intl::message::{Arg, format_message as fm};
 
 #[test]
 fn plural_and_select() {

@@ -1,6 +1,6 @@
 //! Measurement-unit formatting.
 #![cfg(feature = "alloc")]
-use intl::unit::{format_unit as fu, Unit::*, UnitWidth::*};
+use intl::unit::{Unit::*, UnitWidth::*, format_unit as fu};
 
 #[test]
 fn units() {
@@ -17,7 +17,7 @@ fn units() {
 
 #[test]
 fn durations() {
-    use intl::unit::{format_duration as fd, UnitWidth::*};
+    use intl::unit::{UnitWidth::*, format_duration as fd};
     assert_eq!(fd("en", 3661, Long), "1 hour 1 minute 1 second");
     assert_eq!(fd("en", 90, Long), "1 minute 30 seconds");
     assert_eq!(fd("en", 90, Short), "1 min 30 sec");

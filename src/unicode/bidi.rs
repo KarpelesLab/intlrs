@@ -7,7 +7,7 @@
 //! `BidiTest.txt`** (all bidi-class combinations) and 99.996% on
 //! `BidiCharacterTest.txt` (four deeply-nested isolate-boundary lines aside).
 
-use super::generated::bidi as gen;
+use super::generated::bidi as tables;
 
 /// The `Bidi_Class` of a codepoint (UAX #9). Order matches the generated table.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -74,14 +74,14 @@ impl BidiClass {
 #[inline]
 #[must_use]
 pub const fn bidi_class(c: char) -> BidiClass {
-    gen::bidi_class(c as u32)
+    tables::bidi_class(c as u32)
 }
 
 /// The [`BidiClass`] of an arbitrary Unicode scalar value.
 #[inline]
 #[must_use]
 pub const fn bidi_class_u32(cp: u32) -> BidiClass {
-    gen::bidi_class(cp)
+    tables::bidi_class(cp)
 }
 
 /// A paragraph direction.
@@ -118,14 +118,14 @@ pub fn is_rtl(s: &str) -> bool {
 }
 
 #[cfg(feature = "alloc")]
-pub use resolve::{process, BidiInfo};
+pub use resolve::{BidiInfo, process};
 
 /// The full UAX #9 algorithm: resolve embedding levels and visual order.
 #[cfg(feature = "alloc")]
 mod resolve {
-    use super::bidi_class;
     use super::BidiClass::{self, *};
     use super::Direction;
+    use super::bidi_class;
     use crate::unicode::generated::bidi::bidi_bracket;
     use alloc::vec;
     use alloc::vec::Vec;
@@ -148,18 +148,10 @@ mod resolve {
     }
 
     fn next_odd(level: u8) -> u8 {
-        if level % 2 == 0 {
-            level + 1
-        } else {
-            level + 2
-        }
+        if level % 2 == 0 { level + 1 } else { level + 2 }
     }
     fn next_even(level: u8) -> u8 {
-        if level % 2 == 0 {
-            level + 2
-        } else {
-            level + 1
-        }
+        if level % 2 == 0 { level + 2 } else { level + 1 }
     }
     fn is_isolate_init(c: BidiClass) -> bool {
         matches!(c, LRI | RLI | FSI)

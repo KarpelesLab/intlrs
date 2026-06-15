@@ -4,7 +4,7 @@
 //! every paragraph direction in the line's bitset, and the resolved levels +
 //! visual order are checked against @Levels / @Reorder.
 #![cfg(all(feature = "bidi", feature = "alloc"))]
-use intl::unicode::bidi::{process, Direction};
+use intl::unicode::bidi::{Direction, process};
 use std::fs;
 
 fn class_char(c: &str) -> Option<char> {
@@ -90,7 +90,10 @@ fn bidi_test_txt_conformance() {
                 let info = process(&s, base);
                 if info.levels != levels || info.visual_order != reorder {
                     if failures < 5 {
-                        eprintln!("FAIL [{classes}] base={base:?}\n  exp levels {levels:?} order {reorder:?}\n  got levels {:?} order {:?}", info.levels, info.visual_order);
+                        eprintln!(
+                            "FAIL [{classes}] base={base:?}\n  exp levels {levels:?} order {reorder:?}\n  got levels {:?} order {:?}",
+                            info.levels, info.visual_order
+                        );
                     }
                     failures += 1;
                 }

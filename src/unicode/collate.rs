@@ -15,7 +15,7 @@
 //! # }
 //! ```
 
-use super::generated::collation as gen;
+use super::generated::collation as tables;
 use super::normalize::{canonical_combining_class as ccc, nfd};
 use alloc::vec::Vec;
 use core::cmp::Ordering;
@@ -93,7 +93,7 @@ fn implicit_primaries(cp: u32) -> (u32, u32) {
             return (base, (cp - origin) | 0x8000);
         }
     }
-    let base = if gen::unified_ideograph(cp) {
+    let base = if tables::unified_ideograph(cp) {
         if (0x4E00..=0x9FFF).contains(&cp) || (0xF900..=0xFAFF).contains(&cp) {
             0xFB40
         } else {
@@ -107,7 +107,7 @@ fn implicit_primaries(cp: u32) -> (u32, u32) {
 
 /// Look up the collation elements for the contraction `first` + `suffix`.
 fn lookup_contraction(first: u32, suffix: &[char]) -> Option<&'static [u64]> {
-    for (suf, ces) in gen::contractions(first)? {
+    for (suf, ces) in tables::contractions(first)? {
         if *suf == suffix {
             return Some(ces);
         }
@@ -187,7 +187,7 @@ fn each_collation_element<F: FnMut(Option<&'static [u64]>, u32, usize) -> Walk>(
         }
         let s0 = cv[i] as u32;
         let mut end = i + 1;
-        let mut matched: Option<&'static [u64]> = gen::ce_singles(s0);
+        let mut matched: Option<&'static [u64]> = tables::ce_singles(s0);
         suffix.clear();
 
         // The longest registered contraction suffix for `s0` bounds how far the
@@ -195,7 +195,7 @@ fn each_collation_element<F: FnMut(Option<&'static [u64]>, u32, usize) -> Walk>(
         let mut max_suf = 0usize;
 
         // Longest contiguous contraction (entries are sorted longest-first).
-        if let Some(entries) = gen::contractions(s0) {
+        if let Some(entries) = tables::contractions(s0) {
             for (suf, ces) in entries {
                 if suf.len() > max_suf {
                     max_suf = suf.len();
@@ -949,20 +949,22 @@ impl Tailoring {
             "lv" => "&c < č &g < ģ &i < ī &k < ķ &l < ļ &n < ņ &s < š &z < ž", // Latvian
             "lt" => "&c < č &s < š &z < ž",                // Lithuanian
             "hr" | "sr" | "bs" => "&c < č < ć &d < dž < đ &l < lj &n < nj &s < š &z < ž", // Serbo-Croatian
-            "es" => "&n < ñ",                              // Spanish (ñ after n)
+            "es" => "&n < ñ", // Spanish (ñ after n)
             // Hungarian digraphs (dzs/dz longest-match first via the engine sort).
             "hu" => "&c < cs &d < dz < dzs &g < gy &l < ly &n < ny &s < sz &t < ty &z < zs",
-            "ro" => "&a < ă < â &i < î &s < ș &t < ț",     // Romanian
-            "sq" => "&c < ç &d < dh &e < ë &g < gj &l < ll &n < nj &r < rr &s < sh &t < th &x < xh &z < zh", // Albanian
-            "uk" => "&г < ґ &е < є &и < і < ї",            // Ukrainian (Cyrillic)
+            "ro" => "&a < ă < â &i < î &s < ș &t < ț", // Romanian
+            "sq" => {
+                "&c < ç &d < dh &e < ë &g < gj &l < ll &n < nj &r < rr &s < sh &t < th &x < xh &z < zh"
+            } // Albanian
+            "uk" => "&г < ґ &е < є &и < і < ї",        // Ukrainian (Cyrillic)
             "vi" => "&a < ă < â &d < đ &e < ê &o < ô < ơ &u < ư", // Vietnamese (base letters)
             // Welsh digraphs (ch/dd/ff/ng/ll/ph/rh/th), each after its base letter.
             "cy" => "&c < ch &d < dd &f < ff &g < ng &l < ll &p < ph &r < rh &t < th",
-            "fil" | "tl" => "&n < ñ < ng",                 // Filipino/Tagalog (ng digraph)
+            "fil" | "tl" => "&n < ñ < ng", // Filipino/Tagalog (ng digraph)
             "fo" => "&a < á &d < ð &i < í &o < ó &u < ú &y < ý &z < æ < ø", // Faroese
-            "kl" => "&z < æ < ø < å",                      // Greenlandic (Danish-style)
-            "gl" => "&n < ñ",                              // Galician (ñ after n)
-            "ga" => "&a < á &e < é &i < í &o < ó &u < ú",  // Irish (long-vowel accents)
+            "kl" => "&z < æ < ø < å",      // Greenlandic (Danish-style)
+            "gl" => "&n < ñ",              // Galician (ñ after n)
+            "ga" => "&a < á &e < é &i < í &o < ó &u < ú", // Irish (long-vowel accents)
             "ha" => "&b < ɓ &d < ɗ &k < ƙ &s < sh &t < ts &y < ƴ", // Hausa (hooked letters)
             _ => return None,
         };
@@ -1251,9 +1253,9 @@ mod dos_fix_tests {
         while i < cv.len() {
             let s0 = cv[i] as u32;
             let mut end = i + 1;
-            let mut matched: Option<&'static [u64]> = gen::ce_singles(s0);
+            let mut matched: Option<&'static [u64]> = tables::ce_singles(s0);
             let mut suffix: Vec<char> = Vec::new();
-            if let Some(entries) = gen::contractions(s0) {
+            if let Some(entries) = tables::contractions(s0) {
                 for (suf, ces) in entries {
                     let stop = i + 1 + suf.len();
                     if stop <= cv.len() && cv[i + 1..stop] == **suf {
@@ -1446,7 +1448,7 @@ mod dos_fix_tests {
         // input completes near-instantly; the test would hang under the old code.
         let n = 50_000;
         let big: String = "l\u{00B7}".repeat(n); // ~150 KB
-                                                 // "zz" never matches at primary strength → full scan over every start.
+        // "zz" never matches at primary strength → full scan over every start.
         assert_eq!(find(&big, "zz"), None);
         assert!(!contains(&big, "zz"));
         // Correctness against the O(n^2) reference on a small same-structure input.

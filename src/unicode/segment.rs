@@ -11,7 +11,7 @@
 //! (With the `full` tier, emoji ZWJ sequences and flag pairs are also single
 //! clusters.)
 
-use super::generated::segmentation as gen;
+use super::generated::segmentation as tables;
 
 /// Grapheme_Cluster_Break value. (Variants are tier-conditionally constructed
 /// in the generated table, so some are unused under a narrow range tier.)
@@ -149,15 +149,15 @@ pub(crate) enum Lb {
 
 #[inline]
 fn gcb(c: char) -> Gcb {
-    gen::grapheme_break(c as u32)
+    tables::grapheme_break(c as u32)
 }
 #[inline]
 fn pictographic(c: char) -> bool {
-    gen::extended_pictographic(c as u32)
+    tables::extended_pictographic(c as u32)
 }
 #[inline]
 fn incb(c: char) -> Incb {
-    gen::indic_conjunct_break(c as u32)
+    tables::indic_conjunct_break(c as u32)
 }
 
 // State for the multi-character grapheme rules, tracking the run ending at the
@@ -312,7 +312,7 @@ pub fn graphemes(s: &str) -> Graphemes<'_> {
 
 #[inline]
 fn wb(c: char) -> Wb {
-    gen::word_break(c as u32)
+    tables::word_break(c as u32)
 }
 
 /// An "effective" word-break unit: a base character plus any trailing
@@ -489,7 +489,7 @@ pub fn words(s: &str) -> Words<'_> {
 
 #[inline]
 fn sb(c: char) -> Sb {
-    gen::sentence_break(c as u32)
+    tables::sentence_break(c as u32)
 }
 
 /// An effective sentence-break unit: a base character plus any trailing
@@ -566,7 +566,7 @@ fn sb8_lower_ahead_at(s: &str, mut at: usize) -> (bool, usize) {
         match cat {
             Sb::Lower => return (true, at),
             Sb::OLetter | Sb::Upper | Sb::Sep | Sb::CR | Sb::LF | Sb::STerm | Sb::ATerm => {
-                return (false, at)
+                return (false, at);
             }
             _ => {}
         }
@@ -668,7 +668,7 @@ pub fn sentences(s: &str) -> Sentences<'_> {
 
 #[inline]
 fn lb(c: char) -> Lb {
-    gen::line_break(c as u32)
+    tables::line_break(c as u32)
 }
 
 /// An effective line-break unit: a base plus trailing CM/ZWJ (rule LB9).

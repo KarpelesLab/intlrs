@@ -1,7 +1,7 @@
 //! UAX #9 conformance against BidiCharacterTest.txt.
 #![cfg(all(feature = "bidi", feature = "alloc"))]
 
-use intl::unicode::bidi::{process, Direction};
+use intl::unicode::bidi::{Direction, process};
 use std::fs;
 use std::path::PathBuf;
 

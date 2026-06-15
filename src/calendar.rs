@@ -173,11 +173,7 @@ fn hebrew_leap(year: i64) -> bool {
     (7 * year + 1).rem_euclid(19) < 7
 }
 fn hebrew_year_months(year: i64) -> i64 {
-    if hebrew_leap(year) {
-        13
-    } else {
-        12
-    }
+    if hebrew_leap(year) { 13 } else { 12 }
 }
 fn hebrew_elapsed_days(year: i64) -> i64 {
     let months = (235 * year - 234).div_euclid(19);
@@ -512,7 +508,7 @@ pub fn day_of_week(year: i64, month: i64, day: i64) -> u8 {
 pub fn iso_week(year: i64, month: i64, day: i64) -> (i64, u8, u8) {
     let jdn = gregorian_to_jdn(year, month, day);
     let weekday = jdn.rem_euclid(7) + 1; // 1..7
-                                         // The Thursday of this week determines the ISO year.
+    // The Thursday of this week determines the ISO year.
     let thursday = jdn - (weekday - 4);
     let (iso_year, _, _) = jdn_to_gregorian(thursday);
     // Week 1 is the week containing 4 January (the first Thursday's week).

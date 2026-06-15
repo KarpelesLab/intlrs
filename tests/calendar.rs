@@ -41,7 +41,7 @@ fn islamic_roundtrip_and_known() {
 fn weekdays_and_iso_week() {
     assert_eq!(day_of_week(2000, 1, 1), 6); // Saturday
     assert_eq!(day_of_week(2026, 6, 4), 4); // Thursday
-                                            // 2026-01-01 is a Thursday, in ISO week 1 of 2026.
+    // 2026-01-01 is a Thursday, in ISO week 1 of 2026.
     assert_eq!(iso_week(2026, 1, 1), (2026, 1, 4));
     // 2027-01-01 is a Friday, belonging to ISO week 53 of 2026.
     assert_eq!(iso_week(2027, 1, 1).0, 2026);
@@ -66,7 +66,7 @@ fn persian() {
     assert_eq!(gregorian_to_persian(2025, 3, 20), (1404, 1, 1));
     assert_eq!(persian_to_gregorian(1404, 1, 1), (2025, 3, 20));
     assert_eq!(persian_to_jdn(1, 1, 1), 1948321); // epoch
-                                                  // Round-trips.
+    // Round-trips.
     for &(y, m, d) in &[(2000, 1, 1), (1970, 1, 1), (2026, 6, 4), (2025, 12, 31)] {
         let (py, pm, pd) = gregorian_to_persian(y, m, d);
         assert!((1..=12).contains(&pm) && (1..=31).contains(&pd));

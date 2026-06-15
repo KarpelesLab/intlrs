@@ -5,9 +5,9 @@
 #![allow(unused_parens)]
 #![allow(dead_code)]
 
-use crate::plural::in_set;
 use crate::plural::PluralCategory::{self, *};
 use crate::plural::PluralOperands as Op;
+use crate::plural::in_set;
 
 /// CLDR cardinal plural category for an exact locale key (already
 /// case-normalized), or `None` if the key is unknown (caller falls back).

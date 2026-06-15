@@ -17,7 +17,7 @@
 use crate::datetime::DateTime;
 
 #[cfg(feature = "iana-tz")]
-pub use iana::{load_zone, zone_names, IanaZone};
+pub use iana::{IanaZone, load_zone, zone_names};
 
 /// Full IANA time-zone database support (the `iana-tz` feature), backed by the
 /// embedded `timezone-data` crate.
@@ -244,11 +244,7 @@ impl PosixTz {
         } else {
             now >= s || now < e // southern hemisphere (DST wraps the year)
         };
-        if in_dst {
-            dst_offset
-        } else {
-            self.std_offset
-        }
+        if in_dst { dst_offset } else { self.std_offset }
     }
 
     /// `true` if daylight time is in effect at `dt`.
@@ -268,11 +264,7 @@ fn skip_name(s: &str) -> Option<usize> {
     while i < b.len() && b[i].is_ascii_alphabetic() {
         i += 1;
     }
-    if i == 0 {
-        None
-    } else {
-        Some(i)
-    }
+    if i == 0 { None } else { Some(i) }
 }
 
 /// Seconds since the start of `dt`'s year for the date-time `dt`.
@@ -340,7 +332,7 @@ mod tests {
         assert!(parse_rule("M3.0.0").is_none()); // week 0
         assert!(parse_rule("M3.6.0").is_none()); // week 6
         assert!(parse_rule("M3.2.7").is_none()); // dow 7
-                                                 // A full TZ string carrying a malformed rule must fail to parse.
+        // A full TZ string carrying a malformed rule must fail to parse.
         assert!(PosixTz::parse("PST8PDT,M13.2.0,M11.1.0/2").is_none());
         assert!(PosixTz::parse("PST8PDT,M3.2.0,M11.1.0/2").is_some());
     }

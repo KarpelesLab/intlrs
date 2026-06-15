@@ -54,7 +54,7 @@ fn locale_tailoring() {
     assert_eq!(sv.compare("å", "ä"), Ordering::Less);
     assert_eq!(sv.compare("ä", "ö"), Ordering::Less);
     assert_eq!(sv.compare("ö", "a"), Ordering::Greater); // ö after z, so after a
-                                                         // A word list sorts correctly: "z" before "ångström".
+    // A word list sorts correctly: "z" before "ångström".
     assert_eq!(sv.compare("zebra", "ångström"), Ordering::Less);
     // Uppercase tailored too.
     assert_eq!(sv.compare("Z", "Å"), Ordering::Less);
@@ -119,7 +119,7 @@ fn tailoring_multichar_locales() {
     assert_eq!(cs.compare("h", "ch"), Ordering::Less);
     assert_eq!(cs.compare("chata", "irok"), Ordering::Less); // ch < i
     assert_eq!(cs.compare("cesta", "čaj"), Ordering::Less); // c < č
-                                                            // Uppercase digraph forms.
+    // Uppercase digraph forms.
     assert_eq!(cs.compare("Hugo", "Chrabr"), Ordering::Less);
     // Polish accented letters after their base.
     let pl = Tailoring::for_locale("pl").unwrap();
@@ -139,7 +139,7 @@ fn tailoring_more_locales() {
     assert_eq!(hu.compare("cukor", "csak"), Ordering::Less); // c < cs
     assert_eq!(hu.compare("dzem", "dzsungel"), Ordering::Less); // dz < dzs
     assert_eq!(hu.compare("csak", "dolog"), Ordering::Less); // cs < d
-                                                             // Romanian.
+    // Romanian.
     let ro = Tailoring::for_locale("ro").unwrap();
     assert_eq!(ro.compare("a", "ă"), Ordering::Less);
     assert_eq!(ro.compare("ă", "â"), Ordering::Less);
@@ -161,19 +161,21 @@ fn tailoring_locale_batch2() {
     assert_eq!(cy.compare("cwm", "chwe"), Ordering::Less); // c < ch
     assert_eq!(cy.compare("chwe", "dewr"), Ordering::Less); // ch < d
     assert_eq!(cy.compare("llan", "mawr"), Ordering::Less); // ll < m
-                                                            // Filipino: ñ then "ng".
+    // Filipino: ñ then "ng".
     let fil = Tailoring::for_locale("fil").unwrap();
     assert_eq!(fil.compare("nota", "ñino"), Ordering::Less); // n < ñ
     assert_eq!(fil.compare("ñino", "ngipin"), Ordering::Less); // ñ < ng
-                                                               // Faroese ð after d.
+    // Faroese ð after d.
     let fo = Tailoring::for_locale("fo").unwrap();
     assert_eq!(fo.compare("dagur", "ðegar"), Ordering::Less);
     assert_eq!(fo.compare("z", "æ"), Ordering::Less);
     // Greenlandic Danish-style.
-    assert!(Tailoring::for_locale("kl")
-        .unwrap()
-        .compare("z", "å")
-        .is_lt());
+    assert!(
+        Tailoring::for_locale("kl")
+            .unwrap()
+            .compare("z", "å")
+            .is_lt()
+    );
     // Unknown still None.
     assert!(Tailoring::for_locale("qq").is_none());
 }
@@ -202,7 +204,7 @@ fn alphabetic_index() {
     assert_eq!(index_bucket("en", "Ångström"), "A"); // root: å ≈ a
     assert_eq!(index_bucket("en", "123"), "#");
     assert_eq!(index_bucket("en", "  hi"), "H"); // leading ignorables skipped
-                                                 // Swedish: å/ä/ö are their own buckets after Z.
+    // Swedish: å/ä/ö are their own buckets after Z.
     assert_eq!(index_bucket("sv", "Ångström"), "Å");
     assert_eq!(index_bucket("sv", "Öl"), "Ö");
     assert_eq!(index_bucket("sv", "Apple"), "A");
@@ -240,9 +242,10 @@ fn tailoring_capacity() {
             w[1]
         );
     }
-    assert!(t
-        .compare(&letters[letters.len() - 1].to_string(), "b")
-        .is_lt());
+    assert!(
+        t.compare(&letters[letters.len() - 1].to_string(), "b")
+            .is_lt()
+    );
 }
 
 #[test]

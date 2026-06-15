@@ -1,7 +1,7 @@
 //! Date/time formatting.
 #![cfg(feature = "alloc")]
 use intl::datetime::{
-    format_date as fd, format_datetime as fdt, format_time as ft, DateStyle::*, DateTime,
+    DateStyle::*, DateTime, format_date as fd, format_datetime as fdt, format_time as ft,
 };
 
 const DT: DateTime = DateTime {
@@ -68,7 +68,7 @@ fn iso8601() {
     assert_eq!(DateTime::parse_iso8601("2026-06-04T14:30:05"), Some(DT));
     assert_eq!(DateTime::parse_iso8601("2026-06-04 14:30:05"), Some(DT)); // space
     assert_eq!(DateTime::parse_iso8601("2026-06-04T14:30:05Z"), Some(DT)); // Z
-                                                                           // Omitted seconds / time default to zero.
+    // Omitted seconds / time default to zero.
     let midnight = DateTime {
         year: 2026,
         month: 6,
@@ -85,7 +85,7 @@ fn iso8601() {
     // Malformed.
     assert_eq!(DateTime::parse_iso8601("not-a-date"), None);
     assert_eq!(DateTime::parse_iso8601("2026-13-01"), None); // bad month
-                                                             // Fractional seconds round-trip through millisecond precision.
+    // Fractional seconds round-trip through millisecond precision.
     let ms = DateTime {
         millisecond: 250,
         ..DT
@@ -143,7 +143,7 @@ fn gmt_offset_extremes() {
 
 #[test]
 fn islamic_dates() {
-    use intl::datetime::{format_islamic_date as fi, DateStyle::*};
+    use intl::datetime::{DateStyle::*, format_islamic_date as fi};
     // 9 Ramadan 1445 AH (Ramadan = month 9).
     assert_eq!(fi("en", 1445, 9, 1, Long), "Ramadan 1, 1445 AH");
     assert_eq!(fi("en", 1445, 1, 10, Medium), "Muh. 10, 1445 AH");
@@ -196,7 +196,7 @@ fn arithmetic() {
 
 #[test]
 fn persian_dates() {
-    use intl::datetime::{format_persian_date as fp, DateStyle::*};
+    use intl::datetime::{DateStyle::*, format_persian_date as fp};
     assert_eq!(fp("en", 1404, 1, 1, Long), "Farvardin 1, 1404 AP");
     assert_eq!(fp("en", 1403, 12, 30, Medium), "Esfand 30, 1403 AP");
     assert!(fp("fr", 1404, 1, 1, Long).contains("1404"));
@@ -205,8 +205,8 @@ fn persian_dates() {
 #[test]
 fn component_options() {
     use intl::datetime::{
-        format_options as fo, format_to_parts as ftp, DateTimeFormatError, DateTimeFormatOptions,
-        DateTimePartType, HourCycle, MonthStyle, NameStyle, Numeric2Digit, TimeZoneNameStyle,
+        DateTimeFormatError, DateTimeFormatOptions, DateTimePartType, HourCycle, MonthStyle,
+        NameStyle, Numeric2Digit, TimeZoneNameStyle, format_options as fo, format_to_parts as ftp,
     };
     let n = Some(Numeric2Digit::Numeric);
     let td = Some(Numeric2Digit::TwoDigit);
@@ -327,7 +327,7 @@ fn component_options() {
 #[test]
 fn component_locale_defaults_and_field_keep() {
     use intl::datetime::{
-        format_options as fo, DateTimeFormatOptions, MonthStyle, NameStyle, Numeric2Digit,
+        DateTimeFormatOptions, MonthStyle, NameStyle, Numeric2Digit, format_options as fo,
     };
     let n = Some(Numeric2Digit::Numeric);
     let td = Some(Numeric2Digit::TwoDigit);
@@ -355,7 +355,7 @@ fn component_locale_defaults_and_field_keep() {
 
 #[test]
 fn hour_cycles() {
-    use intl::datetime::{format_options as fo, DateTimeFormatOptions, HourCycle, Numeric2Digit};
+    use intl::datetime::{DateTimeFormatOptions, HourCycle, Numeric2Digit, format_options as fo};
     let n = Some(Numeric2Digit::Numeric);
     let td = Some(Numeric2Digit::TwoDigit);
     let at = |h: u8, c: HourCycle| {

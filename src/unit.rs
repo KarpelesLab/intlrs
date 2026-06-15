@@ -13,7 +13,7 @@
 //! ```
 
 use crate::number::format_decimal;
-use crate::plural::{plural_category, PluralOperands};
+use crate::plural::{PluralOperands, plural_category};
 use alloc::string::String;
 
 /// A measurement unit. The discriminant order matches the embedded table.

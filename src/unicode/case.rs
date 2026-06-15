@@ -9,7 +9,7 @@
 //! Case folding ([`case_fold`]) yields the *full* fold (UCD statuses C + F), the
 //! basis for caseless string comparison.
 
-use super::generated::case as gen;
+use super::generated::case as tables;
 
 /// Internal per-codepoint mapping value. `Same` means "maps to the input
 /// character itself"; the wrapper substitutes the original `char`.
@@ -74,28 +74,28 @@ impl ExactSizeIterator for CaseMapIter {}
 #[inline]
 #[must_use]
 pub fn to_uppercase(c: char) -> CaseMapIter {
-    CaseMapIter::new(c, gen::to_upper(c as u32))
+    CaseMapIter::new(c, tables::to_upper(c as u32))
 }
 
 /// The full lowercase mapping of `c`.
 #[inline]
 #[must_use]
 pub fn to_lowercase(c: char) -> CaseMapIter {
-    CaseMapIter::new(c, gen::to_lower(c as u32))
+    CaseMapIter::new(c, tables::to_lower(c as u32))
 }
 
 /// The full titlecase mapping of `c`.
 #[inline]
 #[must_use]
 pub fn to_titlecase(c: char) -> CaseMapIter {
-    CaseMapIter::new(c, gen::to_title(c as u32))
+    CaseMapIter::new(c, tables::to_title(c as u32))
 }
 
 /// The full case folding of `c` (UCD statuses C + F), for caseless matching.
 #[inline]
 #[must_use]
 pub fn case_fold(c: char) -> CaseMapIter {
-    CaseMapIter::new(c, gen::fold(c as u32))
+    CaseMapIter::new(c, tables::fold(c as u32))
 }
 
 /// Iterator adaptor applying a per-character case mapping across a whole `char`

@@ -1,5 +1,5 @@
 //! CLDR cardinal plural selection.
-use intl::plural::{plural_category as pc, PluralCategory::*, PluralOperands as Op};
+use intl::plural::{PluralCategory::*, PluralOperands as Op, plural_category as pc};
 
 #[test]
 fn cardinal_categories() {
@@ -51,7 +51,7 @@ fn ordinal_categories() {
     assert_eq!(oc("en", &Op::from_int(3)), Few);
     assert_eq!(oc("en", &Op::from_int(4)), Other);
     assert_eq!(oc("en", &Op::from_int(11)), Other); // 11th, not 11st
-                                                    // A language without ordinal rules: always other.
+    // A language without ordinal rules: always other.
     assert_eq!(oc("ja", &Op::from_int(1)), Other);
 }
 

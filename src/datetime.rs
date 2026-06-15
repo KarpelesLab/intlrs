@@ -14,7 +14,7 @@
 //! assert_eq!(format_time("en", &dt, DateStyle::Short), "2:30\u{202f}PM");
 //! ```
 
-use crate::cldr::{calendar_spec, CalendarSpec};
+use crate::cldr::{CalendarSpec, calendar_spec};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
@@ -344,20 +344,12 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
             // h12: 1–12 (12-hour clock). Widen first: `dt.hour + 11` would
             // overflow u8 for hour > 244.
             let h = ((dt.hour as u16 + 11) % 12) + 1;
-            if n >= 2 {
-                two(h as i64)
-            } else {
-                h.to_string()
-            }
+            if n >= 2 { two(h as i64) } else { h.to_string() }
         }
         'K' => {
             // h11: 0–11 (12-hour clock, midnight/noon = 0).
             let h = (dt.hour as u16) % 12;
-            if n >= 2 {
-                two(h as i64)
-            } else {
-                h.to_string()
-            }
+            if n >= 2 { two(h as i64) } else { h.to_string() }
         }
         'H' => {
             // h23: 0–23.
@@ -370,11 +362,7 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
         'k' => {
             // h24: 1–24 (midnight = 24).
             let h = if dt.hour == 0 { 24 } else { dt.hour as u16 };
-            if n >= 2 {
-                two(h as i64)
-            } else {
-                h.to_string()
-            }
+            if n >= 2 { two(h as i64) } else { h.to_string() }
         }
         'm' => {
             if n >= 2 {
@@ -1002,7 +990,7 @@ fn resolve_one(lang: &str, s: &CalendarSpec, skeleton: &str) -> String {
             Some(i) => end = i,
             None => {
                 return crate::cldr::skeleton_pattern("en", skeleton)
-                    .map_or_else(|| String::from(s.date[2]), String::from)
+                    .map_or_else(|| String::from(s.date[2]), String::from);
             }
         }
     }
@@ -1442,7 +1430,7 @@ pub fn format_skeleton_to_parts(lang: &str, dt: &DateTime, skeleton: &str) -> Ve
             Some(i) => end = i,
             None => {
                 break crate::cldr::skeleton_pattern("en", skeleton)
-                    .map_or_else(|| String::from(s.date[2]), String::from)
+                    .map_or_else(|| String::from(s.date[2]), String::from);
             }
         }
     };

@@ -8,7 +8,7 @@
 //! rules there is a general [`Transform`] engine (`x > y` with context, character
 //! sets, quantifiers, and a `$0` match-reference).
 
-use crate::unicode::{general_category, nfd, Group};
+use crate::unicode::{Group, general_category, nfd};
 use alloc::string::String;
 
 /// Remove diacritics from `c`'s text: decompose (NFD), drop the combining

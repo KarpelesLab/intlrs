@@ -1,6 +1,6 @@
 //! The Unicode `Numeric_Type` and `Numeric_Value` properties.
 
-use super::generated::numeric as gen;
+use super::generated::numeric as tables;
 
 /// The kind of numeric value a codepoint carries (`Numeric_Type`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -59,7 +59,7 @@ impl NumericValue {
 #[inline]
 #[must_use]
 pub const fn numeric_type(c: char) -> Option<NumericType> {
-    gen::numeric_type(c as u32)
+    tables::numeric_type(c as u32)
 }
 
 /// The exact [`NumericValue`] of `c`, or `None` if `c` has no numeric value.
@@ -74,12 +74,12 @@ pub const fn numeric_type(c: char) -> Option<NumericType> {
 #[inline]
 #[must_use]
 pub const fn numeric_value(c: char) -> Option<NumericValue> {
-    gen::numeric_value(c as u32)
+    tables::numeric_value(c as u32)
 }
 
 /// The [`NumericValue`] of an arbitrary Unicode scalar value.
 #[inline]
 #[must_use]
 pub const fn numeric_value_u32(cp: u32) -> Option<NumericValue> {
-    gen::numeric_value(cp)
+    tables::numeric_value(cp)
 }

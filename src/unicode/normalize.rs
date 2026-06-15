@@ -18,7 +18,7 @@
 //! run of combining marks is split at the bound (each part is still correctly
 //! ordered internally).
 
-use super::generated::normalization as gen;
+use super::generated::normalization as tables;
 
 /// Maximum number of entries buffered for one combining sequence. Exceeds the
 /// Stream-Safe limit of 30 trailing non-starters.
@@ -42,14 +42,14 @@ const S_COUNT: u32 = L_COUNT * N_COUNT; // 11172
 #[inline]
 #[must_use]
 pub const fn canonical_combining_class(c: char) -> u8 {
-    gen::canonical_combining_class(c as u32)
+    tables::canonical_combining_class(c as u32)
 }
 
 /// The Canonical_Combining_Class of an arbitrary Unicode scalar value.
 #[inline]
 #[must_use]
 pub const fn canonical_combining_class_u32(cp: u32) -> u8 {
-    gen::canonical_combining_class(cp)
+    tables::canonical_combining_class(cp)
 }
 
 /// Compose a starter `a` with a following character `b`, if they form a
@@ -70,7 +70,7 @@ fn compose(a: char, b: char) -> Option<char> {
         return char::from_u32(ua + (ub - T_BASE));
     }
     // Table-driven canonical composition.
-    let pairs = gen::compose_pairs(ua)?;
+    let pairs = tables::compose_pairs(ua)?;
     let mut i = 0;
     while i < pairs.len() {
         if pairs[i].0 == b {
@@ -137,9 +137,9 @@ impl<I: Iterator<Item = char>> Decompositions<I> {
             return;
         }
         let table = if self.compat {
-            gen::decompose_compatible(u)
+            tables::decompose_compatible(u)
         } else {
-            gen::decompose_canonical(u)
+            tables::decompose_canonical(u)
         };
         match table {
             Some(seq) => {
@@ -164,7 +164,7 @@ impl<I: Iterator<Item = char>> Decompositions<I> {
         );
         if (self.pend_len as usize) < MAX_DECOMP {
             let c = char::from_u32(cp).unwrap_or('\u{FFFD}');
-            self.pend[self.pend_len as usize] = (gen::canonical_combining_class(cp), c);
+            self.pend[self.pend_len as usize] = (tables::canonical_combining_class(cp), c);
             self.pend_len += 1;
         }
     }
@@ -353,7 +353,7 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
             match self.state {
                 RecompState::Composing => {
                     while let Some(ch) = self.iter.next() {
-                        let ch_class = gen::canonical_combining_class(ch as u32);
+                        let ch_class = tables::canonical_combining_class(ch as u32);
                         let k = match self.composee {
                             None => {
                                 if ch_class != 0 {
@@ -484,7 +484,7 @@ fn quick_check<I: Iterator<Item = char>>(iter: I, qc: fn(u32) -> u8) -> IsNormal
     let mut last_ccc = 0u8;
     let mut result = IsNormalized::Yes;
     for ch in iter {
-        let c = gen::canonical_combining_class(ch as u32);
+        let c = tables::canonical_combining_class(ch as u32);
         if c != 0 && last_ccc > c {
             return IsNormalized::No; // canonical ordering violated
         }
@@ -501,25 +501,25 @@ fn quick_check<I: Iterator<Item = char>>(iter: I, qc: fn(u32) -> u8) -> IsNormal
 /// Quick-check whether a character stream is already in NFC.
 #[inline]
 pub fn quick_check_nfc<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
-    quick_check(iter, gen::nfc_qc)
+    quick_check(iter, tables::nfc_qc)
 }
 
 /// Quick-check whether a character stream is already in NFD.
 #[inline]
 pub fn quick_check_nfd<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
-    quick_check(iter, gen::nfd_qc)
+    quick_check(iter, tables::nfd_qc)
 }
 
 /// Quick-check whether a character stream is already in NFKC.
 #[inline]
 pub fn quick_check_nfkc<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
-    quick_check(iter, gen::nfkc_qc)
+    quick_check(iter, tables::nfkc_qc)
 }
 
 /// Quick-check whether a character stream is already in NFKD.
 #[inline]
 pub fn quick_check_nfkd<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
-    quick_check(iter, gen::nfkd_qc)
+    quick_check(iter, tables::nfkd_qc)
 }
 
 /// `true` if the stream is in NFC. A `Maybe` quick-check result is resolved by
@@ -527,7 +527,7 @@ pub fn quick_check_nfkd<I: Iterator<Item = char>>(iter: I) -> IsNormalized {
 /// `Clone`.
 #[inline]
 pub fn is_nfc<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
-    match quick_check(iter.clone(), gen::nfc_qc) {
+    match quick_check(iter.clone(), tables::nfc_qc) {
         IsNormalized::Yes => true,
         IsNormalized::No => false,
         IsNormalized::Maybe => iter.clone().eq(nfc(iter)),
@@ -537,7 +537,7 @@ pub fn is_nfc<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
 /// `true` if the stream is in NFD.
 #[inline]
 pub fn is_nfd<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
-    match quick_check(iter.clone(), gen::nfd_qc) {
+    match quick_check(iter.clone(), tables::nfd_qc) {
         IsNormalized::Yes => true,
         IsNormalized::No => false,
         IsNormalized::Maybe => iter.clone().eq(nfd(iter)),
@@ -547,7 +547,7 @@ pub fn is_nfd<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
 /// `true` if the stream is in NFKC.
 #[inline]
 pub fn is_nfkc<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
-    match quick_check(iter.clone(), gen::nfkc_qc) {
+    match quick_check(iter.clone(), tables::nfkc_qc) {
         IsNormalized::Yes => true,
         IsNormalized::No => false,
         IsNormalized::Maybe => iter.clone().eq(nfkc(iter)),
@@ -557,7 +557,7 @@ pub fn is_nfkc<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
 /// `true` if the stream is in NFKD.
 #[inline]
 pub fn is_nfkd<I: Iterator<Item = char> + Clone>(iter: I) -> bool {
-    match quick_check(iter.clone(), gen::nfkd_qc) {
+    match quick_check(iter.clone(), tables::nfkd_qc) {
         IsNormalized::Yes => true,
         IsNormalized::No => false,
         IsNormalized::Maybe => iter.clone().eq(nfkd(iter)),

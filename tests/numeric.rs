@@ -1,6 +1,6 @@
 //! Numeric_Type and Numeric_Value lookups.
 
-use intl::unicode::{numeric_type, numeric_value, NumericType};
+use intl::unicode::{NumericType, numeric_type, numeric_value};
 
 #[test]
 fn ascii_numeric() {

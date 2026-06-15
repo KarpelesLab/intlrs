@@ -44,7 +44,7 @@ fn stream_adaptors() {
 fn bmp_case() {
     assert_eq!(s(to_uppercase('ﬀ')), "FF"); // U+FB00 ligature
     assert_eq!(s(to_lowercase('Σ')), "σ"); // U+03A3 -> U+03C3
-                                           // U+212A KELVIN SIGN folds to plain ASCII 'k', enabling caseless match.
+    // U+212A KELVIN SIGN folds to plain ASCII 'k', enabling caseless match.
     assert_eq!(s(case_fold('\u{212A}')), "k");
     assert_eq!(s(case_fold('K')), s(case_fold('\u{212A}')));
 }

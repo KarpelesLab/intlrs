@@ -13,7 +13,7 @@
 #[cfg(all(feature = "latin1", not(feature = "bmp")))]
 #[test]
 fn cjk_unassigned_when_only_latin1() {
-    use intl::unicode::{general_category, GeneralCategory as GC};
+    use intl::unicode::{GeneralCategory as GC, general_category};
     assert_eq!(general_category('中'), GC::Unassigned); // U+4E2D not compiled
     assert_eq!(general_category('é'), GC::LowercaseLetter); // U+00E9 compiled
     assert_eq!(general_category('A'), GC::UppercaseLetter);
@@ -24,7 +24,7 @@ fn cjk_unassigned_when_only_latin1() {
 #[cfg(all(feature = "ascii", not(feature = "latin1")))]
 #[test]
 fn latin1_unassigned_when_only_ascii() {
-    use intl::unicode::{general_category, GeneralCategory as GC};
+    use intl::unicode::{GeneralCategory as GC, general_category};
     assert_eq!(general_category('é'), GC::Unassigned); // U+00E9 not compiled
     assert_eq!(general_category('A'), GC::UppercaseLetter); // U+0041 compiled
     assert_eq!(general_category('0'), GC::DecimalNumber);
@@ -34,7 +34,7 @@ fn latin1_unassigned_when_only_ascii() {
 #[cfg(all(feature = "bmp", not(feature = "full")))]
 #[test]
 fn supplementary_unassigned_without_full() {
-    use intl::unicode::{general_category, GeneralCategory as GC};
+    use intl::unicode::{GeneralCategory as GC, general_category};
     assert_eq!(general_category('\u{10000}'), GC::Unassigned); // not compiled
     assert_eq!(general_category('中'), GC::OtherLetter); // BMP, compiled
 }

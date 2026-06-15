@@ -12,7 +12,7 @@
 //! ```
 
 use crate::number::format_decimal;
-use crate::plural::{plural_category, PluralCategory, PluralOperands};
+use crate::plural::{PluralCategory, PluralOperands, plural_category};
 use alloc::string::String;
 
 pub use crate::cldr::{RelUnit, RelativeSpec};

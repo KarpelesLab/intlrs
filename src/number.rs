@@ -379,7 +379,7 @@ pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
 /// ```
 #[must_use]
 pub fn format_ordinal(lang: &str, n: i64) -> String {
-    use crate::plural::{ordinal_category, PluralOperands};
+    use crate::plural::{PluralOperands, ordinal_category};
     let cat = ordinal_category(lang, &PluralOperands::from_int(n)) as usize;
     let norm: String = lang
         .chars()
@@ -1597,9 +1597,11 @@ mod tests {
         };
         assert_eq!(format("en", 1234.5, &cur), "$1,234.50");
         let parts = format_to_parts("en", 1234.5, &cur);
-        assert!(parts
-            .iter()
-            .any(|p| p.kind == NumberPartType::Currency && p.value == "$"));
+        assert!(
+            parts
+                .iter()
+                .any(|p| p.kind == NumberPartType::Currency && p.value == "$")
+        );
         // currencyDisplay: code
         let code = NumberFormatOptions {
             currency_display: CurrencyDisplay::Code,
@@ -1627,9 +1629,11 @@ mod tests {
             ]
         );
         assert_eq!(format("en", 12345.0, &sci), "1.2345E4");
-        assert!(format_to_parts("en", 0.00042, &sci)
-            .iter()
-            .any(|p| p.kind == NumberPartType::ExponentMinusSign));
+        assert!(
+            format_to_parts("en", 0.00042, &sci)
+                .iter()
+                .any(|p| p.kind == NumberPartType::ExponentMinusSign)
+        );
 
         let eng = NumberFormatOptions {
             notation: Notation::Engineering,
@@ -1642,9 +1646,11 @@ mod tests {
             ..opt()
         };
         assert_eq!(format("en", 1500.0, &comp), "1.5K");
-        assert!(format_to_parts("en", 1500.0, &comp)
-            .iter()
-            .any(|p| p.kind == NumberPartType::Compact && p.value == "K"));
+        assert!(
+            format_to_parts("en", 1500.0, &comp)
+                .iter()
+                .any(|p| p.kind == NumberPartType::Compact && p.value == "K")
+        );
     }
 
     #[test]

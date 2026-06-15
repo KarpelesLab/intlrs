@@ -164,7 +164,7 @@ fn fuzz_invariants() {
 /// of bug — `.unwrap()` on uncontrolled data — behind real production outages.)
 #[test]
 fn fuzz_locale_apis() {
-    use intl::datetime::{format_date, DateStyle, DateTime};
+    use intl::datetime::{DateStyle, DateTime, format_date};
     use intl::number::{
         format_compact, format_currency, format_decimal, format_scientific, parse_decimal,
     };

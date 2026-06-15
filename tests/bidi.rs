@@ -1,6 +1,6 @@
 #![cfg(feature = "bidi")]
 //! Bidi_Class + paragraph base direction (UAX #9 P2-P3).
-use intl::unicode::{base_direction, bidi_class, BidiClass, Direction};
+use intl::unicode::{BidiClass, Direction, base_direction, bidi_class};
 
 #[test]
 fn classes() {
