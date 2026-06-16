@@ -184,3 +184,34 @@ fn compact_long() {
     };
     assert_eq!(format("en", 1500.0, &sh), "1.5K");
 }
+
+#[test]
+fn currency_display() {
+    use intl::number::{CurrencyDisplay, NumberFormatOptions, NumberStyle, format};
+    let mk = |code, disp| NumberFormatOptions {
+        style: NumberStyle::Currency,
+        currency: Some(code),
+        currency_display: disp,
+        ..Default::default()
+    };
+    assert_eq!(
+        format("en", 1234.5, &mk("USD", CurrencyDisplay::Symbol)),
+        "$1,234.50"
+    );
+    assert_eq!(
+        format("en", 1234.5, &mk("USD", CurrencyDisplay::Code)),
+        "1,234.50 USD"
+    );
+    assert_eq!(
+        format("en", 1234.5, &mk("USD", CurrencyDisplay::Name)),
+        "1,234.50 US dollars"
+    );
+    assert_eq!(
+        format("de", 1234.5, &mk("EUR", CurrencyDisplay::Symbol)),
+        "1.234,50\u{a0}€"
+    );
+    assert_eq!(
+        format("ja", 1234.0, &mk("JPY", CurrencyDisplay::Symbol)),
+        "￥1,234"
+    );
+}

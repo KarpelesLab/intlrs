@@ -437,16 +437,30 @@ pub(crate) fn currency_pattern(lang: &str) -> Option<Pattern> {
     Some(c.pattern())
 }
 
-/// Currency symbol for `code` in `lang` (exact lowercased key), if present.
-pub(crate) fn currency_symbol(lang: &str, code: &str) -> Option<&'static str> {
+/// The currency unit pattern (number + code/name, e.g. `"{0} {1}"`) for `lang`.
+pub(crate) fn currency_unit_pattern(lang: &str) -> Option<&'static str> {
     let mut c = find(CURRENCY, lang)?;
     let _ = c.pattern();
-    let n = c.u8();
+    Some(c.str())
+}
+
+/// Currency display forms `(symbol, narrow symbol, display name)` for `code` in
+/// `lang` (exact lowercased key), if present.
+pub(crate) fn currency_forms(
+    lang: &str,
+    code: &str,
+) -> Option<(&'static str, &'static str, &'static str)> {
+    let mut c = find(CURRENCY, lang)?;
+    let _ = c.pattern();
+    let _ = c.str(); // unit pattern
+    let n = c.u16();
     for _ in 0..n {
         let cd = c.str();
         let sym = c.str();
+        let narrow = c.str();
+        let name = c.str();
         if cd == code {
-            return Some(sym);
+            return Some((sym, narrow, name));
         }
     }
     None

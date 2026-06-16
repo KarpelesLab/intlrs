@@ -305,7 +305,12 @@ fn main() {
     emit_numbers(&cldr_dir, &cldr.join("numbers-raw"));
     emit_lists(&cldr_dir, &cldr.join("lists.json"));
     emit_relative(&cldr_dir, &cldr.join("relative.json"));
-    emit_currency(&cldr_dir, &cldr.join("currency.json"));
+    emit_currency(
+        &cldr_dir,
+        &cldr.join("currencies-raw"),
+        &cldr.join("numbers-raw"),
+        &cldr.join("currencyData.json"),
+    );
     emit_display(&cldr_dir, &cldr.join("display.json"));
     emit_units(&cldr_dir, &cldr.join("units.json"));
     emit_dates(
@@ -2123,31 +2128,114 @@ fn emit_relative(cldr_dir: &Path, path: &Path) {
 
 /// Write `cldr/currency.bin` (per-locale pattern + symbols) and
 /// `cldr/currency_digits.bin` (per-currency fraction digits).
-fn emit_currency(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read currency.json");
-    let json = json_parse(&text);
-    let mut records = Vec::new();
-    for (lang, loc) in json.get("locales").expect("locales").entries() {
-        let mut p = Vec::new();
-        let pat = loc.get("pattern").and_then(Json::as_str).unwrap_or("");
-        enc_pattern(&mut p, &parse_number_pattern(pat, ""));
-        let syms = loc.get("symbols").expect("symbols");
-        p.push(syms.entries().len() as u8);
-        for (code, sym) in syms.entries() {
-            enc_str(&mut p, code);
-            enc_str(&mut p, sym.as_str().unwrap_or(code));
-        }
-        records.push((lang.to_ascii_lowercase(), p));
-    }
-    write_blob(cldr_dir, "currency", &records);
-
-    // Per-currency fraction digits (bare JSON numbers parse as `Other`, so read
-    // them directly from the source). Key = code, payload = one byte.
+/// Write `cldr/currency.bin` and `cldr/currency_digits.bin` from raw CLDR:
+/// per-locale `currencies.json` (symbol / narrow symbol / display name), the
+/// currency pattern from `numbers.json`, and per-currency fraction digits from
+/// the supplemental `currencyData.json`.
+///
+/// `currency.bin` payload: currency `Pattern`, then `[u16 count]` and, per
+/// currency, `(code, symbol, narrow-symbol, display-name)`.
+fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, currency_data: &Path) {
+    // ---- currency_digits.bin from supplemental fractions ----
+    let cd_text = fs::read_to_string(currency_data).expect("read currencyData.json");
+    let cd = json_parse(&cd_text);
+    let fractions = cd
+        .get("supplemental")
+        .and_then(|s| s.get("currencyData"))
+        .and_then(|c| c.get("fractions"))
+        .expect("fractions");
     let mut digit_records = Vec::new();
-    for (code, _) in json.get("digits").expect("digits").entries() {
-        digit_records.push((code.clone(), vec![digit_value(&text, code)]));
+    for (code, info) in fractions.entries() {
+        if code == "DEFAULT" {
+            continue;
+        }
+        let digits: u8 = info
+            .get("_digits")
+            .and_then(Json::as_str)
+            .and_then(|d| d.parse().ok())
+            .unwrap_or(2);
+        digit_records.push((code.clone(), vec![digits]));
     }
     write_blob(cldr_dir, "currency_digits", &digit_records);
+
+    // ---- currency.bin per locale ----
+    let mut files: Vec<String> = fs::read_dir(currencies_dir)
+        .expect("read currencies-raw dir")
+        .filter_map(|e| e.ok())
+        .filter_map(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .strip_suffix(".json")
+                .map(String::from)
+        })
+        .collect();
+    files.sort();
+
+    let mut records = Vec::new();
+    for locale in files {
+        let cur_text = fs::read_to_string(currencies_dir.join(alloc_format(&locale)))
+            .unwrap_or_else(|_| panic!("read currencies {locale}"));
+        let cur_json = json_parse(&cur_text);
+        let (_, cur_loc) = cur_json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let currencies = cur_loc
+            .get("numbers")
+            .and_then(|n| n.get("currencies"))
+            .expect("currencies");
+
+        let num_text = fs::read_to_string(numbers_dir.join(alloc_format(&locale)))
+            .unwrap_or_else(|_| panic!("read numbers {locale}"));
+        let num_json = json_parse(&num_text);
+        let (_, num_loc) = num_json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let cur_fmt = num_loc
+            .get("numbers")
+            .and_then(|n| n.get("currencyFormats-numberSystem-latn"));
+        let pat = cur_fmt
+            .and_then(|f| f.get("standard"))
+            .and_then(Json::as_str)
+            .unwrap_or("");
+        // The unit pattern (number + currency code/name), e.g. "{0} {1}".
+        let unit_pat = cur_fmt
+            .and_then(|f| f.get("unitPattern-count-other"))
+            .and_then(Json::as_str)
+            .unwrap_or("{0} {1}");
+
+        let mut p = Vec::new();
+        enc_pattern(&mut p, &parse_number_pattern(pat, ""));
+        enc_str(&mut p, unit_pat);
+        let entries = currencies.entries();
+        p.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+        for (code, info) in entries {
+            let sym = info.get("symbol").and_then(Json::as_str).unwrap_or(code);
+            let narrow = info
+                .get("symbol-alt-narrow")
+                .and_then(Json::as_str)
+                .unwrap_or(sym);
+            // Prefer the plural "other" display name ("US dollars") over the
+            // base ("US Dollar"); ECMA uses the plural-selected form and "other"
+            // matches the common (non-1) case.
+            let name = info
+                .get("displayName-count-other")
+                .or_else(|| info.get("displayName"))
+                .and_then(Json::as_str)
+                .unwrap_or(code);
+            enc_str(&mut p, code);
+            enc_str(&mut p, sym);
+            enc_str(&mut p, narrow);
+            enc_str(&mut p, name);
+        }
+        records.push((locale.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "currency", &records);
 }
 
 /// Write `cldr/calendar.bin`: per-locale Gregorian month/day names, am/pm, and
@@ -2588,19 +2676,6 @@ fn emit_display(cldr_dir: &Path, path: &Path) {
         }
         write_blob(cldr_dir, blob, &records);
     }
-}
-
-/// Pull the integer value of `"CODE":N` out of the digits object of the raw
-/// currency JSON (the minimal JSON parser collapses bare numbers to `Other`).
-fn digit_value(raw: &str, code: &str) -> u8 {
-    let digits_start = raw.rfind("\"digits\"").map_or(0, |i| i);
-    let key = format!("\"{code}\":");
-    if let Some(p) = raw[digits_start..].find(&key) {
-        let after = raw[digits_start + p + key.len()..].trim_start();
-        let num: String = after.chars().take_while(|c| c.is_ascii_digit()).collect();
-        return num.parse().unwrap_or(2);
-    }
-    2
 }
 
 /// Parse a CLDR number pattern (e.g. `#,##0.###`, `#,##0 %`) into a Rust

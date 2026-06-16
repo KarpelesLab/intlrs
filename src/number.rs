@@ -671,7 +671,7 @@ pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
             pat = p;
             got_pat = true;
         }
-        if !got_sym && let Some(sym) = cur::currency_symbol(&norm[..end], code) {
+        if !got_sym && let Some((sym, _, _)) = cur::currency_forms(&norm[..end], code) {
             symbol = sym;
             got_sym = true;
         }
@@ -684,7 +684,7 @@ pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
         }
     }
     // Root fallback (English) for anything the locale chain didn't supply.
-    if !got_sym && let Some(sym) = cur::currency_symbol("en", code) {
+    if !got_sym && let Some((sym, _, _)) = cur::currency_forms("en", code) {
         symbol = sym;
     }
 
@@ -1183,6 +1183,105 @@ fn unit_wrap(
     parts
 }
 
+/// Render a currency amount with `currencyDisplay: code`/`name`: the numeric
+/// core spliced into the locale's currency unit pattern (`"{0} {1}"`) with the
+/// code or display name tagged `Currency`. (The base display name is used; plural
+/// name forms and currency spacing are not applied.)
+fn currency_unit_wrap(
+    lang: &str,
+    value: f64,
+    opts: &NumberFormatOptions,
+    s: &NumberSpec,
+) -> Vec<NumberPart> {
+    let code = opts.currency.unwrap_or("XXX");
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut forms: Option<(&str, &str, &str)> = None;
+    let mut unit = "{0} {1}";
+    let mut end = norm.len();
+    let mut got_unit = false;
+    loop {
+        if forms.is_none() {
+            forms = crate::cldr::currency_forms(&norm[..end], code);
+        }
+        if !got_unit && let Some(u) = crate::cldr::currency_unit_pattern(&norm[..end]) {
+            unit = u;
+            got_unit = true;
+        }
+        if forms.is_some() && got_unit {
+            break;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => break,
+        }
+    }
+    forms = forms.or_else(|| crate::cldr::currency_forms("en", code));
+    let (_, _, name) = forms.unwrap_or((code, code, code));
+    let text = if opts.currency_display == CurrencyDisplay::Name {
+        name
+    } else {
+        code
+    };
+
+    // Number core with the currency's fraction digits (overridable).
+    let digits = crate::cldr::currency_digits(code) as usize;
+    let min_frac = opts.minimum_fraction_digits.map_or(digits, usize::from);
+    let max_frac = opts
+        .maximum_fraction_digits
+        .map_or(digits, usize::from)
+        .max(min_frac);
+    let min_int = (opts.minimum_integer_digits.max(1)) as usize;
+    let neg = value.is_sign_negative() && value != 0.0;
+    let abs = if value < 0.0 { -value } else { value };
+    let (int_d, frac_d) = round_digits(
+        abs,
+        min_int,
+        min_frac,
+        max_frac,
+        opts.minimum_significant_digits.map(usize::from),
+        opts.maximum_significant_digits.map(usize::from),
+        opts.rounding_mode,
+        neg,
+    );
+    let is_zero = int_d.bytes().all(|b| b == b'0') && frac_d.bytes().all(|b| b == b'0');
+    let (pri, sec) = effective_grouping(opts, &s.dec, int_d.len());
+    let core = core_parts(&int_d, &frac_d, neg, is_zero, pri, sec, opts, s);
+
+    // Splice into the two-placeholder unit pattern ({0} number, {1} currency).
+    let mut parts = Vec::new();
+    let mut rest = unit;
+    while !rest.is_empty() {
+        if let Some(i) = rest.find('{') {
+            if i > 0 {
+                parts.push(NumberPart::new(NumberPartType::Literal, &rest[..i]));
+            }
+            if rest[i..].starts_with("{0}") {
+                parts.extend(core.iter().cloned());
+                rest = &rest[i + 3..];
+            } else if rest[i..].starts_with("{1}") {
+                parts.push(NumberPart::new(NumberPartType::Currency, text));
+                rest = &rest[i + 3..];
+            } else {
+                parts.push(NumberPart::new(NumberPartType::Literal, "{"));
+                rest = &rest[i + 1..];
+            }
+        } else {
+            parts.push(NumberPart::new(NumberPartType::Literal, rest));
+            break;
+        }
+    }
+    parts
+}
+
 /// Resolve the base pattern, scaled value, and currency symbol for `style`.
 fn resolve_style(
     lang: &str,
@@ -1206,19 +1305,19 @@ fn resolve_style(
                 })
                 .collect();
             let mut pat = crate::cldr::currency_pattern("en").expect("root currency pattern");
-            let mut symbol = String::from(code);
+            // (symbol, narrow symbol, display name) for the requested currency.
+            let mut forms: Option<(&str, &str, &str)> = None;
             let mut end = norm.len();
-            let (mut got_pat, mut got_sym) = (false, false);
+            let mut got_pat = false;
             loop {
                 if !got_pat && let Some(p) = crate::cldr::currency_pattern(&norm[..end]) {
                     pat = p;
                     got_pat = true;
                 }
-                if !got_sym && let Some(sym) = crate::cldr::currency_symbol(&norm[..end], code) {
-                    symbol = String::from(sym);
-                    got_sym = true;
+                if forms.is_none() {
+                    forms = crate::cldr::currency_forms(&norm[..end], code);
                 }
-                if got_pat && got_sym {
+                if got_pat && forms.is_some() {
                     break;
                 }
                 match norm[..end].rfind('-') {
@@ -1226,13 +1325,15 @@ fn resolve_style(
                     None => break,
                 }
             }
-            if !got_sym && let Some(sym) = crate::cldr::currency_symbol("en", code) {
-                symbol = String::from(sym);
+            if forms.is_none() {
+                forms = crate::cldr::currency_forms("en", code);
             }
-            // currencyDisplay: Code/Name show the code rather than the symbol.
+            let (sym, narrow, name) = forms.unwrap_or((code, code, code));
             let shown = match opts.currency_display {
-                CurrencyDisplay::Code | CurrencyDisplay::Name => String::from(code),
-                CurrencyDisplay::Symbol | CurrencyDisplay::NarrowSymbol => symbol,
+                CurrencyDisplay::Symbol => String::from(sym),
+                CurrencyDisplay::NarrowSymbol => String::from(narrow),
+                CurrencyDisplay::Code => String::from(code),
+                CurrencyDisplay::Name => String::from(name),
             };
             let digits = crate::cldr::currency_digits(code);
             pat.min_frac = digits;
@@ -1249,6 +1350,15 @@ fn standard_parts(
     s: &NumberSpec,
     opts: &NumberFormatOptions,
 ) -> Vec<NumberPart> {
+    // Currency code/name use the unit pattern ("{0} {1}"), not the ¤ pattern.
+    if opts.style == NumberStyle::Currency
+        && matches!(
+            opts.currency_display,
+            CurrencyDisplay::Code | CurrencyDisplay::Name
+        )
+    {
+        return currency_unit_wrap(lang, value, opts, s);
+    }
     let (pattern, scaled, currency) = resolve_style(lang, value, s, opts);
     let min_frac = opts
         .minimum_fraction_digits
@@ -1730,7 +1840,7 @@ mod tests {
             currency_display: CurrencyDisplay::Code,
             ..cur
         };
-        assert_eq!(format("en", 5.0, &code), "USD5.00");
+        assert_eq!(format("en", 5.0, &code), "5.00 USD");
     }
 
     #[test]
