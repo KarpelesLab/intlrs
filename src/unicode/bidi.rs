@@ -148,10 +148,18 @@ mod resolve {
     }
 
     fn next_odd(level: u8) -> u8 {
-        if level % 2 == 0 { level + 1 } else { level + 2 }
+        if level.is_multiple_of(2) {
+            level + 1
+        } else {
+            level + 2
+        }
     }
     fn next_even(level: u8) -> u8 {
-        if level % 2 == 0 { level + 2 } else { level + 1 }
+        if level.is_multiple_of(2) {
+            level + 2
+        } else {
+            level + 1
+        }
     }
     fn is_isolate_init(c: BidiClass) -> bool {
         matches!(c, LRI | RLI | FSI)
@@ -201,10 +209,10 @@ mod resolve {
         for (i, &c) in classes.iter().enumerate() {
             if is_isolate_init(c) {
                 stack.push(i);
-            } else if c == PDI {
-                if let Some(o) = stack.pop() {
-                    match_pdi[o] = i;
-                }
+            } else if c == PDI
+                && let Some(o) = stack.pop()
+            {
+                match_pdi[o] = i;
             }
         }
         match_pdi
@@ -492,7 +500,7 @@ mod resolve {
             return;
         }
         let seq_level = elevels[seq[0]];
-        let e = if seq_level % 2 == 0 { L } else { R };
+        let e = if seq_level.is_multiple_of(2) { L } else { R };
 
         // sos / eos (X10): compare the sequence level with the adjacent embedding
         // levels (from the snapshot, since the live levels are being resolved).
@@ -635,7 +643,7 @@ mod resolve {
 
         // I1 / I2: implicit levels, then write back.
         for (k, &i) in seq.iter().enumerate() {
-            let add = if seq_level % 2 == 0 {
+            let add = if seq_level.is_multiple_of(2) {
                 match cls[k] {
                     R => 1,
                     AN | EN => 2,

@@ -141,14 +141,14 @@ fn spell_d(sets: &[RuleSet], ruleset: &str, value: i64, depth: u32, budget: &mut
     let Some(rs) = sets.iter().find(|s| s.name == ruleset) else {
         return value.to_string();
     };
-    if value < 0 {
-        if let Some((_, text)) = rs.rules.iter().find(|(k, _)| k == "-x") {
-            // `unsigned_abs()` is a u64; clamp before the i64 cast so i64::MIN
-            // (whose magnitude is i64::MAX + 1) cannot wrap back to a negative
-            // value and re-enter the `-x` rule forever.
-            let abs = value.unsigned_abs().min(i64::MAX as u64) as i64;
-            return render(sets, &rs.name, text, abs, 0, depth, budget);
-        }
+    if value < 0
+        && let Some((_, text)) = rs.rules.iter().find(|(k, _)| k == "-x")
+    {
+        // `unsigned_abs()` is a u64; clamp before the i64 cast so i64::MIN
+        // (whose magnitude is i64::MAX + 1) cannot wrap back to a negative
+        // value and re-enter the `-x` rule forever.
+        let abs = value.unsigned_abs().min(i64::MAX as u64) as i64;
+        return render(sets, &rs.name, text, abs, 0, depth, budget);
     }
     // The applicable rule has the greatest numeric base ≤ value. A rule key may
     // be `base/radix` (e.g. `60/20` for French vigesimal); the radix governs the
@@ -159,10 +159,11 @@ fn spell_d(sets: &[RuleSet], ruleset: &str, value: i64, depth: u32, budget: &mut
             Some((b, r)) => (b, r.parse::<i64>().unwrap_or(10).max(2)),
             None => (k.as_str(), 10),
         };
-        if let Ok(base) = base_str.parse::<i64>() {
-            if base <= value && best.is_none_or(|(b, ..)| base > b) {
-                best = Some((base, radix, t));
-            }
+        if let Ok(base) = base_str.parse::<i64>()
+            && base <= value
+            && best.is_none_or(|(b, ..)| base > b)
+        {
+            best = Some((base, radix, t));
         }
     }
     let Some((base, radix, text)) = best else {

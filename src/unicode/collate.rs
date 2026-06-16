@@ -930,10 +930,10 @@ impl Tailoring {
         let full = lang.replace('_', "-").to_ascii_lowercase();
         let primary = full.split('-').next().unwrap_or(&full);
         for key in [full.as_str(), primary] {
-            if let Some(rule) = crate::cldr::collation_rule(key) {
-                if let Some(t) = Tailoring::parse(rule) {
-                    return Some(t);
-                }
+            if let Some(rule) = crate::cldr::collation_rule(key)
+                && let Some(t) = Tailoring::parse(rule)
+            {
+                return Some(t);
             }
         }
         let lc = primary;

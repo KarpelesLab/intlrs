@@ -64,7 +64,7 @@ fn compose(a: char, b: char) -> Option<char> {
     }
     // Hangul LV + T.
     if (S_BASE..S_BASE + S_COUNT).contains(&ua)
-        && (ua - S_BASE) % T_COUNT == 0
+        && (ua - S_BASE).is_multiple_of(T_COUNT)
         && (T_BASE + 1..T_BASE + T_COUNT).contains(&ub)
     {
         return char::from_u32(ua + (ub - T_BASE));

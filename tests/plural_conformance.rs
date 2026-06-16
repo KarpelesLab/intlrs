@@ -29,13 +29,14 @@ fn expand(token: &str, out: &mut Vec<String>) {
     if let Some((a, b)) = token.split_once('~') {
         let (a, b) = (a.trim(), b.trim());
         // Integer range: expand fully (capped). Decimal range: just endpoints.
-        if !a.contains('.') && !b.contains('.') {
-            if let (Ok(lo), Ok(hi)) = (a.parse::<u64>(), b.parse::<u64>()) {
-                for v in lo..=hi.min(lo + 200) {
-                    out.push(v.to_string());
-                }
-                return;
+        if !a.contains('.')
+            && !b.contains('.')
+            && let (Ok(lo), Ok(hi)) = (a.parse::<u64>(), b.parse::<u64>())
+        {
+            for v in lo..=hi.min(lo + 200) {
+                out.push(v.to_string());
             }
+            return;
         }
         out.push(a.to_string());
         out.push(b.to_string());
@@ -78,12 +79,12 @@ fn check_samples(file: &str, select: fn(&str, &PluralOperands) -> PluralCategory
                 );
                 checked += 1;
             }
-        } else if t.ends_with('{') && t.starts_with('"') {
-            if let Some(name) = t.split('"').nth(1) {
-                if !name.starts_with("pluralRule") {
-                    locale = name.to_string();
-                }
-            }
+        } else if t.ends_with('{')
+            && t.starts_with('"')
+            && let Some(name) = t.split('"').nth(1)
+            && !name.starts_with("pluralRule")
+        {
+            locale = name.to_string();
         }
     }
     checked

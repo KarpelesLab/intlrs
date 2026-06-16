@@ -75,10 +75,10 @@ pub fn format_relative(lang: &str, value: i64, unit: RelativeUnit) -> String {
         if let Some(s) = ru.cur {
             return String::from(s);
         }
-    } else if value == 1 {
-        if let Some(s) = ru.next {
-            return String::from(s);
-        }
+    } else if value == 1
+        && let Some(s) = ru.next
+    {
+        return String::from(s);
     }
 
     let table = if value < 0 { &ru.past } else { &ru.future };

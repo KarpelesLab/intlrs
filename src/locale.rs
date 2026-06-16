@@ -66,18 +66,19 @@ impl Locale {
         };
 
         // Script: 4 ALPHA.
-        if let Some(&s) = parts.peek() {
-            if s.len() == 4 && is_alpha(s) {
-                loc.script = Some(titlecase_subtag(s));
-                parts.next();
-            }
+        if let Some(&s) = parts.peek()
+            && s.len() == 4
+            && is_alpha(s)
+        {
+            loc.script = Some(titlecase_subtag(s));
+            parts.next();
         }
         // Region: 2 ALPHA or 3 DIGIT.
-        if let Some(&s) = parts.peek() {
-            if (s.len() == 2 && is_alpha(s)) || (s.len() == 3 && is_digit(s)) {
-                loc.region = Some(s.to_ascii_uppercase());
-                parts.next();
-            }
+        if let Some(&s) = parts.peek()
+            && ((s.len() == 2 && is_alpha(s)) || (s.len() == 3 && is_digit(s)))
+        {
+            loc.region = Some(s.to_ascii_uppercase());
+            parts.next();
         }
         // Variants: 5-8 ALNUM, or 4 chars starting with a digit.
         while let Some(&s) = parts.peek() {
@@ -153,20 +154,20 @@ impl Locale {
         candidates.push(String::from(lang));
 
         for key in &candidates {
-            if let Some(v) = crate::cldr::likely_subtags(key) {
-                if let Ok(m) = Locale::parse(v) {
-                    return Locale {
-                        language: if self.language.is_empty() {
-                            m.language
-                        } else {
-                            self.language.clone()
-                        },
-                        script: self.script.clone().or(m.script),
-                        region: self.region.clone().or(m.region),
-                        variants: self.variants.clone(),
-                        extensions: self.extensions.clone(),
-                    };
-                }
+            if let Some(v) = crate::cldr::likely_subtags(key)
+                && let Ok(m) = Locale::parse(v)
+            {
+                return Locale {
+                    language: if self.language.is_empty() {
+                        m.language
+                    } else {
+                        self.language.clone()
+                    },
+                    script: self.script.clone().or(m.script),
+                    region: self.region.clone().or(m.region),
+                    variants: self.variants.clone(),
+                    extensions: self.extensions.clone(),
+                };
             }
         }
         self.clone()

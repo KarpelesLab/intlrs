@@ -668,17 +668,13 @@ pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
     let mut end = norm.len();
     let (mut got_pat, mut got_sym) = (false, false);
     loop {
-        if !got_pat {
-            if let Some(p) = cur::currency_pattern(&norm[..end]) {
-                pat = p;
-                got_pat = true;
-            }
+        if !got_pat && let Some(p) = cur::currency_pattern(&norm[..end]) {
+            pat = p;
+            got_pat = true;
         }
-        if !got_sym {
-            if let Some(sym) = cur::currency_symbol(&norm[..end], code) {
-                symbol = sym;
-                got_sym = true;
-            }
+        if !got_sym && let Some(sym) = cur::currency_symbol(&norm[..end], code) {
+            symbol = sym;
+            got_sym = true;
         }
         if got_pat && got_sym {
             break;
@@ -689,10 +685,8 @@ pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
         }
     }
     // Root fallback (English) for anything the locale chain didn't supply.
-    if !got_sym {
-        if let Some(sym) = cur::currency_symbol("en", code) {
-            symbol = sym;
-        }
+    if !got_sym && let Some(sym) = cur::currency_symbol("en", code) {
+        symbol = sym;
     }
 
     let digits = cur::currency_digits(code);
@@ -1091,17 +1085,13 @@ fn resolve_style(
             let mut end = norm.len();
             let (mut got_pat, mut got_sym) = (false, false);
             loop {
-                if !got_pat {
-                    if let Some(p) = crate::cldr::currency_pattern(&norm[..end]) {
-                        pat = p;
-                        got_pat = true;
-                    }
+                if !got_pat && let Some(p) = crate::cldr::currency_pattern(&norm[..end]) {
+                    pat = p;
+                    got_pat = true;
                 }
-                if !got_sym {
-                    if let Some(sym) = crate::cldr::currency_symbol(&norm[..end], code) {
-                        symbol = String::from(sym);
-                        got_sym = true;
-                    }
+                if !got_sym && let Some(sym) = crate::cldr::currency_symbol(&norm[..end], code) {
+                    symbol = String::from(sym);
+                    got_sym = true;
                 }
                 if got_pat && got_sym {
                     break;
@@ -1111,10 +1101,8 @@ fn resolve_style(
                     None => break,
                 }
             }
-            if !got_sym {
-                if let Some(sym) = crate::cldr::currency_symbol("en", code) {
-                    symbol = String::from(sym);
-                }
+            if !got_sym && let Some(sym) = crate::cldr::currency_symbol("en", code) {
+                symbol = String::from(sym);
             }
             // currencyDisplay: Code/Name show the code rather than the symbol.
             let shown = match opts.currency_display {
@@ -1167,13 +1155,13 @@ fn standard_parts(
     let core = core_parts(&int_d, &frac_d, negative, is_zero, pri, sec, opts, s);
     // The sign (first core part, if any) precedes the prefix affix.
     let mut core_iter = core.into_iter().peekable();
-    if let Some(first) = core_iter.peek() {
-        if matches!(
+    if let Some(first) = core_iter.peek()
+        && matches!(
             first.kind,
             NumberPartType::MinusSign | NumberPartType::PlusSign
-        ) {
-            parts.push(core_iter.next().unwrap());
-        }
+        )
+    {
+        parts.push(core_iter.next().unwrap());
     }
     parts.extend(affix_parts(pattern.prefix, opts.style, s, &currency));
     parts.extend(core_iter);

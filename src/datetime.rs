@@ -425,11 +425,11 @@ fn render_parts(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> Vec<DateTimeP
         if text.is_empty() {
             return;
         }
-        if let Some(last) = parts.last_mut() {
-            if last.kind == DateTimePartType::Literal {
-                last.value.push_str(text);
-                return;
-            }
+        if let Some(last) = parts.last_mut()
+            && last.kind == DateTimePartType::Literal
+        {
+            last.value.push_str(text);
+            return;
         }
         parts.push(DateTimePart {
             kind: DateTimePartType::Literal,

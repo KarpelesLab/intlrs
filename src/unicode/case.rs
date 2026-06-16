@@ -121,10 +121,10 @@ impl<I: Iterator<Item = char>> Iterator for CaseMapping<I> {
     #[inline]
     fn next(&mut self) -> Option<char> {
         loop {
-            if let Some(m) = self.cur.as_mut() {
-                if let Some(c) = m.next() {
-                    return Some(c);
-                }
+            if let Some(m) = self.cur.as_mut()
+                && let Some(c) = m.next()
+            {
+                return Some(c);
             }
             let ch = self.iter.next()?;
             self.cur = Some((self.map)(ch));
