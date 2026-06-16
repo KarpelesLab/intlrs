@@ -290,6 +290,18 @@ fn two(n: i64) -> String {
     alloc::format!("{n:02}")
 }
 
+/// The flexible day-period name array for a field width `n` (B/BB/BBB →
+/// abbreviated, BBBB → wide, BBBBB → narrow).
+fn day_period_names(s: &CalendarSpec, n: usize) -> &[Option<&'static str>; 10] {
+    if n >= 5 {
+        &s.day_periods_narrow
+    } else if n == 4 {
+        &s.day_periods_wide
+    } else {
+        &s.day_periods_abbr
+    }
+}
+
 /// Render one date-field run (`field` repeated `n` times) of a CLDR pattern.
 fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
     let m = dt.month as usize;
@@ -378,7 +390,48 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
                 dt.second.to_string()
             }
         }
-        'a' | 'b' | 'B' => if dt.hour < 12 { s.am } else { s.pm }.to_string(),
+        'a' => if dt.hour < 12 { s.am } else { s.pm }.to_string(),
+        'b' => {
+            // am/pm, but midnight/noon at the exact instant.
+            let w = day_period_names(s, n);
+            if dt.minute == 0 && dt.second == 0 && dt.millisecond == 0 {
+                if dt.hour == 0
+                    && let Some(x) = w[0]
+                {
+                    return x.to_string();
+                }
+                if dt.hour == 12
+                    && let Some(x) = w[1]
+                {
+                    return x.to_string();
+                }
+            }
+            if dt.hour < 12 { s.am } else { s.pm }.to_string()
+        }
+        'B' => {
+            // Flexible day period (morning/afternoon/evening/night) by hour
+            // range, with midnight/noon at the exact instant; falls back to am/pm.
+            let w = day_period_names(s, n);
+            if dt.minute == 0 && dt.second == 0 && dt.millisecond == 0 {
+                if dt.hour == 0
+                    && let Some(x) = w[0]
+                {
+                    return x.to_string();
+                }
+                if dt.hour == 12
+                    && let Some(x) = w[1]
+                {
+                    return x.to_string();
+                }
+            }
+            let idx = s.day_period_hours[(dt.hour as usize).min(23)];
+            if idx != 0xFF
+                && let Some(x) = w[idx as usize]
+            {
+                return x.to_string();
+            }
+            if dt.hour < 12 { s.am } else { s.pm }.to_string()
+        }
         'S' => {
             // Fractional second: `n` digits from the millisecond field.
             let ms = dt.millisecond.min(999);
@@ -1100,6 +1153,16 @@ fn patch_widths(pattern: &str, o: &DateTimeFormatOptions, loc: char) -> String {
             's',
             if se == Numeric2Digit::TwoDigit { 2 } else { 1 },
         );
+    }
+    if let Some(dp) = o.day_period {
+        // Promote the pattern's am/pm field to the flexible day period `B` at the
+        // requested width (only effective when the pattern carries an a/b/B field).
+        let c = match dp {
+            NameStyle::Long => 4,
+            NameStyle::Short => 1,
+            NameStyle::Narrow => 5,
+        };
+        p = set_field(&p, &['a', 'b', 'B'], 'B', c);
     }
     p
 }

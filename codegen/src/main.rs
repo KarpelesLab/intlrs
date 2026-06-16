@@ -308,7 +308,11 @@ fn main() {
     emit_currency(&cldr_dir, &cldr.join("currency.json"));
     emit_display(&cldr_dir, &cldr.join("display.json"));
     emit_units(&cldr_dir, &cldr.join("units.json"));
-    emit_dates(&cldr_dir, &cldr.join("dates"));
+    emit_dates(
+        &cldr_dir,
+        &cldr.join("dates"),
+        &cldr.join("dayPeriods.json"),
+    );
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
@@ -2082,7 +2086,60 @@ fn emit_currency(cldr_dir: &Path, path: &Path) {
 /// `skeletons.bin` payload: the locale's `availableFormats` map (canonical keys
 /// only — the `-alt-ascii` and `-count-*` variant keys are dropped), as
 /// `[u16 count]` then `(skeleton, pattern)` string pairs.
-fn emit_dates(cldr_dir: &Path, dates_dir: &Path) {
+/// The flexible day-period keys, in the index order shared by codegen and the
+/// runtime: midnight, noon, then the range periods.
+const DAY_PERIOD_KEYS: [&str; 10] = [
+    "midnight",
+    "noon",
+    "morning1",
+    "morning2",
+    "afternoon1",
+    "afternoon2",
+    "evening1",
+    "evening2",
+    "night1",
+    "night2",
+];
+
+/// Parse a `"HH:mm"` day-period boundary to an hour 0..=24 (minutes are always
+/// `:00` in CLDR's rules; verified at vendor time).
+fn dp_hour(t: &str) -> usize {
+    t.split(':').next().and_then(|h| h.parse().ok()).unwrap_or(0)
+}
+
+/// Build the 24-entry hour→period-index table for a locale from its day-period
+/// *range* rules (`_from`/`_before`); `_at` rules (midnight/noon) are applied at
+/// runtime for the exact instant. Unfilled hours are `0xFF`.
+fn day_period_table(rules: Option<&Json>) -> [u8; 24] {
+    let mut table = [0xFFu8; 24];
+    let Some(rules) = rules else { return table };
+    for (idx, key) in DAY_PERIOD_KEYS.iter().enumerate() {
+        let Some(rule) = rules.get(key) else { continue };
+        let (from, before) = match (rule.get("_from"), rule.get("_before")) {
+            (Some(f), Some(b)) => (
+                dp_hour(f.as_str().unwrap_or("0")),
+                dp_hour(b.as_str().unwrap_or("0")),
+            ),
+            _ => continue, // _at rule (midnight/noon): not a range
+        };
+        // Fill [from, before); wrap past midnight if before <= from.
+        let mut h = from % 24;
+        let end = if before == 0 { 24 } else { before };
+        let count = if end > from { end - from } else { 24 - from + end };
+        for _ in 0..count {
+            table[h % 24] = idx as u8;
+            h += 1;
+        }
+    }
+    table
+}
+
+fn emit_dates(cldr_dir: &Path, dates_dir: &Path, day_periods_path: &Path) {
+    let dp_text = fs::read_to_string(day_periods_path).expect("read dayPeriods.json");
+    let dp_json = json_parse(&dp_text);
+    let dp_rules = dp_json
+        .get("supplemental")
+        .and_then(|s| s.get("dayPeriodRuleSet"));
     let mut locales: Vec<String> = fs::read_dir(dates_dir)
         .expect("read dates dir")
         .filter_map(|e| e.ok())
@@ -2179,6 +2236,22 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path) {
                 .unwrap_or_else(|| panic!("eras.{variant}"));
             enc_str(&mut p, e.get("0").and_then(Json::as_str).unwrap_or(""));
             enc_str(&mut p, e.get("1").and_then(Json::as_str).unwrap_or(""));
+        }
+
+        // appended block: flexible day-period names (10 keys × 3 widths, each
+        // optional) + the 24-entry hour→period table from the supplemental rules.
+        let dp_fmt = greg.get("dayPeriods").and_then(|d| d.get("format"));
+        for width in ["wide", "abbreviated", "narrow"] {
+            let w = dp_fmt.and_then(|f| f.get(width));
+            for key in DAY_PERIOD_KEYS {
+                enc_opt(&mut p, w.and_then(|x| x.get(key)).and_then(Json::as_str));
+            }
+        }
+        let rules = dp_rules
+            .and_then(|r| r.get(&locale))
+            .or_else(|| dp_rules.and_then(|r| r.get(locale.split('-').next().unwrap_or(&locale))));
+        for h in day_period_table(rules) {
+            p.push(h);
         }
         cal_records.push((locale.to_ascii_lowercase(), p));
 

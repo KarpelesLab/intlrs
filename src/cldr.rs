@@ -126,6 +126,17 @@ pub struct CalendarSpec {
     pub eras_abbr: [&'static str; 2],
     /// Narrow era names (B, A).
     pub eras_narrow: [&'static str; 2],
+    /// Wide flexible day-period names, indexed by the day-period key order
+    /// (midnight, noon, morning1, morning2, afternoon1, afternoon2, evening1,
+    /// evening2, night1, night2); `None` where the locale has no such period.
+    pub day_periods_wide: [Option<&'static str>; 10],
+    /// Abbreviated flexible day-period names (same indexing).
+    pub day_periods_abbr: [Option<&'static str>; 10],
+    /// Narrow flexible day-period names (same indexing).
+    pub day_periods_narrow: [Option<&'static str>; 10],
+    /// Hour (0–23) → flexible day-period index from the CLDR range rules, or
+    /// `0xFF` if the locale defines no range covering that hour.
+    pub day_period_hours: [u8; 24],
 }
 
 /// CLDR relative-time strings for all units of one locale.
@@ -497,6 +508,10 @@ pub(crate) fn calendar_spec(lang: &str) -> Option<CalendarSpec> {
         eras_wide: core::array::from_fn(|_| c.str()),
         eras_abbr: core::array::from_fn(|_| c.str()),
         eras_narrow: core::array::from_fn(|_| c.str()),
+        day_periods_wide: core::array::from_fn(|_| c.opt()),
+        day_periods_abbr: core::array::from_fn(|_| c.opt()),
+        day_periods_narrow: core::array::from_fn(|_| c.opt()),
+        day_period_hours: core::array::from_fn(|_| c.u8()),
     })
 }
 

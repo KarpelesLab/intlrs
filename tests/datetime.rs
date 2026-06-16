@@ -390,3 +390,33 @@ fn hour_cycles() {
     assert_eq!(at(13, HourCycle::H11), "1:00\u{202f}PM");
     assert_eq!(at(13, HourCycle::H23), "13:00");
 }
+
+#[test]
+fn flexible_day_period() {
+    use intl::datetime::format_skeleton as fs;
+    let at = |h, mi| DateTime {
+        hour: h,
+        minute: mi,
+        second: 0,
+        ..DT
+    };
+    // Range periods by hour (en: morning <12, afternoon <18, evening <21, night).
+    assert_eq!(fs("en", &at(9, 30), "Bhm"), "9:30 in the morning");
+    assert_eq!(fs("en", &at(15, 30), "Bhm"), "3:30 in the afternoon");
+    assert_eq!(fs("en", &at(19, 30), "Bhm"), "7:30 in the evening");
+    assert_eq!(fs("en", &at(22, 30), "Bhm"), "10:30 at night");
+    // Midnight/noon only at the exact instant.
+    assert_eq!(fs("en", &at(12, 0), "Bh"), "12 noon");
+    assert_eq!(fs("en", &at(0, 0), "Bh"), "12 midnight");
+    assert_eq!(fs("en", &at(12, 30), "Bh"), "12 in the afternoon");
+
+    // dayPeriod option promotes am/pm to the flexible period.
+    use intl::datetime::{DateTimeFormatOptions, NameStyle, Numeric2Digit, format_options as fo};
+    let o = DateTimeFormatOptions {
+        hour: Some(Numeric2Digit::Numeric),
+        day_period: Some(NameStyle::Long),
+        hour12: Some(true),
+        ..Default::default()
+    };
+    assert_eq!(fo("en", &at(9, 0), &o).unwrap(), "9\u{202f}in the morning");
+}
