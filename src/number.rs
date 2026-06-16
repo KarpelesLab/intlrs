@@ -138,14 +138,13 @@ pub enum Notation {
 }
 
 /// Whether compact notation uses short or long suffixes (ECMA-402
-/// `compactDisplay`). Only `Short` is data-backed today; `Long` falls back to
-/// `Short`.
+/// `compactDisplay`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CompactDisplay {
-    /// Short suffixes (`K`, `M`).
+    /// Short suffixes (`1.5K`).
     #[default]
     Short,
-    /// Long suffixes (`thousand`); falls back to short (no data yet).
+    /// Long suffixes (`1.5 thousand`).
     Long,
 }
 
@@ -1421,7 +1420,13 @@ fn compact_parts(
         t /= 10.0;
         exp += 1;
     }
-    let pattern = table[(exp - 3).min(11)];
+    // compact.bin holds 12 short patterns then 12 long; pick the band.
+    let base = if opts.compact_display == CompactDisplay::Long {
+        12
+    } else {
+        0
+    };
+    let pattern = table[base + (exp - 3).min(11)];
     let zeros = pattern.chars().filter(|&c| c == '0').count();
     let has_suffix = pattern
         .chars()

@@ -222,7 +222,7 @@ pub(crate) fn default_numbering(lang: &str) -> Option<&'static str> {
 
 /// Compact (short) decimal patterns for magnitudes 10³…10¹⁴ in an exact
 /// (lowercased) locale key.
-pub(crate) fn compact_patterns(lang: &str) -> Option<[&'static str; 12]> {
+pub(crate) fn compact_patterns(lang: &str) -> Option<[&'static str; 24]> {
     let mut c = find(COMPACT, lang)?;
     Some(core::array::from_fn(|_| c.str()))
 }

@@ -166,3 +166,21 @@ fn unit_style() {
     // Unknown unit degrades to the bare number.
     assert_eq!(format("en", 5.0, &mk("furlong", UnitDisplay::Long)), "5");
 }
+
+#[test]
+fn compact_long() {
+    use intl::number::{CompactDisplay, Notation, NumberFormatOptions, format};
+    let lo = NumberFormatOptions {
+        notation: Notation::Compact,
+        compact_display: CompactDisplay::Long,
+        ..Default::default()
+    };
+    assert_eq!(format("en", 1500.0, &lo), "1.5 thousand");
+    assert_eq!(format("en", 2_300_000.0, &lo), "2.3 million");
+    // Short remains the default.
+    let sh = NumberFormatOptions {
+        notation: Notation::Compact,
+        ..Default::default()
+    };
+    assert_eq!(format("en", 1500.0, &sh), "1.5K");
+}

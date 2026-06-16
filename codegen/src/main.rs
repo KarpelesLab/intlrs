@@ -302,7 +302,7 @@ fn main() {
     // ---- CLDR locale formatter tables -> committed binary blobs (no_std). ----
     let cldr_dir = root.join("src/cldr");
     let cldr = root.join("data/cldr/48");
-    emit_numbers(&cldr_dir, &cldr.join("numbers.json"));
+    emit_numbers(&cldr_dir, &cldr.join("numbers-raw"));
     emit_lists(&cldr_dir, &cldr.join("lists.json"));
     emit_relative(&cldr_dir, &cldr.join("relative.json"));
     emit_currency(&cldr_dir, &cldr.join("currency.json"));
@@ -316,7 +316,6 @@ fn main() {
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
-    emit_compact(&cldr_dir, &cldr.join("compact.json"));
     emit_numsys(&cldr_dir, &cldr.join("numsys.json"));
     emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
     emit_collation_rules(&cldr_dir, &cldr.join("collation.json"));
@@ -1961,22 +1960,107 @@ fn emit_plural_fn(out: &mut String, path: &Path, section: &str, fn_name: &str, k
 }
 
 /// Write `cldr/numbers.bin`: per-locale symbols + decimal/percent patterns.
-fn emit_numbers(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read numbers.json");
-    let json = json_parse(&text);
-    let mut records = Vec::new();
-    for (lang, n) in json.get("locales").expect("locales").entries() {
-        let s = |k: &str| n.get(k).and_then(Json::as_str).unwrap_or("");
-        let percent = s("percent");
+/// Compact-notation magnitudes 10³…10¹⁴ (the `decimalFormat` keys are
+/// `<magnitude>-count-other`).
+const COMPACT_MAGNITUDES: [&str; 12] = [
+    "1000",
+    "10000",
+    "100000",
+    "1000000",
+    "10000000",
+    "100000000",
+    "1000000000",
+    "10000000000",
+    "100000000000",
+    "1000000000000",
+    "10000000000000",
+    "100000000000000",
+];
+
+/// Write `cldr/numbers.bin` and `cldr/compact.bin` from the raw, verbatim
+/// Unicode CLDR `cldr-numbers-full` `numbers.json` files vendored under
+/// `data/cldr/48/numbers-raw/<locale>.json`.
+///
+/// `numbers.bin` payload: decimal/group/minus/plus/percent symbols, then the
+/// parsed decimal and percent `Pattern`s (latn numbering system).
+/// `compact.bin` payload: 12 short then 12 long compact patterns (the
+/// `count-other` form for each magnitude 10³…10¹⁴).
+fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path) {
+    let mut files: Vec<String> = fs::read_dir(numbers_dir)
+        .expect("read numbers-raw dir")
+        .filter_map(|e| e.ok())
+        .filter_map(|e| e.file_name().to_string_lossy().strip_suffix(".json").map(String::from))
+        .collect();
+    files.sort();
+
+    let mut num_records = Vec::new();
+    let mut compact_records = Vec::new();
+    for locale in files {
+        let path = numbers_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let main = json.get("main").expect("main");
+        let (_, loc_obj) = main.entries().first().expect("locale entry");
+        let n = loc_obj.get("numbers").expect("numbers");
+
+        let sym = n
+            .get("symbols-numberSystem-latn")
+            .expect("symbols-numberSystem-latn");
+        let g = |o: &Json, k: &str| o.get(k).and_then(Json::as_str).unwrap_or("").to_string();
+        let decimal = g(sym, "decimal");
+        let group = g(sym, "group");
+        let minus = g(sym, "minusSign");
+        let plus = g(sym, "plusSign");
+        let percent = g(sym, "percentSign");
+        let dec_fmt = n
+            .get("decimalFormats-numberSystem-latn")
+            .expect("decimalFormats");
+        let dec_pat = dec_fmt.get("standard").and_then(Json::as_str).unwrap_or("");
+        let pct_pat = n
+            .get("percentFormats-numberSystem-latn")
+            .and_then(|x| x.get("standard"))
+            .and_then(Json::as_str)
+            .unwrap_or("");
+
         let mut p = Vec::new();
-        for sym in [s("decimal"), s("group"), s("minus"), s("plus"), percent] {
-            enc_str(&mut p, sym);
+        for s in [&decimal, &group, &minus, &plus, &percent] {
+            enc_str(&mut p, s);
         }
-        enc_pattern(&mut p, &parse_number_pattern(s("decimalPattern"), percent));
-        enc_pattern(&mut p, &parse_number_pattern(s("percentPattern"), percent));
-        records.push((lang.to_ascii_lowercase(), p));
+        enc_pattern(&mut p, &parse_number_pattern(dec_pat, &percent));
+        enc_pattern(&mut p, &parse_number_pattern(pct_pat, &percent));
+        num_records.push((locale.to_ascii_lowercase(), p));
+
+        // Compact short then long, `count-other` per magnitude.
+        let mut c = Vec::new();
+        for width in ["short", "long"] {
+            let df = dec_fmt
+                .get(width)
+                .and_then(|w| w.get("decimalFormat"));
+            for mag in COMPACT_MAGNITUDES {
+                let key = alloc_concat(mag, "-count-other");
+                let pat = df
+                    .and_then(|d| d.get(&key))
+                    .and_then(Json::as_str)
+                    .unwrap_or("0");
+                enc_str(&mut c, pat);
+            }
+        }
+        compact_records.push((locale.to_ascii_lowercase(), c));
     }
-    write_blob(cldr_dir, "numbers", &records);
+    write_blob(cldr_dir, "numbers", &num_records);
+    write_blob(cldr_dir, "compact", &compact_records);
+}
+
+fn alloc_format(locale: &str) -> String {
+    let mut s = String::from(locale);
+    s.push_str(".json");
+    s
+}
+
+fn alloc_concat(a: &str, b: &str) -> String {
+    let mut s = String::from(a);
+    s.push_str(b);
+    s
 }
 
 /// Write `cldr/lists.bin`: per-locale list connector patterns (and / or).
@@ -2418,22 +2502,6 @@ fn emit_numsys(cldr_dir: &Path, path: &Path) {
         defaults.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "numsys_default", &defaults);
-}
-
-/// Write `cldr/compact.bin`: per-locale compact (short) decimal patterns for
-/// magnitudes 10³…10¹⁴ (12 patterns, `count-other`).
-fn emit_compact(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read compact.json");
-    let json = json_parse(&text);
-    let mut records = Vec::new();
-    for (lang, loc) in json.get("locales").expect("locales").entries() {
-        let mut p = Vec::new();
-        for v in loc.array() {
-            enc_str(&mut p, v.as_str().unwrap_or("0"));
-        }
-        records.push((lang.to_ascii_lowercase(), p));
-    }
-    write_blob(cldr_dir, "compact", &records);
 }
 
 /// Write `cldr/rbnf.bin`: per-locale RBNF spell-out rule sets. Payload is
