@@ -887,8 +887,13 @@ pub struct DateTimeFormatOptions {
     pub fractional_second_digits: Option<u8>,
     /// Day-period width (only affects 12-hour formatting).
     pub day_period: Option<NameStyle>,
-    /// Time-zone-name presentation (requires `tz_offset_minutes`).
+    /// Time-zone-name presentation (requires `time_zone` or `tz_offset_minutes`).
     pub time_zone_name: Option<TimeZoneNameStyle>,
+    /// IANA zone id (e.g. `"America/New_York"`) for `time_zone_name`. With the
+    /// `iana-tz` feature this yields a DST-aware abbreviation for the `Short`
+    /// style and the zone's offset otherwise; without it, or for an unknown
+    /// zone, the offset path (`tz_offset_minutes`) is used.
+    pub time_zone: Option<&'static str>,
     /// Hour cycle (overrides `hour12`).
     pub hour_cycle: Option<HourCycle>,
     /// 12-hour clock toggle.
@@ -1412,6 +1417,33 @@ fn zone_string(lang: &str, style: TimeZoneNameStyle, offset: i32) -> String {
     }
 }
 
+/// Resolve the `time_zone_name` text for `dt`. With the `iana-tz` feature and a
+/// `time_zone` set, the `Short` style yields the DST-aware zone abbreviation
+/// (e.g. `EST`/`EDT`) and other styles use the zone's offset; otherwise the
+/// caller-supplied `tz_offset_minutes` drives the localized GMT offset.
+#[cfg_attr(not(feature = "iana-tz"), allow(unused_variables))]
+fn compute_tz_name(
+    lang: &str,
+    dt: &DateTime,
+    opts: &DateTimeFormatOptions,
+    style: TimeZoneNameStyle,
+) -> Option<String> {
+    #[cfg(feature = "iana-tz")]
+    if let Some(zid) = opts.time_zone
+        && let Some(zone) = crate::timezone::load_zone(zid)
+    {
+        let off_min = zone.offset_for_local(dt) / 60;
+        return Some(match style {
+            // The tz database carries the specific (DST-aware) abbreviation.
+            TimeZoneNameStyle::Short => String::from(zone.abbrev_for_local(dt)),
+            // No long/generic names in the tz db — fall back to the offset form.
+            _ => zone_string(lang, style, off_min),
+        });
+    }
+    opts.tz_offset_minutes
+        .map(|off| zone_string(lang, style, off))
+}
+
 /// Format `dt` in `lang` with ECMA-402-style component options, returning the
 /// tagged parts (`Intl.DateTimeFormat.prototype.formatToParts`).
 ///
@@ -1440,14 +1472,16 @@ pub fn format_to_parts(
     let s = spec(lang);
     let pattern = resolve_pattern(lang, &s, opts)?;
     let mut parts = render_parts(&pattern, dt, &s);
-    if let (Some(style), Some(off)) = (opts.time_zone_name, opts.tz_offset_minutes) {
+    if let Some(style) = opts.time_zone_name
+        && let Some(name) = compute_tz_name(lang, dt, opts, style)
+    {
         parts.push(DateTimePart {
             kind: DateTimePartType::Literal,
             value: String::from(" "),
         });
         parts.push(DateTimePart {
             kind: DateTimePartType::TimeZoneName,
-            value: zone_string(lang, style, off),
+            value: name,
         });
     }
     Ok(parts)

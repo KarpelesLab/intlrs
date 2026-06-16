@@ -440,6 +440,7 @@ pub intl::datetime::DateTimeFormatOptions::minute: core::option::Option<intl::da
 pub intl::datetime::DateTimeFormatOptions::month: core::option::Option<intl::datetime::MonthStyle>
 pub intl::datetime::DateTimeFormatOptions::second: core::option::Option<intl::datetime::Numeric2Digit>
 pub intl::datetime::DateTimeFormatOptions::time_style: core::option::Option<intl::datetime::DateStyle>
+pub intl::datetime::DateTimeFormatOptions::time_zone: core::option::Option<&'static str>
 pub intl::datetime::DateTimeFormatOptions::time_zone_name: core::option::Option<intl::datetime::TimeZoneNameStyle>
 pub intl::datetime::DateTimeFormatOptions::tz_offset_minutes: core::option::Option<i32>
 pub intl::datetime::DateTimeFormatOptions::weekday: core::option::Option<intl::datetime::NameStyle>
@@ -1631,6 +1632,7 @@ pub mod intl::timezone
 pub struct intl::timezone::IanaZone(_)
 impl intl::timezone::IanaZone
 pub fn intl::timezone::IanaZone::abbrev_at(&self, i64) -> &'static str
+pub fn intl::timezone::IanaZone::abbrev_for_local(&self, &intl::datetime::DateTime) -> &'static str
 pub fn intl::timezone::IanaZone::is_dst_at(&self, i64) -> bool
 pub fn intl::timezone::IanaZone::offset_at(&self, i64) -> i32
 pub fn intl::timezone::IanaZone::offset_for_local(&self, &intl::datetime::DateTime) -> i32

@@ -94,6 +94,15 @@ mod iana {
             let off = self.0.lookup(approx).offset as i64;
             self.0.lookup(approx - off).offset
         }
+
+        /// The zone abbreviation (e.g. `"EST"` / `"EDT"`) for a *local*
+        /// date-time in this zone — DST-aware, resolved like `offset_for_local`.
+        #[must_use]
+        pub fn abbrev_for_local(&self, dt: &DateTime) -> &'static str {
+            let approx = to_unix(dt);
+            let off = self.0.lookup(approx).offset as i64;
+            self.0.lookup(approx - off).abbrev
+        }
     }
 
     /// Iterate over every IANA zone name in the embedded database.

@@ -420,3 +420,64 @@ fn flexible_day_period() {
     };
     assert_eq!(fo("en", &at(9, 0), &o).unwrap(), "9\u{202f}in the morning");
 }
+
+#[cfg(feature = "iana-tz")]
+#[test]
+fn named_time_zone() {
+    use intl::datetime::{
+        DateTimeFormatOptions, HourCycle, Numeric2Digit, TimeZoneNameStyle, format_options as fo,
+    };
+    let mk = |zone, style| DateTimeFormatOptions {
+        hour: Some(Numeric2Digit::Numeric),
+        minute: Some(Numeric2Digit::TwoDigit),
+        hour_cycle: Some(HourCycle::H23),
+        time_zone: Some(zone),
+        time_zone_name: Some(style),
+        ..Default::default()
+    };
+    let jul = DateTime { month: 7, ..DT };
+    let jan = DateTime { month: 1, ..DT };
+    // DST-aware abbreviation from the tz database.
+    assert!(
+        fo(
+            "en",
+            &jul,
+            &mk("America/New_York", TimeZoneNameStyle::Short)
+        )
+        .unwrap()
+        .ends_with("EDT")
+    );
+    assert!(
+        fo(
+            "en",
+            &jan,
+            &mk("America/New_York", TimeZoneNameStyle::Short)
+        )
+        .unwrap()
+        .ends_with("EST")
+    );
+    assert!(
+        fo("en", &jul, &mk("Asia/Tokyo", TimeZoneNameStyle::Short))
+            .unwrap()
+            .ends_with("JST")
+    );
+    // Offset styles are zone-derived (DST-aware).
+    assert!(
+        fo(
+            "en",
+            &jul,
+            &mk("America/New_York", TimeZoneNameStyle::LongOffset)
+        )
+        .unwrap()
+        .ends_with("GMT-04:00")
+    );
+    assert!(
+        fo(
+            "en",
+            &jan,
+            &mk("America/New_York", TimeZoneNameStyle::LongOffset)
+        )
+        .unwrap()
+        .ends_with("GMT-05:00")
+    );
+}
