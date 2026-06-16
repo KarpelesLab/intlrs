@@ -130,3 +130,39 @@ fn compact_non_finite() {
     let _ = k("en", f64::INFINITY);
     let _ = k("en", f64::NEG_INFINITY);
 }
+
+#[test]
+fn unit_style() {
+    use intl::number::{
+        NumberFormatOptions, NumberPartType, NumberStyle, UnitDisplay, format, format_to_parts,
+    };
+    let mk = |unit, disp| NumberFormatOptions {
+        style: NumberStyle::Unit,
+        unit: Some(unit),
+        unit_display: disp,
+        ..Default::default()
+    };
+    assert_eq!(
+        format("en", 5.0, &mk("kilometer", UnitDisplay::Long)),
+        "5 kilometers"
+    );
+    assert_eq!(
+        format("en", 1.0, &mk("kilometer", UnitDisplay::Long)),
+        "1 kilometer"
+    );
+    assert_eq!(format("en", 3.0, &mk("hour", UnitDisplay::Short)), "3 hr");
+    assert_eq!(
+        format("en", 5.0, &mk("kilometer-per-hour", UnitDisplay::Short)),
+        "5 km/h"
+    );
+    assert_eq!(
+        format("de", 2.0, &mk("hour", UnitDisplay::Long)),
+        "2 Stunden"
+    );
+    // Parts: number core, then a literal space and the unit.
+    let parts = format_to_parts("en", 1.5, &mk("meter", UnitDisplay::Short));
+    assert_eq!(parts.last().unwrap().kind, NumberPartType::Unit);
+    assert_eq!(parts.last().unwrap().value, "m");
+    // Unknown unit degrades to the bare number.
+    assert_eq!(format("en", 5.0, &mk("furlong", UnitDisplay::Long)), "5");
+}

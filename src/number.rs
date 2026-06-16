@@ -1058,6 +1058,132 @@ fn affix_parts(text: &str, style: NumberStyle, s: &NumberSpec, currency: &str) -
     parts
 }
 
+/// Map an ECMA-402 sanctioned unit identifier to the embedded unit-table index
+/// (the order of `crate::unit::Unit`). Returns `None` for unsupported units.
+fn unit_index(id: &str) -> Option<usize> {
+    Some(match id {
+        "second" => 0,
+        "minute" => 1,
+        "hour" => 2,
+        "day" => 3,
+        "week" => 4,
+        "month" => 5,
+        "year" => 6,
+        "millimeter" => 7,
+        "centimeter" => 8,
+        "meter" => 9,
+        "kilometer" => 10,
+        "inch" => 11,
+        "foot" => 12,
+        "mile" => 13,
+        "gram" => 14,
+        "kilogram" => 15,
+        "ounce" => 16,
+        "pound" => 17,
+        "byte" => 18,
+        "kilobyte" => 19,
+        "megabyte" => 20,
+        "gigabyte" => 21,
+        "celsius" => 22,
+        "fahrenheit" => 23,
+        "kilometer-per-hour" => 24,
+        "mile-per-hour" => 25,
+        "liter" => 26,
+        "milliliter" => 27,
+        _ => return None,
+    })
+}
+
+/// Split a unit-pattern affix into `Unit` (non-whitespace) and `Literal`
+/// (whitespace) runs, matching ECMA-402's tagging of `"1.5 m"` as
+/// `… literal(" ") unit("m")`.
+fn unit_affix(text: &str) -> Vec<NumberPart> {
+    let mut parts = Vec::new();
+    let mut buf = String::new();
+    let mut in_ws = false;
+    for ch in text.chars() {
+        let ws = ch.is_whitespace();
+        if buf.is_empty() {
+            in_ws = ws;
+        } else if ws != in_ws {
+            let kind = if in_ws {
+                NumberPartType::Literal
+            } else {
+                NumberPartType::Unit
+            };
+            parts.push(NumberPart::new(kind, core::mem::take(&mut buf)));
+            in_ws = ws;
+        }
+        buf.push(ch);
+    }
+    if !buf.is_empty() {
+        let kind = if in_ws {
+            NumberPartType::Literal
+        } else {
+            NumberPartType::Unit
+        };
+        parts.push(NumberPart::new(kind, buf));
+    }
+    parts
+}
+
+/// Wrap the numeric `core` parts with the locale's CLDR unit pattern (e.g.
+/// `"{0} km"`), choosing the plural-correct wording. An unknown/missing unit
+/// degrades to the bare number.
+fn unit_wrap(
+    lang: &str,
+    value: f64,
+    core: Vec<NumberPart>,
+    opts: &NumberFormatOptions,
+) -> Vec<NumberPart> {
+    let Some(uidx) = opts.unit.and_then(unit_index) else {
+        return core;
+    };
+    // Long form when requested; short/narrow share the short table (no narrow data).
+    let width = usize::from(opts.unit_display != UnitDisplay::Long);
+    let ops = if value % 1.0 == 0.0 && value > -1e15 && value < 1e15 {
+        crate::plural::PluralOperands::from_int(value as i64)
+    } else {
+        crate::plural::PluralOperands::parse(&alloc::format!("{value}"))
+            .unwrap_or_else(|| crate::plural::PluralOperands::from_int(value as i64))
+    };
+    let cat = crate::plural::plural_category(lang, &ops) as usize;
+
+    let norm: String = lang
+        .chars()
+        .map(|c| {
+            if c == '_' {
+                '-'
+            } else {
+                c.to_ascii_lowercase()
+            }
+        })
+        .collect();
+    let mut pattern = "{0}";
+    let mut end = norm.len();
+    loop {
+        if let Some(p) = crate::cldr::unit_pattern(&norm[..end], width, uidx, cat) {
+            pattern = p;
+            break;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => {
+                if let Some(p) = crate::cldr::unit_pattern("en", width, uidx, cat) {
+                    pattern = p;
+                }
+                break;
+            }
+        }
+    }
+
+    let (pre, post) = pattern.split_once("{0}").unwrap_or(("", pattern));
+    let mut parts = unit_affix(pre);
+    parts.extend(core);
+    parts.extend(unit_affix(post));
+    parts
+}
+
 /// Resolve the base pattern, scaled value, and currency symbol for `style`.
 fn resolve_style(
     lang: &str,
@@ -1153,6 +1279,10 @@ fn standard_parts(
 
     let mut parts = Vec::new();
     let core = core_parts(&int_d, &frac_d, negative, is_zero, pri, sec, opts, s);
+    // Unit style wraps the numeric core in the locale's unit pattern.
+    if opts.style == NumberStyle::Unit {
+        return unit_wrap(lang, scaled, core, opts);
+    }
     // The sign (first core part, if any) precedes the prefix affix.
     let mut core_iter = core.into_iter().peekable();
     if let Some(first) = core_iter.peek()
