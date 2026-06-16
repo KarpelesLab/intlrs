@@ -1994,7 +1994,12 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path) {
     let mut files: Vec<String> = fs::read_dir(numbers_dir)
         .expect("read numbers-raw dir")
         .filter_map(|e| e.ok())
-        .filter_map(|e| e.file_name().to_string_lossy().strip_suffix(".json").map(String::from))
+        .filter_map(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .strip_suffix(".json")
+                .map(String::from)
+        })
         .collect();
     files.sort();
 
@@ -2038,9 +2043,7 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path) {
         // Compact short then long, `count-other` per magnitude.
         let mut c = Vec::new();
         for width in ["short", "long"] {
-            let df = dec_fmt
-                .get(width)
-                .and_then(|w| w.get("decimalFormat"));
+            let df = dec_fmt.get(width).and_then(|w| w.get("decimalFormat"));
             for mag in COMPACT_MAGNITUDES {
                 let key = alloc_concat(mag, "-count-other");
                 let pat = df
@@ -2276,7 +2279,10 @@ const DAY_PERIOD_KEYS: [&str; 10] = [
 /// Parse a `"HH:mm"` day-period boundary to an hour 0..=24 (minutes are always
 /// `:00` in CLDR's rules; verified at vendor time).
 fn dp_hour(t: &str) -> usize {
-    t.split(':').next().and_then(|h| h.parse().ok()).unwrap_or(0)
+    t.split(':')
+        .next()
+        .and_then(|h| h.parse().ok())
+        .unwrap_or(0)
 }
 
 /// Build the 24-entry hour→period-index table for a locale from its day-period
@@ -2295,12 +2301,14 @@ fn day_period_table(rules: Option<&Json>) -> [u8; 24] {
             _ => continue, // _at rule (midnight/noon): not a range
         };
         // Fill [from, before); wrap past midnight if before <= from.
-        let mut h = from % 24;
         let end = if before == 0 { 24 } else { before };
-        let count = if end > from { end - from } else { 24 - from + end };
-        for _ in 0..count {
-            table[h % 24] = idx as u8;
-            h += 1;
+        let count = if end > from {
+            end - from
+        } else {
+            24 - from + end
+        };
+        for k in 0..count {
+            table[(from + k) % 24] = idx as u8;
         }
     }
     table
