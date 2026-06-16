@@ -188,17 +188,16 @@ jobs:
         run: cargo doc --no-deps --all-features
 
   msrv:
-    name: MSRV (Rust 1.86)
+    name: MSRV (Rust 1.88)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      # The crate declares rust-version = "1.86" (the floor set by the default
-      # `iana-tz` / `timezone-data` dependency). Build the default plus each tier
+      # The crate declares rust-version = "1.88". Build the default plus each tier
       # on exactly that toolchain so an accidental use of a newer-stable API fails
       # CI rather than downstream.
-      - name: Install Rust 1.86
-        uses: dtolnay/rust-toolchain@1.86.0
+      - name: Install Rust 1.88
+        uses: dtolnay/rust-toolchain@1.88.0
 
       - name: Cache
         uses: Swatinem/rust-cache@v2

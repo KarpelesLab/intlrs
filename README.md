@@ -142,7 +142,7 @@ under `src/cldr/` and embedded with `include_bytes!`, so the table layer is
 **Everything on by default, opt out for size.** Out of the box you get the
 **whole Unicode codepoint space** (`full`), every allocating API (`alloc`), every
 Unicode **algorithm component**, the **full character-name database** (`names`),
-and the **IANA time-zone database** (`iana-tz`) — all `no_std`. MSRV 1.86.
+and the **IANA time-zone database** (`iana-tz`) — all `no_std`. MSRV 1.88.
 
 To shrink the build, set `default-features = false` and enable only the range
 tier + the components you want.
