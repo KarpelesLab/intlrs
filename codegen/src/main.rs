@@ -303,16 +303,16 @@ fn main() {
     let cldr_dir = root.join("src/cldr");
     let cldr = root.join("data/cldr/48");
     emit_numbers(&cldr_dir, &cldr.join("numbers-raw"));
-    emit_lists(&cldr_dir, &cldr.join("lists.json"));
-    emit_relative(&cldr_dir, &cldr.join("relative.json"));
+    emit_lists(&cldr_dir, &cldr.join("lists-raw"));
+    emit_relative(&cldr_dir, &cldr.join("datefields-raw"));
     emit_currency(
         &cldr_dir,
         &cldr.join("currencies-raw"),
         &cldr.join("numbers-raw"),
         &cldr.join("currencyData.json"),
     );
-    emit_display(&cldr_dir, &cldr.join("display.json"));
-    emit_units(&cldr_dir, &cldr.join("units.json"));
+    emit_display(&cldr_dir, &cldr.join("localenames-raw"));
+    emit_units(&cldr_dir, &cldr.join("units-raw"));
     emit_dates(
         &cldr_dir,
         &cldr.join("dates"),
@@ -321,7 +321,11 @@ fn main() {
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
-    emit_numsys(&cldr_dir, &cldr.join("numsys.json"));
+    emit_numsys(
+        &cldr_dir,
+        &cldr.join("numberingSystems.json"),
+        &cldr.join("numbers-raw"),
+    );
     emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
     emit_collation_rules(&cldr_dir, &cldr.join("collation.json"));
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic.json"));
@@ -2072,45 +2076,82 @@ fn alloc_concat(a: &str, b: &str) -> String {
 }
 
 /// Write `cldr/lists.bin`: per-locale list connector patterns (and / or).
-fn emit_lists(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read lists.json");
-    let json = json_parse(&text);
+fn emit_lists(cldr_dir: &Path, lists_dir: &Path) {
+    let mut locales = locale_files(lists_dir);
+    locales.sort();
     let mut records = Vec::new();
-    for (lang, spec) in json.get("locales").expect("locales").entries() {
+    for locale in locales {
+        let path = lists_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let lp = loc_obj.get("listPatterns").expect("listPatterns");
         let mut p = Vec::new();
-        for style in ["and", "or"] {
-            let st = spec.get(style).expect("style");
-            for k in ["start", "middle", "end", "two"] {
+        for style_key in ["listPattern-type-standard", "listPattern-type-or"] {
+            let st = lp.get(style_key).expect("style");
+            for k in ["start", "middle", "end", "2"] {
                 enc_str(&mut p, st.get(k).and_then(Json::as_str).unwrap_or(""));
             }
         }
-        records.push((lang.to_ascii_lowercase(), p));
+        records.push((locale.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "lists", &records);
 }
 
+/// Sorted base locale names from a directory of `<locale>.json` files.
+fn locale_files(dir: &Path) -> Vec<String> {
+    fs::read_dir(dir)
+        .unwrap_or_else(|_| panic!("read {}", dir.display()))
+        .filter_map(|e| e.ok())
+        .filter_map(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .strip_suffix(".json")
+                .map(String::from)
+        })
+        .collect()
+}
+
 /// Write `cldr/relative.bin`: per-locale relative-time strings (7 units).
-fn emit_relative(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read relative.json");
-    let json = json_parse(&text);
+fn emit_relative(cldr_dir: &Path, datefields_dir: &Path) {
     let units = ["year", "month", "week", "day", "hour", "minute", "second"];
-    let cat_index = |name: &str| match name {
-        "zero" => 0,
-        "one" => 1,
-        "two" => 2,
-        "few" => 3,
-        "many" => 4,
+    let cat_index = |key: &str| match key {
+        "relativeTimePattern-count-zero" => 0,
+        "relativeTimePattern-count-one" => 1,
+        "relativeTimePattern-count-two" => 2,
+        "relativeTimePattern-count-few" => 3,
+        "relativeTimePattern-count-many" => 4,
         _ => 5,
     };
+    let mut locales = locale_files(datefields_dir);
+    locales.sort();
     let mut records = Vec::new();
-    for (lang, loc) in json.get("locales").expect("locales").entries() {
+    for locale in locales {
+        let path = datefields_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let fields = loc_obj
+            .get("dates")
+            .and_then(|d| d.get("fields"))
+            .expect("fields");
         let mut p = Vec::new();
         for u in units {
-            let f = loc.get(u).expect("unit");
-            enc_opt(&mut p, f.get("prev").and_then(Json::as_str));
-            enc_opt(&mut p, f.get("cur").and_then(Json::as_str));
-            enc_opt(&mut p, f.get("next").and_then(Json::as_str));
-            for tense in ["past", "future"] {
+            let f = fields.get(u).expect("unit");
+            enc_opt(&mut p, f.get("relative-type--1").and_then(Json::as_str));
+            enc_opt(&mut p, f.get("relative-type-0").and_then(Json::as_str));
+            enc_opt(&mut p, f.get("relative-type-1").and_then(Json::as_str));
+            for tense in ["relativeTime-type-past", "relativeTime-type-future"] {
                 let mut arr: [Option<&str>; 6] = [None; 6];
                 if let Some(obj) = f.get(tense) {
                     for (count, pat) in obj.entries() {
@@ -2124,7 +2165,7 @@ fn emit_relative(cldr_dir: &Path, path: &Path) {
                 }
             }
         }
-        records.push((lang.to_ascii_lowercase(), p));
+        records.push((locale.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "relative", &records);
 }
@@ -2494,15 +2535,32 @@ const UNITS: [&str; 28] = [
 /// Write `cldr/units.bin`: per-locale unit patterns. Payload is
 /// `width(long, short) × unit(28) × plural-count(6)` optional strings, in that
 /// nested order.
-fn emit_units(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read units.json");
-    let json = json_parse(&text);
-    let counts = ["zero", "one", "two", "few", "many", "other"];
+fn emit_units(cldr_dir: &Path, units_dir: &Path) {
+    let counts = [
+        "unitPattern-count-zero",
+        "unitPattern-count-one",
+        "unitPattern-count-two",
+        "unitPattern-count-few",
+        "unitPattern-count-many",
+        "unitPattern-count-other",
+    ];
+    let mut locales = locale_files(units_dir);
+    locales.sort();
     let mut records = Vec::new();
-    for (lang, loc) in json.get("locales").expect("locales").entries() {
+    for locale in locales {
+        let path = units_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let units = loc_obj.get("units").expect("units");
         let mut p = Vec::new();
         for width in ["long", "short"] {
-            let w = loc.get(width).expect("width");
+            let w = units.get(width).expect("width");
             for unit in UNITS {
                 let f = w.get(unit);
                 for count in counts {
@@ -2511,7 +2569,7 @@ fn emit_units(cldr_dir: &Path, path: &Path) {
                 }
             }
         }
-        records.push((lang.to_ascii_lowercase(), p));
+        records.push((locale.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "units", &records);
 }
@@ -2580,22 +2638,49 @@ fn emit_ordsuffix(cldr_dir: &Path, path: &Path) {
 
 /// Write `cldr/numsys_digits.bin` (numbering system → 10 digit glyphs) and
 /// `cldr/numsys_default.bin` (locale → default numbering system).
-fn emit_numsys(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read numsys.json");
-    let json = json_parse(&text);
+fn emit_numsys(cldr_dir: &Path, numbering_systems: &Path, numbers_dir: &Path) {
+    // Digit glyphs from the supplemental numbering-systems table (numeric only).
+    let ns_text = fs::read_to_string(numbering_systems).expect("read numberingSystems.json");
+    let ns = json_parse(&ns_text);
+    let table = ns
+        .get("supplemental")
+        .and_then(|s| s.get("numberingSystems"))
+        .expect("numberingSystems");
     let mut digits = Vec::new();
-    for (sys, glyphs) in json.get("digits").expect("digits").entries() {
-        let mut p = Vec::new();
-        enc_str(&mut p, glyphs.as_str().unwrap_or(""));
-        digits.push((sys.clone(), p));
+    for (sys, info) in table.entries() {
+        if info.get("_type").and_then(Json::as_str) != Some("numeric") {
+            continue;
+        }
+        if let Some(glyphs) = info.get("_digits").and_then(Json::as_str) {
+            let mut p = Vec::new();
+            enc_str(&mut p, glyphs);
+            digits.push((sys.clone(), p));
+        }
     }
     write_blob(cldr_dir, "numsys_digits", &digits);
 
+    // Per-locale default numbering system from each numbers.json.
+    let mut locales = locale_files(numbers_dir);
+    locales.sort();
     let mut defaults = Vec::new();
-    for (lang, sys) in json.get("defaults").expect("defaults").entries() {
+    for locale in locales {
+        let path = numbers_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let sys = loc_obj
+            .get("numbers")
+            .and_then(|n| n.get("defaultNumberingSystem"))
+            .and_then(Json::as_str)
+            .unwrap_or("latn");
         let mut p = Vec::new();
-        enc_str(&mut p, sys.as_str().unwrap_or("latn"));
-        defaults.push((lang.to_ascii_lowercase(), p));
+        enc_str(&mut p, sys);
+        defaults.push((locale.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "numsys_default", &defaults);
 }
@@ -2663,24 +2748,53 @@ fn emit_likely(cldr_dir: &Path, path: &Path) {
 
 /// Write `cldr/display_languages.bin` and `cldr/display_territories.bin`: for
 /// each display locale, a nested `[u16 count]` table of `code -> name`.
-fn emit_display(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read display.json");
-    let json = json_parse(&text);
-    for (section, blob) in [
-        ("languages", "display_languages"),
-        ("territories", "display_territories"),
+fn emit_display(cldr_dir: &Path, localenames_dir: &Path) {
+    let mut locales: Vec<String> = fs::read_dir(localenames_dir)
+        .expect("read localenames-raw dir")
+        .filter_map(|e| e.ok())
+        .filter_map(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .strip_suffix("-languages.json")
+                .map(String::from)
+        })
+        .collect();
+    locales.sort();
+
+    for (section, suffix, blob) in [
+        ("languages", "-languages.json", "display_languages"),
+        ("territories", "-territories.json", "display_territories"),
     ] {
-        let table = json.get(section).expect("section");
         let mut records = Vec::new();
-        for (disp, codes) in table.entries() {
-            let entries = codes.entries();
+        for locale in &locales {
+            let path = localenames_dir.join(alloc_concat(locale, suffix));
+            let text =
+                fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+            let json = json_parse(&text);
+            let (_, loc_obj) = json
+                .get("main")
+                .expect("main")
+                .entries()
+                .first()
+                .expect("locale");
+            let table = loc_obj
+                .get("localeDisplayNames")
+                .and_then(|d| d.get(section))
+                .expect("section");
+            // Skip `-alt-` variant keys; the runtime looks up the bare code.
+            let kept: Vec<(&str, &str)> = table
+                .entries()
+                .iter()
+                .filter(|(code, _)| !code.contains("-alt-"))
+                .filter_map(|(code, name)| name.as_str().map(|n| (code.as_str(), n)))
+                .collect();
             let mut payload = Vec::new();
-            payload.extend_from_slice(&(entries.len() as u16).to_le_bytes());
-            for (code, name) in entries {
+            payload.extend_from_slice(&(kept.len() as u16).to_le_bytes());
+            for (code, name) in kept {
                 enc_str(&mut payload, code);
-                enc_str(&mut payload, name.as_str().unwrap_or(""));
+                enc_str(&mut payload, name);
             }
-            records.push((disp.to_ascii_lowercase(), payload));
+            records.push((locale.to_ascii_lowercase(), payload));
         }
         write_blob(cldr_dir, blob, &records);
     }
