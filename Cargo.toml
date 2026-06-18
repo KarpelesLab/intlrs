@@ -77,7 +77,7 @@ segmentation = []                           # UAX #29 grapheme/word/sentence + U
 bidi = []                                   # UAX #9 bidirectional algorithm
 identifiers = []                            # UAX #31 identifiers
 case = ["normalization", "segmentation"]    # case mapping/folding (needs NFD + word breaks)
-collation = ["case", "alloc"]               # UTS #10 collation (~1.9 MB table)
+collation = ["case", "alloc", "_cldr"]      # UTS #10 collation (~1.9 MB table; CLDR tailorings)
 idna = ["normalization", "alloc", "bidi"]   # UTS #46 IDNA (bidi: CheckBidi / RFC 5893)
 confusables = ["normalization", "alloc"]    # UTS #39 confusable/skeleton
 
