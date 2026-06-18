@@ -149,25 +149,46 @@ pub struct RelativeSpec {
 
 // ---- Embedded blobs. ----
 
+#[cfg(feature = "number")]
 const NUMBERS: &[u8] = include_bytes!("cldr/numbers.bin");
+#[cfg(feature = "list")]
 const LISTS: &[u8] = include_bytes!("cldr/lists.bin");
+#[cfg(feature = "relative")]
 const RELATIVE: &[u8] = include_bytes!("cldr/relative.bin");
+#[cfg(feature = "currency")]
 const CURRENCY: &[u8] = include_bytes!("cldr/currency.bin");
+#[cfg(feature = "currency")]
 const CURRENCY_DIGITS: &[u8] = include_bytes!("cldr/currency_digits.bin");
+#[cfg(feature = "displaynames")]
 const DISPLAY_LANG: &[u8] = include_bytes!("cldr/display_languages.bin");
+#[cfg(feature = "displaynames")]
 const DISPLAY_TERR: &[u8] = include_bytes!("cldr/display_territories.bin");
+#[cfg(feature = "units")]
 const UNITS: &[u8] = include_bytes!("cldr/units.bin");
+#[cfg(feature = "datetime")]
 const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
+#[cfg(feature = "datetime")]
 const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
+#[cfg(feature = "locale")]
 const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
+#[cfg(feature = "datetime")]
 const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
+#[cfg(feature = "spellout")]
 const RBNF: &[u8] = include_bytes!("cldr/rbnf.bin");
+#[cfg(feature = "number")]
 const COMPACT: &[u8] = include_bytes!("cldr/compact.bin");
+#[cfg(feature = "number")]
 const NUMSYS_DIGITS: &[u8] = include_bytes!("cldr/numsys_digits.bin");
+#[cfg(feature = "number")]
 const NUMSYS_DEFAULT: &[u8] = include_bytes!("cldr/numsys_default.bin");
+#[cfg(feature = "number")]
 const ORDSUFFIX: &[u8] = include_bytes!("cldr/ordsuffix.bin");
 #[cfg(feature = "collation")]
 const COLLATION: &[u8] = include_bytes!("cldr/collation.bin");
+#[cfg(feature = "calendars-extra")]
+const ISLAMIC: &[u8] = include_bytes!("cldr/islamic.bin");
+#[cfg(feature = "calendars-extra")]
+const PERSIAN: &[u8] = include_bytes!("cldr/persian.bin");
 
 /// The CLDR collation tailoring rule string for an exact (lowercased) locale
 /// key, or `None`. Used by `unicode::collate::Tailoring::for_locale`.
@@ -198,6 +219,7 @@ fn rbnf_like_payload(blob: &'static [u8], lang: &str) -> Option<&'static [u8]> {
 
 /// The ordinal suffix for `category` (0=zero…5=other) in an exact (lowercased)
 /// locale key.
+#[cfg(feature = "number")]
 pub(crate) fn ordinal_suffix(lang: &str, category: usize) -> Option<&'static str> {
     let mut c = find(ORDSUFFIX, lang)?;
     let mut s = "";
@@ -211,17 +233,20 @@ pub(crate) fn ordinal_suffix(lang: &str, category: usize) -> Option<&'static str
 }
 
 /// The 10 digit glyphs of a numbering system (e.g. `"arab"` → `"٠١٢٣٤٥٦٧٨٩"`).
+#[cfg(feature = "number")]
 pub(crate) fn numbering_digits(system: &str) -> Option<&'static str> {
     find(NUMSYS_DIGITS, system).map(|mut c| c.str())
 }
 
 /// The default numbering system for an exact (lowercased) locale key.
+#[cfg(feature = "number")]
 pub(crate) fn default_numbering(lang: &str) -> Option<&'static str> {
     find(NUMSYS_DEFAULT, lang).map(|mut c| c.str())
 }
 
 /// Compact (short) decimal patterns for magnitudes 10³…10¹⁴ in an exact
 /// (lowercased) locale key.
+#[cfg(feature = "number")]
 pub(crate) fn compact_patterns(lang: &str) -> Option<[&'static str; 24]> {
     let mut c = find(COMPACT, lang)?;
     Some(core::array::from_fn(|_| c.str()))
@@ -229,6 +254,7 @@ pub(crate) fn compact_patterns(lang: &str) -> Option<[&'static str; 24]> {
 
 /// The raw RBNF payload bytes for an exact (lowercased) locale key (parsed by
 /// the `spellout` module).
+#[cfg(feature = "spellout")]
 pub(crate) fn rbnf_payload(lang: &str) -> Option<&'static [u8]> {
     let count = rd_u16(RBNF, 0);
     let mut o = 2;
@@ -246,8 +272,6 @@ pub(crate) fn rbnf_payload(lang: &str) -> Option<&'static [u8]> {
     }
     None
 }
-const ISLAMIC: &[u8] = include_bytes!("cldr/islamic.bin");
-const PERSIAN: &[u8] = include_bytes!("cldr/persian.bin");
 
 /// Month names + patterns for a non-Gregorian calendar (Islamic, Persian) in one
 /// locale. Calendars with at most 12 named months share this shape.
@@ -263,6 +287,7 @@ pub struct AltCalSpec {
     pub date: [&'static str; 4],
 }
 
+#[cfg(feature = "calendars-extra")]
 fn alt_cal_spec(blob: &'static [u8], lang: &str) -> Option<AltCalSpec> {
     let mut c = find(blob, lang)?;
     Some(AltCalSpec {
@@ -274,11 +299,13 @@ fn alt_cal_spec(blob: &'static [u8], lang: &str) -> Option<AltCalSpec> {
 }
 
 /// Islamic-calendar names + patterns for an exact (lowercased) locale key.
+#[cfg(feature = "calendars-extra")]
 pub(crate) fn islamic_spec(lang: &str) -> Option<AltCalSpec> {
     alt_cal_spec(ISLAMIC, lang)
 }
 
 /// Persian-calendar names + patterns for an exact (lowercased) locale key.
+#[cfg(feature = "calendars-extra")]
 pub(crate) fn persian_spec(lang: &str) -> Option<AltCalSpec> {
     alt_cal_spec(PERSIAN, lang)
 }
@@ -295,6 +322,7 @@ pub struct TzSpec {
 }
 
 /// Localized GMT offset formats for an exact (lowercased) locale key.
+#[cfg(feature = "datetime")]
 pub(crate) fn tz_spec(lang: &str) -> Option<TzSpec> {
     let mut c = find(TIMEZONE, lang)?;
     Some(TzSpec {
@@ -305,6 +333,7 @@ pub(crate) fn tz_spec(lang: &str) -> Option<TzSpec> {
 }
 
 /// The maximized locale for a likelySubtags key (e.g. `"en"` → `"en-Latn-US"`).
+#[cfg(feature = "locale")]
 pub(crate) fn likely_subtags(key: &str) -> Option<&'static str> {
     find(LIKELY, key).map(|mut c| c.str())
 }
@@ -387,6 +416,7 @@ fn find(blob: &'static [u8], key: &str) -> Option<Cursor> {
 }
 
 /// Number symbols + patterns for an exact (lowercased) locale key.
+#[cfg(feature = "number")]
 pub(crate) fn number_spec(lang: &str) -> Option<NumberSpec> {
     let mut c = find(NUMBERS, lang)?;
     Some(NumberSpec {
@@ -410,6 +440,7 @@ fn list_patterns(c: &mut Cursor) -> ListPatterns {
 }
 
 /// List connector patterns for an exact (lowercased) locale key.
+#[cfg(feature = "list")]
 pub(crate) fn list_spec(lang: &str) -> Option<ListSpec> {
     let mut c = find(LISTS, lang)?;
     Some(ListSpec {
@@ -419,6 +450,7 @@ pub(crate) fn list_spec(lang: &str) -> Option<ListSpec> {
 }
 
 /// Relative-time strings for an exact (lowercased) locale key.
+#[cfg(feature = "relative")]
 pub(crate) fn relative_spec(lang: &str) -> Option<RelativeSpec> {
     let mut c = find(RELATIVE, lang)?;
     let units = core::array::from_fn(|_| RelUnit {
@@ -432,12 +464,14 @@ pub(crate) fn relative_spec(lang: &str) -> Option<RelativeSpec> {
 }
 
 /// Standard currency pattern for an exact (lowercased) locale key.
+#[cfg(feature = "currency")]
 pub(crate) fn currency_pattern(lang: &str) -> Option<Pattern> {
     let mut c = find(CURRENCY, lang)?;
     Some(c.pattern())
 }
 
 /// The currency unit pattern (number + code/name, e.g. `"{0} {1}"`) for `lang`.
+#[cfg(feature = "currency")]
 pub(crate) fn currency_unit_pattern(lang: &str) -> Option<&'static str> {
     let mut c = find(CURRENCY, lang)?;
     let _ = c.pattern();
@@ -446,6 +480,7 @@ pub(crate) fn currency_unit_pattern(lang: &str) -> Option<&'static str> {
 
 /// Currency display forms `(symbol, narrow symbol, display name)` for `code` in
 /// `lang` (exact lowercased key), if present.
+#[cfg(feature = "currency")]
 pub(crate) fn currency_forms(
     lang: &str,
     code: &str,
@@ -467,6 +502,7 @@ pub(crate) fn currency_forms(
 }
 
 /// Default fraction digits for a currency code (2 if unknown).
+#[cfg(feature = "currency")]
 pub(crate) fn currency_digits(code: &str) -> u8 {
     match find(CURRENCY_DIGITS, code) {
         Some(mut c) => c.u8(),
@@ -489,22 +525,26 @@ fn display_name(blob: &'static [u8], display_locale: &str, code: &str) -> Option
 }
 
 /// Display name of language `code` in `display_locale` (exact lowercased keys).
+#[cfg(feature = "displaynames")]
 pub(crate) fn language_name(display_locale: &str, code: &str) -> Option<&'static str> {
     display_name(DISPLAY_LANG, display_locale, code)
 }
 
 /// The date pattern for a CLDR `skeleton` (e.g. `"yMMMd"`) in an exact
 /// (lowercased) locale key; skeletons are matched case-sensitively.
+#[cfg(feature = "datetime")]
 pub(crate) fn skeleton_pattern(lang: &str, skeleton: &str) -> Option<&'static str> {
     display_name(SKELETONS, lang, skeleton)
 }
 
 /// Display name of region `code` in `display_locale`.
+#[cfg(feature = "displaynames")]
 pub(crate) fn region_name(display_locale: &str, code: &str) -> Option<&'static str> {
     display_name(DISPLAY_TERR, display_locale, code)
 }
 
 /// Gregorian calendar names + patterns for an exact (lowercased) locale key.
+#[cfg(feature = "datetime")]
 pub(crate) fn calendar_spec(lang: &str) -> Option<CalendarSpec> {
     let mut c = find(CALENDAR, lang)?;
     Some(CalendarSpec {
@@ -531,6 +571,7 @@ pub(crate) fn calendar_spec(lang: &str) -> Option<CalendarSpec> {
 
 /// Unit pattern for `(width, unit, plural category)` in an exact locale key,
 /// falling back to the `other` category. `width` is 0 (long) or 1 (short).
+#[cfg(feature = "units")]
 pub(crate) fn unit_pattern(
     lang: &str,
     width: usize,

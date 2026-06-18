@@ -1,5 +1,5 @@
 //! Locale-aware number formatting.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "number")]
 
 use intl::number::{format_decimal as dec, format_percent as pct};
 
@@ -37,6 +37,7 @@ fn unknown_locale_falls_back() {
     assert_eq!(dec("en-US", 1234.5), "1,234.5"); // region falls back to language
 }
 
+#[cfg(feature = "currency")]
 #[test]
 fn currency() {
     use intl::number::format_currency as fc;
@@ -131,6 +132,7 @@ fn compact_non_finite() {
     let _ = k("en", f64::NEG_INFINITY);
 }
 
+#[cfg(feature = "units")]
 #[test]
 fn unit_style() {
     use intl::number::{
@@ -185,6 +187,7 @@ fn compact_long() {
     assert_eq!(format("en", 1500.0, &sh), "1.5K");
 }
 
+#[cfg(feature = "currency")]
 #[test]
 fn currency_display() {
     use intl::number::{CurrencyDisplay, NumberFormatOptions, NumberStyle, format};

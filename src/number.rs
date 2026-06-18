@@ -647,6 +647,7 @@ fn parse_decimal_with(s: &NumberSpec, input: &str) -> Option<f64> {
 /// assert_eq!(format_currency("ja", 1234.0, "JPY"), "￥1,234"); // no fraction digits
 /// ```
 #[must_use]
+#[cfg(feature = "currency")]
 pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
     use crate::cldr as cur;
     let s = spec(lang);
@@ -1059,6 +1060,7 @@ fn affix_parts(text: &str, style: NumberStyle, s: &NumberSpec, currency: &str) -
 
 /// Map an ECMA-402 sanctioned unit identifier to the embedded unit-table index
 /// (the order of `crate::unit::Unit`). Returns `None` for unsupported units.
+#[cfg(feature = "units")]
 fn unit_index(id: &str) -> Option<usize> {
     Some(match id {
         "second" => 0,
@@ -1096,6 +1098,7 @@ fn unit_index(id: &str) -> Option<usize> {
 /// Split a unit-pattern affix into `Unit` (non-whitespace) and `Literal`
 /// (whitespace) runs, matching ECMA-402's tagging of `"1.5 m"` as
 /// `… literal(" ") unit("m")`.
+#[cfg(feature = "units")]
 fn unit_affix(text: &str) -> Vec<NumberPart> {
     let mut parts = Vec::new();
     let mut buf = String::new();
@@ -1129,6 +1132,7 @@ fn unit_affix(text: &str) -> Vec<NumberPart> {
 /// Wrap the numeric `core` parts with the locale's CLDR unit pattern (e.g.
 /// `"{0} km"`), choosing the plural-correct wording. An unknown/missing unit
 /// degrades to the bare number.
+#[cfg(feature = "units")]
 fn unit_wrap(
     lang: &str,
     value: f64,
@@ -1187,6 +1191,7 @@ fn unit_wrap(
 /// core spliced into the locale's currency unit pattern (`"{0} {1}"`) with the
 /// code or display name tagged `Currency`. (The base display name is used; plural
 /// name forms and currency spacing are not applied.)
+#[cfg(feature = "currency")]
 fn currency_unit_wrap(
     lang: &str,
     value: f64,
@@ -1292,6 +1297,10 @@ fn resolve_style(
     match opts.style {
         NumberStyle::Decimal | NumberStyle::Unit => (s.dec, value, String::new()),
         NumberStyle::Percent => (s.pct, value * 100.0, String::new()),
+        // Without the `currency` feature, currency style degrades to decimal.
+        #[cfg(not(feature = "currency"))]
+        NumberStyle::Currency => (s.dec, value, String::new()),
+        #[cfg(feature = "currency")]
         NumberStyle::Currency => {
             let code = opts.currency.unwrap_or("XXX");
             let norm: String = lang
@@ -1351,6 +1360,7 @@ fn standard_parts(
     opts: &NumberFormatOptions,
 ) -> Vec<NumberPart> {
     // Currency code/name use the unit pattern ("{0} {1}"), not the ¤ pattern.
+    #[cfg(feature = "currency")]
     if opts.style == NumberStyle::Currency
         && matches!(
             opts.currency_display,
@@ -1389,6 +1399,7 @@ fn standard_parts(
     let mut parts = Vec::new();
     let core = core_parts(&int_d, &frac_d, negative, is_zero, pri, sec, opts, s);
     // Unit style wraps the numeric core in the locale's unit pattern.
+    #[cfg(feature = "units")]
     if opts.style == NumberStyle::Unit {
         return unit_wrap(lang, scaled, core, opts);
     }
@@ -1814,7 +1825,7 @@ mod tests {
     }
 
     #[test]
-    fn options_percent_and_currency_parts() {
+    fn options_percent_parts() {
         let pct = NumberFormatOptions {
             style: NumberStyle::Percent,
             ..opt()
@@ -1822,7 +1833,11 @@ mod tests {
         let parts = format_to_parts("en", 0.5, &pct);
         assert_eq!(parts.last().unwrap().kind, NumberPartType::PercentSign);
         assert_eq!(format("en", 0.5, &pct), "50%");
+    }
 
+    #[cfg(feature = "currency")]
+    #[test]
+    fn options_currency_parts() {
         let cur = NumberFormatOptions {
             style: NumberStyle::Currency,
             currency: Some("USD"),

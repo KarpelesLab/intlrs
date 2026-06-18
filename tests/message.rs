@@ -1,5 +1,5 @@
 //! ICU MessageFormat subset.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "message")]
 use intl::message::{Arg, format_message as fm};
 
 #[test]

@@ -1,5 +1,5 @@
 //! POSIX TZ zones.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "datetime")]
 use intl::datetime::DateTime;
 use intl::timezone::PosixTz;
 

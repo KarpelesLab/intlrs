@@ -39,6 +39,19 @@ default = [
     "idna",
     "confusables",
     "iana-tz",
+    # CLDR formatters (each opt-out-able; see below).
+    "number",
+    "currency",
+    "units",
+    "datetime",
+    "calendars-extra",
+    "displaynames",
+    "list",
+    "relative",
+    "message",
+    "spellout",
+    "transliterate",
+    "locale",
 ]
 
 # --- Range tiers (opt out for size) -----------------------------------------
@@ -74,11 +87,31 @@ confusables = ["normalization", "alloc"]    # UTS #39 confusable/skeleton
 # and is always available.
 names = ["alloc"]
 
+# --- CLDR formatters (opt out individually for size) ------------------------
+# Each gates its module AND the CLDR `.bin` table(s) it embeds, so a disabled
+# formatter contributes no code or data. All imply `alloc` (except
+# `displaynames`, which is borrow-only). `_cldr` is an internal marker enabling
+# the shared CLDR data layer; do not select it directly. The always-available
+# `plural` and `calendar` (arithmetic) modules need no feature and no data.
+_cldr = []                                  # internal: shared CLDR reader + structs
+number = ["alloc", "_cldr"]                 # decimal/percent/scientific/compact/ordinal/parse + NumberFormat
+currency = ["number"]                       # currency formatting (+ ~0.9 MB currency.bin)
+units = ["number"]                          # measurement units (+ units.bin)
+datetime = ["number"]                       # date/time/skeleton + POSIX-TZ/GMT (+ calendar/skeletons/timezone.bin)
+calendars-extra = ["datetime"]              # Islamic + Persian calendars (+ islamic/persian.bin)
+displaynames = ["_cldr"]                    # Intl.DisplayNames (+ ~1.6 MB language/territory names)
+list = ["alloc", "_cldr"]                   # Intl.ListFormat
+relative = ["number"]                       # Intl.RelativeTimeFormat (uses number)
+message = ["number"]                        # ICU MessageFormat (uses number + plural)
+spellout = ["alloc", "_cldr"]               # RBNF spell-out (+ rbnf.bin)
+transliterate = ["alloc", "normalization"]  # script transliteration
+locale = ["alloc", "_cldr"]                 # BCP-47 + likely-subtags (+ likely.bin)
+
 # --- Time zones -------------------------------------------------------------
 # Full IANA time-zone support via the embedded `timezone-data` crate (historical
-# transitions, DST, abbreviations). Implies `alloc` for the `DateTime` bridge.
-# POSIX `TZ` rules are available without this feature.
-iana-tz = ["dep:timezone-data", "alloc"]
+# transitions, DST, abbreviations). Drives the `datetime` named-zone path.
+# POSIX `TZ` rules and GMT offsets are available with `datetime` alone.
+iana-tz = ["dep:timezone-data", "datetime"]
 
 [dependencies]
 # Optional: only pulled in by the `iana-tz` feature. no_std / no-alloc itself.

@@ -1,5 +1,5 @@
 //! Measurement-unit formatting.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "units")]
 use intl::unit::{Unit::*, UnitWidth::*, format_unit as fu};
 
 #[test]

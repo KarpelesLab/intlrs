@@ -1,5 +1,5 @@
 //! Locale-aware list formatting.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "list")]
 
 use intl::list::{ListStyle::*, format_list as fl};
 

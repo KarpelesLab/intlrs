@@ -1,4 +1,4 @@
-#![cfg(feature = "alloc")]
+#![cfg(feature = "spellout")]
 use intl::spellout::spell_ordinal;
 
 #[test]

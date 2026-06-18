@@ -1,4 +1,5 @@
 //! Locale display names.
+#![cfg(feature = "displaynames")]
 use intl::display::{language_name as ln, region_name as rn};
 
 #[test]

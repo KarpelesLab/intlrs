@@ -37,31 +37,37 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-// Embedded CLDR locale tables (no_std). Compiled in every configuration so the
-// data layer never depends on `alloc`; the formatters that consume it are
-// `alloc`-gated.
+// Embedded CLDR locale tables (no_std), gated by the `_cldr` marker (enabled by
+// any CLDR-backed formatter). Each formatter module — and the table(s) it embeds
+// — is behind its own feature so a disabled formatter contributes no code or
+// data. `calendar` (arithmetic) and `plural` (rules) need no data and are always
+// available.
 pub mod calendar;
+#[cfg(feature = "_cldr")]
 pub(crate) mod cldr;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "datetime")]
 pub mod datetime;
+#[cfg(feature = "displaynames")]
 pub mod display;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "list")]
 pub mod list;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "locale")]
 pub mod locale;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "message")]
 pub mod message;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "number")]
 pub mod number;
 pub mod plural;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "relative")]
 pub mod relative;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "spellout")]
 pub mod spellout;
-#[cfg(feature = "alloc")]
+// Time-zone support (POSIX TZ + GMT offsets + the IANA bridge) ships with
+// `datetime`; the two modules are mutually dependent.
+#[cfg(feature = "datetime")]
 pub mod timezone;
-#[cfg(all(feature = "alloc", feature = "normalization"))]
+#[cfg(feature = "transliterate")]
 pub mod translit;
 pub mod unicode;
-#[cfg(feature = "alloc")]
+#[cfg(feature = "units")]
 pub mod unit;

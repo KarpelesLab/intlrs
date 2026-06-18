@@ -1,5 +1,5 @@
 //! Date/time formatting.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "datetime")]
 use intl::datetime::{
     DateStyle::*, DateTime, format_date as fd, format_datetime as fdt, format_time as ft,
 };
@@ -141,6 +141,7 @@ fn gmt_offset_extremes() {
     assert_eq!(g("en", -480), "GMT-08:00");
 }
 
+#[cfg(feature = "calendars-extra")]
 #[test]
 fn islamic_dates() {
     use intl::datetime::{DateStyle::*, format_islamic_date as fi};
@@ -194,6 +195,7 @@ fn arithmetic() {
     assert_eq!(DT.add_seconds(12345).add_seconds(-12345), DT);
 }
 
+#[cfg(feature = "calendars-extra")]
 #[test]
 fn persian_dates() {
     use intl::datetime::{DateStyle::*, format_persian_date as fp};

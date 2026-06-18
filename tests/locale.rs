@@ -1,5 +1,5 @@
 //! BCP-47 locale parsing.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "locale")]
 
 use intl::locale::Locale;
 

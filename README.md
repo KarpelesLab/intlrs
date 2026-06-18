@@ -178,6 +178,39 @@ intl = { version = "0.1", default-features = false, features = [
 ] }
 ```
 
+### CLDR formatters (opt out individually)
+
+The locale-aware formatters are each their own feature, gating the module **and**
+the CLDR `.bin` table(s) it embeds, so a disabled formatter adds no code or data.
+All imply `alloc` (except `displaynames`, which is borrow-only). The always-on
+`plural` (rules) and `calendar` (arithmetic) modules need no feature and no data.
+
+| feature           | what it provides                                  | gated data |
+|-------------------|---------------------------------------------------|------------|
+| `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~35 KB |
+| `currency`        | currency formatting (→ number)                    | **~0.9 MB** |
+| `units`           | measurement units (→ number)                      | 175 KB |
+| `datetime`        | date/time/skeleton + POSIX-TZ/GMT (→ number)      | 219 KB |
+| `calendars-extra` | Islamic + Persian calendars (→ datetime)          | 60 KB |
+| `displaynames`    | `Intl.DisplayNames` (languages/regions)           | **~1.6 MB** |
+| `list`            | `Intl.ListFormat`                                 | 10 KB |
+| `relative`        | `Intl.RelativeTimeFormat` (→ number)              | 95 KB |
+| `message`         | ICU MessageFormat subset (→ number)               | — |
+| `spellout`        | RBNF spell-out                                     | 25 KB |
+| `transliterate`   | script transliteration (→ normalization)          | — |
+| `locale`          | BCP-47 + likely-subtags                           | 139 KB |
+| `iana-tz`         | full IANA tz database for named zones (→ datetime) | dep |
+
+```toml
+# Just number + date/time formatting (no currency, display-names, etc.):
+intl = { version = "0.1", default-features = false, features = ["number", "datetime"] }
+# Everything except the heavy currency + display-name data:
+intl = { version = "0.1", default-features = false, features = [
+    "number", "units", "datetime", "calendars-extra", "list", "relative",
+    "message", "spellout", "transliterate", "locale",
+] }
+```
+
 ## Range tiers (opt out for size)
 
 The range tiers select how much of the codepoint space is compiled in, trading
@@ -197,7 +230,7 @@ intl = "0.1"
 intl = { version = "0.1", default-features = false, features = ["bmp"] }
 # Minimal: ASCII tables only:
 intl = { version = "0.1", default-features = false, features = ["ascii"] }
-# iana-tz is already on by default; drop it (and pick what you need) to avoid the dep:
+# Unicode + alloc only — no CLDR formatters (add the ones you need, see above):
 intl = { version = "0.1", default-features = false, features = ["full", "alloc"] }
 ```
 

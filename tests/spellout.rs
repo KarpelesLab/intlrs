@@ -1,5 +1,5 @@
 //! RBNF cardinal spell-out (locale-driven).
-#![cfg(feature = "alloc")]
+#![cfg(feature = "spellout")]
 use intl::spellout::spell_cardinal as c;
 
 fn strip(s: Option<String>) -> String {

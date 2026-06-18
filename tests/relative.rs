@@ -1,5 +1,5 @@
 //! Locale-aware relative time formatting.
-#![cfg(feature = "alloc")]
+#![cfg(feature = "relative")]
 
 use intl::relative::{RelativeUnit::*, format_relative as fr};
 

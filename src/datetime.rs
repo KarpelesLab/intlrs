@@ -617,6 +617,7 @@ pub fn format_skeleton(lang: &str, dt: &DateTime, skeleton: &str) -> String {
 
 /// Render a non-Gregorian date with a calendar's month names/era; the weekday
 /// name (if any) uses the Gregorian day names at the date's `jdn`.
+#[cfg(feature = "calendars-extra")]
 fn render_alt(
     cal: &crate::cldr::AltCalSpec,
     style: DateStyle,
@@ -676,6 +677,7 @@ fn render_alt(
     out
 }
 
+#[cfg(feature = "calendars-extra")]
 fn alt_spec(lang: &str, f: fn(&str) -> Option<crate::cldr::AltCalSpec>) -> crate::cldr::AltCalSpec {
     let norm: String = lang
         .chars()
@@ -702,6 +704,7 @@ fn alt_spec(lang: &str, f: fn(&str) -> Option<crate::cldr::AltCalSpec>) -> crate
 /// Format an Islamic (Hijri) date in `lang`, e.g.
 /// `format_islamic_date("en", 1445, 9, 1, DateStyle::Long)` →
 /// `"Ramadan 1, 1445 AH"` (localized month names + era).
+#[cfg(feature = "calendars-extra")]
 #[must_use]
 pub fn format_islamic_date(
     lang: &str,
@@ -718,6 +721,7 @@ pub fn format_islamic_date(
 /// Format a Persian (Solar Hijri) date in `lang`, e.g.
 /// `format_persian_date("en", 1404, 1, 1, DateStyle::Long)` →
 /// `"Farvardin 1, 1404 AP"` (localized month names + era).
+#[cfg(feature = "calendars-extra")]
 #[must_use]
 pub fn format_persian_date(
     lang: &str,

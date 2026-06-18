@@ -6,7 +6,15 @@
     feature = "collation",
     feature = "idna",
     feature = "confusables",
-    feature = "bidi"
+    feature = "bidi",
+    feature = "number",
+    feature = "currency",
+    feature = "units",
+    feature = "datetime",
+    feature = "calendars-extra",
+    feature = "locale",
+    feature = "spellout",
+    feature = "transliterate"
 ))]
 
 use intl::unicode::{

@@ -234,6 +234,18 @@ jobs:
             echo "::endgroup::"
           done
 
+      # Likewise each CLDR formatter must build (and test-compile) in isolation,
+      # pulling in only its own data.
+      - name: Build each formatter alone
+        run: |
+          for feat in number currency units datetime calendars-extra displaynames \
+                      list relative message spellout transliterate locale iana-tz; do
+            echo "::group::features=$feat"
+            cargo build --no-default-features --features "$feat"
+            cargo test --no-default-features --features "$feat" --tests --no-run
+            echo "::endgroup::"
+          done
+
   fuzz:
     name: Fuzz targets compile
     runs-on: ubuntu-latest
