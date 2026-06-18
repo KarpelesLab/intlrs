@@ -328,8 +328,8 @@ fn main() {
     );
     emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
     emit_collation_rules(&cldr_dir, &cldr.join("collation.json"));
-    emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic.json"));
-    emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian.json"));
+    emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic-raw"));
+    emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian-raw"));
 
     // ---- generated/mod.rs ----
     // Gate the large per-component tables behind their Cargo feature so that
@@ -1759,7 +1759,9 @@ fn emit_idna(out_dir: &Path, modules: &mut Vec<String>, idna: &Path) {
 
 enum Json {
     Obj(Vec<(String, Json)>),
-    Arr(Vec<Json>),
+    // Arrays are parsed (so `[...]` syntax is consumed) but the contents are not
+    // read by any current emitter; keep the payload for completeness.
+    Arr(#[allow(dead_code)] Vec<Json>),
     Str(String),
     Other,
 }
@@ -1774,12 +1776,6 @@ impl Json {
     fn entries(&self) -> &[(String, Json)] {
         match self {
             Json::Obj(e) => e,
-            _ => &[],
-        }
-    }
-    fn array(&self) -> &[Json] {
-        match self {
-            Json::Arr(a) => a,
             _ => &[],
         }
     }
@@ -2577,22 +2573,51 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path) {
 /// Write `cldr/<name>.bin` for a non-Gregorian calendar: per-locale month names
 /// (wide + abbr), the era abbreviation, and date patterns (full/long/medium/
 /// short). Used for the Islamic and Persian calendars (same record shape).
-fn emit_alt_calendar(cldr_dir: &Path, name: &str, path: &Path) {
-    let text = fs::read_to_string(path).expect("read calendar json");
-    let json = json_parse(&text);
+fn emit_alt_calendar(cldr_dir: &Path, name: &str, raw_dir: &Path) {
+    let mut locales = locale_files(raw_dir);
+    locales.sort();
     let mut records = Vec::new();
-    for (lang, loc) in json.get("locales").expect("locales").entries() {
+    for locale in locales {
+        let path = raw_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let cal = loc_obj
+            .get("dates")
+            .and_then(|d| d.get("calendars"))
+            .and_then(|c| c.get(name))
+            .expect("calendar");
+        let months = cal
+            .get("months")
+            .and_then(|m| m.get("format"))
+            .expect("months");
         let mut p = Vec::new();
-        let push_arr = |p: &mut Vec<u8>, key: &str| {
-            for v in loc.get(key).map(Json::array).unwrap_or(&[]) {
-                enc_str(p, v.as_str().unwrap_or(""));
+        for width in ["wide", "abbreviated"] {
+            let w = months.get(width).expect("width");
+            for m in 1..=12u8 {
+                enc_str(
+                    &mut p,
+                    w.get(&m.to_string()).and_then(Json::as_str).unwrap_or(""),
+                );
             }
-        };
-        push_arr(&mut p, "months_wide");
-        push_arr(&mut p, "months_abbr");
-        enc_str(&mut p, loc.get("era").and_then(Json::as_str).unwrap_or(""));
-        push_arr(&mut p, "date");
-        records.push((lang.to_ascii_lowercase(), p));
+        }
+        let era = cal
+            .get("eras")
+            .and_then(|e| e.get("eraAbbr"))
+            .and_then(|a| a.get("0"))
+            .and_then(Json::as_str)
+            .unwrap_or("");
+        enc_str(&mut p, era);
+        let df = cal.get("dateFormats").expect("dateFormats");
+        for k in ["full", "long", "medium", "short"] {
+            enc_str(&mut p, df.get(k).and_then(Json::as_str).unwrap_or(""));
+        }
+        records.push((locale.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, name, &records);
 }
