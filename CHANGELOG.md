@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/KarpelesLab/intlrs/compare/v0.4.1...v0.5.0) - 2026-06-19
+
+### Added
+
+- per-formatter Cargo features (gate module + CLDR data)
+
+### Fixed
+
+- *(ci)* collation needs the _cldr marker (reads CLDR tailorings)
+- *(ci)* codegen clippy — avoid explicit loop counter in day_period_table
+- *(ci)* collapse nested ifs into let-chains (clippy at MSRV 1.88)
+
+### Other
+
+- make DateTimeFormatOptions and NumberFormatOptions non_exhaustive
+- raw-source Islamic/Persian calendars to ~101 locales
+- raw-source DisplayNames/units/lists/relative/numsys to ~101 locales
+- remove obsolete curated currency.json (raw-sourced now)
+- raw-source currency for ~101 locales + currencyDisplay Code/Name
+- complete raw-source numbers/compact (codegen + blobs + reader)
+- raw-source numbers/compact for ~101 locales + compactDisplay Long
+- broaden date coverage to CLDR-modern base locales (~101)
+- named timeZoneName via the timezone-data crate
+- flexible day periods (B field + dayPeriod option)
+- implement style: Unit (ECMA-402)
+- raise minimum supported Rust to 1.88
+- migrate the crate to Rust edition 2024
+
 ## [0.4.1](https://github.com/KarpelesLab/intlrs/compare/v0.4.0...v0.4.1) - 2026-06-11
 
 ### Other
