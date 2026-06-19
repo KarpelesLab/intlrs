@@ -3,6 +3,15 @@
 
 use intl::number::{format_decimal as dec, format_percent as pct};
 
+/// Build options from `Default` (the struct is `#[non_exhaustive]`).
+fn nf(
+    build: impl FnOnce(&mut intl::number::NumberFormatOptions),
+) -> intl::number::NumberFormatOptions {
+    let mut o = intl::number::NumberFormatOptions::default();
+    build(&mut o);
+    o
+}
+
 #[test]
 fn decimal_grouping_and_separators() {
     assert_eq!(dec("en", 1234567.0), "1,234,567");
@@ -135,14 +144,13 @@ fn compact_non_finite() {
 #[cfg(feature = "units")]
 #[test]
 fn unit_style() {
-    use intl::number::{
-        NumberFormatOptions, NumberPartType, NumberStyle, UnitDisplay, format, format_to_parts,
-    };
-    let mk = |unit, disp| NumberFormatOptions {
-        style: NumberStyle::Unit,
-        unit: Some(unit),
-        unit_display: disp,
-        ..Default::default()
+    use intl::number::{NumberPartType, NumberStyle, UnitDisplay, format, format_to_parts};
+    let mk = |unit, disp| {
+        nf(move |o| {
+            o.style = NumberStyle::Unit;
+            o.unit = Some(unit);
+            o.unit_display = disp;
+        })
     };
     assert_eq!(
         format("en", 5.0, &mk("kilometer", UnitDisplay::Long)),
@@ -171,31 +179,28 @@ fn unit_style() {
 
 #[test]
 fn compact_long() {
-    use intl::number::{CompactDisplay, Notation, NumberFormatOptions, format};
-    let lo = NumberFormatOptions {
-        notation: Notation::Compact,
-        compact_display: CompactDisplay::Long,
-        ..Default::default()
-    };
+    use intl::number::{CompactDisplay, Notation, format};
+    let lo = nf(|o| {
+        o.notation = Notation::Compact;
+        o.compact_display = CompactDisplay::Long;
+    });
     assert_eq!(format("en", 1500.0, &lo), "1.5 thousand");
     assert_eq!(format("en", 2_300_000.0, &lo), "2.3 million");
     // Short remains the default.
-    let sh = NumberFormatOptions {
-        notation: Notation::Compact,
-        ..Default::default()
-    };
+    let sh = nf(|o| o.notation = Notation::Compact);
     assert_eq!(format("en", 1500.0, &sh), "1.5K");
 }
 
 #[cfg(feature = "currency")]
 #[test]
 fn currency_display() {
-    use intl::number::{CurrencyDisplay, NumberFormatOptions, NumberStyle, format};
-    let mk = |code, disp| NumberFormatOptions {
-        style: NumberStyle::Currency,
-        currency: Some(code),
-        currency_display: disp,
-        ..Default::default()
+    use intl::number::{CurrencyDisplay, NumberStyle, format};
+    let mk = |code, disp| {
+        nf(move |o| {
+            o.style = NumberStyle::Currency;
+            o.currency = Some(code);
+            o.currency_display = disp;
+        })
     };
     assert_eq!(
         format("en", 1234.5, &mk("USD", CurrencyDisplay::Symbol)),

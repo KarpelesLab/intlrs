@@ -14,6 +14,15 @@ const DT: DateTime = DateTime {
     millisecond: 0,
 };
 
+/// Build options from `Default` (the struct is `#[non_exhaustive]`).
+fn dtf(
+    build: impl FnOnce(&mut intl::datetime::DateTimeFormatOptions),
+) -> intl::datetime::DateTimeFormatOptions {
+    let mut o = intl::datetime::DateTimeFormatOptions::default();
+    build(&mut o);
+    o
+}
+
 #[test]
 fn dates() {
     assert_eq!(fd("en", &DT, Full), "Thursday, June 4, 2026");
@@ -214,12 +223,11 @@ fn component_options() {
     let td = Some(Numeric2Digit::TwoDigit);
 
     // year/month/day numeric + short month.
-    let o = DateTimeFormatOptions {
-        year: n,
-        month: Some(MonthStyle::Short),
-        day: n,
-        ..Default::default()
-    };
+    let o = dtf(|o| {
+        o.year = n;
+        o.month = Some(MonthStyle::Short);
+        o.day = n;
+    });
     assert_eq!(fo("en", &DT, &o).unwrap(), "Jun 4, 2026");
     let kinds: Vec<_> = ftp("en", &DT, &o)
         .unwrap()
@@ -229,47 +237,40 @@ fn component_options() {
     assert_eq!(kinds, ["month", "literal", "day", "literal", "year"]);
 
     // 24-hour time.
-    let t = DateTimeFormatOptions {
-        hour: n,
-        minute: td,
-        hour_cycle: Some(HourCycle::H23),
-        ..Default::default()
-    };
+    let t = dtf(|o| {
+        o.hour = n;
+        o.minute = td;
+        o.hour_cycle = Some(HourCycle::H23);
+    });
     assert_eq!(fo("en", &DT, &t).unwrap(), "14:30");
 
     // 12-hour time.
-    let t12 = DateTimeFormatOptions {
-        hour: n,
-        minute: td,
-        hour12: Some(true),
-        ..Default::default()
-    };
+    let t12 = dtf(|o| {
+        o.hour = n;
+        o.minute = td;
+        o.hour12 = Some(true);
+    });
     assert_eq!(fo("en", &DT, &t12).unwrap(), "2:30\u{202f}PM");
 
     // dateStyle shortcut.
-    let ds = DateTimeFormatOptions {
-        date_style: Some(Long),
-        ..Default::default()
-    };
+    let ds = dtf(|o| o.date_style = Some(Long));
     assert_eq!(fo("en", &DT, &ds).unwrap(), "June 4, 2026");
 
     // Conflicting options.
-    let bad = DateTimeFormatOptions {
-        date_style: Some(Long),
-        year: n,
-        ..Default::default()
-    };
+    let bad = dtf(|o| {
+        o.date_style = Some(Long);
+        o.year = n;
+    });
     assert_eq!(
         fo("en", &DT, &bad),
         Err(DateTimeFormatError::ConflictingOptions)
     );
 
     // Narrow month (asserted on the part, robust to surrounding fields).
-    let narrow = DateTimeFormatOptions {
-        month: Some(MonthStyle::Narrow),
-        day: n,
-        ..Default::default()
-    };
+    let narrow = dtf(|o| {
+        o.month = Some(MonthStyle::Narrow);
+        o.day = n;
+    });
     let parts = ftp("en", &DT, &narrow).unwrap();
     let mon = parts
         .iter()
@@ -284,14 +285,13 @@ fn component_options() {
     );
 
     // Fractional seconds.
-    let frac = DateTimeFormatOptions {
-        hour: n,
-        minute: td,
-        second: td,
-        fractional_second_digits: Some(3),
-        hour_cycle: Some(HourCycle::H23),
-        ..Default::default()
-    };
+    let frac = dtf(|o| {
+        o.hour = n;
+        o.minute = td;
+        o.second = td;
+        o.fractional_second_digits = Some(3);
+        o.hour_cycle = Some(HourCycle::H23);
+    });
     let ms = DateTime {
         millisecond: 50,
         ..DT
@@ -299,14 +299,13 @@ fn component_options() {
     assert_eq!(fo("en", &ms, &frac).unwrap(), "14:30:05.050");
 
     // timeZoneName offset.
-    let tz = DateTimeFormatOptions {
-        hour: n,
-        minute: td,
-        hour_cycle: Some(HourCycle::H23),
-        time_zone_name: Some(TimeZoneNameStyle::LongOffset),
-        tz_offset_minutes: Some(-480),
-        ..Default::default()
-    };
+    let tz = dtf(|o| {
+        o.hour = n;
+        o.minute = td;
+        o.hour_cycle = Some(HourCycle::H23);
+        o.time_zone_name = Some(TimeZoneNameStyle::LongOffset);
+        o.tz_offset_minutes = Some(-480);
+    });
     let parts = ftp("en", &DT, &tz).unwrap();
     assert_eq!(parts.last().unwrap().kind, DateTimePartType::TimeZoneName);
     assert_eq!(parts.last().unwrap().value, "GMT-08:00");
@@ -318,46 +317,39 @@ fn component_options() {
     );
 
     // weekday:Narrow part value.
-    let wd = DateTimeFormatOptions {
-        weekday: Some(NameStyle::Narrow),
-        ..Default::default()
-    };
+    let wd = dtf(|o| o.weekday = Some(NameStyle::Narrow));
     let parts = ftp("en", &DT, &wd).unwrap();
     assert_eq!(parts[0].value, "T"); // Thursday narrow
 }
 
 #[test]
 fn component_locale_defaults_and_field_keep() {
-    use intl::datetime::{
-        DateTimeFormatOptions, MonthStyle, NameStyle, Numeric2Digit, format_options as fo,
-    };
+    use intl::datetime::{MonthStyle, NameStyle, Numeric2Digit, format_options as fo};
     let n = Some(Numeric2Digit::Numeric);
     let td = Some(Numeric2Digit::TwoDigit);
 
     // Default hour cycle is derived from the locale's CLDR time pattern:
     // en-US is 12-hour, de is 24-hour (no explicit hourCycle/hour12).
-    let hm = DateTimeFormatOptions {
-        hour: n,
-        minute: td,
-        ..Default::default()
-    };
+    let hm = dtf(|o| {
+        o.hour = n;
+        o.minute = td;
+    });
     assert_eq!(fo("en", &DT, &hm).unwrap(), "2:30\u{202f}PM");
     assert_eq!(fo("de", &DT, &hm).unwrap(), "14:30");
 
     // Weekday must survive when combined with a wide month + day (the exact
     // skeleton MMMMEd is absent, but MMMEd matches and the width is patched).
-    let wmd = DateTimeFormatOptions {
-        weekday: Some(NameStyle::Long),
-        month: Some(MonthStyle::Long),
-        day: n,
-        ..Default::default()
-    };
+    let wmd = dtf(|o| {
+        o.weekday = Some(NameStyle::Long);
+        o.month = Some(MonthStyle::Long);
+        o.day = n;
+    });
     assert_eq!(fo("en", &DT, &wmd).unwrap(), "Thursday, June 4");
 }
 
 #[test]
 fn hour_cycles() {
-    use intl::datetime::{DateTimeFormatOptions, HourCycle, Numeric2Digit, format_options as fo};
+    use intl::datetime::{HourCycle, Numeric2Digit, format_options as fo};
     let n = Some(Numeric2Digit::Numeric);
     let td = Some(Numeric2Digit::TwoDigit);
     let at = |h: u8, c: HourCycle| {
@@ -366,17 +358,12 @@ fn hour_cycles() {
             minute: 0,
             ..DT
         };
-        fo(
-            "en",
-            &dt,
-            &DateTimeFormatOptions {
-                hour: n,
-                minute: td,
-                hour_cycle: Some(c),
-                ..Default::default()
-            },
-        )
-        .unwrap()
+        let opts = dtf(|o| {
+            o.hour = n;
+            o.minute = td;
+            o.hour_cycle = Some(c);
+        });
+        fo("en", &dt, &opts).unwrap()
     };
     // Midnight (00:00): the four cycles diverge.
     assert_eq!(at(0, HourCycle::H11), "0:00\u{202f}AM");
@@ -413,29 +400,27 @@ fn flexible_day_period() {
     assert_eq!(fs("en", &at(12, 30), "Bh"), "12 in the afternoon");
 
     // dayPeriod option promotes am/pm to the flexible period.
-    use intl::datetime::{DateTimeFormatOptions, NameStyle, Numeric2Digit, format_options as fo};
-    let o = DateTimeFormatOptions {
-        hour: Some(Numeric2Digit::Numeric),
-        day_period: Some(NameStyle::Long),
-        hour12: Some(true),
-        ..Default::default()
-    };
+    use intl::datetime::{NameStyle, Numeric2Digit, format_options as fo};
+    let o = dtf(|o| {
+        o.hour = Some(Numeric2Digit::Numeric);
+        o.day_period = Some(NameStyle::Long);
+        o.hour12 = Some(true);
+    });
     assert_eq!(fo("en", &at(9, 0), &o).unwrap(), "9\u{202f}in the morning");
 }
 
 #[cfg(feature = "iana-tz")]
 #[test]
 fn named_time_zone() {
-    use intl::datetime::{
-        DateTimeFormatOptions, HourCycle, Numeric2Digit, TimeZoneNameStyle, format_options as fo,
-    };
-    let mk = |zone, style| DateTimeFormatOptions {
-        hour: Some(Numeric2Digit::Numeric),
-        minute: Some(Numeric2Digit::TwoDigit),
-        hour_cycle: Some(HourCycle::H23),
-        time_zone: Some(zone),
-        time_zone_name: Some(style),
-        ..Default::default()
+    use intl::datetime::{HourCycle, Numeric2Digit, TimeZoneNameStyle, format_options as fo};
+    let mk = |zone, style| {
+        dtf(move |o| {
+            o.hour = Some(Numeric2Digit::Numeric);
+            o.minute = Some(Numeric2Digit::TwoDigit);
+            o.hour_cycle = Some(HourCycle::H23);
+            o.time_zone = Some(zone);
+            o.time_zone_name = Some(style);
+        })
     };
     let jul = DateTime { month: 7, ..DT };
     let jan = DateTime { month: 1, ..DT };

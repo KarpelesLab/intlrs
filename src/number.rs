@@ -236,7 +236,12 @@ pub enum RoundingMode {
 ///
 /// Currency/unit codes are `&'static str` (so the struct stays `Copy` and borrows
 /// from compile-time string literals, matching the crate's data model).
+///
+/// The struct is `#[non_exhaustive]` (so new options can be added without a
+/// breaking change): construct it from [`Default`] and set the fields you need,
+/// e.g. `let mut o = NumberFormatOptions::default(); o.style = …;`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
 pub struct NumberFormatOptions {
     /// The kind of quantity.
     pub style: NumberStyle,
@@ -1638,7 +1643,8 @@ fn compact_parts(
 ///
 /// ```
 /// use intl::number::{format_to_parts, NumberFormatOptions, NumberPartType, UseGrouping};
-/// let opts = NumberFormatOptions { use_grouping: UseGrouping::Never, ..Default::default() };
+/// let mut opts = NumberFormatOptions::default();
+/// opts.use_grouping = UseGrouping::Never;
 /// let parts = format_to_parts("en", 1234.5, &opts);
 /// assert_eq!(parts[0].kind, NumberPartType::Integer);
 /// assert_eq!(parts.iter().map(|p| p.value.as_str()).collect::<String>(), "1234.5");
@@ -1669,7 +1675,8 @@ pub fn format_to_parts(lang: &str, value: f64, opts: &NumberFormatOptions) -> Ve
 ///
 /// ```
 /// use intl::number::{format, NumberFormatOptions, SignDisplay};
-/// let opts = NumberFormatOptions { sign_display: SignDisplay::Always, ..Default::default() };
+/// let mut opts = NumberFormatOptions::default();
+/// opts.sign_display = SignDisplay::Always;
 /// assert_eq!(format("en", 5.0, &opts), "+5");
 /// assert_eq!(format("en", 1234.5, &Default::default()), "1,234.5");
 /// ```

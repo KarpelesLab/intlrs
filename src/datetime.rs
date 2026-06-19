@@ -869,7 +869,12 @@ pub enum HourCycle {
 /// `Intl.DateTimeFormat`. [`Default`] is all-`None` (which formats a numeric
 /// year/month/day). `date_style`/`time_style` are a shortcut that is mutually
 /// exclusive with the component fields.
+///
+/// The struct is `#[non_exhaustive]` (so new options can be added without a
+/// breaking change): construct it from [`Default`] and set the fields you need,
+/// e.g. `let mut o = DateTimeFormatOptions::default(); o.year = …;`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
 pub struct DateTimeFormatOptions {
     /// Weekday name width.
     pub weekday: Option<NameStyle>,
@@ -1454,12 +1459,10 @@ fn compute_tz_name(
 /// ```
 /// use intl::datetime::{DateTime, DateTimeFormatOptions, MonthStyle, Numeric2Digit, format_to_parts};
 /// let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5, millisecond: 0 };
-/// let opts = DateTimeFormatOptions {
-///     year: Some(Numeric2Digit::Numeric),
-///     month: Some(MonthStyle::Short),
-///     day: Some(Numeric2Digit::Numeric),
-///     ..Default::default()
-/// };
+/// let mut opts = DateTimeFormatOptions::default();
+/// opts.year = Some(Numeric2Digit::Numeric);
+/// opts.month = Some(MonthStyle::Short);
+/// opts.day = Some(Numeric2Digit::Numeric);
 /// let parts = format_to_parts("en", &dt, &opts).unwrap();
 /// let joined: String = parts.iter().map(|p| p.value.as_str()).collect();
 /// assert_eq!(joined, "Jun 4, 2026");
@@ -1496,7 +1499,8 @@ pub fn format_to_parts(
 /// ```
 /// use intl::datetime::{DateTime, DateTimeFormatOptions, DateStyle, format_options};
 /// let dt = DateTime { year: 2026, month: 6, day: 4, hour: 14, minute: 30, second: 5, millisecond: 0 };
-/// let opts = DateTimeFormatOptions { date_style: Some(DateStyle::Long), ..Default::default() };
+/// let mut opts = DateTimeFormatOptions::default();
+/// opts.date_style = Some(DateStyle::Long);
 /// assert_eq!(format_options("en", &dt, &opts).unwrap(), "June 4, 2026");
 /// ```
 ///

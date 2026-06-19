@@ -427,7 +427,7 @@ impl<T> core::clone::CloneToUninit for intl::datetime::DateTime where T: core::c
 pub unsafe fn intl::datetime::DateTime::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::datetime::DateTime
 pub fn intl::datetime::DateTime::from(T) -> T
-pub struct intl::datetime::DateTimeFormatOptions
+#[non_exhaustive] pub struct intl::datetime::DateTimeFormatOptions
 pub intl::datetime::DateTimeFormatOptions::date_style: core::option::Option<intl::datetime::DateStyle>
 pub intl::datetime::DateTimeFormatOptions::day: core::option::Option<intl::datetime::Numeric2Digit>
 pub intl::datetime::DateTimeFormatOptions::day_period: core::option::Option<intl::datetime::NameStyle>
@@ -1213,7 +1213,7 @@ impl<T> core::clone::CloneToUninit for intl::number::UseGrouping where T: core::
 pub unsafe fn intl::number::UseGrouping::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::UseGrouping
 pub fn intl::number::UseGrouping::from(T) -> T
-pub struct intl::number::NumberFormatOptions
+#[non_exhaustive] pub struct intl::number::NumberFormatOptions
 pub intl::number::NumberFormatOptions::compact_display: intl::number::CompactDisplay
 pub intl::number::NumberFormatOptions::currency: core::option::Option<&'static str>
 pub intl::number::NumberFormatOptions::currency_display: intl::number::CurrencyDisplay
