@@ -165,6 +165,19 @@ fn cjk_tailorings() {
     assert_eq!(ko.compare("각", "간"), Ordering::Less);
     assert_eq!(ko.compare("\u{1100}", "\u{1102}"), Ordering::Less); // ᄀ < ᄂ
     assert_eq!(ko.compare("강", "가나"), Ordering::Greater);
+
+    // Hanja sort by their Korean reading (CLDR `ko` `[reorder Hang Hani]` + the
+    // hanja-by-reading table), interleaved with the Hangul band. Verified against
+    // V8 `new Intl.Collator('ko')`.
+    assert_eq!(ko.compare("가", "伽"), Ordering::Less); // syllable before its hanja
+    assert_eq!(ko.compare("伽", "각"), Ordering::Less); // 가-hanja before next syllable 각
+    assert_eq!(ko.compare("각", "刻"), Ordering::Less); // syllable 각 before its hanja
+    assert_eq!(ko.compare("伽", "那"), Ordering::Less); // 가-hanja < 나-hanja
+    assert_eq!(ko.compare("刻", "那"), Ordering::Less); // 각-hanja < 나-hanja
+    assert_eq!(ko.compare("伽", "刻"), Ordering::Less); // ga < gak (by reading)
+    assert_eq!(ko.compare("伽", "佳"), Ordering::Less); // same reading 가: secondary order
+    // Hanja stay in the Hangul/Han band, before Latin.
+    assert_eq!(ko.compare("伽", "a"), Ordering::Less);
 }
 
 /// Chinese (`zh`) pinyin collation — the default `Intl.Collator('zh')` order
@@ -227,10 +240,36 @@ fn zh_stroke_and_zhuyin_variants() {
     assert_eq!(zhuyin.compare("中", "文"), Ordering::Less);
     assert_eq!(zhuyin.compare("阿", "八"), Ordering::Greater);
 
-    // An unknown / deferred collation keyword falls back to the default pinyin.
+    // An unknown / unsupported collation keyword falls back to the default pinyin.
     let pinyin = Tailoring::for_locale("zh").unwrap();
-    let fallback = Tailoring::for_locale("zh-u-co-unihan").unwrap();
+    let fallback = Tailoring::for_locale("zh-u-co-nonesuch").unwrap();
     assert_eq!(fallback.compare("阿", "你"), pinyin.compare("阿", "你"));
+}
+
+/// Chinese `zh-u-co-unihan` collation: every Han ideograph is ordered purely by
+/// Unihan radical-stroke (readings ignored), not by pinyin. Verified against V8
+/// `new Intl.Collator('zh', { collation: 'unihan' })`.
+#[cfg(feature = "collation-zh")]
+#[test]
+fn zh_unihan_variant() {
+    use intl::unicode::collate::Tailoring;
+    let uni = Tailoring::for_locale("zh-u-co-unihan").unwrap();
+    // Radical order: radical 1 (一/丁) before higher radicals; 你 (rad 9, 人)
+    // before 阿 (rad 170, 阜); 中 (rad 2, 丨) after 丁 (rad 1).
+    assert_eq!(uni.compare("你", "阿"), Ordering::Less);
+    assert_eq!(uni.compare("中", "丁"), Ordering::Greater);
+    assert_eq!(uni.compare("一", "丨"), Ordering::Less);
+    // Same radical (75, 木), fewer residual strokes first: 木(0) < 本(1) < 李(3).
+    assert_eq!(uni.compare("木", "本"), Ordering::Less);
+    assert_eq!(uni.compare("本", "李"), Ordering::Less);
+    // Radical-stroke, NOT pinyin: 阿(ā) sorts *after* 你(nǐ) here (radical 170 >
+    // radical 9), the reverse of the pinyin default.
+    assert_eq!(uni.compare("阿", "你"), Ordering::Greater);
+    let pinyin = Tailoring::for_locale("zh").unwrap();
+    assert_eq!(pinyin.compare("阿", "你"), Ordering::Less);
+    // `[reorder Hani]` still holds: Han after digits, before Latin.
+    assert_eq!(uni.compare("木", "9"), Ordering::Greater);
+    assert_eq!(uni.compare("木", "a"), Ordering::Less);
 }
 
 /// Locales whose CLDR rule needs the extended parser syntax: `[before]`

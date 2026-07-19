@@ -3640,18 +3640,26 @@ fn emit_collation_zh_variant(root: &Path, zh_xml: &Path, variant: &str) {
 }
 
 /// Write `src/unicode/collation_zh_rs.bin`: the Unihan **radical-stroke** order
-/// for Han ideographs that carry NO pinyin rank (the CJK Extensions, plus the
-/// rare reading-less URO chars). Gated at runtime by `collation-zh`.
+/// for Han ideographs. Gated at runtime by `collation-zh`.
+///
+/// This table now covers **every** non-decomposing Han ideograph with a
+/// `kRSUnicode` entry — the whole URO (`4E00–9FFF`) plus the CJK Extensions —
+/// not just the reading-less ones. It serves two runtime paths:
+///
+///  * the default pinyin/stroke/zhuyin fallback — a Han *without* a pinyin (or
+///    stroke/zhuyin) rank is sorted by radical-stroke, after all ranked chars
+///    but before Latin. Pinyin-ranked URO chars never consult this table (the
+///    ranked lookup wins first), so their inclusion here is inert for `zh`; it
+///    only feeds the `unihan` variant below.
+///  * the `zh-u-co-unihan` collation — which orders *all* Han purely by
+///    radical-stroke (ignoring readings), so it needs URO coverage too.
 ///
 /// Background: `Intl.Collator('zh')` (ICU/V8) sorts every Han *with* a Mandarin
 /// reading by pinyin (the [`emit_collation_zh`] table, URO + Compatibility), and
 /// every *other* Han by **radical-stroke** order — radical number, then residual
 /// stroke count, then code point — placed after all pinyin chars but before Latin.
-/// The previous runtime approximated that fallback with raw code-point order,
-/// which agrees with V8 for within-block comparisons but collapses to ~63% for
-/// cross-block Extension mixes (ExtA at U+3400 has a *lower* code point than ExtB
-/// at U+20000 yet, by radical-stroke, an ExtA radical-200 char sorts after an ExtB
-/// radical-1 char). Ordering by true radical-stroke restores ~99.7% V8 agreement.
+/// `Intl.Collator('zh',{collation:'unihan'})` instead sorts *all* Han by that
+/// radical-stroke order.
 ///
 /// Source: the vendored `data/ucd/<v>/Unihan_kRSUnicode.txt` (distilled
 /// `kRSUnicode` field of Unihan_IRGSources.txt) — `radical[']␟.residual`, where a
@@ -3660,30 +3668,13 @@ fn emit_collation_zh_variant(root: &Path, zh_xml: &Path, variant: &str) {
 ///
 /// Blob layout (little-endian): `[u32 count]`, then `count` sorted `u32` code
 /// points, then `count` `u16` packed keys. Each key packs
-/// `(radical*2 + is_simplified) << 7 | (residual + 16)` — the runtime unpacks it
-/// into two ordering primaries (radical, then residual), then appends the code
-/// point as a tie-breaker. Pinyin-ranked code points are excluded (they never
-/// reach this fallback); so are decomposing Compatibility ideographs, which
-/// normalize to their URO form before collation.
+/// `radical << 8 | (residual + 16) << 1 | is_simplified` — the runtime unpacks it
+/// into two ordering primaries (radical, then the residual+simplified low byte),
+/// then appends the DUCET implicit primaries as a within-block tie-breaker.
+/// Decomposing Compatibility ideographs are excluded (they normalize to their URO
+/// form before collation).
 fn emit_collation_zh_rs(root: &Path, krs_path: &Path) {
     let text = fs::read_to_string(krs_path).expect("read Unihan_kRSUnicode.txt");
-
-    // The set of code points that already own a pinyin rank — read back from the
-    // freshly written pinyin blob so the two tables stay in lock-step (a pinyin
-    // char must not also get a radical-stroke key).
-    let pinyin_bin = fs::read(root.join("src/unicode/collation_zh.bin")).expect("read pinyin bin");
-    let pcount =
-        u32::from_le_bytes([pinyin_bin[0], pinyin_bin[1], pinyin_bin[2], pinyin_bin[3]]) as usize;
-    let mut pinyin: BTreeSet<u32> = BTreeSet::new();
-    for k in 0..pcount {
-        let o = 4 + k * 4;
-        pinyin.insert(u32::from_le_bytes([
-            pinyin_bin[o],
-            pinyin_bin[o + 1],
-            pinyin_bin[o + 2],
-            pinyin_bin[o + 3],
-        ]));
-    }
 
     // Compatibility ideographs that canonically decompose never reach the runtime
     // fallback (NFD folds them to their URO form first), so skip the two compat
@@ -3706,7 +3697,7 @@ fn emit_collation_zh_rs(root: &Path, krs_path: &Path) {
         let Ok(cp) = u32::from_str_radix(hex, 16) else {
             continue;
         };
-        if pinyin.contains(&cp) || decomposes(cp) {
+        if decomposes(cp) {
             continue;
         }
         // `radical[']␟.residual`, first value only.
@@ -3719,12 +3710,15 @@ fn emit_collation_zh_rs(root: &Path, krs_path: &Path) {
         let (Ok(radical), Ok(residual)) = (rad_s.parse::<u32>(), res_s.parse::<i32>()) else {
             continue;
         };
-        // radical 1..=214 → key 2..=429 (base even, simplified variant odd+1);
-        // residual −9..=76 → +16 keeps it in 1..=127 (7 bits, never zero).
-        let radical_key = radical * 2 + u32::from(simplified);
+        // Key significance order (radical, residual, simplified) — matching V8,
+        // which sorts a simplified-radical variant *after* the base radical only
+        // when residual strokes tie, not ahead of the whole base radical. Layout:
+        //   radical 1..=214            → high 8 bits (never zero);
+        //   residual −9..=76 → +16     → 1..=127, shifted left 1 (7 bits);
+        //   is_simplified              → low bit (variant just after its base).
         let resid = (residual + 16) as u32;
-        assert!(radical_key < 512 && resid < 128, "RS key out of range: {radical}.{residual}");
-        let packed = ((radical_key << 7) | resid) as u16;
+        assert!(radical < 256 && resid < 128, "RS key out of range: {radical}.{residual}");
+        let packed = ((radical << 8) | (resid << 1) | u32::from(simplified)) as u16;
         table.insert(cp, packed);
     }
 
@@ -3739,7 +3733,8 @@ fn emit_collation_zh_rs(root: &Path, krs_path: &Path) {
     let path = root.join("src/unicode/collation_zh_rs.bin");
     fs::write(&path, &buf).expect("write collation_zh_rs.bin");
     eprintln!(
-        "codegen: wrote collation_zh_rs.bin ({} radical-stroke Han ideographs, {} KB)",
+        "codegen: wrote collation_zh_rs.bin ({} radical-stroke Han ideographs (URO + Extensions), \
+         {} KB)",
         table.len(),
         buf.len() / 1024
     );
