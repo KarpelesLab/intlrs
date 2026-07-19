@@ -224,6 +224,50 @@ fn persian_dates() {
     assert!(fp("fr", 1404, 1, 1, Long).contains("1404"));
 }
 
+#[cfg(feature = "calendars-extra")]
+#[test]
+fn chinese_dates() {
+    use intl::datetime::{DateStyle::*, format_chinese_date as fc};
+
+    // 2024-02-10 was Chinese new year: year 2024, month 1, day 1 — the year of
+    // the dragon, sexagenary 甲辰 / jia-chen (the 41st stem-branch, i.e.
+    // (2024 − 4) mod 60 + 1). Values verified against Node/V8
+    // `new Intl.DateTimeFormat(loc,{calendar:'chinese',dateStyle}).format`.
+    //
+    // `U` = cyclic year NAME, `r` = related Gregorian year, month name is numeric.
+    assert_eq!(
+        fc("en", 2024, 1, 1, false, Full),
+        "Saturday, First Month 1, 2024(jia-chen)"
+    );
+    assert_eq!(
+        fc("en", 2024, 1, 1, false, Long),
+        "First Month 1, 2024(jia-chen)"
+    );
+    // Medium carries the related year (`r`) but no cyclic name.
+    assert_eq!(fc("en", 2024, 1, 1, false, Medium), "Mo1 1, 2024");
+    assert_eq!(fc("en", 2024, 1, 1, false, Short), "1/1/2024");
+
+    // Leap month: 2023 had a leap 2nd month; 2023-04-01 = leap month 2, day 11,
+    // sexagenary 癸卯 / gui-mao (year 2023 → (2023 − 4) mod 60 + 1 = 40). The
+    // leap marker wraps the month name (`"Second Monthbis"`), even numeric ones.
+    assert_eq!(
+        fc("en", 2023, 2, 11, true, Long),
+        "Second Monthbis 11, 2023(gui-mao)"
+    );
+    assert_eq!(fc("en", 2023, 2, 11, true, Short), "2bis/11/2023");
+    // `y` (German short pattern `dd.MM.yy`) renders the cyclic year NUMBER (40),
+    // with the leap marker on the numeric month.
+    assert_eq!(fc("de", 2023, 2, 11, true, Short), "11.02bis.40");
+
+    // A non-Latin locale (`zh`): `rU年MMMd` → related year + cyclic name 甲辰 +
+    // month name 正月. (V8 renders the day with the `hanidays` numbering — 初一 —
+    // but, like the Islamic/Persian formatters, this crate uses ASCII digits.)
+    assert_eq!(fc("zh", 2024, 1, 1, false, Long), "2024甲辰年正月1");
+    assert!(fc("zh", 2024, 1, 1, false, Full).starts_with("2024甲辰年正月"));
+    // zh leap month applies the 闰 marker.
+    assert_eq!(fc("zh", 2023, 2, 11, true, Long), "2023癸卯年闰二月11");
+}
+
 #[test]
 fn component_options() {
     use intl::datetime::{

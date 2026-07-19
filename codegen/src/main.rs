@@ -332,6 +332,7 @@ fn main() {
     emit_collation_rules(&cldr_dir, &cldr.join("collation.json"));
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic-raw"));
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian-raw"));
+    emit_chinese(&cldr_dir, &cldr.join("chinese-raw"));
 
     // ---- generated/mod.rs ----
     // Gate the large per-component tables behind their Cargo feature so that
@@ -2695,6 +2696,103 @@ fn emit_alt_calendar(cldr_dir: &Path, name: &str, raw_dir: &Path) {
         records.push((locale.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, name, &records);
+}
+
+/// Write `cldr/chinese.bin`: per-locale Chinese-calendar data. Each record holds
+/// the 60 sexagenary (cyclic) year names (the `U` field), the 12 numeric month
+/// names (wide + abbreviated), the leap-month marker pattern (wide + abbreviated,
+/// e.g. `"闰{0}"` / `"{0}bis"`) and the 4 date patterns (full/long/medium/short).
+/// The cyclic-year names are identical across CLDR widths, so only one set is
+/// stored. A `dateFormats` value may be a plain string or an object carrying a
+/// `_value` (e.g. `zh`/`ja`/`yue`, which annotate a per-field numbering system);
+/// the `_value` is used and the numbering annotation dropped (days render with
+/// ASCII digits, as the other alternate calendars do).
+fn emit_chinese(cldr_dir: &Path, raw_dir: &Path) {
+    // Extract a pattern that is either a plain string or a `{_value, _numbers}`
+    // object.
+    fn pat_str(v: &Json) -> &str {
+        v.as_str()
+            .or_else(|| v.get("_value").and_then(Json::as_str))
+            .unwrap_or("")
+    }
+
+    let mut locales = locale_files(raw_dir);
+    locales.sort();
+    let mut records = Vec::new();
+    for locale in locales {
+        let path = raw_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let cal = loc_obj
+            .get("dates")
+            .and_then(|d| d.get("calendars"))
+            .and_then(|c| c.get("chinese"))
+            .expect("chinese calendar");
+
+        let mut p = Vec::new();
+
+        // 60 cyclic (sexagenary) year names, keyed "1"..="60" (wide width).
+        let years = cal
+            .get("cyclicNameSets")
+            .and_then(|c| c.get("years"))
+            .and_then(|y| y.get("format"))
+            .and_then(|f| f.get("wide"))
+            .expect("cyclic years");
+        for i in 1..=60u8 {
+            enc_str(
+                &mut p,
+                years
+                    .get(&i.to_string())
+                    .and_then(Json::as_str)
+                    .unwrap_or(""),
+            );
+        }
+
+        // 12 numeric month names (wide, then abbreviated).
+        let months = cal
+            .get("months")
+            .and_then(|m| m.get("format"))
+            .expect("months");
+        for width in ["wide", "abbreviated"] {
+            let w = months.get(width).expect("month width");
+            for m in 1..=12u8 {
+                enc_str(
+                    &mut p,
+                    w.get(&m.to_string()).and_then(Json::as_str).unwrap_or(""),
+                );
+            }
+        }
+
+        // Leap-month marker pattern (wide, then abbreviated).
+        let leap = cal
+            .get("monthPatterns")
+            .and_then(|m| m.get("format"))
+            .expect("monthPatterns");
+        for width in ["wide", "abbreviated"] {
+            enc_str(
+                &mut p,
+                leap.get(width)
+                    .and_then(|w| w.get("leap"))
+                    .and_then(Json::as_str)
+                    .unwrap_or("{0}"),
+            );
+        }
+
+        // 4 date patterns.
+        let df = cal.get("dateFormats").expect("dateFormats");
+        for k in ["full", "long", "medium", "short"] {
+            enc_str(&mut p, df.get(k).map(pat_str).unwrap_or(""));
+        }
+
+        records.push((locale.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "chinese", &records);
 }
 
 /// Write `cldr/ordsuffix.bin`: per-locale ordinal suffix for each plural

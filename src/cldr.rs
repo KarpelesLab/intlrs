@@ -193,6 +193,8 @@ const COLLATION: &[u8] = include_bytes!("cldr/collation.bin");
 const ISLAMIC: &[u8] = include_bytes!("cldr/islamic.bin");
 #[cfg(feature = "calendars-extra")]
 const PERSIAN: &[u8] = include_bytes!("cldr/persian.bin");
+#[cfg(feature = "calendars-extra")]
+const CHINESE: &[u8] = include_bytes!("cldr/chinese.bin");
 
 /// The CLDR collation tailoring rule string for an exact (lowercased) locale
 /// key, or `None`. Used by `unicode::collate::Tailoring::for_locale`.
@@ -312,6 +314,41 @@ pub(crate) fn islamic_spec(lang: &str) -> Option<AltCalSpec> {
 #[cfg(feature = "calendars-extra")]
 pub(crate) fn persian_spec(lang: &str) -> Option<AltCalSpec> {
     alt_cal_spec(PERSIAN, lang)
+}
+
+/// Chinese-calendar names + patterns for one locale: the 60 sexagenary (cyclic)
+/// year names (the `U` field), numeric month names (wide + abbreviated), the
+/// leap-month marker pattern (wide + abbreviated) and the four date patterns.
+#[derive(Debug, Clone, Copy)]
+pub struct ChineseCalSpec {
+    /// The 60 sexagenary cyclic year names, indexed by the 1-based
+    /// stem-branch number minus 1 (e.g. index 40 → 甲辰 / `jia-chen`). The CLDR
+    /// widths are identical, so this one set serves every `U` width.
+    pub cyclic: [&'static str; 60],
+    /// Wide numeric month names (e.g. `"正月"` / `"First Month"`), indexed month−1.
+    pub months_wide: [&'static str; 12],
+    /// Abbreviated numeric month names (e.g. `"Mo1"`), indexed month−1.
+    pub months_abbr: [&'static str; 12],
+    /// Wide leap-month marker pattern (contains `{0}`, e.g. `"闰{0}"` / `"{0}bis"`).
+    pub leap_wide: &'static str,
+    /// Abbreviated leap-month marker pattern.
+    pub leap_abbr: &'static str,
+    /// Date patterns by style (full/long/medium/short).
+    pub date: [&'static str; 4],
+}
+
+/// Chinese-calendar names + patterns for an exact (lowercased) locale key.
+#[cfg(feature = "calendars-extra")]
+pub(crate) fn chinese_spec(lang: &str) -> Option<ChineseCalSpec> {
+    let mut c = find(CHINESE, lang)?;
+    Some(ChineseCalSpec {
+        cyclic: core::array::from_fn(|_| c.str()),
+        months_wide: core::array::from_fn(|_| c.str()),
+        months_abbr: core::array::from_fn(|_| c.str()),
+        leap_wide: c.str(),
+        leap_abbr: c.str(),
+        date: core::array::from_fn(|_| c.str()),
+    })
 }
 
 /// Localized GMT offset formats for one locale.

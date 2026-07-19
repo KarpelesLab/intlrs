@@ -738,6 +738,153 @@ pub fn format_islamic_umalqura_date(
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
 
+/// Render a Chinese-calendar date with a locale's cyclic year names, numeric
+/// month names and leap-month marker. The weekday name (if any) uses the
+/// Gregorian day names at the date's `jdn`.
+///
+/// - `U` renders the sexagenary cyclic year name (e.g. 甲辰 / `jia-chen`).
+/// - `r` renders the related Gregorian year (`related`).
+/// - `y` renders the 1-based cyclic year number (`cyclic1`, 1..=60), numeric.
+/// - `M`/`L` render the numeric month name (or number), wrapped in the leap
+///   marker pattern when `is_leap` is set.
+#[cfg(feature = "calendars-extra")]
+#[allow(clippy::too_many_arguments)]
+fn render_chinese(
+    cal: &crate::cldr::ChineseCalSpec,
+    style: DateStyle,
+    month: i64,
+    day: i64,
+    is_leap: bool,
+    related: i64,
+    cyclic1: i64,
+    jdn: i64,
+    greg: &CalendarSpec,
+) -> String {
+    let wd = ((jdn.rem_euclid(7) + 1) % 7) as usize; // 0 = Sunday
+    let ci = (cyclic1.clamp(1, 60) - 1) as usize; // cyclic name index
+    let c: Vec<char> = cal.date[style.idx()].chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < c.len() {
+        let ch = c[i];
+        if ch == '\'' {
+            i += 1;
+            if i < c.len() && c[i] == '\'' {
+                out.push('\'');
+                i += 1;
+                continue;
+            }
+            while i < c.len() && c[i] != '\'' {
+                out.push(c[i]);
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < c.len() && c[i] == ch {
+                i += 1;
+            }
+            let (n, m) = (i - start, month as usize);
+            let mi = m.clamp(1, 12) - 1; // unvalidated month must not index OOB
+            match ch {
+                'M' | 'L' => {
+                    let name = match n {
+                        1 => alloc::format!("{m}"),
+                        2 => two(m as i64),
+                        3 => String::from(cal.months_abbr[mi]),
+                        _ => String::from(cal.months_wide[mi]),
+                    };
+                    if is_leap {
+                        let pat = if n == 3 { cal.leap_abbr } else { cal.leap_wide };
+                        out.push_str(&pat.replace("{0}", &name));
+                    } else {
+                        out.push_str(&name);
+                    }
+                }
+                'd' => out.push_str(&day.to_string()),
+                'E' | 'e' | 'c' => out.push_str(if n >= 4 {
+                    greg.days_wide[wd]
+                } else {
+                    greg.days_abbr[wd]
+                }),
+                // Related Gregorian year.
+                'r' => out.push_str(&related.to_string()),
+                // Cyclic (sexagenary) year name.
+                'U' => out.push_str(cal.cyclic[ci]),
+                // Cyclic (sexagenary) year *number*, 1..=60.
+                'y' | 'Y' => {
+                    if n == 2 {
+                        out.push_str(&two(cyclic1.rem_euclid(100)));
+                    } else {
+                        out.push_str(&cyclic1.to_string());
+                    }
+                }
+                _ => {}
+            }
+        } else {
+            out.push(ch);
+            i += 1;
+        }
+    }
+    out
+}
+
+/// Format a Chinese-calendar date in `lang`, e.g.
+/// `format_chinese_date("en", 2024, 1, 1, false, DateStyle::Long)` →
+/// `"First Month 1, 2024(jia-chen)"`: the localized numeric month name, the
+/// related Gregorian year (`r`) and the sexagenary cyclic year name (`U`).
+///
+/// `year`/`month`/`day` are the Chinese calendar fields (supported range: Chinese
+/// years 1900–2099) and `is_leap_month` marks the intercalary month that follows
+/// `month` (the month name is then wrapped in the locale's leap marker, e.g.
+/// `"闰正月"` / `"First Monthbis"`). The related year and the cyclic year are
+/// derived from the Gregorian year in which the Chinese year begins.
+#[cfg(feature = "calendars-extra")]
+#[must_use]
+pub fn format_chinese_date(
+    lang: &str,
+    year: i64,
+    month: i64,
+    day: i64,
+    is_leap_month: bool,
+    style: DateStyle,
+) -> String {
+    let cal = chinese_alt_spec(lang);
+    // The Gregorian year in which this Chinese year begins (its 1st month, 1st
+    // day). Falls back to `year` itself if the conversion is out of range.
+    let related = crate::calendar::chinese_to_gregorian(year, 1, 1, false).map_or(year, |g| g.0);
+    // 1-based sexagenary (stem-branch) number: (relatedYear − 4) mod 60, +1.
+    let cyclic1 = (related - 4).rem_euclid(60) + 1;
+    let jdn = crate::calendar::chinese_to_jdn(year, month, day, is_leap_month).unwrap_or(0);
+    render_chinese(
+        &cal,
+        style,
+        month,
+        day,
+        is_leap_month,
+        related,
+        cyclic1,
+        jdn,
+        &spec(lang),
+    )
+}
+
+/// Chinese-calendar spec for `lang` via the locale fallback chain (to `en`).
+#[cfg(feature = "calendars-extra")]
+fn chinese_alt_spec(lang: &str) -> crate::cldr::ChineseCalSpec {
+    let norm = normalize_lang(lang);
+    let mut end = norm.len();
+    loop {
+        if let Some(s) = crate::cldr::chinese_spec(&norm[..end]) {
+            return s;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return crate::cldr::chinese_spec("en").expect("root chinese calendar present"),
+        }
+    }
+}
+
 /// Format a Persian (Solar Hijri) date in `lang`, e.g.
 /// `format_persian_date("en", 1404, 1, 1, DateStyle::Long)` →
 /// `"Farvardin 1, 1404 AP"` (localized month names + era).
