@@ -9,10 +9,11 @@
 //! V8 exactly, tokens and all (V8 emits whitespace/punctuation as their own
 //! segments, and so does [`words`]).
 //!
-//! Known divergence from V8: this port does NOT apply ICU's NFKC normalization
-//! of the run before dictionary lookup, so text containing half-width katakana
-//! (U+FF66..=U+FF9F) or other forms NFKC would fold may segment differently.
-//! Normal NFC/NFKC-stable CJK — the overwhelmingly common case — matches.
+//! Like ICU/V8, this port NFKC-normalizes the run before dictionary lookup, so
+//! half-width katakana (U+FF66..=U+FF9F), full-width forms and the like segment
+//! as their canonical equivalents while the emitted tokens keep their original
+//! spelling (see [`nfkc_pre_normalization_matches_v8`]). Normal NFC/NFKC-stable
+//! CJK — the overwhelmingly common case — is untouched (identity mapping).
 
 use intl::unicode::words;
 
@@ -186,6 +187,37 @@ fn non_cjk_scripts_unaffected() {
     // Hangul is deliberately NOT routed to the CJK engine (Korean uses spaces).
     assert_eq!(w("안녕하세요 세계"), ["안녕하세요", " ", "세계"]);
     assert_eq!(w("Hello, world!"), ["Hello", ",", " ", "world", "!"]);
+}
+
+#[test]
+fn nfkc_pre_normalization_matches_v8() {
+    // ICU/V8 NFKC-normalize the run before dictionary lookup, then map the
+    // breaks back onto the ORIGINAL text — so half-width katakana and full-width
+    // forms segment like their canonical equivalents but the tokens keep their
+    // original spelling. Every expected value below is V8's
+    // `Intl.Segmenter('ja',{granularity:'word'})` output.
+    let cases: &[(&str, &[&str])] = &[
+        // Half-width katakana, including a voiced sound mark that composes across
+        // the code-point join (ﾃﾞ → デ): the break falls before ﾃ, never inside it.
+        ("ﾃｽﾄﾃﾞｰﾀ", &["ﾃｽﾄ", "ﾃﾞｰﾀ"]),
+        ("ﾃｽﾄ", &["ﾃｽﾄ"]),
+        ("ｺﾝﾋﾟｭｰﾀｰ", &["ｺﾝﾋﾟｭｰﾀｰ"]),
+        ("ﾊﾟﾋﾟﾌﾟﾍﾟﾎﾟ", &["ﾊﾟﾋﾟﾌﾟﾍﾟﾎﾟ"]),
+        ("ｼﾞｬﾊﾟﾝ", &["ｼﾞｬﾊﾟﾝ"]),
+        // Han + half-width katakana in one dictionary run.
+        ("東京ﾀﾜｰ", &["東京ﾀﾜｰ"]),
+        ("半角ｶﾀｶﾅ", &["半角", "ｶﾀｶﾅ"]),
+        // Full-width Latin / digits are handled by UAX #29 (not the CJK run), but
+        // must still line up exactly with V8 at the script boundary.
+        ("ＡＢＣ東京", &["ＡＢＣ", "東京"]),
+        ("１２３東京", &["１２３", "東京"]),
+        // No-regression: already-NFC text is an identity mapping.
+        ("東京タワー", &["東京タワー"]),
+        ("テストデータ", &["テスト", "データ"]),
+    ];
+    for (input, expected) in cases {
+        assert_eq!(&w(input), expected, "input: {input}");
+    }
 }
 
 #[test]

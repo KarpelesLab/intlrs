@@ -17,10 +17,20 @@
 //! cost. The DP arrays are sized to the run length, hence the `alloc`
 //! requirement (the Thai engine stays allocation-free).
 //!
-//! Divergences from ICU that are deliberately not reproduced: the NFKC
-//! normalization ICU applies to the run before matching (a no-op for the common
-//! Han + full-width-kana case), and the phrase-breaking / ML paths. See the
-//! module tests and the crate notes for the honest parity picture.
+//! Like ICU, the run is **NFKC-normalized before dictionary matching** so that
+//! half-width katakana (`ﾃｽﾄ`), full-width forms and the like segment as their
+//! canonical equivalents; the resulting break positions are then mapped back to
+//! byte offsets in the *original* run so the emitted tokens keep their original
+//! spelling. Normalization is done segment-by-segment at NFKC boundaries, and
+//! every normalized code point is mapped back to the byte offset of its
+//! segment's first original code point, so a break is never introduced inside an
+//! original code point (matching V8/ICU, which never splits e.g. `ﾃﾞ`→デ). On
+//! already-NFKC text (the overwhelmingly common Han/kana case) the mapping is the
+//! identity and the output is byte-for-byte the pre-normalization behavior.
+//!
+//! Divergences from ICU that are deliberately not reproduced: the
+//! phrase-breaking / ML paths. See the module tests and the crate notes for the
+//! honest parity picture.
 
 use alloc::vec::Vec;
 
@@ -160,12 +170,59 @@ fn sym(c: char) -> Option<u16> {
     u16::try_from(c as u32).ok()
 }
 
+/// Whether `c` starts a fresh NFKC normalization segment (has a "boundary
+/// before" it). A code point can be composed onto preceding text exactly when
+/// the leading code point of its (compatibility) decomposition is a non-starter
+/// — e.g. the half-width voiced sound marks U+FF9E/U+FF9F decompose to U+3099
+/// (CCC 8) and so attach to the preceding kana (`ﾃﾞ` → デ). Everything else
+/// begins a new segment. (Two starters only compose for Hangul L+V, and Hangul
+/// is excluded from CJK runs, so the leading-CCC test is exact here.)
+#[inline]
+fn nfkc_boundary_before(c: char) -> bool {
+    use super::normalize;
+    let lead = normalize::nfkd(core::iter::once(c)).next().unwrap_or(c);
+    normalize::canonical_combining_class(lead) == 0
+}
+
+/// Build the NFKC-normalized code point sequence of `run` together with a
+/// mapping back into the original: `chars[i]` is the i-th normalized code point
+/// and `byte_off[i]` is the byte offset (in `run`) of the first original code
+/// point of the normalization segment it came from; `byte_off` has `ncp + 1`
+/// entries with the last being `run.len()`.
+///
+/// Each maximal segment of original code points (one leading starter plus any
+/// following combining/attaching code points) is normalized as a whole, so
+/// composition across the join (`ﾃﾞ` → デ) is honored; every code point the
+/// segment produces maps back to that segment's start, so a dictionary break can
+/// only ever fall on an original code-point boundary, never inside one.
+fn build_normalized(run: &str, chars: &mut Vec<char>, byte_off: &mut Vec<usize>) {
+    use super::normalize::nfkc;
+    let orig: Vec<(usize, char)> = run.char_indices().collect();
+    let n = orig.len();
+    let mut i = 0;
+    while i < n {
+        let start_byte = orig[i].0;
+        i += 1;
+        while i < n && !nfkc_boundary_before(orig[i].1) {
+            i += 1;
+        }
+        let end_byte = if i < n { orig[i].0 } else { run.len() };
+        for c in nfkc(run[start_byte..end_byte].chars()) {
+            chars.push(c);
+            byte_off.push(start_byte);
+        }
+    }
+    byte_off.push(run.len());
+}
+
 /// Fill `out` with the byte offsets (within `run`) of every CJK word end, in
 /// ascending order, the last being `run.len()`. `out` is cleared first.
 ///
 /// This is one call of ICU's `CjkBreakEngine::divideUpDictionaryRange` over the
 /// whole run: a minimum-total-cost Viterbi segmentation. `run` must be a maximal
-/// run of [`is_cjk_dict_char`] characters.
+/// run of [`is_cjk_dict_char`] characters. Like ICU, the run is NFKC-normalized
+/// before matching and the resulting breaks are mapped back to original byte
+/// offsets (see [`build_normalized`]).
 pub(crate) fn segment(run: &str, out: &mut Vec<usize>) {
     out.clear();
     if run.is_empty() {
@@ -176,16 +233,28 @@ pub(crate) fn segment(run: &str, out: &mut Vec<usize>) {
         return;
     };
 
-    // Code points of the run, with their starting byte offsets. `byte_off` has
-    // `ncp + 1` entries so index `ncp` maps to `run.len()`.
+    // Code points to segment, with a byte-offset mapping back into `run`.
+    // `byte_off` has `ncp + 1` entries so index `ncp` maps to `run.len()`.
     let mut chars: Vec<char> = Vec::new();
     let mut byte_off: Vec<usize> = Vec::new();
-    for (i, c) in run.char_indices() {
-        chars.push(c);
-        byte_off.push(i);
+    if super::normalize::quick_check_nfkc(run.chars()) == super::normalize::IsNormalized::Yes {
+        // Already NFKC: identity mapping — byte-for-byte the pre-normalization
+        // behavior, and the common Han/kana case avoids all normalization work.
+        for (i, c) in run.char_indices() {
+            chars.push(c);
+            byte_off.push(i);
+        }
+        byte_off.push(run.len());
+    } else {
+        // Segment the run over its NFKC-normalized code points, mapping each back
+        // to an original byte offset.
+        build_normalized(run, &mut chars, &mut byte_off);
     }
-    byte_off.push(run.len());
     let ncp = chars.len();
+    if ncp == 0 {
+        out.push(run.len());
+        return;
+    }
 
     // bestSnlp[i] = min cost of segmenting the first i code points; prev[i] =
     // the start code point of the last word in that best segmentation.
@@ -263,14 +332,21 @@ pub(crate) fn segment(run: &str, out: &mut Vec<usize>) {
     }
 
     // Backtrace the optimal boundaries (code point indices), collect descending
-    // then reverse into ascending byte offsets.
+    // then reverse into ascending byte offsets. A boundary in normalized space
+    // maps back through `byte_off`; two adjacent normalized breaks can land on
+    // the same original offset (a break that would fall inside a normalization
+    // segment), so drop those to keep the ends strictly ascending — that never
+    // splits an original code point.
     if best[ncp] == u32::MAX {
         out.push(run.len());
         return;
     }
     let mut i = ncp;
     while i > 0 {
-        out.push(byte_off[i]);
+        let b = byte_off[i];
+        if out.last() != Some(&b) {
+            out.push(b);
+        }
         let p = prev[i];
         if p == usize::MAX || p >= i {
             break; // defensive: never loop on a malformed prev chain
