@@ -726,33 +726,54 @@ fn emit_names_blob(root: &Path, ucd: &Path) {
 ///   u32 edge_count E
 ///   u32 root_id
 ///   final-flag bitmap: ceil(N/8) bytes (bit i%8 of byte i/8 == node i is a word end)
-///   edge-offset table: (N+1) u16 (cumulative edge index; node i owns edges[off[i]..off[i+1]])
-///   edges: E records of 3 bytes each — [u8 sym][u16 target], sym = codepoint - 0x0E00,
-///          sorted ascending by sym within each node (binary search at runtime)
+///   edge-offset table: (N+1) idx (cumulative edge index; node i owns edges[off[i]..off[i+1]])
+///   edges: E records of [u8 sym][idx target], sorted ascending by sym within
+///          each node (binary search at runtime)
 /// ```
+/// `sym` is `codepoint - base`, where `base` is the script's block base (U+0E00
+/// for Thai/Lao, U+1780 for Khmer, U+1000 for the main Myanmar block). `idx` is a
+/// `u16` when both `N <= 0xFFFF` and `E <= 0xFFFF` (Thai/Lao — 3-byte edge
+/// records), otherwise a `u32` (Khmer — 5-byte edge records); the runtime reader
+/// picks the width from the `N`/`E` header, so small blobs stay byte-identical.
 /// The DAWG shares common suffixes, so it is far smaller than the raw trie while
 /// preserving exactly the set of dictionary words (word ends are per-node flags).
 fn emit_segment_dict(root: &Path) {
     // Thai and Lao share this word-list DAWG format and the U+0E00-relative edge
     // symbol (Lao lives at U+0E80..=U+0EFF, i.e. byte offsets 128..=255).
-    emit_thai_family_dict(root, "thaidict.txt", "segment_dict.bin");
-    emit_thai_family_dict(root, "laodict.txt", "segment_dict_lao.bin");
+    emit_thai_family_dict(root, "thaidict.txt", "segment_dict.bin", 0x0E00);
+    emit_thai_family_dict(root, "laodict.txt", "segment_dict_lao.bin", 0x0E00);
+    // Khmer: edge symbols are U+1780-relative (whole Khmer block fits a u8).
+    emit_thai_family_dict(root, "khmerdict.txt", "segment_dict_km.bin", 0x1780);
+    // Burmese: edge symbols are U+1000-relative, restricted to the main Myanmar
+    // block (Extended-A/B code points fall outside a u8 of U+1000; ICU's
+    // burmesedict.txt contains none of them).
+    emit_thai_family_dict(root, "burmesedict.txt", "segment_dict_my.bin", 0x1000);
 }
 
 /// Build one Thai-family (word-list, no frequencies) DAWG from `data/brkitr/
-/// <dict_file>` and write it to `src/unicode/<out_file>`. See the doc comment on
-/// [`emit_segment_dict`] for the byte layout.
-fn emit_thai_family_dict(root: &Path, dict_file: &str, out_file: &str) {
+/// <dict_file>` and write it to `src/unicode/<out_file>`, using `base` as the
+/// edge-symbol block base. Words containing any code point outside
+/// `base..=base + 0xFF` are dropped (e.g. a handful of Khmer/Burmese entries that
+/// embed ZWNJ/ZWJ), matching the runtime `sym`'s `u8`-from-base range. See the
+/// doc comment on [`emit_segment_dict`] for the byte layout.
+fn emit_thai_family_dict(root: &Path, dict_file: &str, out_file: &str, base: u32) {
     let text = fs::read_to_string(root.join("data/brkitr").join(dict_file))
         .unwrap_or_else(|e| panic!("read {dict_file}: {e}"));
     let mut words: Vec<Vec<char>> = Vec::new();
+    let mut dropped = 0usize;
     for line in text.lines() {
         // Strip a leading UTF-8 BOM and surrounding whitespace; skip comments.
         let line = line.trim_start_matches('\u{feff}').trim();
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        words.push(line.chars().collect());
+        let w: Vec<char> = line.chars().collect();
+        // Drop words with any code point outside the u8-from-base symbol range.
+        if w.iter().any(|&c| (c as u32).wrapping_sub(base) > 0xFF) {
+            dropped += 1;
+            continue;
+        }
+        words.push(w);
     }
     words.sort();
     words.dedup();
@@ -818,8 +839,14 @@ fn emit_thai_family_dict(root: &Path, dict_file: &str, out_file: &str) {
 
     let n = nodes.len();
     let e: usize = nodes.iter().map(|(_, es)| es.len()).sum();
-    assert!(n <= u16::MAX as usize, "DAWG node count {n} exceeds u16");
-    assert!(e <= u16::MAX as usize, "DAWG edge count {e} exceeds u16");
+    assert!(n <= u32::MAX as usize, "DAWG node count {n} exceeds u32");
+    assert!(e <= u32::MAX as usize, "DAWG edge count {e} exceeds u32");
+    // When a dictionary is small enough (Thai/Lao), node ids and edge indices fit
+    // a u16, and the compact u16 layout is used (unchanged from the original). A
+    // large dictionary (Khmer) auto-widens the offset table and edge targets to
+    // u32; the runtime reader detects the width from the u32 `n`/`e` header, so no
+    // format flag is needed and small blobs stay byte-identical.
+    let wide = n > u16::MAX as usize || e > u16::MAX as usize;
 
     let mut blob = Vec::new();
     blob.extend_from_slice(&(n as u32).to_le_bytes());
@@ -833,29 +860,47 @@ fn emit_thai_family_dict(root: &Path, dict_file: &str, out_file: &str) {
         }
     }
     blob.extend_from_slice(&bitmap);
-    // Edge-offset table (N+1 cumulative u16), then the edge records.
+    // Edge-offset table (N+1 cumulative indices, u16 or u32), then edge records.
     let mut off = 0u32;
     for (_, es) in &nodes {
-        blob.extend_from_slice(&(off as u16).to_le_bytes());
+        if wide {
+            blob.extend_from_slice(&off.to_le_bytes());
+        } else {
+            blob.extend_from_slice(&(off as u16).to_le_bytes());
+        }
         off += es.len() as u32;
     }
-    blob.extend_from_slice(&(off as u16).to_le_bytes());
+    if wide {
+        blob.extend_from_slice(&off.to_le_bytes());
+    } else {
+        blob.extend_from_slice(&(off as u16).to_le_bytes());
+    }
+    // Edge records: [u8 sym][target], target u16 or u32.
     for (_, es) in &nodes {
         for &(sym, target) in es {
             let delta = sym
-                .checked_sub(0x0E00)
+                .checked_sub(base)
                 .filter(|d| *d <= 0xFF)
-                .unwrap_or_else(|| panic!("dict codepoint U+{sym:04X} out of U+0E00 byte range"));
+                .unwrap_or_else(|| panic!("dict codepoint U+{sym:04X} out of U+{base:04X} byte range"));
             blob.push(delta as u8);
-            blob.extend_from_slice(&(target as u16).to_le_bytes());
+            if wide {
+                blob.extend_from_slice(&target.to_le_bytes());
+            } else {
+                blob.extend_from_slice(&(target as u16).to_le_bytes());
+            }
         }
     }
 
     let path = root.join("src/unicode").join(out_file);
     fs::write(&path, &blob).unwrap_or_else(|e| panic!("write {out_file}: {e}"));
     println!(
-        "codegen: wrote {out_file} ({} words, trie {} nodes -> DAWG {} nodes / {} edges, {} KB)",
+        "codegen: wrote {out_file} ({} words{}, trie {} nodes -> DAWG {} nodes / {} edges, {} KB)",
         words.len(),
+        if dropped > 0 {
+            format!(", {dropped} dropped (out of U+{base:04X} byte range)")
+        } else {
+            String::new()
+        },
         trie_nodes,
         n,
         e,

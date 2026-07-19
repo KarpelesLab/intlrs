@@ -1,17 +1,27 @@
-//! Dictionary-based word segmentation for Thai (feature `segmentation-dict`)
-//! and Lao (feature `segmentation-dict-lao`).
+//! Dictionary-based word segmentation for Thai (feature `segmentation-dict`),
+//! Lao (`segmentation-dict-lao`), Khmer (`segmentation-dict-km`) and Burmese /
+//! Myanmar (`segmentation-dict-my`).
 //!
-//! Space-less scripts such as Thai and Lao are not segmented into words by the
-//! UAX #29 rules alone; a language dictionary is required. This module is a
-//! faithful, `no_std`, allocation-free port of ICU's `ThaiBreakEngine` /
-//! `LaoBreakEngine` / `DictionaryBreakEngine` (`icu4c/source/common/dictbe.cpp`),
-//! operating on a UTF-8 `&str` run and driven by the committed `segment_dict.bin`
-//! / `segment_dict_lao.bin` DAWGs built from ICU's `thaidict.txt` / `laodict.txt`.
-//! The two share one engine ([`next_boundary`]) parameterized by a [`Lang`]: Lao
-//! uses the same algorithm minus the Thai-specific suffix handling.
+//! Space-less scripts such as Thai, Lao, Khmer and Burmese are not segmented into
+//! words by the UAX #29 rules alone; a language dictionary is required. This
+//! module is a faithful, `no_std`, allocation-free port of ICU's
+//! `ThaiBreakEngine` / `LaoBreakEngine` / `KhmerBreakEngine` /
+//! `BurmeseBreakEngine` / `DictionaryBreakEngine`
+//! (`icu4c/source/common/dictbe.cpp`), operating on a UTF-8 `&str` run and driven
+//! by the committed `segment_dict*.bin` DAWGs built from ICU's `thaidict.txt` /
+//! `laodict.txt` / `khmerdict.txt` / `burmesedict.txt`. All four share one engine
+//! ([`next_boundary`]) parameterized by a [`Lang`]: only Thai uses the extra
+//! suffix handling; the others are the same algorithm without it.
 //!
-//! The engine is invoked from [`super::segment::words`] over each maximal run of
-//! Thai (or Lao) dictionary characters; everything else keeps its exact UAX #29
+//! Each script's DAWG edge symbol is a `u8` offset from that script's *own* block
+//! base ([`Lang::base`]): U+0E00 for Thai/Lao, U+1780 for Khmer, U+1000 for the
+//! main Myanmar block. (Myanmar Extended-A/B code points lie outside a `u8` of
+//! U+1000; ICU's `burmesedict.txt` contains none of them, so the engine — and the
+//! run detector — is restricted to the main block, and any supplementary Myanmar
+//! characters fall back to single UAX #29 runs.)
+//!
+//! The engine is invoked from [`super::segment::words`] over each maximal run of a
+//! script's dictionary characters; everything else keeps its exact UAX #29
 //! behavior. ICU's algorithm uses only bounded lookahead (at most three candidate
 //! words), so it fits fixed-size stack buffers with no heap allocation.
 
@@ -104,11 +114,91 @@ fn is_begin_word_lao(c: char) -> bool {
     matches!(c as u32, 0x0E81..=0x0EAE | 0x0EC0..=0x0EC4 | 0x0EDC..=0x0EDD)
 }
 
+// ---- Khmer character classes (feature `segmentation-dict-km`) ----
+//
+// ICU's `KhmerBreakEngine` uses the Thai/Lao algorithm (minus the suffix
+// handling — the `fSuffixSet` block is commented out in ICU) with these Khmer
+// sets. The dict / mark sets are `[[:Khmr:]&[:LineBreak=SA:]]` and its `[:M:]`
+// subset; the whole Khmer dict block fits in a `u8` offset from U+1780.
+
+/// `[[:Khmr:]&[:LineBreak=SA:]]` — the characters the Khmer engine segments.
+#[cfg(feature = "segmentation-dict-km")]
+#[inline]
+pub(crate) fn is_khmer_dict_char(c: char) -> bool {
+    matches!(c as u32, 0x1780..=0x17D3 | 0x17D7 | 0x17DC..=0x17DD)
+}
+
+/// `fMarkSet` (Khmer): `[[:Khmr:]&[:LineBreak=SA:]&[:M:]]` plus SPACE.
+#[cfg(feature = "segmentation-dict-km")]
+#[inline]
+fn is_mark_khmer(c: char) -> bool {
+    matches!(c as u32, 0x0020 | 0x17B4..=0x17D3 | 0x17DD)
+}
+
+/// `fEndWordSet` (Khmer): the dict set minus U+17D2 KHMER SIGN COENG.
+#[cfg(feature = "segmentation-dict-km")]
+#[inline]
+fn is_end_word_khmer(c: char) -> bool {
+    matches!(c as u32, 0x1780..=0x17D1 | 0x17D3 | 0x17D7 | 0x17DC..=0x17DD)
+}
+
+/// `fBeginWordSet` (Khmer): U+1780..=U+17B3 (consonants and independent vowels).
+#[cfg(feature = "segmentation-dict-km")]
+#[inline]
+fn is_begin_word_khmer(c: char) -> bool {
+    matches!(c as u32, 0x1780..=0x17B3)
+}
+
+// ---- Burmese (Myanmar) character classes (feature `segmentation-dict-my`) ----
+//
+// ICU's `BurmeseBreakEngine` uses the Thai/Lao algorithm (no suffix handling)
+// with these Myanmar sets. The dict / mark sets are `[[:Mymr:]&[:LineBreak=SA:]]`
+// and its `[:M:]` subset, restricted here to the *main* U+1000 block so the edge
+// symbol fits a `u8` offset from U+1000. Myanmar Extended-A (U+AA60..) and
+// Extended-B (U+A9E0..) are excluded — ICU's `burmesedict.txt` contains no such
+// code points, so nothing is lost from the dictionary; any such characters in
+// input simply fall back to single UAX #29 runs.
+
+/// `[[:Mymr:]&[:LineBreak=SA:]]` restricted to the main U+1000 block — the
+/// characters the Burmese engine segments.
+#[cfg(feature = "segmentation-dict-my")]
+#[inline]
+pub(crate) fn is_burmese_dict_char(c: char) -> bool {
+    matches!(c as u32, 0x1000..=0x103F | 0x1050..=0x108F | 0x109A..=0x109F)
+}
+
+/// `fMarkSet` (Burmese): `[[:Mymr:]&[:LineBreak=SA:]&[:M:]]` (main block) plus SPACE.
+#[cfg(feature = "segmentation-dict-my")]
+#[inline]
+fn is_mark_burmese(c: char) -> bool {
+    matches!(c as u32,
+        0x0020 | 0x102B..=0x103E | 0x1056..=0x1059 | 0x105E..=0x1060 | 0x1062..=0x1064
+        | 0x1067..=0x106D | 0x1071..=0x1074 | 0x1082..=0x108D | 0x108F | 0x109A..=0x109D)
+}
+
+/// `fEndWordSet` (Burmese): the same as the dict set (`setCharacters(fEndWordSet)`).
+#[cfg(feature = "segmentation-dict-my")]
+#[inline]
+fn is_end_word_burmese(c: char) -> bool {
+    is_burmese_dict_char(c)
+}
+
+/// `fBeginWordSet` (Burmese): U+1000..=U+102A (basic consonants and independent vowels).
+#[cfg(feature = "segmentation-dict-my")]
+#[inline]
+fn is_begin_word_burmese(c: char) -> bool {
+    matches!(c as u32, 0x1000..=0x102A)
+}
+
 /// Per-language parameters for the shared `DictionaryBreakEngine` loop: which
-/// DAWG to consult, the character classes, and whether the Thai suffix
-/// (PAIYANNOI/MAIYAMOK) heuristic applies.
+/// DAWG to consult, the DAWG edge-symbol block base, the character classes, and
+/// whether the Thai suffix (PAIYANNOI/MAIYAMOK) heuristic applies.
 pub(crate) struct Lang {
     dict: &'static [u8],
+    /// Block base for the DAWG edge symbol (`sym`): a code point maps to the byte
+    /// `c - base`, valid only for `base..=base + 0xFF`. U+0E00 (Thai/Lao),
+    /// U+1780 (Khmer) or U+1000 (Burmese main block).
+    base: u32,
     is_mark: fn(char) -> bool,
     is_end_word: fn(char) -> bool,
     is_begin_word: fn(char) -> bool,
@@ -118,6 +208,7 @@ pub(crate) struct Lang {
 /// The Thai engine parameters (`ThaiBreakEngine`).
 pub(crate) const THAI: Lang = Lang {
     dict: THAI_DICT,
+    base: 0x0E00,
     is_mark,
     is_end_word,
     is_begin_word,
@@ -128,9 +219,32 @@ pub(crate) const THAI: Lang = Lang {
 #[cfg(feature = "segmentation-dict-lao")]
 pub(crate) const LAO: Lang = Lang {
     dict: LAO_DICT,
+    base: 0x0E00,
     is_mark: is_mark_lao,
     is_end_word: is_end_word_lao,
     is_begin_word: is_begin_word_lao,
+    thai_suffix: false,
+};
+
+/// The Khmer engine parameters (`KhmerBreakEngine`).
+#[cfg(feature = "segmentation-dict-km")]
+pub(crate) const KHMER: Lang = Lang {
+    dict: KHMER_DICT,
+    base: 0x1780,
+    is_mark: is_mark_khmer,
+    is_end_word: is_end_word_khmer,
+    is_begin_word: is_begin_word_khmer,
+    thai_suffix: false,
+};
+
+/// The Burmese engine parameters (`BurmeseBreakEngine`).
+#[cfg(feature = "segmentation-dict-my")]
+pub(crate) const BURMESE: Lang = Lang {
+    dict: BURMESE_DICT,
+    base: 0x1000,
+    is_mark: is_mark_burmese,
+    is_end_word: is_end_word_burmese,
+    is_begin_word: is_begin_word_burmese,
     thai_suffix: false,
 };
 
@@ -144,6 +258,14 @@ const THAI_DICT: &[u8] = include_bytes!("segment_dict.bin");
 /// same byte layout and U+0E00-relative edge symbols as the Thai DAWG).
 #[cfg(feature = "segmentation-dict-lao")]
 const LAO_DICT: &[u8] = include_bytes!("segment_dict_lao.bin");
+/// The committed, minimized Khmer dictionary DAWG (feature `segmentation-dict-km`;
+/// same byte layout, but edge symbols are U+1780-relative).
+#[cfg(feature = "segmentation-dict-km")]
+const KHMER_DICT: &[u8] = include_bytes!("segment_dict_km.bin");
+/// The committed, minimized Burmese dictionary DAWG (feature `segmentation-dict-my`;
+/// same byte layout, but edge symbols are U+1000-relative, main block only).
+#[cfg(feature = "segmentation-dict-my")]
+const BURMESE_DICT: &[u8] = include_bytes!("segment_dict_my.bin");
 
 #[inline]
 fn rd_u32(blob: &[u8], o: usize) -> Option<u32> {
@@ -165,18 +287,27 @@ struct Dict {
     bitmap_base: usize,
     off_base: usize,
     edges_base: usize,
+    /// Block base for edge symbols (see [`Lang::base`]).
+    base: u32,
+    /// `true` when node ids / edge indices are stored as `u32` rather than `u16`
+    /// (a large dictionary such as Khmer whose `n`/`e` exceed `u16::MAX`). The
+    /// offset table then uses 4-byte entries and edge records are 5 bytes.
+    wide: bool,
 }
 
 impl Dict {
-    fn load(blob: &'static [u8]) -> Option<Dict> {
+    fn load(blob: &'static [u8], base: u32) -> Option<Dict> {
         let n = rd_u32(blob, 0)? as usize;
         let e = rd_u32(blob, 4)? as usize;
         let root = rd_u32(blob, 8)? as usize;
+        let wide = n > u16::MAX as usize || e > u16::MAX as usize;
+        let idx = if wide { 4 } else { 2 }; // offset-table / target width
+        let rec = 1 + idx; // edge record width
         let bitmap_base = 12;
         let off_base = bitmap_base + n.div_ceil(8);
-        let edges_base = off_base.checked_add((n.checked_add(1)?).checked_mul(2)?)?;
+        let edges_base = off_base.checked_add((n.checked_add(1)?).checked_mul(idx)?)?;
         // Validate the whole blob is present before any hot-path reads.
-        if edges_base.checked_add(e.checked_mul(3)?)? > blob.len() || root >= n {
+        if edges_base.checked_add(e.checked_mul(rec)?)? > blob.len() || root >= n {
             return None;
         }
         Some(Dict {
@@ -186,7 +317,19 @@ impl Dict {
             bitmap_base,
             off_base,
             edges_base,
+            base,
+            wide,
         })
+    }
+
+    /// Read an offset-table / edge-target index at byte offset `o` (u16 or u32).
+    #[inline]
+    fn rd_idx(&self, o: usize) -> Option<usize> {
+        if self.wide {
+            rd_u32(self.blob, o).map(|v| v as usize)
+        } else {
+            rd_u16(self.blob, o).map(|v| v as usize)
+        }
     }
 
     #[inline]
@@ -202,8 +345,9 @@ impl Dict {
     /// The `[start, end)` edge index range owned by `node`.
     #[inline]
     fn edge_range(&self, node: usize) -> (usize, usize) {
-        let a = rd_u16(self.blob, self.off_base + node * 2).unwrap_or(0) as usize;
-        let b = rd_u16(self.blob, self.off_base + (node + 1) * 2).unwrap_or(0) as usize;
+        let w = if self.wide { 4 } else { 2 };
+        let a = self.rd_idx(self.off_base + node * w).unwrap_or(0);
+        let b = self.rd_idx(self.off_base + (node + 1) * w).unwrap_or(0);
         (a, b)
     }
 
@@ -216,29 +360,31 @@ impl Dict {
     /// Follow the edge labelled `sym` out of `node`, if any (binary search).
     #[inline]
     fn child(&self, node: usize, sym: u8) -> Option<usize> {
+        let recw = if self.wide { 5 } else { 3 };
         let (mut lo, mut hi) = self.edge_range(node);
         while lo < hi {
             let mid = lo + (hi - lo) / 2;
-            let rec = self.edges_base + mid * 3;
+            let rec = self.edges_base + mid * recw;
             let s = *self.blob.get(rec)?;
             match s.cmp(&sym) {
                 core::cmp::Ordering::Less => lo = mid + 1,
                 core::cmp::Ordering::Greater => hi = mid,
-                core::cmp::Ordering::Equal => return Some(rd_u16(self.blob, rec + 1)? as usize),
+                core::cmp::Ordering::Equal => return self.rd_idx(rec + 1),
             }
         }
         None
     }
 }
 
-/// The DAWG edge symbol for a codepoint (offset from U+0E00), or `None` if it is
-/// outside the dictionary's byte range (which forces a NO_MATCH like ICU).
+/// The DAWG edge symbol for a codepoint (offset from the script's block `base`),
+/// or `None` if it is outside the dictionary's byte range (which forces a
+/// NO_MATCH like ICU).
 #[inline]
-fn sym(c: char) -> Option<u8> {
-    let cp = c as u32;
-    (0x0E00..=0x0EFF)
-        .contains(&cp)
-        .then_some((cp - 0x0E00) as u8)
+fn sym(base: u32, c: char) -> Option<u8> {
+    (c as u32)
+        .checked_sub(base)
+        .filter(|d| *d <= 0xFF)
+        .map(|d| d as u8)
 }
 
 // ---- UText-style cursor helpers over a UTF-8 run ----
@@ -347,7 +493,7 @@ impl PossibleWord {
         let end = range_end.min(run.len());
         let max_bytes = end - start;
         for c in run[start..end].chars() {
-            let child = sym(c).and_then(|s| dict.child(node, s));
+            let child = sym(dict.base, c).and_then(|s| dict.child(node, s));
             consumed += c.len_utf8();
             cp_matched += 1;
             match child {
@@ -417,7 +563,7 @@ impl PossibleWord {
 /// `> start` and `<= run.len()`; a return of `run.len()` marks the final word.
 pub(crate) fn next_boundary(lang: &Lang, run: &str, start: usize) -> usize {
     let range_end = run.len();
-    let Some(dict) = Dict::load(lang.dict) else {
+    let Some(dict) = Dict::load(lang.dict, lang.base) else {
         return range_end;
     };
 
