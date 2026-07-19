@@ -143,6 +143,40 @@ fn cjk_tailorings() {
     assert_eq!(ko.compare("강", "가나"), Ordering::Greater);
 }
 
+/// Chinese (`zh`) pinyin collation — the default `Intl.Collator('zh')` order
+/// (feature `collation-zh`). Verified against V8 `Intl.Collator('zh')`.
+#[cfg(feature = "collation-zh")]
+#[test]
+fn zh_pinyin_collation() {
+    use intl::unicode::collate::Tailoring;
+    let zh = Tailoring::for_locale("zh").unwrap();
+    // Han sort by pinyin: 阿(ā) < 你(nǐ) < 中(zhōng); 的(de) < 心(xīn).
+    assert_eq!(zh.compare("阿", "你"), Ordering::Less);
+    assert_eq!(zh.compare("你", "中"), Ordering::Less);
+    assert_eq!(zh.compare("的", "心"), Ordering::Less);
+    assert_eq!(zh.compare("我", "你"), Ordering::Greater); // wǒ > nǐ
+    // `[reorder Hani]`: digits < Han < Latin < other scripts.
+    assert_eq!(zh.compare("中", "9"), Ordering::Greater); // Han after digits
+    assert_eq!(zh.compare("中", "a"), Ordering::Less); // Han before Latin
+    assert_eq!(zh.compare("中", "я"), Ordering::Less); // Han before Cyrillic
+    // Multi-char words and mixed Han/Latin sort like V8.
+    assert_eq!(zh.compare("北京", "上海"), Ordering::Less); // běijīng < shànghǎi
+    assert_eq!(zh.compare("中国", "中文"), Ordering::Less); // guó < wén
+    assert_eq!(zh.compare("中文", "a中"), Ordering::Less); // Han word before Latin lead
+    // `zh-Hans` / `zh-CN` resolve to the same pinyin collator.
+    assert_eq!(
+        Tailoring::for_locale("zh-Hans")
+            .unwrap()
+            .compare("的", "心"),
+        Ordering::Less
+    );
+    // A CJK Compatibility Ideograph (U+FA0C 兀) normalizes to its URO form and
+    // sorts by that pinyin reading, not its code point.
+    assert_eq!(zh.compare("\u{FA0C}", "中"), Ordering::Less);
+    // Non-Han text is unaffected (root order among Latin).
+    assert_eq!(zh.compare("apple", "banana"), Ordering::Less);
+}
+
 /// Locales whose CLDR rule needs the extended parser syntax: `[before]`
 /// (reset-before), `[import]` (splice another locale), and the newly bundled
 /// `af`/`hr`. Verified against V8 `Intl.Collator`.

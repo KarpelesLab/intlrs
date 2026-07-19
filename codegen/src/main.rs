@@ -332,6 +332,7 @@ fn main() {
     );
     emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
     emit_collation_rules(&cldr_dir, &cldr.join("collation.json"));
+    emit_collation_zh(&root, &cldr.join("collation/zh.xml"));
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic-raw"));
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian-raw"));
     emit_chinese(&cldr_dir, &cldr.join("chinese-raw"));
@@ -3237,6 +3238,251 @@ fn emit_collation_rules(cldr_dir: &Path, path: &Path) {
     }
     records.sort();
     write_blob(cldr_dir, "collation", &records);
+}
+
+/// Whether `cp` is a Han ideograph we assign a pinyin rank to: the CJK Unified
+/// Ideographs (URO, `4E00–9FFF`, incl. the high extension `9FA6–9FFF`) and the
+/// CJK Compatibility Ideographs (`F900–FAFF`, which carry pinyin readings).
+///
+/// The Extension A/B/C/… blocks are deliberately EXCLUDED: ICU / V8's
+/// `Intl.Collator('zh')` does not pinyin-tailor them — it sorts every Extension
+/// ideograph *after* all pinyin chars, by radical-stroke. CLDR-48's rule instead
+/// interleaves Extensions into the pinyin chain, but honoring those positions
+/// mismatches V8 (verified: V8 places all Extensions after all URO). So we leave
+/// every Extension to the runtime's unlisted-Han fallback, which band-places them
+/// after all pinyin chars (before Latin) in code-point order — a proxy for ICU's
+/// radical-stroke order, and the residual (rare-vs-rare) divergence class.
+fn is_han_ideograph(cp: u32) -> bool {
+    (0x4E00..=0x9FFF).contains(&cp) // CJK Unified Ideographs (URO)
+        || (0xF900..=0xFAFF).contains(&cp) // CJK Compatibility Ideographs
+}
+
+/// Write `src/unicode/collation_zh.bin`: the distilled Chinese pinyin Han-weight
+/// table, gated at runtime by the `collation-zh` feature.
+///
+/// The vendored CLDR `zh.xml` `<collation type='pinyin'>` rule establishes the
+/// total pinyin order of ~44k Han ideographs. Its main chain is one continuous
+/// `&[last regular] < … < …` block where every ordering step is a *primary*
+/// (`<` / `<*` star runs and `<'﷐X'>` index markers) — so each listed Han
+/// gets a distinct primary. We walk the rule token by token, keep a running
+/// primary counter that bumps on every primary step, and record, for each Han
+/// ideograph, the counter value at its first appearance (first assignment wins —
+/// the later `&anchor<<<variant` compatibility lines and the `&x<han/ctx`
+/// multi-reading context fixups never override a main-chain primary).
+///
+/// Secondary/tertiary are unused among Han (the main chain is all-primary), so
+/// the table is simply `Han codepoint -> u16 pinyin rank`. Ranks are 1-based
+/// (never 0) and fit in a `u16` (max ≈ 41k). The runtime slots these ranks into
+/// a fixed primary base between the DUCET digit and Latin weights (matching
+/// V8/ICU `[reorder Hani]`), disambiguating by rank via the tailoring sub-weight.
+///
+/// Blob layout (little-endian): `[u32 count]`, then `count` sorted `u32`
+/// codepoints, then `count` `u16` ranks (parallel arrays; runtime binary-searches
+/// the codepoint array). Unlisted ideographs are absent and fall back to DUCET.
+fn emit_collation_zh(root: &Path, zh_xml: &Path) {
+    let xml = fs::read_to_string(zh_xml).expect("read zh.xml");
+
+    // Extract the `type='pinyin'` collation's `<cr><![CDATA[ … ]]></cr>`.
+    let marker = "<collation type='pinyin'>";
+    let start = xml.find(marker).expect("find pinyin collation");
+    let cdata_open = xml[start..].find("<![CDATA[").expect("find CDATA open") + start + 9;
+    let cdata_close = xml[cdata_open..].find("]]>").expect("find CDATA close") + cdata_open;
+    let rule = &xml[cdata_open..cdata_close];
+
+    // ---- Lex (strip `#` comments; resolve quotes / `\u`,`\U` escapes). ----
+    #[derive(Debug)]
+    enum Tok {
+        Amp,
+        Opt,           // any `[ … ]` bracket (reorder / import / before / last regular)
+        Rel(u8, bool), // (level 0..=3, star?)  level 0 = `=`
+        Lit(char),
+    }
+    let mut toks: Vec<Tok> = Vec::new();
+    let chars: Vec<char> = rule.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        match c {
+            '#' => {
+                while i < chars.len() && chars[i] != '\n' {
+                    i += 1;
+                }
+            }
+            _ if c.is_whitespace() => i += 1,
+            '&' => {
+                toks.push(Tok::Amp);
+                i += 1;
+            }
+            '=' => {
+                i += 1;
+                let star = i < chars.len() && chars[i] == '*';
+                if star {
+                    i += 1;
+                }
+                toks.push(Tok::Rel(0, star));
+            }
+            '<' => {
+                let mut lvl = 0u8;
+                while i < chars.len() && chars[i] == '<' {
+                    lvl += 1;
+                    i += 1;
+                }
+                let star = i < chars.len() && chars[i] == '*';
+                if star {
+                    i += 1;
+                }
+                toks.push(Tok::Rel(lvl.min(3), star));
+            }
+            '[' => {
+                let mut depth = 1;
+                i += 1;
+                while i < chars.len() && depth > 0 {
+                    match chars[i] {
+                        '[' => depth += 1,
+                        ']' => depth -= 1,
+                        _ => {}
+                    }
+                    i += 1;
+                }
+                toks.push(Tok::Opt);
+            }
+            '\'' => {
+                i += 1;
+                if i < chars.len() && chars[i] == '\'' {
+                    toks.push(Tok::Lit('\''));
+                    i += 1;
+                } else {
+                    while i < chars.len() && chars[i] != '\'' {
+                        toks.push(Tok::Lit(chars[i]));
+                        i += 1;
+                    }
+                    if i < chars.len() {
+                        i += 1; // closing quote
+                    }
+                }
+            }
+            '\\' => {
+                i += 1;
+                match chars.get(i) {
+                    Some('u') => {
+                        let cp = u32::from_str_radix(
+                            &chars[i + 1..i + 5].iter().collect::<String>(),
+                            16,
+                        )
+                        .expect("\\u hex");
+                        toks.push(Tok::Lit(char::from_u32(cp).expect("valid \\u")));
+                        i += 5;
+                    }
+                    Some('U') => {
+                        let cp = u32::from_str_radix(
+                            &chars[i + 1..i + 9].iter().collect::<String>(),
+                            16,
+                        )
+                        .expect("\\U hex");
+                        toks.push(Tok::Lit(char::from_u32(cp).expect("valid \\U")));
+                        i += 9;
+                    }
+                    Some(&other) => {
+                        toks.push(Tok::Lit(other));
+                        i += 1;
+                    }
+                    None => break,
+                }
+            }
+            other => {
+                toks.push(Tok::Lit(other));
+                i += 1;
+            }
+        }
+    }
+
+    // ---- Interpret: assign each Han ideograph its pinyin primary rank. ----
+    //
+    // A running `prim` counter bumps on every primary step. Star runs (`<*abc`)
+    // apply the relation to each character in turn; a non-star run is one target
+    // (an expansion/contraction — we only assign it when it is a single char).
+    // `<<` / `<<<` / `=` never introduce a Han primary distinction, but we still
+    // advance no primary for them. First assignment wins.
+    let mut rank: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut prim: u32 = 0;
+    let mut i = 0;
+    while i < toks.len() {
+        match toks[i] {
+            Tok::Rel(level, star) => {
+                i += 1;
+                let mut targets: Vec<char> = Vec::new();
+                while let Some(Tok::Lit(ch)) = toks.get(i) {
+                    targets.push(*ch);
+                    i += 1;
+                }
+                if star {
+                    for ch in targets {
+                        if level == 1 {
+                            prim += 1;
+                        }
+                        if is_han_ideograph(ch as u32) {
+                            rank.entry(ch as u32).or_insert(prim);
+                        }
+                    }
+                } else {
+                    if level == 1 {
+                        prim += 1;
+                    }
+                    if targets.len() == 1 {
+                        let cp = targets[0] as u32;
+                        if is_han_ideograph(cp) {
+                            rank.entry(cp).or_insert(prim);
+                        }
+                    }
+                }
+            }
+            // `&` reset and its anchor literals carry no new Han primary (the
+            // anchor is either an option like `[last regular]` or an already-seen
+            // character). Skip the `&` and any following anchor literals; the next
+            // relation supplies its own primary bump from the current counter.
+            Tok::Amp => {
+                i += 1;
+                while let Some(Tok::Opt) = toks.get(i) {
+                    i += 1;
+                }
+                while let Some(Tok::Lit(_)) = toks.get(i) {
+                    i += 1;
+                }
+            }
+            _ => i += 1,
+        }
+    }
+
+    // Compact the pinyin primaries to a dense 1-based rank (the running counter
+    // has gaps where index markers and skipped chars consumed slots). Order is
+    // preserved: sort the assigned ideographs by their counter value, then
+    // renumber 1, 2, 3, …. Ranks stay well within `u16`.
+    let mut ordered: Vec<(u32, u32)> = rank.iter().map(|(&cp, &p)| (cp, p)).collect();
+    ordered.sort_by_key(|&(_, p)| p);
+    assert!(ordered.len() <= u16::MAX as usize, "too many pinyin ranks for u16");
+    let mut final_rank: BTreeMap<u32, u16> = BTreeMap::new();
+    for (idx, &(cp, _)) in ordered.iter().enumerate() {
+        final_rank.insert(cp, idx as u16 + 1); // 1-based; 0 reserved
+    }
+
+    // Sorted parallel arrays: codepoints then ranks (BTreeMap iterates by cp).
+    let mut buf: Vec<u8> = Vec::new();
+    buf.extend_from_slice(&(final_rank.len() as u32).to_le_bytes());
+    for &cp in final_rank.keys() {
+        buf.extend_from_slice(&cp.to_le_bytes());
+    }
+    for &rk in final_rank.values() {
+        buf.extend_from_slice(&rk.to_le_bytes());
+    }
+
+    let path = root.join("src/unicode/collation_zh.bin");
+    fs::write(&path, &buf).expect("write collation_zh.bin");
+    eprintln!(
+        "codegen: wrote collation_zh.bin ({} pinyin-ranked Han ideographs (URO + Compatibility), \
+         {} KB)",
+        final_rank.len(),
+        buf.len() / 1024
+    );
 }
 
 fn emit_ordsuffix(cldr_dir: &Path, path: &Path) {
