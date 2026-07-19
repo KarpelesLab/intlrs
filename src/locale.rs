@@ -100,8 +100,8 @@ impl Locale {
             let in_private = current.as_deref().is_some_and(|c| c.starts_with('x'));
             if p.len() == 1 && p.bytes().next().unwrap().is_ascii_alphanumeric() && !in_private {
                 if let Some(ext) = current.take() {
-                    if !ext.contains('-') {
-                        return Err(ParseError::InvalidSubtag); // singleton with no subtag
+                    if !is_valid_extension(&ext) {
+                        return Err(ParseError::InvalidSubtag);
                     }
                     loc.extensions.push(ext);
                 }
@@ -117,7 +117,7 @@ impl Locale {
             }
         }
         if let Some(ext) = current {
-            if !ext.contains('-') {
+            if !is_valid_extension(&ext) {
                 return Err(ParseError::InvalidSubtag);
             }
             loc.extensions.push(ext);
@@ -547,6 +547,94 @@ pub fn get_canonical_locales(tags: &[&str]) -> Vec<String> {
         }
     }
     out
+}
+
+/// Validate the length constraints of an extension / private-use sequence
+/// `singleton-subtag(-subtag)*` (already lowercased) per the UTS #35 ABNF, as
+/// enforced by ECMA-402 `IsStructurallyValidLanguageTag`. Every subtag is
+/// already known to be ASCII-alphanumeric; this rejects structurally invalid
+/// forms such as `u-ca-gregorian` (a 9-char type), `a-b` (a 1-char non-private
+/// subtag), or a singleton carrying no subtag.
+fn is_valid_extension(ext: &str) -> bool {
+    let mut subs = ext.split('-');
+    let singleton = subs.next().unwrap_or("");
+    match singleton {
+        // Transform (`-t-`): an optional tlang (a valid language tag) followed by
+        // tfields `tkey (tvalue)+`, tkey = <alpha><digit>, tvalue = 3-8 alnum.
+        "t" => is_valid_transform(subs),
+        // Private use (`-x-`): each subtag 1-8 alnum, at least one.
+        "x" => {
+            let mut any = false;
+            for s in subs {
+                any = true;
+                if !(1..=8).contains(&s.len()) || !is_alnum(s) {
+                    return false;
+                }
+            }
+            any
+        }
+        // Unicode (`-u-`): each subtag is either a key (2 chars, 2nd = alpha)
+        // or an attribute/type (3-8 alnum). A 2-char subtag ending in a digit
+        // (`en-u-a1`) or a 1-char subtag (`en-u-c`) is invalid.
+        "u" => {
+            let mut any = false;
+            for s in subs {
+                any = true;
+                let is_key = s.len() == 2 && is_alnum(s) && s.as_bytes()[1].is_ascii_alphabetic();
+                let is_attr_or_type = (3..=8).contains(&s.len()) && is_alnum(s);
+                if !is_key && !is_attr_or_type {
+                    return false;
+                }
+            }
+            any
+        }
+        // All other singletons (`a`-`s`, `v`-`w`, `y`-`z`): each subtag 2-8
+        // alnum, at least one.
+        _ => {
+            let mut any = false;
+            for s in subs {
+                any = true;
+                if !(2..=8).contains(&s.len()) || !is_alnum(s) {
+                    return false;
+                }
+            }
+            any
+        }
+    }
+}
+
+/// Validate a Transform (`-t-`) extension body (the subtags after the `t`
+/// singleton). See [`is_valid_extension`].
+fn is_valid_transform<'a>(subs: impl Iterator<Item = &'a str>) -> bool {
+    let subs: Vec<&str> = subs.collect();
+    let is_tkey = |s: &str| {
+        s.len() == 2 && s.as_bytes()[0].is_ascii_alphabetic() && s.as_bytes()[1].is_ascii_digit()
+    };
+    // tlang: the subtags before the first tfield key. When present it must parse
+    // as a valid language tag (e.g. `de-t-0` is rejected).
+    let split = subs.iter().position(|s| is_tkey(s)).unwrap_or(subs.len());
+    if split > 0 && Locale::parse(&subs[..split].join("-")).is_err() {
+        return false;
+    }
+    // tfields: `tkey (tvalue)+`, each tvalue 3-8 alnum.
+    let mut i = split;
+    let mut fields = 0;
+    while i < subs.len() {
+        i += 1; // consume the tkey (guaranteed by construction)
+        let start = i;
+        while i < subs.len() && !is_tkey(subs[i]) {
+            if !(3..=8).contains(&subs[i].len()) || !is_alnum(subs[i]) {
+                return false;
+            }
+            i += 1;
+        }
+        if start == i {
+            return false; // a tkey with no tvalue
+        }
+        fields += 1;
+    }
+    // The extension must carry at least a tlang or one tfield.
+    split > 0 || fields > 0
 }
 
 fn titlecase_subtag(s: &str) -> String {

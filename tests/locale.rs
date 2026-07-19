@@ -237,3 +237,72 @@ fn extensions() {
     assert!(Locale::parse("en-a-b").is_err()); // 'b' too short for a non-x ext
     assert_eq!(Locale::parse("en-x-a-b").unwrap().to_string(), "en-x-a-b");
 }
+
+/// Structural validation of extension/singleton subtag lengths (UTS #35 ABNF /
+/// ECMA-402 `IsStructurallyValidLanguageTag`). Every accept/reject below was
+/// cross-checked against V8 `Intl.getCanonicalLocales`: a tag V8 throws on must
+/// be dropped by `get_canonical_locales` and yield `None` from `canonicalize`.
+#[test]
+fn rejects_structurally_invalid_extensions() {
+    // (tag, valid?) — `valid == false` means V8 throws RangeError.
+    let cases: &[(&str, bool)] = &[
+        // -u-: a type longer than 8 chars, or a 1-char / 2-char-ending-in-digit
+        // subtag, is invalid; legal short and long forms are kept.
+        ("en-u-ca-gregorian", false),       // 9-char type
+        ("en-u-attr-toolongvalue9", false), // 13-char type
+        ("en-u-c", false),                  // 1-char subtag
+        ("en-u-a1", false),                 // 2-char subtag ending in a digit
+        ("en-u-11", false),                 // 2-char subtag, no alpha
+        ("en-u-ca-x1", false),              // 2-char type ending in a digit
+        ("en-u-ca-gregory", true),
+        ("en-u-ca-islamic-civil", true),
+        ("en-u-kn", true),
+        ("en-u-ca", true),
+        ("en-u-nu-latn", true),
+        ("en-u-attr", true),   // 4-char attribute
+        ("en-u-ab", true),     // 2-char attribute/key (2nd char alpha)
+        ("en-u-1a", true),     // key: 2 chars, 2nd char alpha
+        ("en-u-ca-1x", true),  // 2-char type, 2nd char alpha
+        ("en-u-ca-123", true), // 3-char numeric type
+        // Generic singletons (`a`-`s`, `v`-`w`, `y`-`z`): each subtag 2-8 alnum.
+        ("en-a-b", false),         // 1-char subtag
+        ("en-0", false),           // singleton with no subtag
+        ("en-a-abcdefghi", false), // 9-char subtag
+        ("en-a-bc", true),
+        ("en-a-a1", true), // no alpha-ending restriction for generic singletons
+        ("en-a-11", true),
+        // -t- transform: valid tlang, tkey = <alpha><digit>, tvalue = 3-8 alnum.
+        ("en-t-de-a", false),     // tvalue 1 char
+        ("en-t-k0-a", false),     // tvalue 1 char (no tlang)
+        ("de-t-de-0", false),     // stray 1-char subtag
+        ("de-t-0", false),        // invalid tlang
+        ("de-t-de-k0-ab", false), // tvalue 2 chars (too short)
+        ("de-t-de-k0-a1", false), // "a1" parsed as a new tkey -> k0 has no value
+        ("de-t-de-k0", false),    // tkey with no tvalue
+        ("de-t-de-u-ca-gregory", true),
+        ("en-t-en-us", true),
+        ("en-t-k0-qwerty", true),
+        ("de-t-en-latn-us-k0-qwerty", true),
+        // -x- private use: each subtag 1-8 alnum.
+        ("en-x-toolongprivateuse9", false), // 15-char subtag
+        ("en-x-anylongprivateuse", false),  // 16-char subtag
+        ("en-x-abcdefghi", false),          // 9-char subtag
+        ("en-x-a", true),
+        ("en-x-a-b", true),
+        ("en-x-abcdefgh", true), // 8-char subtag
+    ];
+    for &(tag, valid) in cases {
+        assert_eq!(
+            canonicalize(tag).is_some(),
+            valid,
+            "canonicalize({tag:?}) validity mismatch (V8 valid = {valid})"
+        );
+        // `get_canonical_locales` drops the invalid ones and keeps the valid.
+        let got = get_canonical_locales(&[tag]);
+        assert_eq!(
+            got.is_empty(),
+            !valid,
+            "get_canonical_locales([{tag:?}]) = {got:?} (V8 valid = {valid})"
+        );
+    }
+}
