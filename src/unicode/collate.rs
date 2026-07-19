@@ -955,6 +955,12 @@ pub fn sort_key(s: &str) -> Vec<u16> {
 pub struct Tailoring {
     /// Tailored NFD sequences → collation-element sequence, sorted longest-first.
     entries: Vec<(Vec<char>, Vec<u64>)>,
+    /// Script `[reorder …]` mapping (CLDR reorder codes → primary-rank remap), or
+    /// `None` when the rule has no `[reorder]` of script groups. Applied by
+    /// [`sort_key`](Self::sort_key) so whole scripts move (e.g. `[reorder Cyrl]`
+    /// sorts Cyrillic before Latin for `ru`/`bg`/`sr`), preserving within-script
+    /// order. See [`Reorder`].
+    reorder: Option<Reorder>,
     /// zh pinyin: when set, Han ideographs are weighted by their pinyin rank
     /// ([`zh_pinyin_rank`]) instead of their DUCET implicit weight. Set only by
     /// [`Tailoring::zh_pinyin`] (feature `collation-zh`); false otherwise.
@@ -1039,7 +1045,9 @@ impl Tailoring {
             "lv" => "&c < č &g < ģ &i < ī &k < ķ &l < ļ &n < ņ &s < š &z < ž", // Latvian
             "lt" => "&c < č &s < š &z < ž",                             // Lithuanian
             // Serbo-Croatian Latin digraphs (bs imports this via `[import hr]`).
-            "hr" | "sr" => "&c < č < ć &d < dž < đ &l < lj &n < nj &s < š &z < ž",
+            // `sr` (default Cyrillic) is bundled from CLDR as `[reorder Cyrl]`
+            // instead, so only `hr` (Latin) uses this hand rule.
+            "hr" => "&c < č < ć &d < dž < đ &l < lj &n < nj &s < š &z < ž",
             // Kazakh (CLDR): Cyrillic ё/ү after their bases, і reset before ь.
             "kk" => "&Е<ё<<<Ё &Ұ<ү<<<Ү &[before 1]ь<і<<<І",
             "es" => "&n < ñ", // Spanish (ñ after n)
@@ -1075,31 +1083,47 @@ impl Tailoring {
     ///   letters sort immediately below it (`&[before 1] i < ı` puts `ı` between
     ///   `h` and `i`);
     /// * `[import <locale>]` — splice in another bundled locale's parsed rules;
+    /// * `[reorder <code> …]` — script reordering: whole scripts move as blocks
+    ///   (e.g. `[reorder Cyrl]` sorts Cyrillic before Latin), preserving
+    ///   within-script order (see [`Reorder`]). Special low groups
+    ///   (`space`/`punct`/`digit`/…) are parsed but kept in their default front
+    ///   position (reordering *among* them is not modeled);
     /// * `\uXXXX` / `\UXXXXXXXX` escapes and `'…'` / `''` quoting of literals;
-    /// * option resets that carry no ordering — `[reorder …]`,
-    ///   `[normalization …]`, `[caseFirst …]`, `[suppressContractions …]`,
-    ///   `[optimize …]` — are ignored, and `#…` line comments are stripped.
+    /// * option resets that carry no ordering — `[normalization …]`,
+    ///   `[caseFirst …]`, `[suppressContractions …]`, `[optimize …]` — are
+    ///   ignored, and `#…` line comments are stripped.
     ///
     /// Returns `None` if a reset anchor or target is malformed or no orderings
     /// were produced.
     #[must_use]
     pub fn parse(rules: &str) -> Option<Tailoring> {
         let mut entries: Vec<(Vec<char>, Vec<u64>)> = Vec::new();
-        Self::parse_into(rules, &mut entries, 0)?;
-        if entries.is_empty() {
+        let mut reorder_codes: Vec<ReorderCode> = Vec::new();
+        Self::parse_into(rules, &mut entries, &mut reorder_codes, 0)?;
+        let reorder = Reorder::build(&reorder_codes);
+        // A rule with *only* a `[reorder …]` (no `<`/`=` orderings) — as `ru`/`bg`/
+        // `sr` — is a valid tailoring: its reorder mapping is the whole content.
+        if entries.is_empty() && reorder.is_none() {
             return None;
         }
         // Longest sequences first so contractions win during matching.
         entries.sort_by_key(|e| core::cmp::Reverse(e.0.len()));
         Some(Tailoring {
             entries,
+            reorder,
             #[cfg(feature = "collation-zh")]
             han_pinyin: false,
         })
     }
 
-    /// Parse `rules` into `entries`. `depth` bounds `[import]` recursion.
-    fn parse_into(rules: &str, entries: &mut Vec<(Vec<char>, Vec<u64>)>, depth: u32) -> Option<()> {
+    /// Parse `rules` into `entries` (orderings) and `reorder_codes` (any
+    /// `[reorder …]` group list). `depth` bounds `[import]` recursion.
+    fn parse_into(
+        rules: &str,
+        entries: &mut Vec<(Vec<char>, Vec<u64>)>,
+        reorder_codes: &mut Vec<ReorderCode>,
+        depth: u32,
+    ) -> Option<()> {
         if depth > 8 {
             return Some(()); // import cycle / runaway guard
         }
@@ -1176,7 +1200,7 @@ impl Tailoring {
                     // Unresolvable imports (e.g. the private `*-u-co-*` kana/unihan
                     // tables) are skipped rather than failing the whole parse.
                     if let Some(rule) = import_rule(loc) {
-                        Self::parse_into(rule, entries, depth + 1)?;
+                        Self::parse_into(rule, entries, reorder_codes, depth + 1)?;
                     } else if depth < 8
                         && let Some(t) = import_tailoring(loc)
                     {
@@ -1186,6 +1210,14 @@ impl Tailoring {
                     // The import may leave the anchor context in any state; require
                     // an explicit `&` reset before the next relation.
                     anchor_primary = 0;
+                }
+                Tok::Reorder(codes) => {
+                    for c in codes {
+                        if let Some(rc) = ReorderCode::parse(c) {
+                            reorder_codes.push(rc);
+                        }
+                    }
+                    i += 1;
                 }
                 // Stray tokens (a `[before]`/`Star` not following its operator, an
                 // ignored option bracket, or a leftover literal) carry no ordering.
@@ -1349,7 +1381,7 @@ impl Tailoring {
         if !buf.is_empty() {
             cea.extend(collation_elements(buf));
         }
-        build_tailored_sort_key(&cea)
+        build_tailored_sort_key(&cea, self.reorder.as_ref())
     }
 
     /// Compare two strings in this tailored order.
@@ -1365,6 +1397,7 @@ impl Tailoring {
     pub fn identity() -> Tailoring {
         Tailoring {
             entries: Vec::new(),
+            reorder: None,
             #[cfg(feature = "collation-zh")]
             han_pinyin: false,
         }
@@ -1404,7 +1437,7 @@ impl Tailoring {
 /// sub-weight (0 for plain DUCET letters). This places a tailored letter
 /// immediately after its anchor and after every word that merely *starts* with
 /// the anchor, with no bound on how many letters share one anchor.
-fn build_tailored_sort_key(cea: &[u64]) -> Vec<u16> {
+fn build_tailored_sort_key(cea: &[u64], reorder: Option<&Reorder>) -> Vec<u16> {
     let mut rows: Vec<(u16, u16, u16, u16, u16)> = Vec::with_capacity(cea.len());
     let mut after_variable = false;
     for &ce in cea {
@@ -1428,6 +1461,12 @@ fn build_tailored_sort_key(cea: &[u64]) -> Vec<u16> {
     let mut key = Vec::new();
     for &(p, sub, ..) in &rows {
         if p != 0 {
+            // `[reorder …]`: prepend the primary's reorder-group rank so whole
+            // scripts move as a block (listed groups first, then others in DUCET
+            // order) while the original primary still orders *within* a group.
+            if let Some(r) = reorder {
+                key.push(r.rank(p));
+            }
             key.push(p);
             // A plain DUCET letter (`sub == 0`) sits at the midpoint, so tailored
             // letters can be inserted just below (`[before]`) or above it.
@@ -1455,6 +1494,206 @@ fn build_tailored_sort_key(cea: &[u64]) -> Vec<u16> {
     key
 }
 
+/// A parsed CLDR `[reorder …]` group code.
+enum ReorderCode {
+    /// A script group (`Cyrl` → [`Script::Cyrillic`]).
+    Script(super::script::Script),
+    /// The `others`/`Zzzz` placeholder — where unlisted groups sort.
+    Others,
+    /// A special low group (`space`/`punct`/`symbol`/`currency`/`digit`). These
+    /// live below every script; we keep them in their default (front) position
+    /// and do not model reordering *among* them (a documented approximation —
+    /// no bundled locale needs it). Parsed so such codes don't defeat the rule.
+    Special,
+}
+
+impl ReorderCode {
+    fn parse(tag: &str) -> Option<ReorderCode> {
+        match tag.to_ascii_lowercase().as_str() {
+            "space" | "punct" | "symbol" | "currency" | "digit" => Some(ReorderCode::Special),
+            "others" | "zzzz" => Some(ReorderCode::Others),
+            _ => script_from_tag(tag).map(ReorderCode::Script),
+        }
+    }
+}
+
+/// Map an ISO 15924 script tag (`Cyrl`, `Latn`, …) to a [`Script`]. Covers the
+/// tags that appear in CLDR collation `[reorder]` rules; others return `None`.
+fn script_from_tag(tag: &str) -> Option<super::script::Script> {
+    use super::script::Script::*;
+    // Normalize to `Titlecase` (`cyrl`/`CYRL` → `Cyrl`).
+    let mut norm = String::new();
+    for (i, c) in tag.chars().enumerate() {
+        if i == 0 {
+            norm.push(c.to_ascii_uppercase());
+        } else {
+            norm.push(c.to_ascii_lowercase());
+        }
+    }
+    Some(match norm.as_str() {
+        "Cyrl" => Cyrillic,
+        "Latn" => Latin,
+        "Grek" => Greek,
+        "Arab" => Arabic,
+        "Hani" => Han,
+        "Hebr" => Hebrew,
+        "Armn" => Armenian,
+        "Geor" => Georgian,
+        "Ethi" => Ethiopic,
+        "Cher" => Cherokee,
+        "Deva" => Devanagari,
+        "Beng" => Bengali,
+        "Guru" => Gurmukhi,
+        "Gujr" => Gujarati,
+        "Orya" => Oriya,
+        "Taml" => Tamil,
+        "Telu" => Telugu,
+        "Knda" => Kannada,
+        "Mlym" => Malayalam,
+        "Sinh" => Sinhala,
+        "Tibt" => Tibetan,
+        "Thai" => Thai,
+        "Laoo" => Lao,
+        "Khmr" => Khmer,
+        "Mymr" => Myanmar,
+        "Hang" => Hangul,
+        "Bopo" => Bopomofo,
+        "Kana" => Katakana,
+        "Mong" => Mongolian,
+        _ => return None,
+    })
+}
+
+/// The first non-zero DUCET primary weight of code point `cp`, or `0` if it has
+/// none (fully ignorable). Used to derive a script's primary range from the
+/// DUCET at [`Reorder::build`] time. Avoids allocating for the common
+/// single-mapping case; decomposing/implicit code points take the full path.
+fn char_primary(cp: u32) -> u16 {
+    if let Some(ces) = tables::ce_singles(cp) {
+        for &ce in ces {
+            let p = primary(ce);
+            if p != 0 {
+                return p;
+            }
+        }
+        return 0;
+    }
+    let Some(c) = char::from_u32(cp) else {
+        return 0;
+    };
+    for ce in collation_elements(nfd(core::iter::once(c)).collect()) {
+        let p = primary(ce);
+        if p != 0 {
+            return p;
+        }
+    }
+    0
+}
+
+/// A script `[reorder …]` mapping, resolved to primary-weight ranges. Reordering
+/// moves whole scripts by remapping the **primary rank** in the sort key: each
+/// primary is classified into a reorder group and the group's rank is emitted
+/// before the primary, so groups sort by rank and characters within a group keep
+/// their DUCET primary order.
+///
+/// Groups and ranks: rank `0` is the low region — every space/punctuation/
+/// symbol/currency/digit primary, i.e. everything below the first script letter
+/// (`script_start`). It always sorts first (matching ICU/V8: digits and
+/// punctuation precede the reordered scripts). Each **listed** script group gets
+/// a rank `≥ 1` in list order; every unlisted script (and the implicit CJK
+/// range) gets `others_rank`, sorting after the listed ones in DUCET order.
+struct Reorder {
+    /// The lowest primary of any script letter (DUCET primary of `'a'`).
+    /// Primaries below this are the low region (rank 0).
+    script_start: u16,
+    /// `(lo, hi, rank)` per listed script, from the DUCET; ranges are disjoint.
+    groups: Vec<(u16, u16, u16)>,
+    /// Rank for scripts not explicitly listed (the `others` slot).
+    others_rank: u16,
+}
+
+impl Reorder {
+    /// Build the mapping from parsed reorder codes, deriving each listed script's
+    /// primary range from the DUCET. Returns `None` if no script group is listed
+    /// (a `[reorder]` of only special groups / `others` is treated as a no-op).
+    fn build(codes: &[ReorderCode]) -> Option<Reorder> {
+        // Assign ranks: listed scripts take slots 1,2,…; `others` reserves the
+        // slot where unlisted groups sort; special groups take no script slot.
+        let mut scripts: Vec<(super::script::Script, u16)> = Vec::new();
+        let mut idx = 1u16;
+        let mut others_rank: Option<u16> = None;
+        for c in codes {
+            match c {
+                ReorderCode::Script(s) => {
+                    scripts.push((*s, idx));
+                    idx += 1;
+                }
+                ReorderCode::Others => {
+                    if others_rank.is_none() {
+                        others_rank = Some(idx);
+                        idx += 1;
+                    }
+                }
+                ReorderCode::Special => {}
+            }
+        }
+        if scripts.is_empty() {
+            return None;
+        }
+        let others_rank = others_rank.unwrap_or(idx);
+        let script_start = char_primary('a' as u32);
+
+        // Derive each listed script's primary range by scanning the BMP: for each
+        // code point of a listed script, fold its (letter) primary into that
+        // group's [lo, hi]. Only primaries ≥ `script_start` count, so a script's
+        // own low-region punctuation (e.g. the Arabic comma) is excluded and the
+        // range stays a clean letter band. Supplementary-plane scripts are not
+        // scanned (none of the reorder-only locales need them).
+        let mut groups: Vec<(u16, u16, u16)> =
+            scripts.iter().map(|&(_, r)| (u16::MAX, 0u16, r)).collect();
+        for cp in 0u32..0x1_0000 {
+            let sc = super::script::script_u32(cp);
+            let Some(pos) = scripts.iter().position(|&(s, _)| s == sc) else {
+                continue;
+            };
+            let pr = char_primary(cp);
+            if pr < script_start {
+                continue;
+            }
+            let g = &mut groups[pos];
+            if pr < g.0 {
+                g.0 = pr;
+            }
+            if pr > g.1 {
+                g.1 = pr;
+            }
+        }
+        // Drop groups whose script had no letter in the scanned range.
+        groups.retain(|&(lo, hi, _)| lo <= hi);
+        if groups.is_empty() {
+            return None;
+        }
+        Some(Reorder {
+            script_start,
+            groups,
+            others_rank,
+        })
+    }
+
+    /// The reorder-group rank of primary weight `p` (see [`Reorder`]).
+    fn rank(&self, p: u16) -> u16 {
+        if p < self.script_start {
+            return 0;
+        }
+        for &(lo, hi, r) in &self.groups {
+            if p >= lo && p <= hi {
+                return r;
+            }
+        }
+        self.others_rank
+    }
+}
+
 /// The upper-case form of `c` (first char of its full mapping), or `c` itself.
 fn upper(c: char) -> char {
     super::case::to_uppercase(c).next().unwrap_or(c)
@@ -1475,6 +1714,9 @@ enum Tok {
     Before(u8),
     /// `[import <locale>]`.
     Import(String),
+    /// `[reorder <code> <code> …]` — the whitespace-split group codes (script
+    /// tags like `Cyrl`, or special groups `space`/`punct`/`digit`/`others`).
+    Reorder(Vec<String>),
 }
 
 /// Read `n` hex digits from `chars[start..]` into a code point.
@@ -1570,9 +1812,15 @@ fn lex(rules: &str) -> Option<Vec<Tok>> {
                     out.push(Tok::Before(lvl.clamp(1, 3)));
                 } else if let Some(rest) = content.strip_prefix("import") {
                     out.push(Tok::Import(rest.trim().to_string()));
+                } else if let Some(rest) = content.strip_prefix("reorder") {
+                    let codes: Vec<String> =
+                        rest.split_whitespace().map(ToString::to_string).collect();
+                    if !codes.is_empty() {
+                        out.push(Tok::Reorder(codes));
+                    }
                 }
-                // Else an ordering-free option (reorder / normalization /
-                // caseFirst / suppressContractions / optimize / …): ignored.
+                // Else an ordering-free option (normalization / caseFirst /
+                // suppressContractions / optimize / …): ignored.
             }
             '&' => {
                 out.push(Tok::Amp);

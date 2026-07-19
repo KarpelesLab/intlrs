@@ -117,6 +117,30 @@ fn newly_added_cldr_tailorings() {
     lt(&mk, "ћ", "ќ");
 }
 
+/// Script `[reorder Cyrl]` locales: ru / bg / sr sort Cyrillic *before* Latin,
+/// while the special low groups (space, punctuation, currency, digits) still
+/// sort first and unlisted scripts (Greek, Hebrew, …) keep their DUCET order
+/// after Cyrillic. Verified identical to V8 `Intl.Collator('ru'|'bg'|'sr')`.
+#[test]
+fn cyrillic_reorder() {
+    use intl::unicode::collate::Tailoring;
+    for loc in ["ru", "bg", "sr"] {
+        let t = Tailoring::for_locale(loc).unwrap_or_else(|| panic!("no tailoring for {loc}"));
+        // Cyrillic before Latin — even я (last Cyrillic letter) before a.
+        assert_eq!(t.compare("я", "a"), Ordering::Less, "{loc}: я < a");
+        assert_eq!(t.compare("ж", "z"), Ordering::Less, "{loc}: ж < z");
+        assert_eq!(t.compare("привет", "hello"), Ordering::Less, "{loc}");
+        // Digits and punctuation still sort before Cyrillic.
+        assert_eq!(t.compare("9", "я"), Ordering::Less, "{loc}: digit < я");
+        assert_eq!(t.compare("!", "я"), Ordering::Less, "{loc}: punct < я");
+        assert_eq!(t.compare("$", "я"), Ordering::Less, "{loc}: currency < я");
+        // Cyrillic sorts before Greek (unlisted), which keeps DUCET order.
+        assert_eq!(t.compare("я", "ω"), Ordering::Less, "{loc}: Cyrl < Grek");
+        // Within-Cyrillic order is unchanged (still root order).
+        assert_eq!(t.compare("а", "б"), Ordering::Less, "{loc}: а < б");
+    }
+}
+
 /// CJK collations: Japanese kana and Korean Hangul (the headline additions).
 /// Verified against V8 `Intl.Collator`.
 #[test]
