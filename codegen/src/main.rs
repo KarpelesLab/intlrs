@@ -338,6 +338,7 @@ fn main() {
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian-raw"));
     emit_chinese(&cldr_dir, &cldr.join("chinese-raw"));
     emit_japanese(&cldr_dir, &cldr.join("japanese-raw"));
+    emit_japanese_hist(&cldr_dir, &cldr.join("japanese-raw"));
 
     // ---- generated/mod.rs ----
     // Gate the large per-component tables behind their Cargo feature so that
@@ -2670,42 +2671,43 @@ const DAY_PERIOD_KEYS: [&str; 10] = [
     "night2",
 ];
 
-/// Parse a `"HH:mm"` day-period boundary to an hour 0..=24 (minutes are always
-/// `:00` in CLDR's rules; verified at vendor time).
-fn dp_hour(t: &str) -> usize {
-    t.split(':')
-        .next()
-        .and_then(|h| h.parse().ok())
-        .unwrap_or(0)
+/// Parse a `"HH:mm"` day-period boundary to a minute-of-day 0..=1440. CLDR's
+/// boundaries are currently all on the hour, but minutes are preserved so
+/// sub-hour boundaries (should CLDR ever add them) resolve correctly.
+fn dp_minutes(t: &str) -> u16 {
+    let mut it = t.split(':');
+    let h: u16 = it.next().and_then(|h| h.parse().ok()).unwrap_or(0);
+    let m: u16 = it.next().and_then(|m| m.parse().ok()).unwrap_or(0);
+    h * 60 + m
 }
 
-/// Build the 24-entry hour→period-index table for a locale from its day-period
-/// *range* rules (`_from`/`_before`); `_at` rules (midnight/noon) are applied at
-/// runtime for the exact instant. Unfilled hours are `0xFF`.
-fn day_period_table(rules: Option<&Json>) -> [u8; 24] {
-    let mut table = [0xFFu8; 24];
-    let Some(rules) = rules else { return table };
+/// Build the minute-resolution day-period range rules for a locale from its
+/// `_from`/`_before` rules (`_at` midnight/noon points are applied at runtime for
+/// the exact instant). Each rule is `(from_minute, to_minute, period_index)` with
+/// `from < to`; a rule that wraps past midnight is split into two non-wrapping
+/// rules covering `[from, 1440)` and `[0, before)`.
+fn day_period_rules(rules: Option<&Json>) -> Vec<(u16, u16, u8)> {
+    let mut out = Vec::new();
+    let Some(rules) = rules else { return out };
     for (idx, key) in DAY_PERIOD_KEYS.iter().enumerate() {
         let Some(rule) = rules.get(key) else { continue };
         let (from, before) = match (rule.get("_from"), rule.get("_before")) {
             (Some(f), Some(b)) => (
-                dp_hour(f.as_str().unwrap_or("0")),
-                dp_hour(b.as_str().unwrap_or("0")),
+                dp_minutes(f.as_str().unwrap_or("0")),
+                dp_minutes(b.as_str().unwrap_or("0")),
             ),
             _ => continue, // _at rule (midnight/noon): not a range
         };
-        // Fill [from, before); wrap past midnight if before <= from.
-        let end = if before == 0 { 24 } else { before };
-        let count = if end > from {
-            end - from
+        let end = if before == 0 { 1440 } else { before };
+        if end > from {
+            out.push((from, end, idx as u8));
         } else {
-            24 - from + end
-        };
-        for k in 0..count {
-            table[(from + k) % 24] = idx as u8;
+            // Wraps past midnight: split into [from, 1440) and [0, before).
+            out.push((from, 1440, idx as u8));
+            out.push((0, end, idx as u8));
         }
     }
-    table
+    out
 }
 
 fn emit_dates(cldr_dir: &Path, dates_dir: &Path, day_periods_path: &Path) {
@@ -2813,7 +2815,8 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path, day_periods_path: &Path) {
         }
 
         // appended block: flexible day-period names (10 keys × 3 widths, each
-        // optional) + the 24-entry hour→period table from the supplemental rules.
+        // optional) + the minute-resolution day-period range rules from the
+        // supplemental rules.
         let dp_fmt = greg.get("dayPeriods").and_then(|d| d.get("format"));
         for width in ["wide", "abbreviated", "narrow"] {
             let w = dp_fmt.and_then(|f| f.get(width));
@@ -2824,8 +2827,14 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path, day_periods_path: &Path) {
         let rules = dp_rules
             .and_then(|r| r.get(&locale))
             .or_else(|| dp_rules.and_then(|r| r.get(locale.split('-').next().unwrap_or(&locale))));
-        for h in day_period_table(rules) {
-            p.push(h);
+        // Minute-resolution day-period range rules: [u8 count] then count
+        // records of [u16 from_minute][u16 to_minute][u8 period_index].
+        let dp_ranges = day_period_rules(rules);
+        p.push(dp_ranges.len() as u8);
+        for (from, to, idx) in dp_ranges {
+            p.extend_from_slice(&from.to_le_bytes());
+            p.extend_from_slice(&to.to_le_bytes());
+            p.push(idx);
         }
         cal_records.push((locale.to_ascii_lowercase(), p));
 
@@ -3001,8 +3010,9 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path) {
 }
 
 /// Write `cldr/<name>.bin` for a non-Gregorian calendar: per-locale month names
-/// (wide + abbr), the era abbreviation, and date patterns (full/long/medium/
-/// short). Used for the Islamic and Persian calendars (same record shape).
+/// (wide + abbr), the era names (all three widths × indices 0/1), and date
+/// patterns (full/long/medium/short). Used for the Islamic and Persian calendars
+/// (same record shape).
 fn emit_alt_calendar(cldr_dir: &Path, name: &str, raw_dir: &Path) {
     let mut locales = locale_files(raw_dir);
     locales.sort();
@@ -3036,13 +3046,18 @@ fn emit_alt_calendar(cldr_dir: &Path, name: &str, raw_dir: &Path) {
                 );
             }
         }
-        let era = cal
-            .get("eras")
-            .and_then(|e| e.get("eraAbbr"))
-            .and_then(|a| a.get("0"))
-            .and_then(Json::as_str)
-            .unwrap_or("");
-        enc_str(&mut p, era);
+        // Era names in all three widths, indices 0 (current era: AH / AP) and
+        // 1 (pre-era: BH / BP). Persian defines only index 0, so index 1 is "".
+        let eras = cal.get("eras");
+        for width in ["eraNames", "eraAbbr", "eraNarrow"] {
+            let w = eras.and_then(|e| e.get(width));
+            for idx in ["0", "1"] {
+                enc_str(
+                    &mut p,
+                    w.and_then(|x| x.get(idx)).and_then(Json::as_str).unwrap_or(""),
+                );
+            }
+        }
         let df = cal.get("dateFormats").expect("dateFormats");
         for k in ["full", "long", "medium", "short"] {
             enc_str(&mut p, df.get(k).and_then(Json::as_str).unwrap_or(""));
@@ -3217,6 +3232,98 @@ fn emit_japanese(cldr_dir: &Path, raw_dir: &Path) {
         records.push((locale.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "japanese", &records);
+}
+
+/// Number of pre-Meiji (historical) Japanese era names carried by
+/// `japanese_hist.bin`: CLDR era indices 0 (Taika) .. 231 (Keiō).
+const HIST_ERA_COUNT: usize = 232;
+
+/// Write `cldr/japanese_hist.bin`: the localized pre-Meiji nengō (era) names for
+/// CLDR era indices 0..=231, in all three widths (`eraNames` wide, `eraAbbr`,
+/// `eraNarrow`). Because these are mostly identical Latin romanizations across
+/// locales (only ~20 distinct sets over ~100 locales), the per-locale name sets
+/// are de-duplicated: each locale maps to a shared set id.
+///
+/// Layout (little-endian):
+/// ```text
+///   u16 nloc
+///   nloc × [u8 klen][key bytes][u16 set_id]        (sorted by key)
+///   u16 nsets
+///   nsets × u32 offset            (into the sets region, cumulative)
+///   sets region: per set, 3 × 232 strings [u8 len][bytes], in the order
+///                wide[0..232], abbr[0..232], narrow[0..232]
+/// ```
+/// The modern eras (232..=236) live in `japanese.bin`; the Gregorian era-start
+/// dates that select an index live in the runtime (`datetime.rs`).
+fn emit_japanese_hist(cldr_dir: &Path, raw_dir: &Path) {
+    let mut locales = locale_files(raw_dir);
+    locales.sort();
+
+    let mut set_index: BTreeMap<Vec<u8>, u16> = BTreeMap::new();
+    let mut sets: Vec<Vec<u8>> = Vec::new();
+    let mut loc_map: Vec<(String, u16)> = Vec::new();
+
+    for locale in locales {
+        let path = raw_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let eras = loc_obj
+            .get("dates")
+            .and_then(|d| d.get("calendars"))
+            .and_then(|c| c.get("japanese"))
+            .and_then(|j| j.get("eras"))
+            .expect("japanese eras");
+
+        let mut payload = Vec::new();
+        for width in ["eraNames", "eraAbbr", "eraNarrow"] {
+            let w = eras.get(width);
+            for i in 0..HIST_ERA_COUNT {
+                let s = w
+                    .and_then(|x| x.get(&i.to_string()))
+                    .and_then(Json::as_str)
+                    .unwrap_or("");
+                enc_str(&mut payload, s);
+            }
+        }
+        let id = *set_index.entry(payload.clone()).or_insert_with(|| {
+            sets.push(payload.clone());
+            (sets.len() - 1) as u16
+        });
+        loc_map.push((locale.to_ascii_lowercase(), id));
+    }
+    loc_map.sort();
+
+    let mut blob = Vec::new();
+    blob.extend_from_slice(&(loc_map.len() as u16).to_le_bytes());
+    for (k, id) in &loc_map {
+        blob.push(k.len() as u8);
+        blob.extend_from_slice(k.as_bytes());
+        blob.extend_from_slice(&id.to_le_bytes());
+    }
+    blob.extend_from_slice(&(sets.len() as u16).to_le_bytes());
+    let mut off = 0u32;
+    for s in &sets {
+        blob.extend_from_slice(&off.to_le_bytes());
+        off += s.len() as u32;
+    }
+    for s in &sets {
+        blob.extend_from_slice(s);
+    }
+
+    let path = cldr_dir.join("japanese_hist.bin");
+    fs::write(&path, &blob).expect("write japanese_hist.bin");
+    println!(
+        "codegen: wrote japanese_hist.bin ({} locales, {} sets, {} KB)",
+        loc_map.len(),
+        sets.len(),
+        blob.len() / 1024
+    );
 }
 
 /// Write `cldr/ordsuffix.bin`: per-locale ordinal suffix for each plural

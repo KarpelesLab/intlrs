@@ -134,9 +134,32 @@ pub struct CalendarSpec {
     pub day_periods_abbr: [Option<&'static str>; 10],
     /// Narrow flexible day-period names (same indexing).
     pub day_periods_narrow: [Option<&'static str>; 10],
-    /// Hour (0–23) → flexible day-period index from the CLDR range rules, or
-    /// `0xFF` if the locale defines no range covering that hour.
-    pub day_period_hours: [u8; 24],
+    /// Minute-resolution flexible day-period range rules: a packed list of
+    /// `[u16 from_minute][u16 to_minute][u8 period_index]` records (each 5 bytes,
+    /// non-wrapping, `from < to`). A minute-of-day falling in `[from, to)` maps to
+    /// `period_index` (an index into the `day_periods_*` arrays). The `_at`
+    /// midnight/noon points are applied by the caller at the exact instant.
+    pub day_period_rules: &'static [u8],
+}
+
+impl CalendarSpec {
+    /// The flexible day-period index for a `minute` of day (0..=1439) from the
+    /// locale's CLDR range rules, or `0xFF` if no range covers it.
+    #[cfg(feature = "datetime")]
+    pub(crate) fn day_period_index(&self, minute: u16) -> u8 {
+        let b = self.day_period_rules;
+        let mut o = 0;
+        while o + 5 <= b.len() {
+            let from = u16::from_le_bytes([b[o], b[o + 1]]);
+            let to = u16::from_le_bytes([b[o + 2], b[o + 3]]);
+            let idx = b[o + 4];
+            o += 5;
+            if minute >= from && minute < to {
+                return idx;
+            }
+        }
+        0xFF
+    }
 }
 
 /// CLDR relative-time strings for all units of one locale.
@@ -199,6 +222,8 @@ const PERSIAN: &[u8] = include_bytes!("cldr/persian.bin");
 const CHINESE: &[u8] = include_bytes!("cldr/chinese.bin");
 #[cfg(feature = "calendars-extra")]
 const JAPANESE: &[u8] = include_bytes!("cldr/japanese.bin");
+#[cfg(feature = "calendars-extra")]
+const JAPANESE_HIST: &[u8] = include_bytes!("cldr/japanese_hist.bin");
 
 /// The CLDR collation tailoring rule string for an exact (lowercased) locale
 /// key, or `None`. Used by `unicode::collate::Tailoring::for_locale`.
@@ -291,8 +316,14 @@ pub struct AltCalSpec {
     pub months_wide: [&'static str; 12],
     /// Abbreviated month names.
     pub months_abbr: [&'static str; 12],
-    /// Era abbreviation (e.g. `"AH"`, `"AP"`).
-    pub era: &'static str,
+    /// Wide era names, indexed 0 = current era (`"Anno Hegirae"` / `"AP"`),
+    /// 1 = pre-era (`"Before Hijrah"` / `"BP"`; empty when the calendar defines
+    /// only one era, as Persian does).
+    pub eras_wide: [&'static str; 2],
+    /// Abbreviated era names (e.g. `"AH"`/`"BH"`, `"AP"`).
+    pub eras_abbr: [&'static str; 2],
+    /// Narrow era names.
+    pub eras_narrow: [&'static str; 2],
     /// Date patterns by style (full/long/medium/short).
     pub date: [&'static str; 4],
 }
@@ -303,7 +334,9 @@ fn alt_cal_spec(blob: &'static [u8], lang: &str) -> Option<AltCalSpec> {
     Some(AltCalSpec {
         months_wide: core::array::from_fn(|_| c.str()),
         months_abbr: core::array::from_fn(|_| c.str()),
-        era: c.str(),
+        eras_wide: [c.str(), c.str()],
+        eras_abbr: [c.str(), c.str()],
+        eras_narrow: [c.str(), c.str()],
         date: core::array::from_fn(|_| c.str()),
     })
 }
@@ -391,6 +424,57 @@ pub(crate) fn japanese_spec(lang: &str) -> Option<JapaneseCalSpec> {
     })
 }
 
+/// Number of pre-Meiji historical Japanese era names in `japanese_hist.bin`
+/// (CLDR era indices 0 = Taika .. 231 = Keiō); must match codegen's
+/// `HIST_ERA_COUNT`.
+#[cfg(feature = "calendars-extra")]
+pub(crate) const HIST_ERA_COUNT: usize = 232;
+
+/// The localized pre-Meiji nengō (era) name for CLDR era `index` (0..=231) in
+/// an exact (lowercased) locale key, as `[wide, abbr, narrow]`, or `None` if the
+/// locale is absent. See `emit_japanese_hist` for the blob layout.
+#[cfg(feature = "calendars-extra")]
+pub(crate) fn japanese_hist_eras(lang: &str, index: usize) -> Option<[&'static str; 3]> {
+    if index >= HIST_ERA_COUNT {
+        return None;
+    }
+    let b = JAPANESE_HIST;
+    let nloc = rd_u16(b, 0);
+    let mut o = 2;
+    let mut setid: Option<usize> = None;
+    for _ in 0..nloc {
+        let klen = b[o] as usize;
+        o += 1;
+        let k = &b[o..o + klen];
+        o += klen;
+        let sid = rd_u16(b, o);
+        o += 2;
+        if k == lang.as_bytes() {
+            setid = Some(sid);
+        }
+    }
+    let setid = setid?;
+    let nsets = rd_u16(b, o);
+    o += 2;
+    let table = o;
+    let sets_base = table + nsets * 4;
+    let set_off = rd_u32(b, table + setid * 4);
+    let mut c = Cursor {
+        b,
+        o: sets_base + set_off,
+    };
+    let mut res = [""; 3];
+    for slot in &mut res {
+        for i in 0..HIST_ERA_COUNT {
+            let s = c.str();
+            if i == index {
+                *slot = s;
+            }
+        }
+    }
+    Some(res)
+}
+
 /// Localized GMT offset formats for one locale.
 #[derive(Debug, Clone, Copy)]
 pub struct TzSpec {
@@ -446,6 +530,11 @@ fn rd_u16(b: &[u8], o: usize) -> usize {
     u16::from_le_bytes([b[o], b[o + 1]]) as usize
 }
 
+#[cfg(feature = "calendars-extra")]
+fn rd_u32(b: &[u8], o: usize) -> usize {
+    u32::from_le_bytes([b[o], b[o + 1], b[o + 2], b[o + 3]]) as usize
+}
+
 /// A forward cursor over a record payload in a `'static` blob.
 struct Cursor {
     b: &'static [u8],
@@ -483,6 +572,14 @@ impl Cursor {
             let n = self.b[self.o] as usize;
             self.o += 1 + n;
         }
+    }
+    /// Read a length-prefixed day-period rule list: a `[u8 count]` followed by
+    /// `count` 5-byte records, returned as a raw slice (parsed lazily).
+    fn dp_rules(&mut self) -> &'static [u8] {
+        let n = self.u8() as usize * 5;
+        let s = &self.b[self.o..self.o + n];
+        self.o += n;
+        s
     }
     fn pattern(&mut self) -> Pattern {
         Pattern {
@@ -699,7 +796,7 @@ pub(crate) fn calendar_spec(lang: &str) -> Option<CalendarSpec> {
         day_periods_wide: core::array::from_fn(|_| c.opt()),
         day_periods_abbr: core::array::from_fn(|_| c.opt()),
         day_periods_narrow: core::array::from_fn(|_| c.opt()),
-        day_period_hours: core::array::from_fn(|_| c.u8()),
+        day_period_rules: c.dp_rules(),
     })
 }
 

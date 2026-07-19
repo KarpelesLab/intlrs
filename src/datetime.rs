@@ -424,7 +424,8 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
                     return x.to_string();
                 }
             }
-            let idx = s.day_period_hours[(dt.hour as usize).min(23)];
+            let minute_of_day = (dt.hour as u16).min(23) * 60 + (dt.minute as u16).min(59);
+            let idx = s.day_period_index(minute_of_day);
             if idx != 0xFF
                 && let Some(x) = w[idx as usize]
             {
@@ -666,7 +667,19 @@ fn render_alt(
                 } else {
                     greg.days_abbr[wd]
                 }),
-                'G' => out.push_str(cal.era),
+                'G' => {
+                    // Era by year sign (0 = current era AH/AP, 1 = pre-era
+                    // BH/BP) and width (G/GG/GGG = abbr, GGGG = wide,
+                    // GGGGG = narrow).
+                    let ei = usize::from(year <= 0);
+                    out.push_str(if n >= 5 {
+                        cal.eras_narrow[ei]
+                    } else if n == 4 {
+                        cal.eras_wide[ei]
+                    } else {
+                        cal.eras_abbr[ei]
+                    });
+                }
                 _ => {}
             }
         } else {
@@ -902,17 +915,91 @@ pub fn format_persian_date(
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
 
-/// Modern Japanese-era index (0 = Meiji … 4 = Reiwa) for a romaji era name from
-/// [`crate::calendar::japanese_era`], or `None` for a pre-Meiji date (`"CE"`).
+/// Gregorian start dates `(year, month, day)` of every Japanese nengō, indexed
+/// by CLDR era index 0 (Taika) .. 236 (Reiwa). Historical entries (0..=231) are
+/// ICU4C's `japancal.cpp` `kEraInfo`; the 5 modern entries (232..=236) are the
+/// Meiji…Reiwa starts. Kan'ei (index 198) is normalized to `1624-03-01` (ICU
+/// stores an out-of-range `1624-02-30`); the two pre-1582 anomalies (Einin 141,
+/// Eishō 187) are likewise given valid days. These dates are the exact Gregorian
+/// era boundaries ICU/V8 use for dates on or after the 1582-10-15 Gregorian
+/// cutover; before it, the Julian–Gregorian offset applies.
 #[cfg(feature = "calendars-extra")]
-fn japanese_era_index(era: &str) -> Option<usize> {
-    match era {
-        "Meiji" => Some(0),
-        "Taisho" => Some(1),
-        "Showa" => Some(2),
-        "Heisei" => Some(3),
-        "Reiwa" => Some(4),
-        _ => None,
+#[rustfmt::skip]
+const JAPANESE_ERA_STARTS: [(i16, u8, u8); 237] = [
+    (645,6,19),(650,2,15),(672,1,1),(686,7,20),(701,3,21),(704,5,10),(708,1,11),
+    (715,9,2),(717,11,17),(724,2,4),(729,8,5),(749,4,14),(749,7,2),(757,8,18),
+    (765,1,7),(767,8,16),(770,10,1),(781,1,1),(782,8,19),(806,5,18),(810,9,19),
+    (824,1,5),(834,1,3),(848,6,13),(851,4,28),(854,11,30),(857,2,21),(859,4,15),
+    (877,4,16),(885,2,21),(889,4,27),(898,4,26),(901,7,15),(923,4,11),(931,4,26),
+    (938,5,22),(947,4,22),(957,10,27),(961,2,16),(964,7,10),(968,8,13),(970,3,25),
+    (973,12,20),(976,7,13),(978,11,29),(983,4,15),(985,4,27),(987,4,5),(989,8,8),
+    (990,11,7),(995,2,22),(999,1,13),(1004,7,20),(1012,12,25),(1017,4,23),(1021,2,2),
+    (1024,7,13),(1028,7,25),(1037,4,21),(1040,11,10),(1044,11,24),(1046,4,14),(1053,1,11),
+    (1058,8,29),(1065,8,2),(1069,4,13),(1074,8,23),(1077,11,17),(1081,2,10),(1084,2,7),
+    (1087,4,7),(1094,12,15),(1096,12,17),(1097,11,21),(1099,8,28),(1104,2,10),(1106,4,9),
+    (1108,8,3),(1110,7,13),(1113,7,13),(1118,4,3),(1120,4,10),(1124,4,3),(1126,1,22),
+    (1131,1,29),(1132,8,11),(1135,4,27),(1141,7,10),(1142,4,28),(1144,2,23),(1145,7,22),
+    (1151,1,26),(1154,10,28),(1156,4,27),(1159,4,20),(1160,1,10),(1161,9,4),(1163,3,29),
+    (1165,6,5),(1166,8,27),(1169,4,8),(1171,4,21),(1175,7,28),(1177,8,4),(1181,7,14),
+    (1182,5,27),(1184,4,16),(1185,8,14),(1190,4,11),(1199,4,27),(1201,2,13),(1204,2,20),
+    (1206,4,27),(1207,10,25),(1211,3,9),(1213,12,6),(1219,4,12),(1222,4,13),(1224,11,20),
+    (1225,4,20),(1227,12,10),(1229,3,5),(1232,4,2),(1233,4,15),(1234,11,5),(1235,9,19),
+    (1238,11,23),(1239,2,7),(1240,7,16),(1243,2,26),(1247,2,28),(1249,3,18),(1256,10,5),
+    (1257,3,14),(1259,3,26),(1260,4,13),(1261,2,20),(1264,2,28),(1275,4,25),(1278,2,29),
+    (1288,4,28),(1293,8,5),(1299,4,25),(1302,11,21),(1303,8,5),(1306,12,14),(1308,10,9),
+    (1311,4,28),(1312,3,20),(1317,2,3),(1319,4,28),(1321,2,23),(1324,12,9),(1326,4,26),
+    (1329,8,29),(1331,8,9),(1334,1,29),(1336,2,29),(1340,4,28),(1346,12,8),(1370,7,24),
+    (1372,4,1),(1375,5,27),(1379,3,22),(1381,2,10),(1384,4,28),(1384,2,27),(1387,8,23),
+    (1389,2,9),(1390,3,26),(1394,7,5),(1428,4,27),(1429,9,5),(1441,2,17),(1444,2,5),
+    (1449,7,28),(1452,7,25),(1455,7,25),(1457,9,28),(1460,12,21),(1466,2,28),(1467,3,3),
+    (1469,4,28),(1487,7,29),(1489,8,21),(1492,7,19),(1501,2,29),(1504,3,1),(1521,8,23),
+    (1528,8,20),(1532,7,29),(1555,10,23),(1558,2,28),(1570,4,23),(1573,7,28),(1592,12,8),
+    (1596,10,27),(1615,7,13),(1624,3,1),(1644,12,16),(1648,2,15),(1652,9,18),(1655,4,13),
+    (1658,7,23),(1661,4,25),(1673,9,21),(1681,9,29),(1684,2,21),(1688,9,30),(1704,3,13),
+    (1711,4,25),(1716,6,22),(1736,4,28),(1741,2,27),(1744,2,21),(1748,7,12),(1751,10,27),
+    (1764,6,2),(1772,11,16),(1781,4,2),(1789,1,25),(1801,2,5),(1804,2,11),(1818,4,22),
+    (1830,12,10),(1844,12,2),(1848,2,28),(1854,11,27),(1860,3,18),(1861,2,19),(1864,2,20),
+    (1865,4,7),
+    // Modern eras (CLDR indices 232..=236): Meiji, Taishō, Shōwa, Heisei, Reiwa.
+    (1868,9,8),(1912,7,30),(1926,12,25),(1989,1,8),(2019,5,1),
+];
+
+/// The number of modern Japanese eras (Meiji..Reiwa); CLDR index 232 is the
+/// first modern era.
+#[cfg(feature = "calendars-extra")]
+const JAPANESE_FIRST_MODERN: usize = 232;
+
+/// The CLDR Japanese era index (0..=236) and year-within-era for a Gregorian
+/// date, by boundary search over [`JAPANESE_ERA_STARTS`]. Year-within-era is
+/// `gregYear − eraStartYear + 1`. Exact vs ICU/V8 for dates on or after the
+/// 1582-10-15 Gregorian cutover (this covers every Edo-period era); earlier
+/// dates may differ by the Julian–Gregorian offset.
+#[cfg(feature = "calendars-extra")]
+fn japanese_nengo(year: i64, month: i64, day: i64) -> (usize, i64) {
+    for (i, &(sy, sm, sd)) in JAPANESE_ERA_STARTS.iter().enumerate().rev() {
+        if (year, month, day) >= (sy as i64, sm as i64, sd as i64) {
+            return (i, year - sy as i64 + 1);
+        }
+    }
+    // Before Taika (645): still reckoned in the Taika era with a non-positive year.
+    let sy = JAPANESE_ERA_STARTS[0].0 as i64;
+    (0, year - sy + 1)
+}
+
+/// The localized pre-Meiji nengō names `[wide, abbr, narrow]` for CLDR era
+/// `index` (0..=231) in `lang`, via the locale fallback chain (to `en`).
+#[cfg(feature = "calendars-extra")]
+fn japanese_hist_eras(lang: &str, index: usize) -> [&'static str; 3] {
+    let norm = normalize_lang(lang);
+    let mut end = norm.len();
+    loop {
+        if let Some(e) = crate::cldr::japanese_hist_eras(&norm[..end], index) {
+            return e;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return crate::cldr::japanese_hist_eras("en", index).unwrap_or([""; 3]),
+        }
     }
 }
 
@@ -927,6 +1014,7 @@ fn render_japanese(
     cal: &crate::cldr::JapaneseCalSpec,
     style: DateStyle,
     era_idx: Option<usize>,
+    hist_eras: [&'static str; 3],
     year_in_era: i64,
     month: i64,
     day: i64,
@@ -1005,16 +1093,28 @@ fn render_japanese(
                                 cal.eras_abbr[idx]
                             }
                         }
-                        // Pre-Meiji: fall back to the localized Gregorian era
-                        // (BCE/CE), since only the 5 modern eras are localized.
+                        // Pre-Meiji: use the localized historical nengō name at
+                        // the width implied by the G-count, falling back to the
+                        // localized Gregorian era only if that name is absent.
                         None => {
-                            let gi = usize::from(year_in_era > 0);
-                            if n >= 5 {
-                                greg.eras_narrow[gi]
+                            let hname = if n >= 5 {
+                                hist_eras[2]
                             } else if n == 4 {
-                                greg.eras_wide[gi]
+                                hist_eras[0]
                             } else {
-                                greg.eras_abbr[gi]
+                                hist_eras[1]
+                            };
+                            if !hname.is_empty() {
+                                hname
+                            } else {
+                                let gi = usize::from(year_in_era > 0);
+                                if n >= 5 {
+                                    greg.eras_narrow[gi]
+                                } else if n == 4 {
+                                    greg.eras_wide[gi]
+                                } else {
+                                    greg.eras_abbr[gi]
+                                }
                             }
                         }
                     };
@@ -1059,8 +1159,10 @@ fn japanese_alt_spec(lang: &str) -> crate::cldr::JapaneseCalSpec {
 /// implied by the pattern's `G` count; month and weekday names are the Gregorian
 /// ones. In Japanese, year 1 of an era prints as 元 (gannen) for the full/long/
 /// medium styles (the CLDR `jpanyear` numbering), e.g. `"令和元年"`. A pre-Meiji
-/// date falls back to the localized Gregorian era with the Gregorian year (ICU
-/// instead shows the historical nengō, which is out of scope here).
+/// date is rendered with its historical nengō (e.g. `1850-03-15` → `"嘉永3年…"` /
+/// `"3 Kaei…"`), resolved from ICU's Gregorian era-start dates and the localized
+/// era names. This is exact vs V8 for dates on or after the 1582 Gregorian
+/// cutover (all Edo-period eras); earlier dates carry the Julian–Gregorian offset.
 #[cfg(feature = "calendars-extra")]
 #[must_use]
 pub fn format_japanese_date(
@@ -1071,8 +1173,15 @@ pub fn format_japanese_date(
     style: DateStyle,
 ) -> String {
     let cal = japanese_alt_spec(lang);
-    let (era, year_in_era) = crate::calendar::japanese_era(year, month, day);
-    let era_idx = japanese_era_index(era);
+    let (cldr_idx, year_in_era) = japanese_nengo(year, month, day);
+    // Modern eras (Meiji..Reiwa) are indices 232..=236; earlier indices are the
+    // historical nengō localized via `japanese_hist_eras`.
+    let era_idx = cldr_idx.checked_sub(JAPANESE_FIRST_MODERN);
+    let hist_eras = if era_idx.is_none() {
+        japanese_hist_eras(lang, cldr_idx)
+    } else {
+        [""; 3]
+    };
     let jdn = crate::calendar::gregorian_to_jdn(year, month, day);
     // Gannen (元) applies only to modern eras whose style pattern uses jpanyear.
     let gannen = era_idx.is_some() && (cal.gannen >> style.idx()) & 1 == 1;
@@ -1080,6 +1189,7 @@ pub fn format_japanese_date(
         &cal,
         style,
         era_idx,
+        hist_eras,
         year_in_era,
         month,
         day,

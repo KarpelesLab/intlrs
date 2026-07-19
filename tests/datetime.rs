@@ -312,14 +312,32 @@ fn japanese_dates() {
     // Japanese era names (V8: "1 mai 1 Reiwa").
     assert_eq!(fj("fr", 2019, 5, 1, Long), "1 mai 1 Reiwa");
 
-    // ---- Pre-Meiji fallback. `calendar::japanese_era` collapses every pre-Meiji
-    // date to `("CE", gregorianYear)`, so this formatter renders the Gregorian
-    // year with the localized Gregorian era rather than the historical nengō.
-    // V8 instead shows the era of the day, e.g. "March 15, 3 Kaei (1848–1854)"
-    // (`en`) / "嘉永3年3月15日" (`ja`) — that historical-era table is out of scope
-    // here. The crate's own (documented) output: ----
-    assert_eq!(fj("en", 1850, 3, 15, Long), "March 15, 1850 AD");
-    assert_eq!(fj("ja", 1850, 3, 15, Long), "西暦1850年3月15日");
+    // ---- Pre-Meiji historical nengō. Now rendered from ICU's Gregorian
+    // era-start dates + the localized era names. Every assertion is the EXACT
+    // output of Node/V8 `Intl.DateTimeFormat(loc,{calendar:'japanese',dateStyle})`.
+    // Kaei era (1848-02-28 .. 1854-11-27): 1850 → Kaei 3. ----
+    assert_eq!(fj("en", 1850, 3, 15, Long), "March 15, 3 Kaei (1848–1854)");
+    assert_eq!(fj("en", 1850, 3, 15, Medium), "Mar 15, 3 Kaei (1848–1854)");
+    assert_eq!(fj("en", 1850, 3, 15, Short), "3/15/3 Kaei (1848–1854)");
+    assert_eq!(
+        fj("en", 1850, 3, 15, Full),
+        "Friday, March 15, 3 Kaei (1848–1854)"
+    );
+    assert_eq!(fj("ja", 1850, 3, 15, Long), "嘉永3年3月15日");
+    assert_eq!(fj("ja", 1850, 3, 15, Full), "嘉永3年3月15日金曜日");
+    assert_eq!(fj("ja", 1850, 3, 15, Short), "嘉永3/3/15"); // GGGGG narrow
+    assert_eq!(fj("fr", 1850, 3, 15, Long), "15 mars 3 Kaei (1848–1854)");
+    // Genroku era (1688-09-30 .. 1704-03-13): 1700 → Genroku 13.
+    assert_eq!(
+        fj("en", 1700, 1, 1, Long),
+        "January 1, 13 Genroku (1688–1704)"
+    );
+    assert_eq!(fj("ja", 1700, 1, 1, Long), "元禄13年1月1日");
+    // Genna era start 1615-07-13 (first post-1582-cutover era boundary).
+    assert_eq!(fj("en", 1615, 7, 13, Long), "July 13, 1 Genna (1615–1624)");
+    // The Meiji boundary matches ICU/V8 (1868-09-08, not the civil 1868-10-23):
+    // 1868-09-10 is already Meiji 1 (gannen in `ja`).
+    assert_eq!(fj("ja", 1868, 9, 10, Long), "明治元年9月10日");
 }
 
 #[test]
