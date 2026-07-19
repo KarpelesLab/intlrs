@@ -68,10 +68,7 @@ fn resolve(lang: &str) -> Option<(String, alloc::vec::Vec<RuleSet>)> {
         if let Some(b) = crate::cldr::rbnf_payload(&norm[..end]) {
             break b;
         }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return None,
-        }
+        end = norm[..end].rfind('-')?;
     };
     Some(parse_payload(bytes))
 }
