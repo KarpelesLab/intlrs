@@ -1,6 +1,6 @@
 [package]
 name = "intl"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2024"
 rust-version = "1.88"
 description = "Pure-Rust, no_std internationalization primitives (a pure-Rust ICU analog). The `unicode` module provides General_Category, character predicates, scripts, East Asian Width, numeric values, case mapping/folding, UAX #15 normalization (NFC/NFD/NFKC/NFKD), and UTS #10 collation — property tables compiled into const-fn match lookups, with feature-selectable codepoint ranges."
