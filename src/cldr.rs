@@ -195,6 +195,8 @@ const ISLAMIC: &[u8] = include_bytes!("cldr/islamic.bin");
 const PERSIAN: &[u8] = include_bytes!("cldr/persian.bin");
 #[cfg(feature = "calendars-extra")]
 const CHINESE: &[u8] = include_bytes!("cldr/chinese.bin");
+#[cfg(feature = "calendars-extra")]
+const JAPANESE: &[u8] = include_bytes!("cldr/japanese.bin");
 
 /// The CLDR collation tailoring rule string for an exact (lowercased) locale
 /// key, or `None`. Used by `unicode::collate::Tailoring::for_locale`.
@@ -348,6 +350,42 @@ pub(crate) fn chinese_spec(lang: &str) -> Option<ChineseCalSpec> {
         leap_wide: c.str(),
         leap_abbr: c.str(),
         date: core::array::from_fn(|_| c.str()),
+    })
+}
+
+/// Japanese-calendar data for one locale: the 5 modern eras (Meiji, Taishō,
+/// Shōwa, Heisei, Reiwa) in three widths and the four date patterns. The Japanese
+/// calendar shares the Gregorian month and weekday names, so only the era and the
+/// (year-within-era) year field differ; those names are taken from the Gregorian
+/// [`CalendarSpec`] by the caller.
+#[derive(Debug, Clone, Copy)]
+pub struct JapaneseCalSpec {
+    /// Wide era names (`eraNames`), indexed by modern-era number (0 = Meiji …
+    /// 4 = Reiwa). Used for the `GGGG` field width.
+    pub eras_wide: [&'static str; 5],
+    /// Abbreviated era names (`eraAbbr`); the `G`/`GG`/`GGG` field width.
+    pub eras_abbr: [&'static str; 5],
+    /// Narrow era names (`eraNarrow`, e.g. `"R"`); the `GGGGG` field width.
+    pub eras_narrow: [&'static str; 5],
+    /// Date patterns by style (full/long/medium/short). Every pattern carries a
+    /// `G` (era) field.
+    pub date: [&'static str; 4],
+    /// Gannen bitmask: bit `i` (full=0, long=1, medium=2, short=3) is set when
+    /// that style's year field uses the `jpanyear` numbering system, i.e. year 1
+    /// of an era prints as 元 (gannen) instead of `1`.
+    pub gannen: u8,
+}
+
+/// Japanese-calendar names + patterns for an exact (lowercased) locale key.
+#[cfg(feature = "calendars-extra")]
+pub(crate) fn japanese_spec(lang: &str) -> Option<JapaneseCalSpec> {
+    let mut c = find(JAPANESE, lang)?;
+    Some(JapaneseCalSpec {
+        eras_wide: core::array::from_fn(|_| c.str()),
+        eras_abbr: core::array::from_fn(|_| c.str()),
+        eras_narrow: core::array::from_fn(|_| c.str()),
+        date: core::array::from_fn(|_| c.str()),
+        gannen: c.u8(),
     })
 }
 

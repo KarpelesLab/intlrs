@@ -902,6 +902,193 @@ pub fn format_persian_date(
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
 
+/// Modern Japanese-era index (0 = Meiji … 4 = Reiwa) for a romaji era name from
+/// [`crate::calendar::japanese_era`], or `None` for a pre-Meiji date (`"CE"`).
+#[cfg(feature = "calendars-extra")]
+fn japanese_era_index(era: &str) -> Option<usize> {
+    match era {
+        "Meiji" => Some(0),
+        "Taisho" => Some(1),
+        "Showa" => Some(2),
+        "Heisei" => Some(3),
+        "Reiwa" => Some(4),
+        _ => None,
+    }
+}
+
+/// Render a Japanese-calendar date. The Japanese calendar shares the Gregorian
+/// month and weekday names (`greg`); only the era (`G`) and the year (`y`, the
+/// year-within-era) differ. When `gannen` is set, year 1 of the era renders as 元.
+/// A pre-Meiji date (`era_idx == None`) falls back to the localized Gregorian era
+/// with `year_in_era` holding the proleptic Gregorian year.
+#[cfg(feature = "calendars-extra")]
+#[allow(clippy::too_many_arguments)]
+fn render_japanese(
+    cal: &crate::cldr::JapaneseCalSpec,
+    style: DateStyle,
+    era_idx: Option<usize>,
+    year_in_era: i64,
+    month: i64,
+    day: i64,
+    jdn: i64,
+    gannen: bool,
+    greg: &CalendarSpec,
+) -> String {
+    let wd = ((jdn.rem_euclid(7) + 1) % 7) as usize; // 0 = Sunday
+    let c: Vec<char> = cal.date[style.idx()].chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < c.len() {
+        let ch = c[i];
+        if ch == '\'' {
+            i += 1;
+            if i < c.len() && c[i] == '\'' {
+                out.push('\'');
+                i += 1;
+                continue;
+            }
+            while i < c.len() && c[i] != '\'' {
+                out.push(c[i]);
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < c.len() && c[i] == ch {
+                i += 1;
+            }
+            let (n, m) = (i - start, month as usize);
+            let mi = m.clamp(1, 12) - 1; // unvalidated month must not index OOB
+            match ch {
+                // Year-within-era; 元 (gannen) for year 1 when the pattern uses
+                // the `jpanyear` numbering system.
+                'y' | 'Y' => {
+                    if gannen && year_in_era == 1 {
+                        out.push('元');
+                    } else if n == 2 {
+                        out.push_str(&two(year_in_era.rem_euclid(100)));
+                    } else {
+                        out.push_str(&year_in_era.to_string());
+                    }
+                }
+                'M' | 'L' => match n {
+                    1 => out.push_str(&m.to_string()),
+                    2 => out.push_str(&two(m as i64)),
+                    3 => out.push_str(greg.months_abbr[mi]),
+                    5 => out.push_str(greg.months_narrow[mi]),
+                    _ => out.push_str(greg.months_wide[mi]),
+                },
+                'd' => {
+                    if n >= 2 {
+                        out.push_str(&two(day));
+                    } else {
+                        out.push_str(&day.to_string());
+                    }
+                }
+                'E' | 'e' | 'c' => out.push_str(if n >= 5 {
+                    greg.days_narrow[wd]
+                } else if n >= 4 {
+                    greg.days_wide[wd]
+                } else {
+                    greg.days_abbr[wd]
+                }),
+                'G' => {
+                    let era = match era_idx {
+                        // Modern era: pick the width implied by the G-count
+                        // (G/GG/GGG = abbr, GGGG = wide, GGGGG = narrow).
+                        Some(idx) => {
+                            if n >= 5 {
+                                cal.eras_narrow[idx]
+                            } else if n == 4 {
+                                cal.eras_wide[idx]
+                            } else {
+                                cal.eras_abbr[idx]
+                            }
+                        }
+                        // Pre-Meiji: fall back to the localized Gregorian era
+                        // (BCE/CE), since only the 5 modern eras are localized.
+                        None => {
+                            let gi = usize::from(year_in_era > 0);
+                            if n >= 5 {
+                                greg.eras_narrow[gi]
+                            } else if n == 4 {
+                                greg.eras_wide[gi]
+                            } else {
+                                greg.eras_abbr[gi]
+                            }
+                        }
+                    };
+                    out.push_str(era);
+                }
+                _ => {}
+            }
+        } else {
+            out.push(ch);
+            i += 1;
+        }
+    }
+    out
+}
+
+/// Japanese-calendar spec for `lang` via the locale fallback chain (to `en`).
+#[cfg(feature = "calendars-extra")]
+fn japanese_alt_spec(lang: &str) -> crate::cldr::JapaneseCalSpec {
+    let norm = normalize_lang(lang);
+    let mut end = norm.len();
+    loop {
+        if let Some(s) = crate::cldr::japanese_spec(&norm[..end]) {
+            return s;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => {
+                return crate::cldr::japanese_spec("en").expect("root japanese calendar present");
+            }
+        }
+    }
+}
+
+/// Format a Gregorian date in the localized Japanese (imperial-era) calendar in
+/// `lang`, e.g. `format_japanese_date("en", 2019, 5, 1, DateStyle::Long)` →
+/// `"May 1, 1 Reiwa"` and `format_japanese_date("ja", 2019, 5, 1, DateStyle::Long)`
+/// → `"令和元年5月1日"`.
+///
+/// `year`/`month`/`day` are the **Gregorian** fields; the era and year-within-era
+/// are derived via [`crate::calendar::japanese_era`] (the 5 modern eras: Meiji,
+/// Taishō, Shōwa, Heisei, Reiwa). The localized era name is taken at the width
+/// implied by the pattern's `G` count; month and weekday names are the Gregorian
+/// ones. In Japanese, year 1 of an era prints as 元 (gannen) for the full/long/
+/// medium styles (the CLDR `jpanyear` numbering), e.g. `"令和元年"`. A pre-Meiji
+/// date falls back to the localized Gregorian era with the Gregorian year (ICU
+/// instead shows the historical nengō, which is out of scope here).
+#[cfg(feature = "calendars-extra")]
+#[must_use]
+pub fn format_japanese_date(
+    lang: &str,
+    year: i64,
+    month: i64,
+    day: i64,
+    style: DateStyle,
+) -> String {
+    let cal = japanese_alt_spec(lang);
+    let (era, year_in_era) = crate::calendar::japanese_era(year, month, day);
+    let era_idx = japanese_era_index(era);
+    let jdn = crate::calendar::gregorian_to_jdn(year, month, day);
+    // Gannen (元) applies only to modern eras whose style pattern uses jpanyear.
+    let gannen = era_idx.is_some() && (cal.gannen >> style.idx()) & 1 == 1;
+    render_japanese(
+        &cal,
+        style,
+        era_idx,
+        year_in_era,
+        month,
+        day,
+        jdn,
+        gannen,
+        &spec(lang),
+    )
+}
+
 /// Format a fixed UTC offset (in minutes) in the localized GMT form, e.g.
 /// `"GMT+5:30"`-style output: `format_gmt_offset("en", 330)` → `"GMT+05:30"`,
 /// `format_gmt_offset("fr", -480)` → `"UTC−08:00"`, `0` → `"GMT"` / `"UTC"`.

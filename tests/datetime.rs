@@ -268,6 +268,60 @@ fn chinese_dates() {
     assert_eq!(fc("zh", 2023, 2, 11, true, Long), "2023癸卯年闰二月11");
 }
 
+#[cfg(feature = "calendars-extra")]
+#[test]
+fn japanese_dates() {
+    use intl::datetime::{DateStyle::*, format_japanese_date as fj};
+
+    // Every modern-era assertion below is the EXACT output of Node/V8
+    // `new Intl.DateTimeFormat(loc,{calendar:'japanese',dateStyle}).format(date)`
+    // (V8 uses the same CLDR `dateFormats` patterns this formatter renders). The
+    // input is a Gregorian (year, month, day); the era/year-within-era come from
+    // `calendar::japanese_era`.
+
+    // ---- Reiwa (era starts 2019-05-01). ----
+    // 2019-05-01 is Reiwa 1; in `en` the year is numeric ("1"), in `ja` it is 元
+    // (gannen) for the full/long/medium styles (CLDR `jpanyear` numbering).
+    assert_eq!(fj("en", 2019, 5, 1, Full), "Wednesday, May 1, 1 Reiwa");
+    assert_eq!(fj("en", 2019, 5, 1, Long), "May 1, 1 Reiwa");
+    assert_eq!(fj("en", 2019, 5, 1, Short), "5/1/1 R"); // narrow era (GGGGG)
+    assert_eq!(fj("ja", 2019, 5, 1, Long), "令和元年5月1日"); // gannen
+    assert_eq!(fj("ja", 2019, 5, 1, Full), "令和元年5月1日水曜日");
+    // The `ja` short pattern (GGGGGy/M/d) has no `jpanyear`, so year 1 is "1".
+    assert_eq!(fj("ja", 2019, 5, 1, Short), "R1/5/1");
+    // 2024 is Reiwa 6 (year 6, no gannen).
+    assert_eq!(fj("en", 2024, 3, 15, Long), "March 15, 6 Reiwa");
+    assert_eq!(fj("en", 2024, 3, 15, Medium), "Mar 15, 6 Reiwa");
+    assert_eq!(fj("ja", 2024, 3, 15, Long), "令和6年3月15日");
+
+    // ---- Heisei: 2019-04-30 is the last Heisei day → Heisei 31. ----
+    assert_eq!(fj("en", 2019, 4, 30, Long), "April 30, 31 Heisei");
+    assert_eq!(fj("ja", 2019, 4, 30, Long), "平成31年4月30日");
+
+    // ---- Shōwa. 1970-01-01 → Shōwa 45; 1926-12-25 (Shōwa era start) → Shōwa 1
+    // (gannen in `ja`). Note the localized wide era name carries the macron. ----
+    assert_eq!(fj("en", 1970, 1, 1, Long), "January 1, 45 Shōwa");
+    assert_eq!(fj("ja", 1970, 1, 1, Long), "昭和45年1月1日");
+    assert_eq!(fj("ja", 1926, 12, 25, Long), "昭和元年12月25日"); // gannen
+
+    // ---- Taishō era start 1912-07-30 → Taishō 1 (gannen in `ja`). ----
+    assert_eq!(fj("en", 1912, 7, 30, Long), "July 30, 1 Taishō");
+    assert_eq!(fj("ja", 1912, 7, 30, Long), "大正元年7月30日"); // gannen
+
+    // A non-en/ja locale (`fr`) localizes month names; the era names are the CLDR
+    // Japanese era names (V8: "1 mai 1 Reiwa").
+    assert_eq!(fj("fr", 2019, 5, 1, Long), "1 mai 1 Reiwa");
+
+    // ---- Pre-Meiji fallback. `calendar::japanese_era` collapses every pre-Meiji
+    // date to `("CE", gregorianYear)`, so this formatter renders the Gregorian
+    // year with the localized Gregorian era rather than the historical nengō.
+    // V8 instead shows the era of the day, e.g. "March 15, 3 Kaei (1848–1854)"
+    // (`en`) / "嘉永3年3月15日" (`ja`) — that historical-era table is out of scope
+    // here. The crate's own (documented) output: ----
+    assert_eq!(fj("en", 1850, 3, 15, Long), "March 15, 1850 AD");
+    assert_eq!(fj("ja", 1850, 3, 15, Long), "西暦1850年3月15日");
+}
+
 #[test]
 fn component_options() {
     use intl::datetime::{

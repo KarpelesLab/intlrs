@@ -333,6 +333,7 @@ fn main() {
     emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic-raw"));
     emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian-raw"));
     emit_chinese(&cldr_dir, &cldr.join("chinese-raw"));
+    emit_japanese(&cldr_dir, &cldr.join("japanese-raw"));
 
     // ---- generated/mod.rs ----
     // Gate the large per-component tables behind their Cargo feature so that
@@ -2793,6 +2794,76 @@ fn emit_chinese(cldr_dir: &Path, raw_dir: &Path) {
         records.push((locale.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "chinese", &records);
+}
+
+/// Write `cldr/japanese.bin`: per-locale Japanese-calendar data for the 5 modern
+/// eras (CLDR era indices 232=Meiji, 233=Taishō, 234=Shōwa, 235=Heisei,
+/// 236=Reiwa). Each record holds, in this order: the 5 eras in each of the three
+/// widths (`eraNames` wide, `eraAbbr` abbreviated, `eraNarrow` narrow), then the
+/// 4 date patterns (full/long/medium/short), then one "gannen" bitmask byte whose
+/// bit `i` (full=0, long=1, medium=2, short=3) is set when that pattern's year
+/// field uses the `jpanyear` numbering system — the CLDR signal that year 1 in an
+/// era prints as 元 (gannen) rather than "1". A `dateFormats` value may be a plain
+/// string or an object carrying a `_value` (e.g. `ja`, which annotates the year
+/// field with `y=jpanyear`); the `_value` is stored and the annotation captured
+/// only in the gannen mask. The Japanese calendar shares the Gregorian
+/// months/weekdays, so no month or day names are stored here.
+fn emit_japanese(cldr_dir: &Path, raw_dir: &Path) {
+    // The 5 modern-era CLDR indices, in chronological order.
+    const ERA_KEYS: [&str; 5] = ["232", "233", "234", "235", "236"];
+
+    let mut locales = locale_files(raw_dir);
+    locales.sort();
+    let mut records = Vec::new();
+    for locale in locales {
+        let path = raw_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let cal = loc_obj
+            .get("dates")
+            .and_then(|d| d.get("calendars"))
+            .and_then(|c| c.get("japanese"))
+            .expect("japanese calendar");
+
+        let mut p = Vec::new();
+
+        // 5 modern eras in each of the three widths (wide, abbr, narrow).
+        let eras = cal.get("eras").expect("eras");
+        for width in ["eraNames", "eraAbbr", "eraNarrow"] {
+            let w = eras.get(width).expect("era width");
+            for key in ERA_KEYS {
+                enc_str(&mut p, w.get(key).and_then(Json::as_str).unwrap_or(""));
+            }
+        }
+
+        // 4 date patterns; a pattern may be a plain string or a `{_value,
+        // _numbers}` object. Capture, per style, whether the year field uses the
+        // `jpanyear` numbering system (the gannen signal).
+        let df = cal.get("dateFormats").expect("dateFormats");
+        let mut gannen: u8 = 0;
+        for (bit, k) in ["full", "long", "medium", "short"].iter().enumerate() {
+            let v = df.get(k).expect("date pattern");
+            let value = v
+                .as_str()
+                .or_else(|| v.get("_value").and_then(Json::as_str))
+                .unwrap_or("");
+            enc_str(&mut p, value);
+            let numbers = v.get("_numbers").and_then(Json::as_str).unwrap_or("");
+            if numbers.contains("jpanyear") {
+                gannen |= 1 << bit;
+            }
+        }
+        p.push(gannen);
+
+        records.push((locale.to_ascii_lowercase(), p));
+    }
+    write_blob(cldr_dir, "japanese", &records);
 }
 
 /// Write `cldr/ordsuffix.bin`: per-locale ordinal suffix for each plural
