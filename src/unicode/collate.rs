@@ -17,6 +17,7 @@
 
 use super::generated::collation as tables;
 use super::normalize::{canonical_combining_class as ccc, nfd};
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 
@@ -57,6 +58,15 @@ fn sub_weight(ce: u64) -> u16 {
 fn pack_tailored(base: u32, sub: u32, s: u32, t: u32) -> u64 {
     ((sub as u64) << 49) | (base as u64) << 32 | (s as u64) << 16 | t as u64
 }
+
+// Tailoring sub-weight regions (see `build_tailored_sort_key`). A plain DUCET
+// letter emits the *midpoint* sub-weight `SUB_MID` in the sort key, so a tailored
+// letter can be placed either just **after** its reset anchor (sub `SUB_MID + k`,
+// the `&z < å` case) or just **before** it (sub `SUB_BEFORE + k < SUB_MID`, the
+// CLDR `&[before 1] X < å` reset-before). `k` is the running primary offset, so
+// any number of letters fit on either side of one anchor.
+const SUB_MID: u16 = 0x4000;
+const SUB_BEFORE: u16 = 0x2000;
 
 /// How variable collation elements (spaces, punctuation, symbols) are handled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -868,10 +878,12 @@ pub fn sort_key(s: &str) -> Vec<u16> {
 /// reordering applied (CLDR tailoring rules). Built from a rule string such as
 /// `"&z < å < ä < ö"` (Swedish), which places `å`/`ä`/`ö` immediately after `z`.
 ///
-/// Supported relations: `<` (primary — a new sort position) and `=` (identical
-/// to the previous element). Each tailored letter is given a primary weight in
-/// the reserved gap just above its reset anchor; upper-case forms are added
-/// automatically. Characters not mentioned keep their DUCET order.
+/// Supported relations: `<`/`<<`/`<<<` (primary/secondary/tertiary), `=`
+/// (identical), their `*` range forms, plus `[before]` reset-before and
+/// `[import]` (see [`parse`](Self::parse) for the full grammar). Each tailored
+/// letter is given a primary weight just above (or below, for `[before]`) its
+/// reset anchor; upper-case forms are added automatically. Characters not
+/// mentioned keep their DUCET order.
 ///
 /// **Capacity:** tailored letters share their anchor's DUCET primary as a *base*
 /// and are ordered by a second *sub-weight* component (the sort key emits a
@@ -900,11 +912,11 @@ pub struct Tailoring {
 impl Tailoring {
     /// A built-in tailoring for a locale, or `None` if none is bundled. Two
     /// sources are consulted, in order: the **official CLDR collation rules**
-    /// (generated into a committed table for every locale whose rule uses the
-    /// supported relations — the bulk of the coverage), then a small set of
-    /// hand-written rules for locales whose CLDR rules need syntax the parser
-    /// doesn't implement (`[before]`/`[import]`/extensions), e.g. the Nordic
-    /// `&z < å < ä < ö`.
+    /// (generated into a committed table for the bulk of the coverage — including
+    /// the Japanese kana collation and Croatian/Bosnian), then a small set of
+    /// hand-written rules for locales kept out of that table (e.g. the Nordic
+    /// `&z < å < ä < ö`, or `[before]`-based rules the data-consistency gate's
+    /// simple tokenizer can't validate: Icelandic, Turkish, Estonian, Kazakh).
     ///
     /// A self-consistency gate (`tests/collation_data_consistency`) excludes from
     /// the generated table any locale whose rule the parser would mis-order
@@ -937,18 +949,39 @@ impl Tailoring {
             }
         }
         let lc = primary;
+        if lc == "ko" {
+            // Korean sorts Hangul syllables and conjoining jamo in root (Unicode)
+            // order — verified identical to ICU/V8 for all-Hangul text. Sorting
+            // Hanja by their Korean reading (a ~15 KB table) and the
+            // `[reorder Hang Hani]` script move are not modeled; see the module
+            // and `parse` docs.
+            return Some(Tailoring::identity());
+        }
         let rules = match lc {
             "sv" | "fi" => "&z < å < ä < ö",               // Swedish, Finnish
             "da" | "nb" | "nn" | "no" => "&z < æ < ø < å", // Danish, Norwegian
-            "is" => "&y < ð < þ < æ < ö",                  // Icelandic
-            "et" => "&s < š < z < ž < õ < ä < ö < ü",      // Estonian
-            "de" => "&ae = ä &oe = ö &ue = ü &ss = ß",     // German phonebook (expansions)
+            // Icelandic (CLDR): accented vowels reset *before* the next base letter
+            // (so ý sorts just before z's neighbor, þ after z, then æ ä ö ø å).
+            "is" => {
+                "&[before 1]b<á<<<Á &d<<đ<<<Đ<ð<<<Ð &[before 1]f<é<<<É &[before 1]j<í<<<Í \
+                 &[before 1]p<ó<<<Ó &[before 1]v<ú<<<Ú &[before 1]z<ý<<<Ý \
+                 &[before 1]ǀ<æ<<<Æ<<ä<<<Ä<ö<<<Ö<<ø<<<Ø<å<<<Å"
+            }
+            // Estonian (CLDR): š/z/ž reset before T (so they sort after s), and
+            // õ/ä/ö/ü reset before X (so they sort after w) — not all after s.
+            "et" => "&[before 1]T<š<<<Š<z<<<Z<ž<<<Ž &[before 1]X<õ<<<Õ<ä<<<Ä<ö<<<Ö<ü<<<Ü",
+            "de" => "&ae = ä &oe = ö &ue = ü &ss = ß", // German phonebook (expansions)
             "pl" => "&a < ą &c < ć &e < ę &l < ł &n < ń &o < ó &s < ś &z < ź < ż", // Polish
             "cs" | "sk" => "&c < č &h < ch &r < ř &s < š &z < ž", // Czech/Slovak (ch digraph)
-            "tr" | "az" => "&c < ç &g < ğ &h < ı &i < i̇ &o < ö &s < ş &u < ü", // Turkish/Azeri
+            // Turkish (CLDR): dotless ı resets *before* i (ı sorts between h and i).
+            "tr" => "&C<ç<<<Ç &G<ğ<<<Ğ &[before 1]i<ı<<<I &i<<<İ &O<ö<<<Ö &S<ş<<<Ş &U<ü<<<Ü",
+            "az" => "&c < ç &g < ğ &h < ı &i < i̇ &o < ö &s < ş &u < ü", // Azerbaijani
             "lv" => "&c < č &g < ģ &i < ī &k < ķ &l < ļ &n < ņ &s < š &z < ž", // Latvian
-            "lt" => "&c < č &s < š &z < ž",                // Lithuanian
-            "hr" | "sr" | "bs" => "&c < č < ć &d < dž < đ &l < lj &n < nj &s < š &z < ž", // Serbo-Croatian
+            "lt" => "&c < č &s < š &z < ž",                             // Lithuanian
+            // Serbo-Croatian Latin digraphs (bs imports this via `[import hr]`).
+            "hr" | "sr" => "&c < č < ć &d < dž < đ &l < lj &n < nj &s < š &z < ž",
+            // Kazakh (CLDR): Cyrillic ё/ү after their bases, і reset before ь.
+            "kk" => "&Е<ё<<<Ё &Ұ<ү<<<Ү &[before 1]ь<і<<<І",
             "es" => "&n < ñ", // Spanish (ñ after n)
             // Hungarian digraphs (dzs/dz longest-match first via the engine sort).
             "hu" => "&c < cs &d < dz < dzs &g < gy &l < ly &n < ny &s < sz &t < ty &z < zs",
@@ -971,83 +1004,162 @@ impl Tailoring {
         Tailoring::parse(rules)
     }
 
-    /// Parse a CLDR-style tailoring rule string. Supports the `<` (primary),
-    /// `<<` (secondary), `<<<` (tertiary), and `=` (identity) relations, and
-    /// **expansions** when the reset anchor is a multi-character string
-    /// (`"&ae = ä"` makes `ä` collate as `"ae"`). Returns `None` if a reset
-    /// anchor or target is malformed.
+    /// Parse a CLDR-style tailoring rule string. Supported syntax:
+    ///
+    /// * relations `<` (primary), `<<` (secondary), `<<<` (tertiary), `=`
+    ///   (identity), and their **star / range** forms `<*`, `<<*`, `<<<*`, `=*`
+    ///   (each character of the target run is related to the previous one);
+    /// * **expansions** when the reset anchor is a multi-character string
+    ///   (`"&ae = ä"` makes `ä` collate as `"ae"`);
+    /// * `[before 1|2|3] <anchor>` — reset *before* the anchor, so the following
+    ///   letters sort immediately below it (`&[before 1] i < ı` puts `ı` between
+    ///   `h` and `i`);
+    /// * `[import <locale>]` — splice in another bundled locale's parsed rules;
+    /// * `\uXXXX` / `\UXXXXXXXX` escapes and `'…'` / `''` quoting of literals;
+    /// * option resets that carry no ordering — `[reorder …]`,
+    ///   `[normalization …]`, `[caseFirst …]`, `[suppressContractions …]`,
+    ///   `[optimize …]` — are ignored, and `#…` line comments are stripped.
+    ///
+    /// Returns `None` if a reset anchor or target is malformed or no orderings
+    /// were produced.
     #[must_use]
     pub fn parse(rules: &str) -> Option<Tailoring> {
-        let chars: Vec<char> = rules.chars().filter(|c| !c.is_whitespace()).collect();
         let mut entries: Vec<(Vec<char>, Vec<u64>)> = Vec::new();
-        let mut anchor: Vec<char> = Vec::new();
-        let mut anchor_primary = 0u32;
-        // Running offsets within each level relative to the reset anchor.
-        let (mut p_off, mut s_off, mut t_off) = (0u32, 0u32, 0u32);
-        let mut i = 0;
-        while i < chars.len() {
-            match chars[i] {
-                '&' => {
-                    i += 1;
-                    let start = i;
-                    while i < chars.len() && !matches!(chars[i], '<' | '=' | '&') {
-                        i += 1;
-                    }
-                    anchor = chars[start..i].to_vec();
-                    anchor_primary = primary(*collation_elements(anchor.clone()).first()?) as u32;
-                    (p_off, s_off, t_off) = (0, 0, 0);
-                }
-                '<' | '=' => {
-                    // The number of `<`s is the relation level: 1 = primary,
-                    // 2 = secondary, 3 = tertiary; `=` is identity (no change).
-                    let mut level = 0u32;
-                    while i < chars.len() && (chars[i] == '<' || chars[i] == '=') {
-                        if chars[i] == '<' {
-                            level += 1;
-                        }
-                        i += 1;
-                    }
-                    // The target may be a multi-character contraction (e.g.
-                    // Czech "ch"); read up to the next operator/reset.
-                    let tstart = i;
-                    while i < chars.len() && !matches!(chars[i], '<' | '=' | '&') {
-                        i += 1;
-                    }
-                    let target = &chars[tstart..i];
-                    if target.is_empty() || anchor_primary == 0 {
-                        return None;
-                    }
-                    if level == 0 {
-                        // `=` identity / expansion: target collates as the anchor.
-                        Self::push_expansion(&mut entries, target, &anchor);
-                    } else {
-                        match level {
-                            1 => (p_off, s_off, t_off) = (p_off + 1, 0, 0),
-                            2 => (s_off, t_off) = (s_off + 1, 0),
-                            _ => t_off += 1,
-                        }
-                        // Tailored letters share the anchor's DUCET primary as
-                        // their base and are ordered by the sub-weight `p_off`,
-                        // so any number of them fit after the anchor.
-                        Self::push_letter(
-                            &mut entries,
-                            target,
-                            anchor_primary,
-                            p_off,
-                            s_off,
-                            t_off,
-                        );
-                    }
-                }
-                _ => i += 1, // ignore anything else (comments, options)
-            }
-        }
+        Self::parse_into(rules, &mut entries, 0)?;
         if entries.is_empty() {
             return None;
         }
         // Longest sequences first so contractions win during matching.
         entries.sort_by_key(|e| core::cmp::Reverse(e.0.len()));
         Some(Tailoring { entries })
+    }
+
+    /// Parse `rules` into `entries`. `depth` bounds `[import]` recursion.
+    fn parse_into(rules: &str, entries: &mut Vec<(Vec<char>, Vec<u64>)>, depth: u32) -> Option<()> {
+        if depth > 8 {
+            return Some(()); // import cycle / runaway guard
+        }
+        let toks = lex(rules)?;
+        let mut anchor: Vec<char> = Vec::new();
+        let mut anchor_primary = 0u32;
+        let mut before = false; // current reset was `[before …]`
+        // Running offsets within each level relative to the reset anchor.
+        let (mut p_off, mut s_off, mut t_off) = (0u32, 0u32, 0u32);
+        let mut i = 0;
+        while i < toks.len() {
+            match &toks[i] {
+                Tok::Amp => {
+                    i += 1;
+                    // `[before N]` places the following letters just below the
+                    // anchor. We model reset-before at the primary level (the only
+                    // level any bundled rule uses); a `[before 2|3]` is treated the
+                    // same, i.e. just below the anchor's primary.
+                    before = false;
+                    if let Some(Tok::Before(lvl)) = toks.get(i) {
+                        before = *lvl >= 1;
+                        i += 1;
+                    }
+                    let mut a = Vec::new();
+                    while let Some(Tok::Lit(c)) = toks.get(i) {
+                        a.push(*c);
+                        i += 1;
+                    }
+                    anchor = a;
+                    anchor_primary = primary(*collation_elements(anchor.clone()).first()?) as u32;
+                    (p_off, s_off, t_off) = (0, 0, 0);
+                }
+                Tok::Rel(level) => {
+                    let level = *level;
+                    i += 1;
+                    let star = matches!(toks.get(i), Some(Tok::Star));
+                    if star {
+                        i += 1;
+                    }
+                    let mut target = Vec::new();
+                    while let Some(Tok::Lit(c)) = toks.get(i) {
+                        target.push(*c);
+                        i += 1;
+                    }
+                    if target.is_empty() || anchor_primary == 0 {
+                        return None;
+                    }
+                    // `<*abc` (and friends) is shorthand for `<a<b<c`: apply the
+                    // relation to each character in turn. Otherwise the whole run
+                    // is one contraction/expansion target.
+                    let groups: Vec<Vec<char>> = if star {
+                        target.iter().map(|&c| alloc::vec![c]).collect()
+                    } else {
+                        alloc::vec![target]
+                    };
+                    for g in groups {
+                        Self::apply_relation(
+                            entries,
+                            level,
+                            &g,
+                            &anchor,
+                            anchor_primary,
+                            before,
+                            &mut p_off,
+                            &mut s_off,
+                            &mut t_off,
+                        );
+                    }
+                }
+                Tok::Import(loc) => {
+                    // Splice in another bundled locale's rules — from its CLDR rule
+                    // string if bundled, else from its hand-written fallback (so
+                    // `[import hr]` resolves even though hr has no rule table entry).
+                    // Unresolvable imports (e.g. the private `*-u-co-*` kana/unihan
+                    // tables) are skipped rather than failing the whole parse.
+                    if let Some(rule) = import_rule(loc) {
+                        Self::parse_into(rule, entries, depth + 1)?;
+                    } else if depth < 8
+                        && let Some(t) = import_tailoring(loc)
+                    {
+                        entries.extend(t.entries);
+                    }
+                    i += 1;
+                    // The import may leave the anchor context in any state; require
+                    // an explicit `&` reset before the next relation.
+                    anchor_primary = 0;
+                }
+                // Stray tokens (a `[before]`/`Star` not following its operator, an
+                // ignored option bracket, or a leftover literal) carry no ordering.
+                _ => i += 1,
+            }
+        }
+        Some(())
+    }
+
+    /// Apply one non-reset relation to `target` under the current anchor.
+    #[allow(clippy::too_many_arguments)]
+    fn apply_relation(
+        entries: &mut Vec<(Vec<char>, Vec<u64>)>,
+        level: u8,
+        target: &[char],
+        anchor: &[char],
+        anchor_primary: u32,
+        before: bool,
+        p_off: &mut u32,
+        s_off: &mut u32,
+        t_off: &mut u32,
+    ) {
+        if level == 0 {
+            // `=` identity / expansion: target collates as the anchor.
+            Self::push_expansion(entries, target, anchor);
+            return;
+        }
+        match level {
+            1 => (*p_off, *s_off, *t_off) = (*p_off + 1, 0, 0),
+            2 => (*s_off, *t_off) = (*s_off + 1, 0),
+            _ => *t_off += 1,
+        }
+        // Tailored letters share the anchor's DUCET primary as their base and are
+        // ordered by a sub-weight: `SUB_MID + p_off` places them just *after* the
+        // anchor, `SUB_BEFORE + p_off` just *before* it (a `[before]` reset).
+        let region = if before { SUB_BEFORE } else { SUB_MID };
+        let sub = region as u32 + *p_off;
+        Self::push_letter(entries, target, anchor_primary, sub, *s_off, *t_off);
     }
 
     /// Case variants of a tailored `target`: the lower form (tertiary `0x02`),
@@ -1183,7 +1295,9 @@ fn build_tailored_sort_key(cea: &[u64]) -> Vec<u16> {
     for &(p, sub, ..) in &rows {
         if p != 0 {
             key.push(p);
-            key.push(sub);
+            // A plain DUCET letter (`sub == 0`) sits at the midpoint, so tailored
+            // letters can be inserted just below (`[before]`) or above it.
+            key.push(if sub == 0 { SUB_MID } else { sub });
         }
     }
     key.push(0);
@@ -1210,6 +1324,180 @@ fn build_tailored_sort_key(cea: &[u64]) -> Vec<u16> {
 /// The upper-case form of `c` (first char of its full mapping), or `c` itself.
 fn upper(c: char) -> char {
     super::case::to_uppercase(c).next().unwrap_or(c)
+}
+
+/// A lexical token of a CLDR tailoring rule (see [`Tailoring::parse`]).
+enum Tok {
+    /// `&` — reset.
+    Amp,
+    /// A relation: `0` = `=` (identity), `1` = `<`, `2` = `<<`, `3` = `<<<`.
+    Rel(u8),
+    /// The `*` immediately following a relation (`<*`, `<<*`, `=*`): the target
+    /// run is a character list, each related to the previous.
+    Star,
+    /// A literal character (letter, or a quoted/escaped operator character).
+    Lit(char),
+    /// `[before N]` preceding a reset anchor.
+    Before(u8),
+    /// `[import <locale>]`.
+    Import(String),
+}
+
+/// Read `n` hex digits from `chars[start..]` into a code point.
+fn parse_hex(chars: &[char], start: usize, n: usize) -> Option<u32> {
+    if start + n > chars.len() {
+        return None;
+    }
+    let s: String = chars[start..start + n].iter().collect();
+    u32::from_str_radix(&s, 16).ok()
+}
+
+/// Tokenize a CLDR tailoring rule string: strips `#` comments and whitespace,
+/// resolves `\uXXXX`/`\UXXXXXXXX` escapes and `'…'`/`''` quoting, recognizes the
+/// relation operators and their `*` range form, and classifies `[…]` brackets
+/// into `[before N]`, `[import …]`, or ignored options.
+fn lex(rules: &str) -> Option<Vec<Tok>> {
+    let chars: Vec<char> = rules.chars().collect();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        match c {
+            '#' => {
+                while i < chars.len() && chars[i] != '\n' {
+                    i += 1;
+                }
+            }
+            _ if c.is_whitespace() => i += 1,
+            // Expansion (`x/y`) and prefix context (`x|y`) carry ordering we don't
+            // model; treat as separators so neither side merges into a neighbor.
+            '/' | '|' => i += 1,
+            '\'' => {
+                i += 1;
+                if i < chars.len() && chars[i] == '\'' {
+                    out.push(Tok::Lit('\'')); // `''` = a literal apostrophe
+                    i += 1;
+                } else {
+                    while i < chars.len() && chars[i] != '\'' {
+                        out.push(Tok::Lit(chars[i]));
+                        i += 1;
+                    }
+                    if i < chars.len() {
+                        i += 1; // closing quote
+                    }
+                }
+            }
+            '\\' => {
+                i += 1;
+                let Some(&e) = chars.get(i) else { break };
+                match e {
+                    'u' => {
+                        out.push(Tok::Lit(char::from_u32(parse_hex(&chars, i + 1, 4)?)?));
+                        i += 5;
+                    }
+                    'U' => {
+                        out.push(Tok::Lit(char::from_u32(parse_hex(&chars, i + 1, 8)?)?));
+                        i += 9;
+                    }
+                    other => {
+                        out.push(Tok::Lit(other)); // `\-`, `\!`, … → literal
+                        i += 1;
+                    }
+                }
+            }
+            '[' => {
+                // Read a bracketed option, honoring nested `[…]` (e.g. the range
+                // list in `[optimize [가-…]]`).
+                let start = i + 1;
+                let mut depth = 1;
+                i += 1;
+                while i < chars.len() && depth > 0 {
+                    match chars[i] {
+                        '[' => depth += 1,
+                        ']' => depth -= 1,
+                        _ => {}
+                    }
+                    if depth > 0 {
+                        i += 1;
+                    }
+                }
+                let content: String = chars[start..i].iter().collect();
+                if i < chars.len() {
+                    i += 1; // closing `]`
+                }
+                let content = content.trim();
+                if let Some(rest) = content.strip_prefix("before") {
+                    let lvl = rest
+                        .trim()
+                        .chars()
+                        .next()
+                        .and_then(|d| d.to_digit(10))
+                        .unwrap_or(1) as u8;
+                    out.push(Tok::Before(lvl.clamp(1, 3)));
+                } else if let Some(rest) = content.strip_prefix("import") {
+                    out.push(Tok::Import(rest.trim().to_string()));
+                }
+                // Else an ordering-free option (reorder / normalization /
+                // caseFirst / suppressContractions / optimize / …): ignored.
+            }
+            '&' => {
+                out.push(Tok::Amp);
+                i += 1;
+            }
+            '=' => {
+                out.push(Tok::Rel(0));
+                i += 1;
+                if i < chars.len() && chars[i] == '*' {
+                    out.push(Tok::Star);
+                    i += 1;
+                }
+            }
+            '<' => {
+                let mut n = 0u8;
+                while i < chars.len() && chars[i] == '<' {
+                    n = n.saturating_add(1);
+                    i += 1;
+                }
+                out.push(Tok::Rel(n.min(3)));
+                if i < chars.len() && chars[i] == '*' {
+                    out.push(Tok::Star);
+                    i += 1;
+                }
+            }
+            other => {
+                out.push(Tok::Lit(other));
+                i += 1;
+            }
+        }
+    }
+    Some(out)
+}
+
+/// Resolve an `[import <locale>]` target to a bundled rule string. Accepts a bare
+/// locale (`es`) or a BCP-47 collation tag (`da-u-co-standard`); only the
+/// `standard` collation is bundled, so private/other `-u-co-*` types (e.g. the
+/// Japanese `ja-u-co-private-kana`) resolve to `None` and are skipped.
+fn import_rule(loc: &str) -> Option<&'static str> {
+    let full = loc.replace('_', "-").to_ascii_lowercase();
+    if let Some(idx) = full.find("-u-co-") {
+        if &full[idx + 6..] != "standard" {
+            return None;
+        }
+        return crate::cldr::collation_rule(&full[..idx]);
+    }
+    crate::cldr::collation_rule(&full)
+}
+
+/// Resolve an `[import <locale>]` target that has no bundled rule string to its
+/// hand-written fallback tailoring (e.g. `hr`). Strips a `-u-co-standard` suffix.
+fn import_tailoring(loc: &str) -> Option<Tailoring> {
+    let full = loc.replace('_', "-").to_ascii_lowercase();
+    let base = match full.find("-u-co-") {
+        Some(idx) if &full[idx + 6..] == "standard" => full[..idx].to_string(),
+        Some(_) => return None,
+        None => full,
+    };
+    Tailoring::for_locale(&base)
 }
 
 #[cfg(test)]
