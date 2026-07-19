@@ -332,6 +332,50 @@ impl<T> core::clone::CloneToUninit for intl::datetime::Numeric2Digit where T: co
 pub unsafe fn intl::datetime::Numeric2Digit::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::datetime::Numeric2Digit
 pub fn intl::datetime::Numeric2Digit::from(T) -> T
+pub enum intl::datetime::RangeSource
+pub intl::datetime::RangeSource::EndRange
+pub intl::datetime::RangeSource::Shared
+pub intl::datetime::RangeSource::StartRange
+impl intl::datetime::RangeSource
+pub fn intl::datetime::RangeSource::as_str(&self) -> &'static str
+impl core::clone::Clone for intl::datetime::RangeSource
+pub fn intl::datetime::RangeSource::clone(&self) -> intl::datetime::RangeSource
+impl core::cmp::Eq for intl::datetime::RangeSource
+impl core::cmp::PartialEq for intl::datetime::RangeSource
+pub fn intl::datetime::RangeSource::eq(&self, &intl::datetime::RangeSource) -> bool
+impl core::fmt::Debug for intl::datetime::RangeSource
+pub fn intl::datetime::RangeSource::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::datetime::RangeSource
+impl core::marker::StructuralPartialEq for intl::datetime::RangeSource
+impl core::marker::Freeze for intl::datetime::RangeSource
+impl core::marker::Send for intl::datetime::RangeSource
+impl core::marker::Sync for intl::datetime::RangeSource
+impl core::marker::Unpin for intl::datetime::RangeSource
+impl core::marker::UnsafeUnpin for intl::datetime::RangeSource
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::RangeSource
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::RangeSource
+impl<T, U> core::convert::Into<U> for intl::datetime::RangeSource where U: core::convert::From<T>
+pub fn intl::datetime::RangeSource::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::RangeSource where U: core::convert::Into<T>
+pub type intl::datetime::RangeSource::Error = core::convert::Infallible
+pub fn intl::datetime::RangeSource::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::RangeSource where U: core::convert::TryFrom<T>
+pub type intl::datetime::RangeSource::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::RangeSource::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::RangeSource where T: core::clone::Clone
+pub type intl::datetime::RangeSource::Owned = T
+pub fn intl::datetime::RangeSource::clone_into(&self, &mut T)
+pub fn intl::datetime::RangeSource::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::RangeSource where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::RangeSource::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::RangeSource where T: ?core::marker::Sized
+pub fn intl::datetime::RangeSource::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::RangeSource where T: ?core::marker::Sized
+pub fn intl::datetime::RangeSource::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::RangeSource where T: core::clone::Clone
+pub unsafe fn intl::datetime::RangeSource::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::RangeSource
+pub fn intl::datetime::RangeSource::from(T) -> T
 pub enum intl::datetime::TimeZoneNameStyle
 pub intl::datetime::TimeZoneNameStyle::Long
 pub intl::datetime::TimeZoneNameStyle::LongGeneric
@@ -529,6 +573,47 @@ impl<T> core::clone::CloneToUninit for intl::datetime::DateTimePart where T: cor
 pub unsafe fn intl::datetime::DateTimePart::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::datetime::DateTimePart
 pub fn intl::datetime::DateTimePart::from(T) -> T
+pub struct intl::datetime::DateTimeRangePart
+pub intl::datetime::DateTimeRangePart::kind: intl::datetime::DateTimePartType
+pub intl::datetime::DateTimeRangePart::source: intl::datetime::RangeSource
+pub intl::datetime::DateTimeRangePart::value: alloc::string::String
+impl core::clone::Clone for intl::datetime::DateTimeRangePart
+pub fn intl::datetime::DateTimeRangePart::clone(&self) -> intl::datetime::DateTimeRangePart
+impl core::cmp::Eq for intl::datetime::DateTimeRangePart
+impl core::cmp::PartialEq for intl::datetime::DateTimeRangePart
+pub fn intl::datetime::DateTimeRangePart::eq(&self, &intl::datetime::DateTimeRangePart) -> bool
+impl core::fmt::Debug for intl::datetime::DateTimeRangePart
+pub fn intl::datetime::DateTimeRangePart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for intl::datetime::DateTimeRangePart
+impl core::marker::Freeze for intl::datetime::DateTimeRangePart
+impl core::marker::Send for intl::datetime::DateTimeRangePart
+impl core::marker::Sync for intl::datetime::DateTimeRangePart
+impl core::marker::Unpin for intl::datetime::DateTimeRangePart
+impl core::marker::UnsafeUnpin for intl::datetime::DateTimeRangePart
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::DateTimeRangePart
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimeRangePart
+impl<T, U> core::convert::Into<U> for intl::datetime::DateTimeRangePart where U: core::convert::From<T>
+pub fn intl::datetime::DateTimeRangePart::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimeRangePart where U: core::convert::Into<T>
+pub type intl::datetime::DateTimeRangePart::Error = core::convert::Infallible
+pub fn intl::datetime::DateTimeRangePart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimeRangePart where U: core::convert::TryFrom<T>
+pub type intl::datetime::DateTimeRangePart::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::DateTimeRangePart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::DateTimeRangePart where T: core::clone::Clone
+pub type intl::datetime::DateTimeRangePart::Owned = T
+pub fn intl::datetime::DateTimeRangePart::clone_into(&self, &mut T)
+pub fn intl::datetime::DateTimeRangePart::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::DateTimeRangePart where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::DateTimeRangePart::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::DateTimeRangePart where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimeRangePart::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::DateTimeRangePart where T: ?core::marker::Sized
+pub fn intl::datetime::DateTimeRangePart::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::DateTimeRangePart where T: core::clone::Clone
+pub unsafe fn intl::datetime::DateTimeRangePart::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::DateTimeRangePart
+pub fn intl::datetime::DateTimeRangePart::from(T) -> T
 pub fn intl::datetime::format_date(&str, &intl::datetime::DateTime, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_datetime(&str, &intl::datetime::DateTime, intl::datetime::DateStyle, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_gmt_offset(&str, i32) -> alloc::string::String
@@ -536,6 +621,8 @@ pub fn intl::datetime::format_islamic_date(&str, i64, i64, i64, intl::datetime::
 pub fn intl::datetime::format_islamic_umalqura_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_options(&str, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::string::String, intl::datetime::DateTimeFormatError>
 pub fn intl::datetime::format_persian_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
+pub fn intl::datetime::format_range(&str, &intl::datetime::DateTime, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::string::String, intl::datetime::DateTimeFormatError>
+pub fn intl::datetime::format_range_to_parts(&str, &intl::datetime::DateTime, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::vec::Vec<intl::datetime::DateTimeRangePart>, intl::datetime::DateTimeFormatError>
 pub fn intl::datetime::format_skeleton(&str, &intl::datetime::DateTime, &str) -> alloc::string::String
 pub fn intl::datetime::format_skeleton_to_parts(&str, &intl::datetime::DateTime, &str) -> alloc::vec::Vec<intl::datetime::DateTimePart>
 pub fn intl::datetime::format_time(&str, &intl::datetime::DateTime, intl::datetime::DateStyle) -> alloc::string::String
