@@ -169,6 +169,8 @@ const UNITS: &[u8] = include_bytes!("cldr/units.bin");
 const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
 #[cfg(feature = "datetime")]
 const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
+#[cfg(feature = "datetime")]
+const INTERVALS: &[u8] = include_bytes!("cldr/intervals.bin");
 #[cfg(feature = "locale")]
 const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
 #[cfg(feature = "locale")]
@@ -548,6 +550,39 @@ pub(crate) fn language_name(display_locale: &str, code: &str) -> Option<&'static
 #[cfg(feature = "datetime")]
 pub(crate) fn skeleton_pattern(lang: &str, skeleton: &str) -> Option<&'static str> {
     display_name(SKELETONS, lang, skeleton)
+}
+
+/// The CLDR `intervalFormatFallback` string (e.g. `"{0} – {1}"`) for an exact
+/// (lowercased) locale key.
+#[cfg(feature = "datetime")]
+pub(crate) fn interval_fallback(lang: &str) -> Option<&'static str> {
+    find(INTERVALS, lang).map(|mut c| c.str())
+}
+
+/// The CLDR interval pattern for a `skeleton` (e.g. `"yMMMd"`) whose greatest
+/// differing field is `field` (a CLDR field letter byte such as `b'y'`), in an
+/// exact (lowercased) locale key. Skeletons are matched case-sensitively.
+#[cfg(feature = "datetime")]
+pub(crate) fn interval_pattern(lang: &str, skeleton: &str, field: u8) -> Option<&'static str> {
+    let mut c = find(INTERVALS, lang)?;
+    let _fallback = c.str();
+    let count = c.u16();
+    for _ in 0..count {
+        let sk = c.str();
+        let fcount = c.u8();
+        let mut found: Option<&'static str> = None;
+        for _ in 0..fcount {
+            let letter = c.u8();
+            let pat = c.str();
+            if sk == skeleton && letter == field {
+                found = Some(pat);
+            }
+        }
+        if sk == skeleton {
+            return found;
+        }
+    }
+    None
 }
 
 /// Display name of region `code` in `display_locale`.

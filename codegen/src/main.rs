@@ -318,6 +318,7 @@ fn main() {
         &cldr.join("dates"),
         &cldr.join("dayPeriods.json"),
     );
+    emit_intervals(&cldr_dir, &cldr.join("dates"));
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_aliases(&cldr_dir, &cldr.join("aliases.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
@@ -2495,6 +2496,79 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path, day_periods_path: &Path) {
 
     write_blob(cldr_dir, "calendar", &cal_records);
     write_blob(cldr_dir, "skeletons", &skel_records);
+}
+
+/// Write `cldr/intervals.bin`: per-locale CLDR `intervalFormats`. Payload is
+///   [str fallback]
+///   [u16 skeleton count]
+///   skeleton × count: [str skeleton][u8 field count]
+///                     field × count: [u8 field letter][str pattern]
+/// Skeleton keys and field letters are sorted for deterministic output.
+fn emit_intervals(cldr_dir: &Path, dates_dir: &Path) {
+    let mut locales: Vec<String> = fs::read_dir(dates_dir)
+        .expect("read dates dir")
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_dir())
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    locales.sort();
+
+    let mut records = Vec::new();
+    for locale in locales {
+        let path = dates_dir.join(&locale).join("ca-gregorian.json");
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let main = json.get("main").expect("main");
+        let (_, loc_obj) = main.entries().first().expect("locale entry");
+        let iv = loc_obj
+            .get("dates")
+            .and_then(|d| d.get("calendars"))
+            .and_then(|c| c.get("gregorian"))
+            .and_then(|g| g.get("dateTimeFormats"))
+            .and_then(|d| d.get("intervalFormats"));
+        let Some(iv) = iv else { continue };
+
+        let fallback = iv
+            .get("intervalFormatFallback")
+            .and_then(Json::as_str)
+            .unwrap_or("{0} – {1}");
+
+        // Collect (skeleton, [(field letter, pattern)]) for every skeleton entry
+        // (every key except the fallback, whose value is a string not an object).
+        let mut skeletons: Vec<(&str, Vec<(u8, &str)>)> = Vec::new();
+        for (sk, val) in iv.entries() {
+            if sk == "intervalFormatFallback" {
+                continue;
+            }
+            let Json::Obj(_) = val else { continue };
+            let mut fields: Vec<(u8, &str)> = val
+                .entries()
+                .iter()
+                .filter_map(|(f, p)| {
+                    let letter = *f.as_bytes().first()?;
+                    p.as_str().map(|s| (letter, s))
+                })
+                .collect();
+            fields.sort_by_key(|(f, _)| *f);
+            skeletons.push((sk.as_str(), fields));
+        }
+        skeletons.sort_by(|a, b| a.0.cmp(b.0));
+
+        let mut p = Vec::new();
+        enc_str(&mut p, fallback);
+        p.extend_from_slice(&(skeletons.len() as u16).to_le_bytes());
+        for (sk, fields) in skeletons {
+            enc_str(&mut p, sk);
+            p.push(fields.len() as u8);
+            for (letter, pat) in fields {
+                p.push(letter);
+                enc_str(&mut p, pat);
+            }
+        }
+        records.push((locale.to_ascii_lowercase(), p));
+    }
+
+    write_blob(cldr_dir, "intervals", &records);
 }
 
 /// The curated measurement units, in the order the runtime `Unit` enum expects.

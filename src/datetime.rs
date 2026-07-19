@@ -1561,3 +1561,392 @@ pub fn format_skeleton_to_parts(lang: &str, dt: &DateTime, skeleton: &str) -> Ve
     };
     render_parts(&pattern, dt, &s)
 }
+
+// ---------------------------------------------------------------------------
+// Interval formatting (formatRange / formatRangeToParts, UTS #35 §2.6.2)
+// ---------------------------------------------------------------------------
+
+/// Which of the two dates a [`DateTimeRangePart`] originates from, matching the
+/// `source` values of `Intl.DateTimeFormat.prototype.formatRangeToParts`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RangeSource {
+    /// The part belongs to the start (earlier) date.
+    StartRange,
+    /// The part belongs to the end (later) date.
+    EndRange,
+    /// The part is common to both dates (e.g. a shared year, or a separator).
+    Shared,
+}
+
+impl RangeSource {
+    /// The ECMA-402 `source` string for this value.
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RangeSource::StartRange => "startRange",
+            RangeSource::EndRange => "endRange",
+            RangeSource::Shared => "shared",
+        }
+    }
+}
+
+/// One tagged segment of a formatted date-time *range* (see
+/// [`format_range_to_parts`]): a [`DateTimePart`] plus the [`RangeSource`] that
+/// says which date it came from.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DateTimeRangePart {
+    /// What this segment represents.
+    pub kind: DateTimePartType,
+    /// The literal text of this segment.
+    pub value: String,
+    /// Which date this segment originates from.
+    pub source: RangeSource,
+}
+
+/// The distinct non-literal field categories a pattern uses, in first-seen order.
+fn field_categories(pattern: &str) -> Vec<DateTimePartType> {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut cats: Vec<DateTimePartType> = Vec::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            i += 1;
+            if i < chars.len() && chars[i] == '\'' {
+                i += 1;
+                continue;
+            }
+            while i < chars.len() && chars[i] != '\'' {
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+            let cat = part_type(ch);
+            if cat != DateTimePartType::Literal && !cats.contains(&cat) {
+                cats.push(cat);
+            }
+        } else {
+            i += 1;
+        }
+    }
+    cats
+}
+
+/// Split a CLDR interval pattern (which mentions each date's fields once) into
+/// the two halves at the first field whose category repeats (UTS #35). The split
+/// point always falls on a field-run boundary, so quoted literals stay intact.
+/// Returns `None` if no field category repeats.
+fn split_interval(pattern: &str) -> Option<(String, String)> {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut seen: Vec<DateTimePartType> = Vec::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            i += 1;
+            if i < chars.len() && chars[i] == '\'' {
+                i += 1;
+                continue;
+            }
+            while i < chars.len() && chars[i] != '\'' {
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+            let cat = part_type(ch);
+            if cat != DateTimePartType::Literal {
+                if seen.contains(&cat) {
+                    let first: String = chars[..start].iter().collect();
+                    let second: String = chars[start..].iter().collect();
+                    return Some((first, second));
+                }
+                seen.push(cat);
+            }
+        } else {
+            i += 1;
+        }
+    }
+    None
+}
+
+/// The combined CLDR skeleton implied by `opts` (the same field letters used to
+/// key `intervalFormats`), or `"yMd"` when no component is requested.
+fn interval_skeleton(opts: &DateTimeFormatOptions, loc_hour: char) -> String {
+    let (date_sk, want_date) = build_date_skeleton(opts);
+    let (time_sk, want_time) = build_time_skeleton(opts, loc_hour);
+    if !want_date && !want_time {
+        String::from("yMd")
+    } else {
+        let mut sk = date_sk;
+        sk.push_str(&time_sk);
+        sk
+    }
+}
+
+/// The CLDR field letter of the greatest calendar field in which `a` and `b`
+/// differ, restricted to fields the `skeleton` actually uses. `None` if they
+/// agree on every field the skeleton mentions (→ format as a single value).
+fn greatest_diff_field(a: &DateTime, b: &DateTime, skeleton: &str) -> Option<u8> {
+    let era = |d: &DateTime| d.year > 0;
+    if skeleton.contains('G') && era(a) != era(b) {
+        return Some(b'G');
+    }
+    if skeleton.contains('y') && a.year != b.year {
+        return Some(b'y');
+    }
+    if skeleton.contains('M') && a.month != b.month {
+        return Some(b'M');
+    }
+    if skeleton.contains('d') && a.day != b.day {
+        return Some(b'd');
+    }
+    let h12 = skeleton.contains('h');
+    let h24 = skeleton.contains('H');
+    if h12 && (a.hour < 12) != (b.hour < 12) {
+        return Some(b'a');
+    }
+    if (h12 || h24) && a.hour != b.hour {
+        return Some(if h12 { b'h' } else { b'H' });
+    }
+    if skeleton.contains('m') && a.minute != b.minute {
+        return Some(b'm');
+    }
+    None
+}
+
+/// Resolve a per-skeleton interval pattern through the locale fallback chain.
+fn resolve_interval_pattern(lang: &str, skeleton: &str, field: u8) -> Option<String> {
+    let norm = normalize_lang(lang);
+    let mut end = norm.len();
+    loop {
+        if let Some(p) = crate::cldr::interval_pattern(&norm[..end], skeleton, field) {
+            return Some(String::from(p));
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return crate::cldr::interval_pattern("en", skeleton, field).map(String::from),
+        }
+    }
+}
+
+/// Resolve the `intervalFormatFallback` string through the locale fallback chain.
+fn resolve_interval_fallback(lang: &str) -> String {
+    let norm = normalize_lang(lang);
+    let mut end = norm.len();
+    loop {
+        if let Some(p) = crate::cldr::interval_fallback(&norm[..end]) {
+            return String::from(p);
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => {
+                return crate::cldr::interval_fallback("en").map_or_else(
+                    || String::from("{0}\u{2009}\u{2013}\u{2009}{1}"),
+                    String::from,
+                );
+            }
+        }
+    }
+}
+
+/// Give each literal part the common source of its nearest non-literal neighbors
+/// (or `Shared` when they disagree or are absent), matching ECMA-402's tagging.
+fn fix_literal_sources(parts: &mut [DateTimeRangePart]) {
+    let n = parts.len();
+    for i in 0..n {
+        if parts[i].kind != DateTimePartType::Literal {
+            continue;
+        }
+        let prev = (0..i)
+            .rev()
+            .find(|&j| parts[j].kind != DateTimePartType::Literal)
+            .map(|j| parts[j].source);
+        let next = (i + 1..n)
+            .find(|&j| parts[j].kind != DateTimePartType::Literal)
+            .map(|j| parts[j].source);
+        parts[i].source = match (prev, next) {
+            (Some(x), Some(y)) if x == y => x,
+            _ => RangeSource::Shared,
+        };
+    }
+}
+
+/// Render the two halves of a split interval pattern with per-part sources: a
+/// field that appears in *both* halves is start/end; one that appears in a
+/// single half is shared.
+fn render_split(
+    first: &str,
+    second: &str,
+    start: &DateTime,
+    end: &DateTime,
+    s: &CalendarSpec,
+) -> Vec<DateTimeRangePart> {
+    let cats_first = field_categories(first);
+    let cats_second = field_categories(second);
+    let mut out: Vec<DateTimeRangePart> = Vec::new();
+    for p in render_parts(first, start, s) {
+        let source = if p.kind != DateTimePartType::Literal && cats_second.contains(&p.kind) {
+            RangeSource::StartRange
+        } else {
+            RangeSource::Shared
+        };
+        out.push(DateTimeRangePart {
+            kind: p.kind,
+            value: p.value,
+            source,
+        });
+    }
+    for p in render_parts(second, end, s) {
+        let source = if p.kind != DateTimePartType::Literal && cats_first.contains(&p.kind) {
+            RangeSource::EndRange
+        } else {
+            RangeSource::Shared
+        };
+        out.push(DateTimeRangePart {
+            kind: p.kind,
+            value: p.value,
+            source,
+        });
+    }
+    fix_literal_sources(&mut out);
+    out
+}
+
+/// Format `start`/`end` independently with `pattern` and glue them with the
+/// locale's `intervalFormatFallback` (`{0} … {1}`).
+fn render_fallback(
+    fallback: &str,
+    pattern: &str,
+    start: &DateTime,
+    end: &DateTime,
+    s: &CalendarSpec,
+) -> Vec<DateTimeRangePart> {
+    let mut out: Vec<DateTimeRangePart> = Vec::new();
+    let push_lit = |out: &mut Vec<DateTimeRangePart>, text: &str| {
+        if !text.is_empty() {
+            out.push(DateTimeRangePart {
+                kind: DateTimePartType::Literal,
+                value: String::from(text),
+                source: RangeSource::Shared,
+            });
+        }
+    };
+    let push_side = |out: &mut Vec<DateTimeRangePart>, dt: &DateTime, source: RangeSource| {
+        for p in render_parts(pattern, dt, s) {
+            let source = if p.kind == DateTimePartType::Literal {
+                RangeSource::Shared
+            } else {
+                source
+            };
+            out.push(DateTimeRangePart {
+                kind: p.kind,
+                value: p.value,
+                source,
+            });
+        }
+    };
+    match (fallback.find("{0}"), fallback.find("{1}")) {
+        (Some(a), Some(b)) if a < b => {
+            push_lit(&mut out, &fallback[..a]);
+            push_side(&mut out, start, RangeSource::StartRange);
+            push_lit(&mut out, &fallback[a + 3..b]);
+            push_side(&mut out, end, RangeSource::EndRange);
+            push_lit(&mut out, &fallback[b + 3..]);
+        }
+        _ => {
+            push_side(&mut out, start, RangeSource::StartRange);
+            push_lit(&mut out, "\u{2009}\u{2013}\u{2009}");
+            push_side(&mut out, end, RangeSource::EndRange);
+        }
+    }
+    out
+}
+
+/// Render a single date (both endpoints equal, or differing only in fields the
+/// pattern omits): every part is [`RangeSource::Shared`].
+fn single_range(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> Vec<DateTimeRangePart> {
+    render_parts(pattern, dt, s)
+        .into_iter()
+        .map(|p| DateTimeRangePart {
+            kind: p.kind,
+            value: p.value,
+            source: RangeSource::Shared,
+        })
+        .collect()
+}
+
+/// Format the date-time interval `start`–`end` in `lang` with ECMA-402-style
+/// component options, returning the tagged parts
+/// (`Intl.DateTimeFormat.prototype.formatRangeToParts`).
+///
+/// When `start` and `end` are equal (or differ only in fields the resolved
+/// pattern omits) the result is the single-date formatting with every part
+/// tagged [`RangeSource::Shared`]. Otherwise the locale's CLDR interval pattern
+/// for the greatest differing field is used, falling back to
+/// `intervalFormatFallback` (`{0} – {1}`) when the skeleton has no such pattern.
+///
+/// # Errors
+/// Returns [`DateTimeFormatError::ConflictingOptions`] if `date_style`/`time_style`
+/// are combined with component fields.
+pub fn format_range_to_parts(
+    lang: &str,
+    start: &DateTime,
+    end: &DateTime,
+    opts: &DateTimeFormatOptions,
+) -> Result<Vec<DateTimeRangePart>, DateTimeFormatError> {
+    let s = spec(lang);
+    let base = resolve_pattern(lang, &s, opts)?;
+    let loc_hour = locale_hour_letter(&s);
+    let skeleton = interval_skeleton(opts, loc_hour);
+
+    let Some(field) = greatest_diff_field(start, end, &skeleton) else {
+        return Ok(single_range(&base, start, &s));
+    };
+
+    if let Some(ip) = resolve_interval_pattern(lang, &skeleton, field) {
+        // The interval pattern is already keyed by the skeleton (which encodes the
+        // requested field widths), so it is used as-is — re-patching widths would
+        // corrupt locales whose numeric field abuts a literal (e.g. ja `M月`).
+        return Ok(match split_interval(&ip) {
+            Some((first, second)) => render_split(&first, &second, start, end, &s),
+            None => single_range(&ip, start, &s),
+        });
+    }
+
+    let fallback = resolve_interval_fallback(lang);
+    Ok(render_fallback(&fallback, &base, start, end, &s))
+}
+
+/// Format the date-time interval `start`–`end` in `lang` with ECMA-402-style
+/// component options (`Intl.DateTimeFormat.prototype.formatRange`).
+///
+/// ```
+/// use intl::datetime::{DateTime, DateTimeFormatOptions, MonthStyle, Numeric2Digit, format_range};
+/// let mut o = DateTimeFormatOptions::default();
+/// o.year = Some(Numeric2Digit::Numeric);
+/// o.month = Some(MonthStyle::Short);
+/// o.day = Some(Numeric2Digit::Numeric);
+/// let a = DateTime { year: 2024, month: 1, day: 1, ..DateTime::default() };
+/// let b = DateTime { year: 2024, month: 1, day: 5, ..DateTime::default() };
+/// assert_eq!(format_range("en", &a, &b, &o).unwrap(), "Jan 1\u{2009}\u{2013}\u{2009}5, 2024");
+/// ```
+///
+/// # Errors
+/// Returns [`DateTimeFormatError::ConflictingOptions`] if `date_style`/`time_style`
+/// are combined with component fields.
+pub fn format_range(
+    lang: &str,
+    start: &DateTime,
+    end: &DateTime,
+    opts: &DateTimeFormatOptions,
+) -> Result<String, DateTimeFormatError> {
+    let parts = format_range_to_parts(lang, start, end, opts)?;
+    Ok(parts.iter().map(|p| p.value.as_str()).collect())
+}
