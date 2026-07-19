@@ -1,16 +1,19 @@
-//! Dictionary-based word segmentation for Thai (feature `segmentation-dict`).
+//! Dictionary-based word segmentation for Thai (feature `segmentation-dict`)
+//! and Lao (feature `segmentation-dict-lao`).
 //!
-//! Space-less scripts such as Thai are not segmented into words by the UAX #29
-//! rules alone; a language dictionary is required. This module is a faithful,
-//! `no_std`, allocation-free port of ICU's `ThaiBreakEngine` /
-//! `DictionaryBreakEngine` (`icu4c/source/common/dictbe.cpp`), operating on a
-//! UTF-8 `&str` run and driven by the committed `segment_dict.bin` DAWG built
-//! from ICU's `thaidict.txt`.
+//! Space-less scripts such as Thai and Lao are not segmented into words by the
+//! UAX #29 rules alone; a language dictionary is required. This module is a
+//! faithful, `no_std`, allocation-free port of ICU's `ThaiBreakEngine` /
+//! `LaoBreakEngine` / `DictionaryBreakEngine` (`icu4c/source/common/dictbe.cpp`),
+//! operating on a UTF-8 `&str` run and driven by the committed `segment_dict.bin`
+//! / `segment_dict_lao.bin` DAWGs built from ICU's `thaidict.txt` / `laodict.txt`.
+//! The two share one engine ([`next_boundary`]) parameterized by a [`Lang`]: Lao
+//! uses the same algorithm minus the Thai-specific suffix handling.
 //!
 //! The engine is invoked from [`super::segment::words`] over each maximal run of
-//! Thai dictionary characters; everything else keeps its exact UAX #29 behavior.
-//! ICU's algorithm uses only bounded lookahead (at most three candidate words),
-//! so it fits fixed-size stack buffers with no heap allocation.
+//! Thai (or Lao) dictionary characters; everything else keeps its exact UAX #29
+//! behavior. ICU's algorithm uses only bounded lookahead (at most three candidate
+//! words), so it fits fixed-size stack buffers with no heap allocation.
 
 /// Minimum word size (code points), per ICU `THAI_MIN_WORD`.
 const THAI_MIN_WORD: usize = 2;
@@ -18,7 +21,7 @@ const THAI_MIN_WORD: usize = 2;
 /// whole (matches ICU's `divideUpDictionaryRange` early-out).
 pub(crate) const THAI_MIN_WORD_SPAN: usize = THAI_MIN_WORD * 2;
 // ICU's THAI_LOOKAHEAD (3) is realized directly as the three `PossibleWord`
-// slots `w0`/`w1`/`w2` in `thai_next_boundary` rather than a modular array.
+// slots `w0`/`w1`/`w2` in `next_boundary` rather than a modular array.
 /// Won't combine a non-word with a preceding dictionary word longer than this.
 const THAI_ROOT_COMBINE_THRESHOLD: usize = 3;
 /// Won't combine a non-word sharing at least this long a prefix with a
@@ -62,27 +65,101 @@ fn is_suffix(c: char) -> bool {
     c == THAI_PAIYANNOI || c == THAI_MAIYAMOK
 }
 
+// ---- Lao character classes (feature `segmentation-dict-lao`) ----
+//
+// ICU's `LaoBreakEngine` uses the same algorithm as Thai (minus the suffix
+// handling, "NOT CURRENTLY APPLICABLE TO LAO") with these Lao sets. The dict /
+// mark sets are `[[:Laoo:]&[:LineBreak=SA:]]` and its `[:M:]` subset; the
+// begin/end sets are the explicit ranges from the ICU constructor.
+
+/// `[[:Laoo:]&[:LineBreak=SA:]]` — the characters the Lao engine segments.
+#[cfg(feature = "segmentation-dict-lao")]
+#[inline]
+pub(crate) fn is_lao_dict_char(c: char) -> bool {
+    matches!(c as u32,
+        0x0E81..=0x0E82 | 0x0E84 | 0x0E86..=0x0E8A | 0x0E8C..=0x0EA3 | 0x0EA5
+        | 0x0EA7..=0x0EBD | 0x0EC0..=0x0EC4 | 0x0EC6 | 0x0EC8..=0x0ECE | 0x0EDC..=0x0EDF)
+}
+
+/// `fMarkSet` (Lao): `[[:Laoo:]&[:LineBreak=SA:]&[:M:]]` plus SPACE.
+#[cfg(feature = "segmentation-dict-lao")]
+#[inline]
+fn is_mark_lao(c: char) -> bool {
+    matches!(c as u32, 0x0020 | 0x0EB1 | 0x0EB4..=0x0EBC | 0x0EC8..=0x0ECE)
+}
+
+/// `fEndWordSet` (Lao): the dict set minus the prefix vowels U+0EC0..=U+0EC4.
+#[cfg(feature = "segmentation-dict-lao")]
+#[inline]
+fn is_end_word_lao(c: char) -> bool {
+    matches!(c as u32,
+        0x0E81..=0x0E82 | 0x0E84 | 0x0E86..=0x0E8A | 0x0E8C..=0x0EA3 | 0x0EA5
+        | 0x0EA7..=0x0EBD | 0x0EC6 | 0x0EC8..=0x0ECE | 0x0EDC..=0x0EDF)
+}
+
+/// `fBeginWordSet` (Lao): basic + digraph consonants and the prefix vowels.
+#[cfg(feature = "segmentation-dict-lao")]
+#[inline]
+fn is_begin_word_lao(c: char) -> bool {
+    matches!(c as u32, 0x0E81..=0x0EAE | 0x0EC0..=0x0EC4 | 0x0EDC..=0x0EDD)
+}
+
+/// Per-language parameters for the shared `DictionaryBreakEngine` loop: which
+/// DAWG to consult, the character classes, and whether the Thai suffix
+/// (PAIYANNOI/MAIYAMOK) heuristic applies.
+pub(crate) struct Lang {
+    dict: &'static [u8],
+    is_mark: fn(char) -> bool,
+    is_end_word: fn(char) -> bool,
+    is_begin_word: fn(char) -> bool,
+    thai_suffix: bool,
+}
+
+/// The Thai engine parameters (`ThaiBreakEngine`).
+pub(crate) const THAI: Lang = Lang {
+    dict: THAI_DICT,
+    is_mark,
+    is_end_word,
+    is_begin_word,
+    thai_suffix: true,
+};
+
+/// The Lao engine parameters (`LaoBreakEngine`).
+#[cfg(feature = "segmentation-dict-lao")]
+pub(crate) const LAO: Lang = Lang {
+    dict: LAO_DICT,
+    is_mark: is_mark_lao,
+    is_end_word: is_end_word_lao,
+    is_begin_word: is_begin_word_lao,
+    thai_suffix: false,
+};
+
 // ---- DAWG dictionary matcher ----
 
 /// The committed, minimized Thai dictionary DAWG. Always embedded; only read
 /// when the `segmentation-dict` feature is on. See `codegen::emit_segment_dict`
 /// for the byte layout.
-const DICT: &[u8] = include_bytes!("segment_dict.bin");
+const THAI_DICT: &[u8] = include_bytes!("segment_dict.bin");
+/// The committed, minimized Lao dictionary DAWG (feature `segmentation-dict-lao`;
+/// same byte layout and U+0E00-relative edge symbols as the Thai DAWG).
+#[cfg(feature = "segmentation-dict-lao")]
+const LAO_DICT: &[u8] = include_bytes!("segment_dict_lao.bin");
 
 #[inline]
-fn rd_u32(o: usize) -> Option<u32> {
-    let b = DICT.get(o..o.checked_add(4)?)?;
+fn rd_u32(blob: &[u8], o: usize) -> Option<u32> {
+    let b = blob.get(o..o.checked_add(4)?)?;
     Some(u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
 }
 #[inline]
-fn rd_u16(o: usize) -> Option<u16> {
-    let b = DICT.get(o..o.checked_add(2)?)?;
+fn rd_u16(blob: &[u8], o: usize) -> Option<u16> {
+    let b = blob.get(o..o.checked_add(2)?)?;
     Some(u16::from_le_bytes([b[0], b[1]]))
 }
 
-/// A parsed view over the embedded DAWG. Every access is bounds-checked so a
+/// A parsed view over an embedded DAWG. Every access is bounds-checked so a
 /// truncated or inconsistent blob degrades to "no match" rather than panicking.
 struct Dict {
+    blob: &'static [u8],
     n: usize,
     root: usize,
     bitmap_base: usize,
@@ -91,18 +168,19 @@ struct Dict {
 }
 
 impl Dict {
-    fn load() -> Option<Dict> {
-        let n = rd_u32(0)? as usize;
-        let e = rd_u32(4)? as usize;
-        let root = rd_u32(8)? as usize;
+    fn load(blob: &'static [u8]) -> Option<Dict> {
+        let n = rd_u32(blob, 0)? as usize;
+        let e = rd_u32(blob, 4)? as usize;
+        let root = rd_u32(blob, 8)? as usize;
         let bitmap_base = 12;
         let off_base = bitmap_base + n.div_ceil(8);
         let edges_base = off_base.checked_add((n.checked_add(1)?).checked_mul(2)?)?;
         // Validate the whole blob is present before any hot-path reads.
-        if edges_base.checked_add(e.checked_mul(3)?)? > DICT.len() || root >= n {
+        if edges_base.checked_add(e.checked_mul(3)?)? > blob.len() || root >= n {
             return None;
         }
         Some(Dict {
+            blob,
             n,
             root,
             bitmap_base,
@@ -116,15 +194,16 @@ impl Dict {
         if node >= self.n {
             return false;
         }
-        DICT.get(self.bitmap_base + node / 8)
+        self.blob
+            .get(self.bitmap_base + node / 8)
             .is_some_and(|byte| (byte >> (node % 8)) & 1 != 0)
     }
 
     /// The `[start, end)` edge index range owned by `node`.
     #[inline]
     fn edge_range(&self, node: usize) -> (usize, usize) {
-        let a = rd_u16(self.off_base + node * 2).unwrap_or(0) as usize;
-        let b = rd_u16(self.off_base + (node + 1) * 2).unwrap_or(0) as usize;
+        let a = rd_u16(self.blob, self.off_base + node * 2).unwrap_or(0) as usize;
+        let b = rd_u16(self.blob, self.off_base + (node + 1) * 2).unwrap_or(0) as usize;
         (a, b)
     }
 
@@ -141,11 +220,11 @@ impl Dict {
         while lo < hi {
             let mid = lo + (hi - lo) / 2;
             let rec = self.edges_base + mid * 3;
-            let s = *DICT.get(rec)?;
+            let s = *self.blob.get(rec)?;
             match s.cmp(&sym) {
                 core::cmp::Ordering::Less => lo = mid + 1,
                 core::cmp::Ordering::Greater => hi = mid,
-                core::cmp::Ordering::Equal => return Some(rd_u16(rec + 1)? as usize),
+                core::cmp::Ordering::Equal => return Some(rd_u16(self.blob, rec + 1)? as usize),
             }
         }
         None
@@ -326,18 +405,19 @@ impl PossibleWord {
 }
 
 /// Byte offset of the next dictionary word boundary at or after `start` within
-/// the Thai run `run` (whose whole length is the dictionary range end).
+/// the Thai/Lao run `run` (whose whole length is the dictionary range end), using
+/// the [`Lang`] `lang`'s dictionary and character classes.
 ///
 /// This is exactly one iteration of ICU's
-/// `ThaiBreakEngine::divideUpDictionaryRange` outer loop. That loop carries no
+/// `ThaiBreakEngine`/`LaoBreakEngine::divideUpDictionaryRange` outer loop. That loop carries no
 /// state between iterations other than the text position (each iteration refills
 /// its `PossibleWord` scratch from the current offset), so it is a pure function
 /// of `(run, start)` and can be resumed here one word at a time — no allocation,
 /// no buffering of the whole run's breaks. The returned boundary is always
 /// `> start` and `<= run.len()`; a return of `run.len()` marks the final word.
-pub(crate) fn thai_next_boundary(run: &str, start: usize) -> usize {
+pub(crate) fn next_boundary(lang: &Lang, run: &str, start: usize) -> usize {
     let range_end = run.len();
-    let Some(dict) = Dict::load() else {
+    let Some(dict) = Dict::load(lang.dict) else {
         return range_end;
     };
 
@@ -405,7 +485,7 @@ pub(crate) fn thai_next_boundary(run: &str, start: usize) -> usize {
                     break;
                 }
                 uc = current32(run, cursor);
-                if is_end_word(pc) && is_begin_word(uc) {
+                if (lang.is_end_word)(pc) && (lang.is_begin_word)(uc) {
                     let num = w1.candidates(&dict, run, range_end, &mut cursor);
                     cursor = current + cu_word_length + chars;
                     if num > 0 {
@@ -421,7 +501,7 @@ pub(crate) fn thai_next_boundary(run: &str, start: usize) -> usize {
     }
 
     // Never stop before a combining mark.
-    while cursor < range_end && is_mark(current32(run, cursor)) {
+    while cursor < range_end && (lang.is_mark)(current32(run, cursor)) {
         let curr_pos = cursor;
         next32(run, &mut cursor);
         cu_word_length += cursor - curr_pos;
@@ -429,8 +509,9 @@ pub(crate) fn thai_next_boundary(run: &str, start: usize) -> usize {
 
     // Look ahead for possible suffixes if a dictionary word does not follow. Done
     // in code (not via a rule) so the heuristic resync keeps working, e.g. when a
-    // suffix character is a typo mid-word.
-    if cursor < range_end && cu_word_length > 0 {
+    // suffix character is a typo mid-word. (Thai only — ICU's Lao engine omits
+    // this: "NOT CURRENTLY APPLICABLE TO LAO".)
+    if lang.thai_suffix && cursor < range_end && cu_word_length > 0 {
         let no_dict_follows = w0.candidates(&dict, run, range_end, &mut cursor) == 0;
         uc = current32(run, cursor);
         if no_dict_follows && is_suffix(uc) {

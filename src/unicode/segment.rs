@@ -438,39 +438,58 @@ fn word_break(prev2: Wb, prev: &WbUnit, cur: &WbUnit, next: Wb, ri: u32) -> bool
 pub struct Words<'a> {
     s: &'a str,
     pos: usize,
-    /// End byte of a Thai dictionary run currently being subdivided (feature
+    /// End byte of a Thai/Lao dictionary run currently being subdivided (feature
     /// `segmentation-dict`). While `pos < dict_run_end` the iterator is resuming
     /// inside that run.
     #[cfg(feature = "segmentation-dict")]
     dict_run_end: usize,
+    /// Whether the run being resumed is Lao rather than Thai (they use the same
+    /// incremental engine with different parameters; feature
+    /// `segmentation-dict-lao`).
+    #[cfg(feature = "segmentation-dict-lao")]
+    dict_is_lao: bool,
+    /// Byte offsets of the word ends within the CJK run currently being emitted
+    /// (feature `segmentation-dict-cjk`). The whole run is segmented at once by
+    /// the Viterbi DP, then its boundaries are handed out one at a time; the
+    /// next unemitted boundary is `cjk_ends[cjk_idx]`.
+    #[cfg(feature = "segmentation-dict-cjk")]
+    cjk_ends: alloc::vec::Vec<usize>,
+    #[cfg(feature = "segmentation-dict-cjk")]
+    cjk_idx: usize,
 }
 
 impl<'a> Words<'a> {
-    /// Dictionary-based subdivision of Thai runs (feature `segmentation-dict`).
-    /// Returns the next word when the cursor is at/inside a run of Thai
-    /// dictionary characters, or `None` to defer to the UAX #29 rules.
+    /// Dictionary-based subdivision of space-less runs (feature
+    /// `segmentation-dict`; CJK additionally needs `segmentation-dict-cjk`).
+    /// Returns the next word when the cursor is at/inside a run of dictionary
+    /// characters (Thai, or Chinese/Japanese), or `None` to defer to the UAX #29
+    /// rules for everything else.
+    /// The engine parameters for the Thai/Lao run currently being resumed.
     #[cfg(feature = "segmentation-dict")]
-    fn next_dict(&mut self) -> Option<&'a str> {
+    fn resume_lang(&self) -> &'static super::segment_dict::Lang {
+        #[cfg(feature = "segmentation-dict-lao")]
+        if self.dict_is_lao {
+            return &super::segment_dict::LAO;
+        }
+        &super::segment_dict::THAI
+    }
+
+    /// Begin subdividing a maximal run of Thai-family (Thai or Lao) dictionary
+    /// characters starting at `self.pos`, returning its first word. Short runs
+    /// (ICU's `<= MIN_WORD_SPAN` early-out) are returned whole.
+    #[cfg(feature = "segmentation-dict")]
+    fn start_thai_family(
+        &mut self,
+        lang: &super::segment_dict::Lang,
+        is_char: fn(char) -> bool,
+        is_lao: bool,
+    ) -> &'a str {
         use super::segment_dict;
-
-        // Resuming inside a run we already committed to subdividing.
-        if self.pos < self.dict_run_end {
-            let b = segment_dict::thai_next_boundary(&self.s[..self.dict_run_end], self.pos);
-            let word = &self.s[self.pos..b];
-            self.pos = b;
-            return Some(word);
-        }
-
-        // Does a Thai dictionary run start here?
-        let first = self.s[self.pos..].chars().next()?;
-        if !segment_dict::is_thai_dict_char(first) {
-            return None;
-        }
-        // Extend to the maximal run of Thai dictionary characters.
+        let _ = is_lao; // used only under `segmentation-dict-lao`
         let mut run_end = self.pos;
         let mut cps = 0usize;
         for c in self.s[self.pos..].chars() {
-            if !segment_dict::is_thai_dict_char(c) {
+            if !is_char(c) {
                 break;
             }
             run_end += c.len_utf8();
@@ -480,13 +499,92 @@ impl<'a> Words<'a> {
         if cps <= segment_dict::THAI_MIN_WORD_SPAN {
             let word = &self.s[self.pos..run_end];
             self.pos = run_end;
-            return Some(word);
+            return word;
         }
         self.dict_run_end = run_end;
-        let b = segment_dict::thai_next_boundary(&self.s[..run_end], self.pos);
+        #[cfg(feature = "segmentation-dict-lao")]
+        {
+            self.dict_is_lao = is_lao;
+        }
+        let b = segment_dict::next_boundary(lang, &self.s[..run_end], self.pos);
         let word = &self.s[self.pos..b];
         self.pos = b;
-        Some(word)
+        word
+    }
+
+    #[cfg(feature = "segmentation-dict")]
+    fn next_dict(&mut self) -> Option<&'a str> {
+        use super::segment_dict;
+
+        // Resuming inside a Thai/Lao run we already committed to subdividing.
+        if self.pos < self.dict_run_end {
+            let lang = self.resume_lang();
+            let b = segment_dict::next_boundary(lang, &self.s[..self.dict_run_end], self.pos);
+            let word = &self.s[self.pos..b];
+            self.pos = b;
+            return Some(word);
+        }
+
+        // Resuming inside a CJK run whose boundaries are already computed.
+        #[cfg(feature = "segmentation-dict-cjk")]
+        if self.cjk_idx < self.cjk_ends.len() {
+            let b = self.cjk_ends[self.cjk_idx];
+            self.cjk_idx += 1;
+            let word = &self.s[self.pos..b];
+            self.pos = b;
+            return Some(word);
+        }
+
+        let first = self.s[self.pos..].chars().next()?;
+
+        // Does a Thai dictionary run start here?
+        if segment_dict::is_thai_dict_char(first) {
+            return Some(self.start_thai_family(
+                &segment_dict::THAI,
+                segment_dict::is_thai_dict_char,
+                false,
+            ));
+        }
+
+        // Does a Lao dictionary run start here? (Same engine as Thai.)
+        #[cfg(feature = "segmentation-dict-lao")]
+        if segment_dict::is_lao_dict_char(first) {
+            return Some(self.start_thai_family(
+                &segment_dict::LAO,
+                segment_dict::is_lao_dict_char,
+                true,
+            ));
+        }
+
+        // Does a CJK (Han/Hiragana/Katakana) dictionary run start here?
+        #[cfg(feature = "segmentation-dict-cjk")]
+        {
+            use super::segment_dict_cjk;
+            if segment_dict_cjk::is_cjk_dict_char(first) {
+                // Extend to the maximal run of CJK dictionary characters.
+                let mut run_end = self.pos;
+                for c in self.s[self.pos..].chars() {
+                    if !segment_dict_cjk::is_cjk_dict_char(c) {
+                        break;
+                    }
+                    run_end += c.len_utf8();
+                }
+                // Segment the whole run at once, then emit boundaries one at a
+                // time (converted from run-relative to absolute byte offsets).
+                segment_dict_cjk::segment(&self.s[self.pos..run_end], &mut self.cjk_ends);
+                let base = self.pos;
+                for b in self.cjk_ends.iter_mut() {
+                    *b += base;
+                }
+                self.cjk_idx = 1;
+                let b = self.cjk_ends[0];
+                let word = &self.s[self.pos..b];
+                self.pos = b;
+                return Some(word);
+            }
+        }
+
+        None
     }
 }
 
@@ -541,6 +639,12 @@ pub fn words(s: &str) -> Words<'_> {
         pos: 0,
         #[cfg(feature = "segmentation-dict")]
         dict_run_end: 0,
+        #[cfg(feature = "segmentation-dict-lao")]
+        dict_is_lao: false,
+        #[cfg(feature = "segmentation-dict-cjk")]
+        cjk_ends: alloc::vec::Vec::new(),
+        #[cfg(feature = "segmentation-dict-cjk")]
+        cjk_idx: 0,
     }
 }
 

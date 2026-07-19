@@ -222,6 +222,7 @@ fn main() {
     emit_properties(&out_dir, &mut modules, &ucd);
     emit_names_blob(&root, &ucd);
     emit_segment_dict(&root);
+    emit_cjk_dict(&root);
 
     // ---- Normalization ----
     emit_normalization(&out_dir, &mut modules, &ucd);
@@ -732,8 +733,18 @@ fn emit_names_blob(root: &Path, ucd: &Path) {
 /// The DAWG shares common suffixes, so it is far smaller than the raw trie while
 /// preserving exactly the set of dictionary words (word ends are per-node flags).
 fn emit_segment_dict(root: &Path) {
-    let text =
-        fs::read_to_string(root.join("data/brkitr/thaidict.txt")).expect("read thaidict.txt");
+    // Thai and Lao share this word-list DAWG format and the U+0E00-relative edge
+    // symbol (Lao lives at U+0E80..=U+0EFF, i.e. byte offsets 128..=255).
+    emit_thai_family_dict(root, "thaidict.txt", "segment_dict.bin");
+    emit_thai_family_dict(root, "laodict.txt", "segment_dict_lao.bin");
+}
+
+/// Build one Thai-family (word-list, no frequencies) DAWG from `data/brkitr/
+/// <dict_file>` and write it to `src/unicode/<out_file>`. See the doc comment on
+/// [`emit_segment_dict`] for the byte layout.
+fn emit_thai_family_dict(root: &Path, dict_file: &str, out_file: &str) {
+    let text = fs::read_to_string(root.join("data/brkitr").join(dict_file))
+        .unwrap_or_else(|e| panic!("read {dict_file}: {e}"));
     let mut words: Vec<Vec<char>> = Vec::new();
     for line in text.lines() {
         // Strip a leading UTF-8 BOM and surrounding whitespace; skip comments.
@@ -834,16 +845,173 @@ fn emit_segment_dict(root: &Path) {
             let delta = sym
                 .checked_sub(0x0E00)
                 .filter(|d| *d <= 0xFF)
-                .unwrap_or_else(|| panic!("dict codepoint U+{sym:04X} out of Thai byte range"));
+                .unwrap_or_else(|| panic!("dict codepoint U+{sym:04X} out of U+0E00 byte range"));
             blob.push(delta as u8);
             blob.extend_from_slice(&(target as u16).to_le_bytes());
         }
     }
 
-    let path = root.join("src/unicode/segment_dict.bin");
-    fs::write(&path, &blob).expect("write segment_dict.bin");
+    let path = root.join("src/unicode").join(out_file);
+    fs::write(&path, &blob).unwrap_or_else(|e| panic!("write {out_file}: {e}"));
     println!(
-        "codegen: wrote segment_dict.bin ({} words, trie {} nodes -> DAWG {} nodes / {} edges, {} KB)",
+        "codegen: wrote {out_file} ({} words, trie {} nodes -> DAWG {} nodes / {} edges, {} KB)",
+        words.len(),
+        trie_nodes,
+        n,
+        e,
+        blob.len() / 1024
+    );
+}
+
+/// Write `src/unicode/segment_dict_cjk.bin`: a minimized DAWG of ICU's
+/// Chinese/Japanese break dictionary (`data/brkitr/cjdict.txt`), *with* a
+/// per-word cost, used by the `segmentation-dict-cjk` feature to drive the
+/// ICU-style `CjkBreakEngine` Viterbi minimum-cost word segmentation.
+///
+/// Each `word<whitespace>value` line contributes a word whose `value` is the
+/// self-negative-log-probability cost that ICU's `gendict` stores verbatim
+/// (range ~27..251, always < 255 = `maxSnlp`, so it fits a `u8`; the value `0`
+/// is used as the "not a word end" sentinel, since no real cost is 0).
+///
+/// Layout (all little-endian):
+/// ```text
+///   u32 node_count N
+///   u32 edge_count E
+///   u32 root_id
+///   values: N bytes — u8 cost per node (0 == not a word end / non-final)
+///   edge-offset table: (N+1) u32 (cumulative edge index; node i owns
+///                       edges[off[i]..off[i+1]])
+///   edges: E records of 5 bytes each — [u16 sym][u24 target], sym = codepoint
+///          (cjdict is entirely within the BMP), sorted ascending by sym within
+///          each node (binary search at runtime).
+/// ```
+/// Unlike the Thai DAWG this stores full codepoints (not a byte offset) so it
+/// can represent Han; word-end costs are the per-node `values`. The DAWG shares
+/// common suffixes, so two word-ends merge only when they share both cost and
+/// continuation, still yielding a large but bounded blob.
+fn emit_cjk_dict(root: &Path) {
+    let text = fs::read_to_string(root.join("data/brkitr/cjdict.txt")).expect("read cjdict.txt");
+    // (word, cost) pairs. gendict parses "word [spaces] value"; the word is the
+    // first whitespace-delimited token, the cost the second.
+    let mut words: Vec<(Vec<char>, u8)> = Vec::new();
+    for line in text.lines() {
+        let line = line.trim_start_matches('\u{feff}');
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let mut it = trimmed.split_whitespace();
+        let (Some(word), Some(val)) = (it.next(), it.next()) else {
+            continue;
+        };
+        let Ok(cost) = val.parse::<u32>() else {
+            continue;
+        };
+        // Costs are self-neg-log-probabilities; ICU's Viterbi caps the
+        // single-char fallback at maxSnlp = 255, and every real cost is < 255.
+        assert!(
+            (1..=254).contains(&cost),
+            "cjdict cost {cost} out of the expected 1..=254 range"
+        );
+        words.push((word.chars().collect(), cost as u8));
+    }
+    words.sort();
+    words.dedup_by(|a, b| a.0 == b.0);
+
+    // Build a trie (node 0 == root). Each node carries an optional word cost.
+    struct TNode {
+        cost: u8, // 0 == not a word end
+        edges: BTreeMap<char, usize>,
+    }
+    let mut trie: Vec<TNode> = vec![TNode {
+        cost: 0,
+        edges: BTreeMap::new(),
+    }];
+    for (w, cost) in &words {
+        let mut n = 0usize;
+        for &c in w {
+            let next = match trie[n].edges.get(&c) {
+                Some(&x) => x,
+                None => {
+                    let id = trie.len();
+                    trie.push(TNode {
+                        cost: 0,
+                        edges: BTreeMap::new(),
+                    });
+                    trie[n].edges.insert(c, id);
+                    id
+                }
+            };
+            n = next;
+        }
+        trie[n].cost = *cost;
+    }
+    let trie_nodes = trie.len();
+
+    // Minimize into a DAWG: two subtrees merge when they have identical cost and
+    // identical (already-canonical) edge sets. Post-order assignment guarantees
+    // every child id is < its parent id.
+    type CanonNode = (u8, Vec<(u32, u32)>); // (cost, sorted [(sym, child_id)])
+    fn minimize(
+        t: usize,
+        trie: &[TNode],
+        map: &mut BTreeMap<CanonNode, u32>,
+        nodes: &mut Vec<CanonNode>,
+    ) -> u32 {
+        let mut edges: Vec<(u32, u32)> = Vec::new();
+        for (&c, &child) in &trie[t].edges {
+            let cid = minimize(child, trie, map, nodes);
+            edges.push((c as u32, cid));
+        }
+        edges.sort_unstable();
+        let key: CanonNode = (trie[t].cost, edges);
+        if let Some(&id) = map.get(&key) {
+            return id;
+        }
+        let id = nodes.len() as u32;
+        nodes.push(key.clone());
+        map.insert(key, id);
+        id
+    }
+    let mut map: BTreeMap<CanonNode, u32> = BTreeMap::new();
+    let mut nodes: Vec<CanonNode> = Vec::new();
+    let root_id = minimize(0, &trie, &mut map, &mut nodes);
+
+    let n = nodes.len();
+    let e: usize = nodes.iter().map(|(_, es)| es.len()).sum();
+    // Targets are stored as u24; node ids must fit.
+    assert!(n <= 0x00FF_FFFF, "CJK DAWG node count {n} exceeds u24");
+
+    let mut blob = Vec::new();
+    blob.extend_from_slice(&(n as u32).to_le_bytes());
+    blob.extend_from_slice(&(e as u32).to_le_bytes());
+    blob.extend_from_slice(&root_id.to_le_bytes());
+    // Per-node cost byte (0 == non-final).
+    for (cost, _) in &nodes {
+        blob.push(*cost);
+    }
+    // Edge-offset table (N+1 cumulative u32), then the edge records.
+    let mut off = 0u32;
+    for (_, es) in &nodes {
+        blob.extend_from_slice(&off.to_le_bytes());
+        off += es.len() as u32;
+    }
+    blob.extend_from_slice(&off.to_le_bytes());
+    for (_, es) in &nodes {
+        for &(sym, target) in es {
+            let sym = u16::try_from(sym).unwrap_or_else(|_| {
+                panic!("cjdict codepoint U+{sym:04X} outside the BMP (u16 sym range)")
+            });
+            blob.extend_from_slice(&sym.to_le_bytes());
+            let t = target.to_le_bytes();
+            blob.extend_from_slice(&[t[0], t[1], t[2]]); // u24
+        }
+    }
+
+    let path = root.join("src/unicode/segment_dict_cjk.bin");
+    fs::write(&path, &blob).expect("write segment_dict_cjk.bin");
+    println!(
+        "codegen: wrote segment_dict_cjk.bin ({} words, trie {} nodes -> DAWG {} nodes / {} edges, {} KB)",
         words.len(),
         trie_nodes,
         n,
