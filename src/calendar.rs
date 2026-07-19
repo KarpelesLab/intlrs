@@ -1,10 +1,10 @@
 //! Calendar date conversions (`no_std`, no `alloc`): the Julian Day Number as a
 //! pivot between the proleptic Gregorian, civil (tabular) Islamic, Umm al-Qura
 //! (Saudi) Islamic, Persian (Solar Hijri), Hebrew, Chinese (lunisolar,
-//! 1900–2099), and Japanese-era calendars, plus the ISO-8601 week date and day
-//! of week. Pure integer arithmetic; the Chinese and Umm al-Qura calendars use
-//! an embedded month-length table, and the Persian calendar embeds ICU's
-//! leap-year correction set.
+//! 1800–2200), Korean dangi (lunisolar, 1800–2200), and Japanese-era calendars,
+//! plus the ISO-8601 week date and day of week. Pure integer arithmetic; the
+//! Chinese, dangi, and Umm al-Qura calendars use an embedded month-length table,
+//! and the Persian calendar embeds ICU's leap-year correction set.
 //!
 //! ```
 //! use intl::calendar::{gregorian_to_islamic, islamic_to_gregorian, day_of_week};
@@ -510,23 +510,54 @@ pub fn hebrew_to_gregorian(year: i64, month: i64, day: i64) -> (i64, i64, i64) {
     jdn_to_gregorian(hebrew_to_jdn(year, month, day))
 }
 
-// ---- Chinese (lunisolar) calendar, 1900–2099. ----
+// ---- Chinese (lunisolar) and Korean dangi (lunisolar) calendars, 1800–2200. ----
 //
 // Lunisolar conversion cannot be derived from CLDR (which carries only the month
 // *names*) nor from simple arithmetic; it needs astronomical computation or a
-// precomputed table. We embed the well-established lunar table for years
-// 1900–2099. Each entry packs one Chinese year (which begins at its New Year):
+// precomputed table. Each entry packs one lunisolar year (which begins at its
+// New Year):
 //   * low 4 bits  — the leap-month number (0 = no leap month);
 //   * bit (16−m)  — month m (1..=12) has 30 days (1) or 29 (0);
 //   * bit 16      — the leap month has 30 days (1) or 29 (0).
-// Anchored at the 1900 New Year = 1900-01-31 (JDN 2 415 051). Validated against
-// known New-Year dates (2024-02-10, 2025-01-29, 2000-02-05, …). Source: the
-// `lunardate` table (MIT), itself derived from astronomical almanac data.
-const CHINESE_FIRST_YEAR: i64 = 1900;
-const CHINESE_LAST_YEAR: i64 = 2099;
-const CHINESE_EPOCH_JDN: i64 = 2_415_051; // 1900-01-31
+// The two tables share this format and the `ls_*` helpers below, differing only
+// in table, first year, and epoch.
+//
+// The Chinese and dangi calendars use the SAME lunisolar rules — a year runs
+// between the two new moons that bracket the winter solstice (month 11 always
+// contains the solstice); a 13-month year inserts a leap month, the first month
+// with no major solar term (zhongqi) — but evaluate them at DIFFERENT meridians:
+// China at UTC+8, Korea at its historical offsets (ICU `DangiCalendar`: UTC+8
+// through 1911 — save an ad-hoc UTC+7 in 1897 — then UTC+9 from 1912). That one
+// meridian hour is why dangi's New Year / leap-month placement diverges from
+// Chinese in some years (e.g. 1997: Chinese New Year 1997-02-07, dangi Seollal
+// 1997-02-08).
+//
+// The tables were produced OFFLINE by a throwaway astronomical generator that
+// ports Jean Meeus, "Astronomical Algorithms" (new-moon conjunction, apparent
+// solar longitude) and applies ICU's ChineseCalendar leap rule at each meridian;
+// the runtime here is pure integer table lookup. For the Chinese years 1900–2099
+// the table is the previously-committed almanac (Hong Kong Observatory) data,
+// kept verbatim: HKO-precise ephemerides resolve ~7 new moons that fall within
+// minutes of local midnight differently from any independent truncated model,
+// so those years are trusted to HKO rather than regenerated. Outside 1900–2099
+// (Chinese) and across the whole span (dangi) the Meeus generator is used; its
+// New-Year dates match ICU at every sampled anchor from 1800 to 2200, and the
+// 1900 and 2100 seams line up exactly with the HKO block. Validated New Years:
+// Chinese 2000-02-05, 2024-02-10, 2025-01-29, 1850-02-12, 2150-01-29.
+const CHINESE_FIRST_YEAR: i64 = 1800; // last year 2200 = first + table length − 1
+const CHINESE_EPOCH_JDN: i64 = 2_378_521; // New Year 1800 = 1800-01-25
 #[rustfmt::skip]
-const CHINESE_YEAR_INFO: [u32; 200] = [
+const CHINESE_YEAR_INFO: [u32; 401] = [
+    0x0baa4, 0x06b50, 0x02ba0, 0x0ab62, 0x09570, 0x150e7, 0x0d160, 0x0e4b0, 0x06d25, 0x0da90,
+    0x05b50, 0x036d3, 0x02ae0, 0x0a2e0, 0x0e2d2, 0x0c950, 0x0d556, 0x0b520, 0x0b690, 0x05da4,
+    0x055d0, 0x025d0, 0x0a5b3, 0x0a2b0, 0x1a8b7, 0x0a950, 0x0b4a0, 0x1b2a5, 0x0ad50, 0x055b0,
+    0x02b74, 0x04570, 0x052f9, 0x052b0, 0x06950, 0x06d56, 0x05aa0, 0x0ab50, 0x056d4, 0x04ae0,
+    0x0a570, 0x14563, 0x0d2a0, 0x1e8a7, 0x0d550, 0x05aa0, 0x0ada5, 0x095d0, 0x04ae0, 0x0aab4,
+    0x0a4d0, 0x0d2b8, 0x0b290, 0x0b550, 0x05757, 0x02da0, 0x095d0, 0x04d75, 0x049b0, 0x0a4b0,
+    0x1a4b3, 0x06a90, 0x0ada8, 0x06b50, 0x02b60, 0x19365, 0x09370, 0x04970, 0x06964, 0x0e4a0,
+    0x0ea6a, 0x0da90, 0x05ad0, 0x12ad6, 0x02ae0, 0x092e0, 0x0cad5, 0x0c950, 0x0d4a0, 0x1d4a3,
+    0x0b650, 0x057a7, 0x055b0, 0x025d0, 0x095b5, 0x092b0, 0x0a950, 0x0d954, 0x0b4a0, 0x0b55c,
+    0x0ad50, 0x055b0, 0x02776, 0x02570, 0x052b0, 0x0aab5, 0x06950, 0x06aa0, 0x0baa3, 0x0ab50,
     0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
     0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
     0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970,
@@ -547,54 +578,120 @@ const CHINESE_YEAR_INFO: [u32; 200] = [
     0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0,
     0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160,
     0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252,
+    0x0d520, 0x0db27, 0x0b5a0, 0x055d0, 0x04db5, 0x049b0, 0x0a4b0, 0x0d4b4, 0x0aa50, 0x0b559,
+    0x06d20, 0x0ad60, 0x05766, 0x09370, 0x04970, 0x06974, 0x054b0, 0x06a50, 0x07a53, 0x06aa0,
+    0x1aaa7, 0x0aad0, 0x052e0, 0x0cae5, 0x0a960, 0x0d4a0, 0x1e4a4, 0x0d950, 0x05abb, 0x056a0,
+    0x0a6d0, 0x151d6, 0x052d0, 0x0a8d0, 0x1d155, 0x0b2a0, 0x0b550, 0x06d52, 0x055a0, 0x1a5a7,
+    0x0a5b0, 0x052b0, 0x0a975, 0x068b0, 0x07290, 0x0baa4, 0x06b50, 0x02dbb, 0x04b60, 0x0a570,
+    0x052e6, 0x0d160, 0x0e8b0, 0x06d25, 0x0da90, 0x05b50, 0x036d3, 0x02ae0, 0x0a3d7, 0x0a2d0,
+    0x0d150, 0x0d556, 0x0b520, 0x0d690, 0x155a4, 0x055b0, 0x02afa, 0x045b0, 0x0a2b0, 0x0aab6,
+    0x0a950, 0x0b4a0, 0x1b2a5, 0x0ad50, 0x055b0, 0x02b73, 0x04570, 0x06377, 0x052b0, 0x06950,
+    0x06d56, 0x05aa0, 0x0ab50, 0x056d4, 0x04ae0, 0x0a570, 0x06562, 0x0d2a0, 0x0eaa6, 0x0d550,
+    0x05aa0, 0x0aea5, 0x0a6d0, 0x04ae0, 0x0aab3, 0x0a4d0, 0x0d2b7, 0x0b290, 0x0b550, 0x15556,
+    0x02da0,
 ];
 
-fn cn_info(year: i64) -> Option<u32> {
-    if (CHINESE_FIRST_YEAR..=CHINESE_LAST_YEAR).contains(&year) {
-        Some(CHINESE_YEAR_INFO[(year - CHINESE_FIRST_YEAR) as usize])
+const DANGI_FIRST_YEAR: i64 = 1800; // last year 2200 = first + table length − 1
+const DANGI_EPOCH_JDN: i64 = 2_378_521; // New Year 1800 = 1800-01-25 (same as Chinese)
+#[rustfmt::skip]
+const DANGI_YEAR_INFO: [u32; 401] = [
+    0x0baa4, 0x06b50, 0x02ba0, 0x0ab62, 0x09570, 0x150e7, 0x0d160, 0x0e4b0, 0x06d25, 0x0da90,
+    0x05b50, 0x036d3, 0x02ae0, 0x0a2e0, 0x0e2d2, 0x0c950, 0x0d556, 0x0b520, 0x0b690, 0x05da4,
+    0x055d0, 0x025d0, 0x0a5b3, 0x0a2b0, 0x1a8b7, 0x0a950, 0x0b4a0, 0x1b2a5, 0x0ad50, 0x055b0,
+    0x02b74, 0x04570, 0x052f9, 0x052b0, 0x06950, 0x06d56, 0x05aa0, 0x0ab50, 0x056d4, 0x04ae0,
+    0x0a570, 0x14563, 0x0d2a0, 0x1e8a7, 0x0d550, 0x05aa0, 0x0ada5, 0x095d0, 0x04ae0, 0x0aab4,
+    0x0a4d0, 0x0d2b8, 0x0b290, 0x0b550, 0x05757, 0x02da0, 0x095d0, 0x04d75, 0x049b0, 0x0a4b0,
+    0x1a4b3, 0x06a90, 0x0ada8, 0x06b50, 0x02b60, 0x19365, 0x09370, 0x04970, 0x06964, 0x0e4a0,
+    0x0ea6a, 0x0da90, 0x05ad0, 0x12ad6, 0x02ae0, 0x092e0, 0x0cad5, 0x0c950, 0x0d4a0, 0x1d4a3,
+    0x0b650, 0x057a7, 0x055b0, 0x025d0, 0x095b5, 0x092b0, 0x0a950, 0x0d954, 0x0b4a0, 0x0b55c,
+    0x0ad50, 0x055b0, 0x02776, 0x02570, 0x052b0, 0x0aab5, 0x06950, 0x06aa0, 0x0baa3, 0x0ab50,
+    0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
+    0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x0da95, 0x0b550, 0x056a0, 0x0ada2, 0x095d0, 0x04bb7,
+    0x049b0, 0x0a4b0, 0x0b4b5, 0x06a90, 0x0ad40, 0x0bb54, 0x02b60, 0x095b0, 0x05372, 0x04970,
+    0x06566, 0x0e4a0, 0x0ea50, 0x16a95, 0x05b50, 0x02b60, 0x18ae3, 0x092e0, 0x1c8d7, 0x0c950,
+    0x0d4a0, 0x1d8a6, 0x0b690, 0x056d0, 0x125b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0d557,
+    0x0b4a0, 0x0b550, 0x15555, 0x04db0, 0x025b0, 0x18573, 0x052b0, 0x0a9b8, 0x06950, 0x06aa0,
+    0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05270, 0x07263, 0x0d950, 0x06b57, 0x056a0,
+    0x09ad0, 0x04dd5, 0x04ae0, 0x0a4e0, 0x0d4d4, 0x0d250, 0x0d598, 0x0b540, 0x0d6a0, 0x195a6,
+    0x095b0, 0x049b0, 0x0a9b4, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x0b756, 0x02b60, 0x095b0,
+    0x04b75, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06d98, 0x05ad0, 0x02b60, 0x096e5, 0x092e0,
+    0x0c960, 0x0e954, 0x0d4a0, 0x0da50, 0x07552, 0x056c0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5,
+    0x0a950, 0x0b4a0, 0x1b4a3, 0x0b550, 0x055d9, 0x04ba0, 0x0a5b0, 0x05575, 0x052b0, 0x0a950,
+    0x0b954, 0x06aa0, 0x0ad50, 0x06b52, 0x04b60, 0x0a6e6, 0x0a570, 0x05270, 0x06a65, 0x0d930,
+    0x05aa0, 0x0b6a3, 0x096d0, 0x04afb, 0x04ae0, 0x0a4d0, 0x1d0d6, 0x0d250, 0x0d520, 0x0dd45,
+    0x0b6a0, 0x096d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0b250, 0x1b255, 0x06d40, 0x0ada0,
+    0x18b63, 0x09570, 0x14978, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06b20, 0x1aac4, 0x0ab60,
+    0x09370, 0x052e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0aad0, 0x095d4,
+    0x092d0, 0x0c9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0,
+    0x0b2b3, 0x0a930, 0x07557, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054f4, 0x05260,
+    0x0e968, 0x0d530, 0x05aa0, 0x1aaa6, 0x096d0, 0x04ae0, 0x0aad4, 0x0a4d0, 0x0d260, 0x0f253,
+    0x0d520, 0x0db47, 0x0b5a0, 0x096d0, 0x04db5, 0x049b0, 0x0a4b0, 0x0d4b4, 0x0aa50, 0x0b559,
+    0x06d20, 0x0ada0, 0x05766, 0x09370, 0x04970, 0x0a974, 0x064b0, 0x06a50, 0x16a53, 0x06b20,
+    0x1aaa7, 0x0ab60, 0x09370, 0x04ae5, 0x0c960, 0x0d4a0, 0x1e4a4, 0x0da50, 0x05ad9, 0x056a0,
+    0x0a6d0, 0x151d6, 0x092d0, 0x0a950, 0x1d155, 0x0b4a0, 0x0b550, 0x06d52, 0x055a0, 0x1a5a7,
+    0x0a5b0, 0x052b0, 0x0aa75, 0x06930, 0x07290, 0x0baa4, 0x0ad50, 0x04dbb, 0x04b60, 0x0a570,
+    0x150f6, 0x05160, 0x0e930, 0x06d25, 0x0daa0, 0x06b50, 0x036d3, 0x04ae0, 0x0a5d7, 0x0a2d0,
+    0x0d150, 0x0da56, 0x0d520, 0x0da90, 0x155a4, 0x055d0, 0x04afa, 0x049b0, 0x0a2b0, 0x1d0b6,
+    0x0aa50, 0x0b520, 0x0bd24, 0x0ada0, 0x055b0, 0x05373, 0x04570, 0x0a377, 0x054b0, 0x06a50,
+    0x06d56, 0x06aa0, 0x0ab50, 0x05ad4, 0x052e0, 0x0c570, 0x06962, 0x0d4a0, 0x0eaa7, 0x0d950,
+    0x05aa0, 0x0aea5, 0x0a6d0, 0x052e0, 0x0b2d3, 0x0a950, 0x0d557, 0x0b2a0, 0x0b550, 0x15556,
+    0x055a0,
+];
+
+/// The packed year info for `year`, or `None` when it lies outside `table`'s
+/// range (`first_year ..= first_year + table.len() − 1`).
+fn ls_info(table: &[u32], first_year: i64, year: i64) -> Option<u32> {
+    let last = first_year + table.len() as i64 - 1;
+    if (first_year..=last).contains(&year) {
+        Some(table[(year - first_year) as usize])
     } else {
         None
     }
 }
-fn cn_month_days(info: u32, month: i64) -> i64 {
+fn ls_month_days(info: u32, month: i64) -> i64 {
     ((info >> (16 - month)) & 1) as i64 + 29
 }
-fn cn_leap_days(info: u32) -> i64 {
+fn ls_leap_days(info: u32) -> i64 {
     ((info >> 16) & 1) as i64 + 29
 }
-fn cn_year_days(info: u32) -> i64 {
+fn ls_year_days(info: u32) -> i64 {
     let leap = (info % 16) as i64;
     let mut sum = 0;
     let mut m = 1;
     while m <= 12 {
-        sum += cn_month_days(info, m);
+        sum += ls_month_days(info, m);
         if leap == m {
-            sum += cn_leap_days(info);
+            sum += ls_leap_days(info);
         }
         m += 1;
     }
     sum
 }
 
-/// The Julian Day Number of a Chinese (lunisolar) date. `month` is 1–12; set
-/// `leap` for the intercalary month that follows `month`. Returns `None` for a
-/// year outside the supported range (1900–2099) or a `leap` month that does not
-/// occur that year.
-#[must_use]
-pub fn chinese_to_jdn(year: i64, month: i64, day: i64, leap: bool) -> Option<i64> {
-    let info = cn_info(year)?;
+/// The Julian Day Number of a lunisolar date in the given table. Shared by the
+/// Chinese and dangi front ends; see [`chinese_to_jdn`] for the argument meaning.
+fn ls_to_jdn(
+    table: &[u32],
+    first_year: i64,
+    epoch: i64,
+    year: i64,
+    month: i64,
+    day: i64,
+    leap: bool,
+) -> Option<i64> {
+    let info = ls_info(table, first_year, year)?;
     if leap && (info % 16) as i64 != month {
         return None;
     }
-    // `year` is already range-checked by `cn_info`, but `day` is added to the
+    // `year` is already range-checked by `ls_info`, but `day` is added to the
     // accumulated JDN unguarded (`jdn + day - 1`); an extreme `day` would
-    // overflow. A valid Chinese day is 1..=30, so clamping to the `FWD_LIMIT`
+    // overflow. A valid lunisolar day is 1..=30, so clamping to the `FWD_LIMIT`
     // band leaves every real date unchanged while preventing the overflow.
     let day = clamp_component(day);
-    let mut jdn = CHINESE_EPOCH_JDN;
-    let mut y = CHINESE_FIRST_YEAR;
+    let mut jdn = epoch;
+    let mut y = first_year;
     while y < year {
-        jdn += cn_year_days(cn_info(y)?);
+        jdn += ls_year_days(ls_info(table, first_year, y)?);
         y += 1;
     }
     let leap_m = (info % 16) as i64;
@@ -603,46 +700,50 @@ pub fn chinese_to_jdn(year: i64, month: i64, day: i64, leap: bool) -> Option<i64
         if m == month && !leap {
             return Some(jdn + day - 1);
         }
-        jdn += cn_month_days(info, m);
+        jdn += ls_month_days(info, m);
         if leap_m == m {
             if m == month && leap {
                 return Some(jdn + day - 1);
             }
-            jdn += cn_leap_days(info);
+            jdn += ls_leap_days(info);
         }
         m += 1;
     }
     None
 }
 
-/// The Chinese `(year, month, day, is_leap_month)` of a Julian Day Number, or
-/// `None` if it falls outside the supported range (Chinese years 1900–2099).
-#[must_use]
-pub fn jdn_to_chinese(jdn: i64) -> Option<(i64, i64, i64, bool)> {
-    let mut offset = jdn - CHINESE_EPOCH_JDN;
+/// The lunisolar `(year, month, day, is_leap_month)` of a Julian Day Number in
+/// the given table, or `None` if it falls outside the table's range.
+fn jdn_to_ls(
+    table: &[u32],
+    first_year: i64,
+    epoch: i64,
+    jdn: i64,
+) -> Option<(i64, i64, i64, bool)> {
+    let mut offset = jdn - epoch;
     if offset < 0 {
         return None;
     }
-    let mut year = CHINESE_FIRST_YEAR;
+    let mut year = first_year;
     loop {
-        let yd = cn_year_days(cn_info(year)?);
+        let yd = ls_year_days(ls_info(table, first_year, year)?);
         if offset < yd {
             break;
         }
         offset -= yd;
         year += 1;
     }
-    let info = cn_info(year)?;
+    let info = ls_info(table, first_year, year)?;
     let leap_m = (info % 16) as i64;
     let mut m = 1;
     while m <= 12 {
-        let d = cn_month_days(info, m);
+        let d = ls_month_days(info, m);
         if offset < d {
             return Some((year, m, offset + 1, false));
         }
         offset -= d;
         if leap_m == m {
-            let dl = cn_leap_days(info);
+            let dl = ls_leap_days(info);
             if offset < dl {
                 return Some((year, m, offset + 1, true));
             }
@@ -651,6 +752,35 @@ pub fn jdn_to_chinese(jdn: i64) -> Option<(i64, i64, i64, bool)> {
         m += 1;
     }
     None
+}
+
+/// The Julian Day Number of a Chinese (lunisolar) date. `month` is 1–12; set
+/// `leap` for the intercalary month that follows `month`. Returns `None` for a
+/// year outside the supported range (1800–2200) or a `leap` month that does not
+/// occur that year.
+#[must_use]
+pub fn chinese_to_jdn(year: i64, month: i64, day: i64, leap: bool) -> Option<i64> {
+    ls_to_jdn(
+        &CHINESE_YEAR_INFO,
+        CHINESE_FIRST_YEAR,
+        CHINESE_EPOCH_JDN,
+        year,
+        month,
+        day,
+        leap,
+    )
+}
+
+/// The Chinese `(year, month, day, is_leap_month)` of a Julian Day Number, or
+/// `None` if it falls outside the supported range (Chinese years 1800–2200).
+#[must_use]
+pub fn jdn_to_chinese(jdn: i64) -> Option<(i64, i64, i64, bool)> {
+    jdn_to_ls(
+        &CHINESE_YEAR_INFO,
+        CHINESE_FIRST_YEAR,
+        CHINESE_EPOCH_JDN,
+        jdn,
+    )
 }
 
 /// Convert a Gregorian date to the Chinese calendar (`None` if out of range).
@@ -668,6 +798,47 @@ pub fn chinese_to_gregorian(
     leap: bool,
 ) -> Option<(i64, i64, i64)> {
     Some(jdn_to_gregorian(chinese_to_jdn(year, month, day, leap)?))
+}
+
+/// The Julian Day Number of a Korean dangi (lunisolar) date. Same month/`leap`
+/// convention as [`chinese_to_jdn`]; the dangi calendar uses the same lunisolar
+/// rules computed at the Korean meridian, so its months can differ from the
+/// Chinese calendar's in some years. Returns `None` outside the supported range
+/// (1800–2200) or for a `leap` month that does not occur that year.
+///
+/// Note dangi years are conventionally numbered from 2333 BC (Chinese year + 2333);
+/// this function takes the equivalent Gregorian-aligned `year` (the same numbering
+/// [`chinese_to_jdn`] uses), not the traditional dangi era number.
+#[must_use]
+pub fn dangi_to_jdn(year: i64, month: i64, day: i64, leap: bool) -> Option<i64> {
+    ls_to_jdn(
+        &DANGI_YEAR_INFO,
+        DANGI_FIRST_YEAR,
+        DANGI_EPOCH_JDN,
+        year,
+        month,
+        day,
+        leap,
+    )
+}
+
+/// The dangi `(year, month, day, is_leap_month)` of a Julian Day Number, or
+/// `None` if it falls outside the supported range (1800–2200).
+#[must_use]
+pub fn jdn_to_dangi(jdn: i64) -> Option<(i64, i64, i64, bool)> {
+    jdn_to_ls(&DANGI_YEAR_INFO, DANGI_FIRST_YEAR, DANGI_EPOCH_JDN, jdn)
+}
+
+/// Convert a Gregorian date to the Korean dangi calendar (`None` if out of range).
+#[must_use]
+pub fn gregorian_to_dangi(year: i64, month: i64, day: i64) -> Option<(i64, i64, i64, bool)> {
+    jdn_to_dangi(gregorian_to_jdn(year, month, day))
+}
+
+/// Convert a Korean dangi date to the Gregorian calendar (`None` if out of range).
+#[must_use]
+pub fn dangi_to_gregorian(year: i64, month: i64, day: i64, leap: bool) -> Option<(i64, i64, i64)> {
+    Some(jdn_to_gregorian(dangi_to_jdn(year, month, day, leap)?))
 }
 
 /// The Japanese era and year-within-era for a Gregorian date, e.g.

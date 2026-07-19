@@ -269,14 +269,87 @@ fn chinese() {
     assert_eq!(gregorian_to_chinese(2024, 2, 10), Some((2024, 1, 1, false)));
     // A leap month: Chinese year 2023 had a leap 2nd month.
     assert_eq!(gregorian_to_chinese(2023, 1, 22), Some((2023, 1, 1, false))); // CNY 2023
-    let (_, _, _, _) = gregorian_to_chinese(2023, 4, 1).unwrap();
-    // Round-trips across the supported range.
-    for &(y, m, d) in &[(1950, 6, 1), (2000, 1, 1), (2024, 2, 10), (2099, 12, 31)] {
+    assert_eq!(gregorian_to_chinese(2023, 2, 20), Some((2023, 2, 1, false))); // regular 2nd
+    assert_eq!(gregorian_to_chinese(2023, 3, 22), Some((2023, 2, 1, true))); // leap 2nd month
+    // Widened-range New-Year anchors (validated: matches ICU + almanac data).
+    assert_eq!(chinese_to_gregorian(1850, 1, 1, false), Some((1850, 2, 12)));
+    assert_eq!(chinese_to_gregorian(1900, 1, 1, false), Some((1900, 1, 31)));
+    assert_eq!(chinese_to_gregorian(2150, 1, 1, false), Some((2150, 1, 29)));
+    assert_eq!(chinese_to_gregorian(2100, 1, 1, false), Some((2100, 2, 9)));
+    // Leap months outside the original 1900-2099 range: 1803 leap 2nd, 2147
+    // leap 11th (and month 5 is not that year's leap month).
+    assert_eq!(gregorian_to_chinese(2148, 1, 1).unwrap().0, 2147);
+    assert_eq!(
+        chinese_to_gregorian(2147, 11, 1, true),
+        Some((2147, 12, 23))
+    );
+    assert_eq!(chinese_to_jdn(2147, 5, 1, true), None);
+    assert!(chinese_to_jdn(1803, 2, 1, true).is_some());
+    // Round-trips across the widened range (pre-1900, mid, post-2099).
+    for &(y, m, d) in &[
+        (1801, 5, 1),
+        (1850, 2, 12),
+        (1899, 12, 31),
+        (1950, 6, 1),
+        (2000, 1, 1),
+        (2024, 2, 10),
+        (2099, 12, 31),
+        (2150, 1, 29),
+        (2200, 6, 1),
+    ] {
         let c = gregorian_to_chinese(y, m, d).unwrap();
         assert_eq!(chinese_to_gregorian(c.0, c.1, c.2, c.3), Some((y, m, d)));
     }
-    // Out of range -> None (no panic).
-    assert_eq!(gregorian_to_chinese(1800, 1, 1), None);
-    assert_eq!(gregorian_to_chinese(2200, 1, 1), None);
+    // Out of range -> None (no panic). 1799 and 2201 straddle the table.
+    assert_eq!(gregorian_to_chinese(1799, 1, 1), None);
+    assert_eq!(gregorian_to_chinese(2201, 6, 1), None);
+    assert_eq!(chinese_to_jdn(1799, 1, 1, false), None);
     assert_eq!(chinese_to_jdn(3000, 1, 1, false), None);
+}
+
+#[test]
+fn dangi() {
+    use intl::calendar::*;
+    // Korean dangi shares the lunisolar algorithm but is computed at the Korean
+    // meridian; New-Year dates match ICU DangiCalendar across the span.
+    assert_eq!(dangi_to_gregorian(2024, 1, 1, false), Some((2024, 2, 10)));
+    assert_eq!(dangi_to_gregorian(2000, 1, 1, false), Some((2000, 2, 5)));
+    assert_eq!(dangi_to_gregorian(1850, 1, 1, false), Some((1850, 2, 12)));
+    assert_eq!(dangi_to_gregorian(2150, 1, 1, false), Some((2150, 1, 29)));
+    assert_eq!(gregorian_to_dangi(2024, 2, 10), Some((2024, 1, 1, false)));
+    // Round-trips across the widened range.
+    for &(y, m, d) in &[
+        (1801, 5, 1),
+        (1899, 12, 31),
+        (1950, 6, 1),
+        (1997, 3, 1),
+        (2000, 1, 1),
+        (2024, 2, 10),
+        (2099, 12, 31),
+        (2200, 6, 1),
+    ] {
+        let c = gregorian_to_dangi(y, m, d).unwrap();
+        assert_eq!(dangi_to_gregorian(c.0, c.1, c.2, c.3), Some((y, m, d)));
+    }
+    // Out of range -> None.
+    assert_eq!(gregorian_to_dangi(1799, 1, 1), None);
+    assert_eq!(gregorian_to_dangi(2201, 6, 1), None);
+    assert_eq!(dangi_to_jdn(3000, 1, 1, false), None);
+
+    // Dangi diverges from Chinese in some years because of the +9h vs +8h
+    // meridian. 1997: Chinese New Year is 1997-02-07, dangi Seollal 1997-02-08.
+    assert_eq!(chinese_to_gregorian(1997, 1, 1, false), Some((1997, 2, 7)));
+    assert_eq!(dangi_to_gregorian(1997, 1, 1, false), Some((1997, 2, 8)));
+    assert_ne!(
+        chinese_to_gregorian(1997, 1, 1, false),
+        dangi_to_gregorian(1997, 1, 1, false)
+    );
+    // 1988 is another New-Year divergence (Chinese 02-17, dangi Seollal 02-18).
+    assert_eq!(chinese_to_gregorian(1988, 1, 1, false), Some((1988, 2, 17)));
+    assert_eq!(dangi_to_gregorian(1988, 1, 1, false), Some((1988, 2, 18)));
+    // Pre-1912 Korea used the same +8h meridian as China: New Years coincide.
+    assert_eq!(
+        chinese_to_gregorian(1801, 1, 1, false),
+        dangi_to_gregorian(1801, 1, 1, false)
+    );
 }
