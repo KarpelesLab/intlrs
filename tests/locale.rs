@@ -155,6 +155,54 @@ fn canonicalize_structural() {
 }
 
 #[test]
+fn canonicalize_unicode_extension_keywords() {
+    let c = |t: &str| canonicalize(t).unwrap();
+    // Deprecated type-value aliases (all cross-checked against V8
+    // `Intl.getCanonicalLocales`).
+    assert_eq!(c("en-u-ca-islamicc"), "en-u-ca-islamic-civil");
+    assert_eq!(c("en-u-ca-ethiopic-amete-alem"), "en-u-ca-ethioaa");
+    assert_eq!(c("en-u-ms-imperial"), "en-u-ms-uksystem");
+    assert_eq!(c("en-u-ks-primary"), "en-u-ks-level1");
+    assert_eq!(c("en-u-ks-tertiary"), "en-u-ks-level3");
+    assert_eq!(c("en-u-tz-uct"), "en-u-tz-utc");
+    assert_eq!(c("en-u-tz-gmt0"), "en-u-tz-gmt");
+    // A `true`/`yes` type is dropped for any key; `false`/`no` are kept verbatim.
+    assert_eq!(c("en-u-kn-true"), "en-u-kn");
+    assert_eq!(c("en-u-kn-yes"), "en-u-kn");
+    assert_eq!(c("en-u-ca-true"), "en-u-ca");
+    assert_eq!(c("en-u-kn-false"), "en-u-kn-false");
+    assert_eq!(c("en-u-kn-no"), "en-u-kn-no");
+    assert_eq!(c("en-u-kf-no"), "en-u-kf-no");
+    // Attribute + keyword sorting; attributes precede keywords.
+    assert_eq!(
+        c("en-u-foo-bar-ca-gregory-nu-latn"),
+        "en-u-bar-foo-ca-gregory-nu-latn"
+    );
+    assert_eq!(c("en-u-nu-latn-ca-gregory"), "en-u-ca-gregory-nu-latn");
+    // Case normalization.
+    assert_eq!(c("EN-U-CA-ISLAMICC"), "en-u-ca-islamic-civil");
+    // A `true` attribute (not a keyword type) is kept.
+    assert_eq!(c("en-u-true-ca-gregory"), "en-u-true-ca-gregory");
+    // Duplicate key: first occurrence wins.
+    assert_eq!(c("en-u-ca-buddhist-ca-gregory"), "en-u-ca-buddhist");
+}
+
+#[test]
+fn canonicalize_transform_extension() {
+    let c = |t: &str| canonicalize(t).unwrap();
+    // tlang is canonicalized like a language tag, then lowercased.
+    assert_eq!(c("en-t-iw"), "en-t-he");
+    assert_eq!(c("en-t-sh"), "en-t-sr-latn");
+    assert_eq!(c("en-t-en-us"), "en-t-en-us");
+    // tfield value alias (transform mechanism `m0`).
+    assert_eq!(c("en-t-en-m0-names"), "en-t-en-m0-prprname");
+    // A `-t-` and a `-u-` extension coexist and are ordered t before u.
+    assert_eq!(c("de-t-de-u-ca-gregory"), "de-t-de-u-ca-gregory");
+    // No tlang, just a tfield.
+    assert_eq!(c("en-t-k0-qwerty"), "en-t-k0-qwerty");
+}
+
+#[test]
 fn canonical_locale_list_dedupes() {
     assert_eq!(
         get_canonical_locales(&["en-US", "EN-us", "iw"]),

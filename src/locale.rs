@@ -275,13 +275,15 @@ pub fn negotiate(requested: &[&str], available: &[Locale]) -> Option<usize> {
 /// (`BU`→`MM`, one→many like `SU`), and variant aliases (`heploc`→`alalc97`).
 /// The result is also structurally canonicalized (case, subtag order).
 ///
+/// Unicode (`-u-`) and Transform (`-t-`) extension keywords are also
+/// canonicalized (UTS #35 §3.6.5 / ECMA-402 `CanonicalizeUnicodeLocaleId`):
+/// attributes and keywords are sorted, deprecated key/type values are replaced
+/// with their CLDR canonical forms (e.g. `-u-ca-islamicc` → `-u-ca-islamic-civil`,
+/// `-u-ms-imperial` → `-u-ms-uksystem`), a `true`/`yes` keyword type is dropped
+/// (`-u-kn-true` → `-u-kn`), and a `-t-` tag's embedded language is canonicalized.
+///
 /// Returns `None` if the tag (after any grandfathered replacement) fails to
 /// parse.
-///
-/// Note: Unicode extension (`-u-`/`-t-`) keyword canonicalization is **not**
-/// performed; extension sequences are preserved exactly as parsed.
-// TODO: canonicalize `-u-`/`-t-` extension keywords (sort/normalize the keys
-// and their values, e.g. deprecated `-u-ca-*` type aliases).
 #[must_use]
 pub fn canonicalize(tag: &str) -> Option<String> {
     // 1. Whole-tag (grandfathered / redundant) alias: if the entire input tag
@@ -359,7 +361,141 @@ pub fn canonicalize(tag: &str) -> Option<String> {
         }
     }
 
+    // 6. Canonicalize each Unicode (`-u-`) / Transform (`-t-`) extension keyword.
+    for e in &mut loc.extensions {
+        if let Some(body) = e.strip_prefix("u-") {
+            *e = canonicalize_unicode_ext(body);
+        } else if let Some(body) = e.strip_prefix("t-") {
+            *e = canonicalize_transform_ext(body);
+        }
+    }
+
     Some(loc.to_string())
+}
+
+/// Canonicalize a Unicode (`-u-`) extension body (the subtags after the `u`
+/// singleton, already lowercased). Attributes are sorted; keywords are sorted by
+/// key with the first occurrence of a duplicate key kept; each keyword's type is
+/// replaced by its CLDR canonical value and a resulting `true`/`yes` type is
+/// dropped. Returns the full extension string, e.g. `"u-ca-islamic-civil"`.
+fn canonicalize_unicode_ext(body: &str) -> String {
+    let subs: Vec<&str> = body.split('-').collect();
+    let mut i = 0;
+    // Attributes: leading non-key (len != 2) subtags.
+    let mut attrs: Vec<&str> = Vec::new();
+    while i < subs.len() && subs[i].len() != 2 {
+        attrs.push(subs[i]);
+        i += 1;
+    }
+    attrs.sort_unstable();
+    attrs.dedup();
+
+    // Keywords: `key (type-subtag)*`, key == a 2-char subtag.
+    let mut keywords: Vec<(&str, String)> = Vec::new();
+    while i < subs.len() {
+        let key = subs[i];
+        i += 1;
+        let start = i;
+        while i < subs.len() && subs[i].len() != 2 {
+            i += 1;
+        }
+        // Skip a duplicate key (keep the first occurrence).
+        if keywords.iter().any(|(k, _)| *k == key) {
+            continue;
+        }
+        let value = subs[start..i].join("-");
+        keywords.push((key, canonical_keyword_type(key, &value)));
+    }
+    keywords.sort_by(|a, b| a.0.cmp(b.0));
+
+    let mut out = String::from("u");
+    for a in &attrs {
+        out.push('-');
+        out.push_str(a);
+    }
+    for (key, value) in &keywords {
+        out.push('-');
+        out.push_str(key);
+        if !value.is_empty() {
+            out.push('-');
+            out.push_str(value);
+        }
+    }
+    out
+}
+
+/// The canonical type value for a Unicode-extension keyword `key` whose raw type
+/// is `value` (possibly multi-subtag, `-`-joined). Applies the CLDR bcp47 type
+/// alias, then drops a `true`/`yes` value (returned as an empty string).
+fn canonical_keyword_type(key: &str, value: &str) -> String {
+    if value.is_empty() {
+        return String::new();
+    }
+    let alias_key = alloc::format!("{key}/{value}");
+    let canonical = crate::cldr::bcp47_type_alias(&alias_key).unwrap_or(value);
+    if canonical == "true" || canonical == "yes" {
+        String::new()
+    } else {
+        String::from(canonical)
+    }
+}
+
+/// Canonicalize a Transform (`-t-`) extension body (subtags after the `t`
+/// singleton, already lowercased): the leading tlang is canonicalized like a
+/// language tag (then lowercased), tfields are sorted by their `<alpha><digit>`
+/// key, and deprecated tfield values are replaced with their CLDR canonical form.
+fn canonicalize_transform_ext(body: &str) -> String {
+    let subs: Vec<&str> = body.split('-').collect();
+    let is_tkey = |s: &str| {
+        s.len() == 2 && s.as_bytes()[0].is_ascii_alphabetic() && s.as_bytes()[1].is_ascii_digit()
+    };
+    let mut i = 0;
+    // tlang: leading subtags up to the first tfield key.
+    while i < subs.len() && !is_tkey(subs[i]) {
+        i += 1;
+    }
+    let tlang = if i > 0 {
+        let joined = subs[..i].join("-");
+        // Canonicalize as a language tag, then lowercase (transform tlangs are
+        // rendered lowercase, e.g. `sh` → `sr-latn`, `iw` → `he`).
+        canonicalize(&joined).unwrap_or(joined).to_ascii_lowercase()
+    } else {
+        String::new()
+    };
+
+    // tfields: `tkey (value-subtag)+`.
+    let mut fields: Vec<(&str, String)> = Vec::new();
+    while i < subs.len() {
+        let key = subs[i];
+        i += 1;
+        let start = i;
+        while i < subs.len() && !is_tkey(subs[i]) {
+            i += 1;
+        }
+        if fields.iter().any(|(k, _)| *k == key) {
+            continue;
+        }
+        let value = subs[start..i].join("-");
+        let alias_key = alloc::format!("{key}/{value}");
+        let canonical = crate::cldr::bcp47_type_alias(&alias_key).unwrap_or(&value);
+        fields.push((key, String::from(canonical)));
+    }
+    fields.sort_by(|a, b| a.0.cmp(b.0));
+
+    let mut out = String::from("t");
+    if !tlang.is_empty() {
+        out.push('-');
+        out.push_str(&tlang);
+    }
+    for (key, value) in &fields {
+        out.push('-');
+        out.push_str(key);
+        if !value.is_empty() {
+            out.push('-');
+            out.push_str(value);
+        }
+    }
+    out
 }
 
 /// Rewrite a space-separated subtag string (as stored in the alias blob) into a

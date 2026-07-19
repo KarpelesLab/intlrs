@@ -323,6 +323,7 @@ fn main() {
     emit_intervals(&cldr_dir, &cldr.join("dates"));
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_aliases(&cldr_dir, &cldr.join("aliases.json"));
+    emit_bcp47(&cldr_dir, &cldr.join("bcp47"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
     emit_numsys(
@@ -3675,6 +3676,153 @@ fn push_alias(records: &mut Vec<(String, Vec<u8>)>, prefix: char, key: &str, ent
     let mut p = Vec::new();
     enc_str(&mut p, &repl);
     records.push((format!("{prefix}{key}"), p));
+}
+
+/// Write `cldr/bcp47.bin`: the CLDR `-u-`/`-t-` extension type-value aliases used
+/// by locale-extension canonicalization (UTS #35 §3.6.5 / ECMA-402
+/// CanonicalizeUnicodeLocaleId). Reads every `data/cldr/48/bcp47/*.xml` keyword
+/// file and, for each `<key>`/`<type>`, records the deprecated-value → canonical
+/// mapping under the key `"<keyName>/<sourceValue>"` (both lowercased). The
+/// canonical value keeps CLDR's `-` subtag separators (e.g. `islamic-civil`).
+///
+/// Two shapes are recorded:
+/// - `deprecated="true" preferred="P"` on a `<type name=N>` → `N` → `P`.
+/// - otherwise, each space-separated token of `alias="A1 A2 …"` → `Ai` → `N`.
+///
+/// Only BCP-47-legal source values are kept (every `-` subtag is 2–8 alphanum),
+/// which drops overlong long-form aliases (`gregorian`, `phonebook`, …) and the
+/// slash-bearing IANA timezone aliases that can never appear in a real tag. The
+/// boolean `yes`/`no`/`true`/`false` type aliases are intentionally skipped: at
+/// canonicalization time a `true`/`yes` keyword value is dropped and `false`/`no`
+/// kept verbatim (matching V8 / ECMA-402), so those aliases are never consulted.
+fn emit_bcp47(cldr_dir: &Path, bcp47_dir: &Path) {
+    let is_bool = |s: &str| matches!(s, "true" | "false" | "yes" | "no");
+    // A source value is BCP-47-legal when each `-` subtag is 2..=8 alphanumerics.
+    let valid_src = |s: &str| {
+        !s.is_empty()
+            && s.split('-')
+                .all(|sub| (2..=8).contains(&sub.len()) && sub.bytes().all(|b| b.is_ascii_alphanumeric()))
+    };
+
+    let mut files: Vec<PathBuf> = fs::read_dir(bcp47_dir)
+        .expect("read bcp47 dir")
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "xml"))
+        .collect();
+    files.sort();
+
+    // De-duplicated map so determinism does not depend on file order.
+    let mut map: BTreeMap<String, String> = BTreeMap::new();
+    for path in &files {
+        let xml = fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        for (kattrs, body) in xml_blocks(&xml, "key") {
+            let Some(kname) = xml_attr(kattrs, "name") else {
+                continue;
+            };
+            let kname = kname.to_ascii_lowercase();
+            for tattrs in xml_self_tags(body, "type") {
+                let Some(name) = xml_attr(tattrs, "name") else {
+                    continue;
+                };
+                let name = name.to_ascii_lowercase();
+                let deprecated = xml_attr(tattrs, "deprecated") == Some("true");
+                let preferred = xml_attr(tattrs, "preferred").map(str::to_ascii_lowercase);
+                let alias = xml_attr(tattrs, "alias").map(str::to_ascii_lowercase);
+
+                let mut add = |src: &str, tgt: &str| {
+                    if src == tgt || is_bool(src) || is_bool(tgt) || !valid_src(src) {
+                        return;
+                    }
+                    map.insert(format!("{kname}/{src}"), tgt.to_string());
+                };
+                match (deprecated, &preferred) {
+                    (true, Some(p)) => add(&name, p),
+                    _ => {
+                        if let Some(a) = &alias {
+                            for tok in a.split_whitespace() {
+                                add(tok, &name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut records: Vec<(String, Vec<u8>)> = Vec::new();
+    for (key, val) in &map {
+        let mut p = Vec::new();
+        enc_str(&mut p, val);
+        records.push((key.clone(), p));
+    }
+    records.sort();
+    write_blob(cldr_dir, "bcp47", &records);
+    println!("codegen: wrote bcp47.bin ({} type-value aliases)", records.len());
+}
+
+/// True when byte `after` follows a tag name as a real delimiter (so `<key`
+/// matches `<key …>` but not `<keyword>`).
+fn tag_delim(after: Option<u8>) -> bool {
+    matches!(after, Some(b) if b == b'>' || b == b'/' || b.is_ascii_whitespace())
+}
+
+/// Iterate `<tag …attrs…> …body… </tag>` blocks, yielding `(attrs, body)`.
+fn xml_blocks<'a>(xml: &'a str, tag: &str) -> Vec<(&'a str, &'a str)> {
+    let open = format!("<{tag}");
+    let close = format!("</{tag}>");
+    let bytes = xml.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while let Some(rel) = xml[i..].find(&open) {
+        let start = i + rel + open.len();
+        if !tag_delim(bytes.get(start).copied()) {
+            i = start; // e.g. `<keyword>` when scanning for `<key`
+            continue;
+        }
+        // Attributes run to the closing `>` of the open tag.
+        let Some(gt) = xml[start..].find('>') else {
+            break;
+        };
+        let attrs = &xml[start..start + gt];
+        let body_start = start + gt + 1;
+        let Some(crel) = xml[body_start..].find(&close) else {
+            break;
+        };
+        out.push((attrs, &xml[body_start..body_start + crel]));
+        i = body_start + crel + close.len();
+    }
+    out
+}
+
+/// Iterate the attribute strings of self-contained `<tag …/>` (or `<tag …>`)
+/// elements found in `xml`.
+fn xml_self_tags<'a>(xml: &'a str, tag: &str) -> Vec<&'a str> {
+    let open = format!("<{tag}");
+    let bytes = xml.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while let Some(rel) = xml[i..].find(&open) {
+        let start = i + rel + open.len();
+        if !tag_delim(bytes.get(start).copied()) {
+            i = start;
+            continue;
+        }
+        let Some(gt) = xml[start..].find('>') else {
+            break;
+        };
+        let attrs = xml[start..start + gt].trim_end_matches('/');
+        out.push(attrs);
+        i = start + gt + 1;
+    }
+    out
+}
+
+/// Extract the value of `name="…"` from an XML attribute string.
+fn xml_attr<'a>(attrs: &'a str, name: &str) -> Option<&'a str> {
+    let pat = format!("{name}=\"");
+    let idx = attrs.find(&pat)? + pat.len();
+    let end = attrs[idx..].find('"')? + idx;
+    Some(&attrs[idx..end])
 }
 
 /// Write `cldr/display_languages.bin` and `cldr/display_territories.bin`: for

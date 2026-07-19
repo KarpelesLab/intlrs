@@ -175,6 +175,8 @@ const INTERVALS: &[u8] = include_bytes!("cldr/intervals.bin");
 const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
 #[cfg(feature = "locale")]
 const ALIASES: &[u8] = include_bytes!("cldr/aliases.bin");
+#[cfg(feature = "locale")]
+const BCP47: &[u8] = include_bytes!("cldr/bcp47.bin");
 #[cfg(feature = "datetime")]
 const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
 #[cfg(feature = "spellout")]
@@ -426,6 +428,15 @@ pub(crate) fn likely_subtags(key: &str) -> Option<&'static str> {
 #[cfg(feature = "locale")]
 pub(crate) fn alias_lookup(prefixed_key: &str) -> Option<&'static str> {
     find(ALIASES, prefixed_key).map(|mut c| c.str())
+}
+
+/// Canonical replacement for a deprecated `-u-`/`-t-` extension type value, or
+/// `None`. The key is `"<keyword>/<value>"` lowercased, e.g. `"ca/islamicc"` →
+/// `"islamic-civil"`, `"ms/imperial"` → `"uksystem"`, `"m0/names"` → `"prprname"`.
+/// The returned value keeps CLDR `-` subtag separators.
+#[cfg(feature = "locale")]
+pub(crate) fn bcp47_type_alias(keyword_and_value: &str) -> Option<&'static str> {
+    find(BCP47, keyword_and_value).map(|mut c| c.str())
 }
 
 /// Number of curated units (must match codegen's `UNITS` and the `Unit` enum).
