@@ -2,8 +2,9 @@
 //! pivot between the proleptic Gregorian, civil (tabular) Islamic, Umm al-Qura
 //! (Saudi) Islamic, Persian (Solar Hijri), Hebrew, Chinese (lunisolar,
 //! 1900–2099), and Japanese-era calendars, plus the ISO-8601 week date and day
-//! of week. Pure integer arithmetic; only the Chinese and Umm al-Qura calendars
-//! use an embedded month-length table.
+//! of week. Pure integer arithmetic; the Chinese and Umm al-Qura calendars use
+//! an embedded month-length table, and the Persian calendar embeds ICU's
+//! leap-year correction set.
 //!
 //! ```
 //! use intl::calendar::{gregorian_to_islamic, islamic_to_gregorian, day_of_week};
@@ -96,46 +97,98 @@ pub fn jdn_to_islamic(jdn: i64) -> (i64, i64, i64) {
     (year, month, day)
 }
 
-/// JDN of 1 Farvardin 1 in the Persian (Solar Hijri) calendar.
-const PERSIAN_EPOCH: i64 = 1_948_321;
+// ---- Persian (Solar Hijri) calendar, ported verbatim from ICU4C. ----
+//
+// The Persian civil calendar is astronomical: 1 Farvardin is the day whose
+// midnight (Tehran, 52.5°E meridian) is nearest the March equinox. That rule
+// cannot be reproduced with float-free integer arithmetic, and the older
+// arithmetic 2820-year (Birashk) cycle used here diverged from it — and from
+// ICU — by a day in some modern years (e.g. Nowruz 1404 AP is 2025-03-21, not
+// the 2025-03-20 the Birashk cycle produced). ICU4C solves this with a
+// *calibrated* closed form: the arithmetic 33-year leap rule
+// `(year·25 + 11) mod 33 < 8`, corrected by a fixed set of years where that
+// rule disagrees with the astronomical calendar. We port that closed form
+// exactly (no astronomy, no float, pure integers), so month starts / Nowruz
+// match ICU — and the official Iranian calendar — across the modern era.
+//
+// `PERSIAN_NONLEAP` is ICU's `nonLeapYears`, verbatim from ICU4C
+// `icu4c/source/i18n/persncal.cpp`: each listed Persian year is forced
+// *non-leap* (the bare arithmetic rule would mark it leap), and the year
+// immediately after each is forced leap. It spans Persian years 1502..=2987 AP;
+// outside that span the bare arithmetic rule applies, exactly as ICU does.
 
-/// The Julian Day Number of a Persian (Solar Hijri) date (arithmetic 2820-year
-/// cycle).
+/// JDN of 1 Farvardin 1 in the Persian (Solar Hijri) calendar (ICU's
+/// `PERSIAN_EPOCH`; `persian_to_jdn(1, 1, 1) == 1_948_320`).
+const PERSIAN_EPOCH: i64 = 1_948_320;
+
+/// First year of ICU's leap-correction set (`PERSIAN_NONLEAP[0]`).
+const PERSIAN_MIN_CORRECTION: i64 = 1502;
+
+#[rustfmt::skip]
+const PERSIAN_NONLEAP: [i64; 78] = [
+    1502, 1601, 1634, 1667, 1700, 1733, 1766, 1799, 1832, 1865, 1898, 1931, 1964, 1997, 2030, 2059,
+    2063, 2096, 2129, 2158, 2162, 2191, 2195, 2224, 2228, 2257, 2261, 2290, 2294, 2323, 2327, 2356,
+    2360, 2389, 2393, 2422, 2426, 2455, 2459, 2488, 2492, 2521, 2525, 2554, 2558, 2587, 2591, 2620,
+    2624, 2653, 2657, 2686, 2690, 2719, 2723, 2748, 2752, 2756, 2781, 2785, 2789, 2818, 2822, 2847,
+    2851, 2855, 2880, 2884, 2888, 2913, 2917, 2921, 2946, 2950, 2954, 2979, 2983, 2987,
+];
+
+/// Whether `year` is in ICU's forced-non-leap correction set.
+fn persian_forced_nonleap(year: i64) -> bool {
+    year >= PERSIAN_MIN_CORRECTION && PERSIAN_NONLEAP.contains(&year)
+}
+
+/// Days elapsed before `month` (1..=12) within a Persian year: months 1..=6 are
+/// 31 days, 7..=11 are 30, month 12 is 29 (30 in leap years).
+fn persian_days_before_month(month: i64) -> i64 {
+    if month <= 7 {
+        (month - 1) * 31
+    } else {
+        (month - 1) * 30 + 6
+    }
+}
+
+/// Julian day (Persian-epoch relative) of 1 Farvardin of `year`: ICU's
+/// `firstJulianOfYear`. 365 days per prior year plus the arithmetic leap days
+/// `floor((8·year + 21) / 33)`, then the astronomical correction.
+fn persian_first_julian_of_year(year: i64) -> i64 {
+    let mut jd = 365 * (year - 1) + (8 * year + 21).div_euclid(33);
+    if persian_forced_nonleap(year - 1) {
+        jd -= 1;
+    }
+    jd
+}
+
+/// The Julian Day Number of a Persian (Solar Hijri) date. Ported verbatim from
+/// ICU4C `PersianCalendar::handleComputeMonthStart` (calibrated arithmetic
+/// 33-year leap rule), so month starts match ICU exactly.
 #[must_use]
 pub fn persian_to_jdn(year: i64, month: i64, day: i64) -> i64 {
     let year = clamp_component(year);
     let month = clamp_component(month);
     let day = clamp_component(day);
-    let epbase = if year >= 0 { year - 474 } else { year - 473 };
-    let epyear = 474 + epbase.rem_euclid(2820);
-    let month_days = if month <= 7 {
-        (month - 1) * 31
-    } else {
-        (month - 1) * 30 + 6
-    };
-    day + month_days
-        + (epyear * 682 - 110) / 2816
-        + (epyear - 1) * 365
-        + epbase.div_euclid(2820) * 1_029_983
-        + (PERSIAN_EPOCH - 1)
+    PERSIAN_EPOCH - 1 + persian_first_julian_of_year(year) + persian_days_before_month(month) + day
 }
 
 /// The Persian (Solar Hijri) `(year, month, day)` of a Julian Day Number.
+/// Ported verbatim from ICU4C `PersianCalendar::handleComputeFields`.
 #[must_use]
 pub fn jdn_to_persian(jdn: i64) -> (i64, i64, i64) {
-    // The Persian year of a Gregorian date is roughly `gregorian - 621`.
-    let mut year = jdn_to_gregorian(jdn).0 - 621;
-    while year > -FWD_LIMIT && persian_to_jdn(year, 1, 1) > jdn {
-        year -= 1;
-    }
-    while year < FWD_LIMIT && persian_to_jdn(year + 1, 1, 1) <= jdn {
+    let days_since_epoch = jdn - PERSIAN_EPOCH;
+    let mut year = (33 * days_since_epoch + 3).div_euclid(12053) + 1;
+    let mut day_of_year = days_since_epoch - persian_first_julian_of_year(year); // 0-based
+    // A forced-non-leap year has 365 days: its would-be day 366 is 1 Farvardin
+    // of the (forced-leap) next year.
+    if day_of_year == 365 && persian_forced_nonleap(year) {
         year += 1;
+        day_of_year = 0;
     }
-    let mut month = 1;
-    while month < 12 && persian_to_jdn(year, month + 1, 1) <= jdn {
-        month += 1;
-    }
-    let day = jdn - persian_to_jdn(year, month, 1) + 1;
+    let month = if day_of_year < 216 {
+        day_of_year / 31 + 1
+    } else {
+        (day_of_year - 6) / 30 + 1
+    };
+    let day = day_of_year + 1 - persian_days_before_month(month);
     (year, month, day)
 }
 

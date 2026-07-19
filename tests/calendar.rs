@@ -113,15 +113,95 @@ fn japanese() {
 #[test]
 fn persian() {
     use intl::calendar::*;
-    // Nowruz 1404 = 20 March 2025 (vernal equinox).
-    assert_eq!(gregorian_to_persian(2025, 3, 20), (1404, 1, 1));
-    assert_eq!(persian_to_gregorian(1404, 1, 1), (2025, 3, 20));
-    assert_eq!(persian_to_jdn(1, 1, 1), 1948321); // epoch
+    // Nowruz 1404 = 21 March 2025. The 2025 March equinox fell at 12:31 Tehran
+    // time (52.5°E) — *after* solar noon — so Nowruz rolls to the next day. This
+    // matches ICU4C and the official Iranian calendar. (The older Birashk cycle
+    // that this file previously asserted here gave 2025-03-20, which is wrong;
+    // see the `persian_matches_icu` test below for the full divergence list.)
+    assert_eq!(gregorian_to_persian(2025, 3, 21), (1404, 1, 1));
+    assert_eq!(persian_to_gregorian(1404, 1, 1), (2025, 3, 21));
+    // 2025-03-20 is therefore the last day of 1403 (a leap year: 30 Esfand).
+    assert_eq!(gregorian_to_persian(2025, 3, 20), (1403, 12, 30));
+    assert_eq!(persian_to_jdn(1, 1, 1), 1948320); // epoch (ICU's PERSIAN_EPOCH)
     // Round-trips.
     for &(y, m, d) in &[(2000, 1, 1), (1970, 1, 1), (2026, 6, 4), (2025, 12, 31)] {
         let (py, pm, pd) = gregorian_to_persian(y, m, d);
         assert!((1..=12).contains(&pm) && (1..=31).contains(&pd));
         assert_eq!(persian_to_gregorian(py, pm, pd), (y, m, d));
+    }
+}
+
+#[test]
+fn persian_matches_icu() {
+    use intl::calendar::*;
+
+    // --- Authoritative Nowruz (1 Farvardin) anchors, both directions. ---
+    // These are astronomically correct (equinox nearest Tehran midnight) and
+    // agree with ICU4C's PersianCalendar and the official Iranian calendar.
+    let anchors = [
+        (1354, 1975, 3, 21),
+        (1399, 2020, 3, 20),
+        (1403, 2024, 3, 20),
+        (1404, 2025, 3, 21), // divergence year (Birashk said 03-20)
+        (1405, 2026, 3, 21),
+        (1408, 2029, 3, 20),
+        // Second-source cross-checks spanning the range.
+        (1300, 1921, 3, 21),
+        (1370, 1991, 3, 21),
+        (1395, 2016, 3, 20),
+        (1420, 2041, 3, 20),
+    ];
+    for &(ap, gy, gm, gd) in &anchors {
+        assert_eq!(persian_to_gregorian(ap, 1, 1), (gy, gm, gd));
+        assert_eq!(gregorian_to_persian(gy, gm, gd), (ap, 1, 1));
+    }
+
+    // --- Divergence years: Nowruz where the new ICU-matching value differs
+    // from the old Birashk 2820-year cycle. (Persian year, old Birashk
+    // Gregorian date, new ICU Gregorian date.) Every `new` value here is the
+    // authoritative astronomical Nowruz. ---
+    let divergences = [
+        (1210, (1831, 3, 22), (1831, 3, 21)),
+        (1243, (1864, 3, 21), (1864, 3, 20)),
+        (1404, (2025, 3, 20), (2025, 3, 21)),
+        (1437, (2058, 3, 20), (2058, 3, 21)),
+        (1470, (2091, 3, 20), (2091, 3, 21)),
+        (1532, (2153, 3, 20), (2153, 3, 21)),
+        (1536, (2157, 3, 20), (2157, 3, 21)),
+        (1565, (2186, 3, 20), (2186, 3, 21)),
+        (1569, (2190, 3, 20), (2190, 3, 21)),
+        (1598, (2219, 3, 21), (2219, 3, 22)),
+        (1631, (2252, 3, 20), (2252, 3, 21)),
+    ];
+    for &(ap, _old, new) in &divergences {
+        assert_eq!(persian_to_gregorian(ap, 1, 1), new);
+        assert_eq!(gregorian_to_persian(new.0, new.1, new.2), (ap, 1, 1));
+    }
+
+    // --- Full round-trips across the modern range, every day of every month
+    // (month lengths: 1..=6 -> 31, 7..=11 -> 30, 12 -> 29 or 30 in leap years).
+    // Also checks a leap year has exactly 366 days. ---
+    for ap in 1178..=1633 {
+        let year_days = persian_to_jdn(ap + 1, 1, 1) - persian_to_jdn(ap, 1, 1);
+        assert!(year_days == 365 || year_days == 366);
+        let leap = year_days == 366;
+        for mo in 1..=12 {
+            let mlen = match mo {
+                1..=6 => 31,
+                7..=11 => 30,
+                _ => {
+                    if leap {
+                        30
+                    } else {
+                        29
+                    }
+                }
+            };
+            for da in [1, mlen] {
+                let jdn = persian_to_jdn(ap, mo, da);
+                assert_eq!(jdn_to_persian(jdn), (ap, mo, da));
+            }
+        }
     }
 }
 
@@ -174,7 +254,7 @@ fn forward_extremes_do_not_panic() {
     // Normal in-range results must remain byte-for-byte identical to before.
     assert_eq!(gregorian_to_jdn(2000, 1, 1), 2451545);
     assert_eq!(islamic_to_jdn(1, 1, 1), 1948440);
-    assert_eq!(persian_to_jdn(1, 1, 1), 1948321);
+    assert_eq!(persian_to_jdn(1, 1, 1), 1948320);
     assert_eq!(gregorian_to_hebrew(2024, 10, 3), (5785, 7, 1));
 }
 
