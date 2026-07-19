@@ -83,10 +83,13 @@ bidi = []                                   # UAX #9 bidirectional algorithm
 identifiers = []                            # UAX #31 identifiers
 case = ["normalization", "segmentation"]    # case mapping/folding (needs NFD + word breaks)
 collation = ["case", "alloc", "_cldr"]      # UTS #10 collation (~1.9 MB table; CLDR tailorings)
-# Chinese (zh) pinyin collation — the default `Intl.Collator('zh')` order. Adds a
-# ~259 KB generated Han→pinyin-rank table (`src/unicode/collation_zh.bin`) and a
-# gated code path in `Tailoring`; opt-in, NOT in default. See `collate` docs.
-collation-zh = ["collation"]                # zh pinyin Han-weight table (+ collation_zh.bin)
+# Chinese (zh) collation — the default `Intl.Collator('zh')` pinyin order plus the
+# `zh-u-co-stroke` / `zh-u-co-zhuyin` variants. Adds four generated tables:
+# collation_zh.bin (pinyin, ~122 KB), collation_zh_rs.bin (Unihan radical-stroke
+# fallback for CJK Extensions, ~474 KB), collation_zh_stroke.bin (~123 KB) and
+# collation_zh_zhuyin.bin (~122 KB) — ~841 KB total — plus a gated code path in
+# `Tailoring`; opt-in, NOT in default. See `collate` docs.
+collation-zh = ["collation"]                # zh Han-weight tables (pinyin/stroke/zhuyin + radical-stroke)
 idna = ["normalization", "alloc", "bidi"]   # UTS #46 IDNA (bidi: CheckBidi / RFC 5893)
 confusables = ["normalization", "alloc"]    # UTS #39 confusable/skeleton
 

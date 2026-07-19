@@ -199,6 +199,38 @@ fn zh_pinyin_collation() {
     assert_eq!(zh.compare("\u{FA0C}", "中"), Ordering::Less);
     // Non-Han text is unaffected (root order among Latin).
     assert_eq!(zh.compare("apple", "banana"), Ordering::Less);
+
+    // Extension-A/B ideographs (no pinyin reading) fall to Unihan radical-stroke
+    // order, not code point: U+3400 (㐀, radical 1) sorts before U+34CA
+    // (radical 15) even though both are unlisted; and all Extensions sort after
+    // the URO pinyin chars but before Latin. Verified against V8.
+    assert_eq!(zh.compare("\u{3400}", "\u{34CA}"), Ordering::Less); // radical 1 < 15
+    assert_eq!(zh.compare("中", "\u{3400}"), Ordering::Less); // pinyin URO < Extension
+    assert_eq!(zh.compare("\u{3400}", "a"), Ordering::Less); // Extension Han < Latin
+}
+
+/// Chinese `zh-u-co-stroke` / `zh-u-co-zhuyin` collation variants
+/// (feature `collation-zh`). Verified against V8 `Intl.Collator('zh',{collation})`.
+#[cfg(feature = "collation-zh")]
+#[test]
+fn zh_stroke_and_zhuyin_variants() {
+    use intl::unicode::collate::Tailoring;
+    let stroke = Tailoring::for_locale("zh-u-co-stroke").unwrap();
+    // Stroke order: fewer strokes first.
+    assert_eq!(stroke.compare("一", "乙"), Ordering::Less); // 1 stroke each, 一 first
+    assert_eq!(stroke.compare("十", "百"), Ordering::Less); // 2 < 6 strokes
+    assert_eq!(stroke.compare("中", "一"), Ordering::Greater); // 4 > 1 stroke
+
+    let zhuyin = Tailoring::for_locale("zh-u-co-zhuyin").unwrap();
+    // Zhuyin (bopomofo) order.
+    assert_eq!(zhuyin.compare("八", "不"), Ordering::Less);
+    assert_eq!(zhuyin.compare("中", "文"), Ordering::Less);
+    assert_eq!(zhuyin.compare("阿", "八"), Ordering::Greater);
+
+    // An unknown / deferred collation keyword falls back to the default pinyin.
+    let pinyin = Tailoring::for_locale("zh").unwrap();
+    let fallback = Tailoring::for_locale("zh-u-co-unihan").unwrap();
+    assert_eq!(fallback.compare("阿", "你"), pinyin.compare("阿", "你"));
 }
 
 /// Locales whose CLDR rule needs the extended parser syntax: `[before]`
