@@ -2,8 +2,11 @@ pub mod intl
 pub mod intl::calendar
 pub fn intl::calendar::chinese_to_gregorian(i64, i64, i64, bool) -> core::option::Option<(i64, i64, i64)>
 pub fn intl::calendar::chinese_to_jdn(i64, i64, i64, bool) -> core::option::Option<i64>
+pub fn intl::calendar::dangi_to_gregorian(i64, i64, i64, bool) -> core::option::Option<(i64, i64, i64)>
+pub fn intl::calendar::dangi_to_jdn(i64, i64, i64, bool) -> core::option::Option<i64>
 pub fn intl::calendar::day_of_week(i64, i64, i64) -> u8
 pub fn intl::calendar::gregorian_to_chinese(i64, i64, i64) -> core::option::Option<(i64, i64, i64, bool)>
+pub fn intl::calendar::gregorian_to_dangi(i64, i64, i64) -> core::option::Option<(i64, i64, i64, bool)>
 pub fn intl::calendar::gregorian_to_hebrew(i64, i64, i64) -> (i64, i64, i64)
 pub fn intl::calendar::gregorian_to_islamic(i64, i64, i64) -> (i64, i64, i64)
 pub fn intl::calendar::gregorian_to_jdn(i64, i64, i64) -> i64
@@ -16,6 +19,7 @@ pub fn intl::calendar::islamic_to_jdn(i64, i64, i64) -> i64
 pub fn intl::calendar::iso_week(i64, i64, i64) -> (i64, u8, u8)
 pub fn intl::calendar::japanese_era(i64, i64, i64) -> (&'static str, i64)
 pub fn intl::calendar::jdn_to_chinese(i64) -> core::option::Option<(i64, i64, i64, bool)>
+pub fn intl::calendar::jdn_to_dangi(i64) -> core::option::Option<(i64, i64, i64, bool)>
 pub fn intl::calendar::jdn_to_gregorian(i64) -> (i64, i64, i64)
 pub fn intl::calendar::jdn_to_hebrew(i64) -> (i64, i64, i64)
 pub fn intl::calendar::jdn_to_islamic(i64) -> (i64, i64, i64)
