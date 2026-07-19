@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/KarpelesLab/intlrs/compare/v0.5.0...v0.5.1) - 2026-07-19
+
+### Added
+
+- *(collation)* zh unihan variant and ko hanja-by-reading
+- *(collation)* Unihan radical-stroke fallback, hu gemination, zh stroke/zhuyin + ko variants
+- *(datetime)* dayPeriod minute-precision, islamic/persian era widths, Japanese pre-Meiji nengo
+- *(locale)* structural validation of extension subtag lengths in canonicalize
+- *(collation)* script [reorder] engine (Cyrillic-first for ru/bg/sr)
+- *(segment)* NFKC pre-normalization on the CJK segmentation path
+- *(locale)* canonicalize -u-/-t- extension keywords in getCanonicalLocales
+- *(collation)* zh pinyin collation via generated Han weight table
+- *(segment)* Khmer and Burmese dictionary word segmentation
+- *(collation)* parser [before]/[import] support; add ja/ko and wide locale coverage
+- *(segment)* CJK (and SEA) dictionary word segmentation
+- *(segment)* dictionary-based word segmentation for Thai (and related scripts)
+- *(collation)* expand per-locale tailoring coverage
+- *(datetime)* localized Japanese-era date formatting
+- *(calendar)* widen Chinese table and add Korean dangi calendar
+- *(datetime)* Chinese calendar formatting with cyclic year names and related year
+- *(datetime)* add formatRange/formatRangeToParts interval formatting
+- *(calendar)* match ICU for Persian calendar (astronomical leap years)
+- *(locale)* resolve CLDR aliases in canonicalize/getCanonicalLocales
+- *(calendar)* add Umm al-Qura (islamic-umalqura) calendar
+
+### Fixed
+
+- *(ci)* format codegen crate and drop private intra-doc link
+- *(clippy)* replace match with ? in rbnf_lookup (stable clippy -D warnings)
+
+### Other
+
+- update public-api snapshot for format_japanese_date
+- update public-api snapshot for dangi calendar
+- update public-api snapshot for format_chinese_date
+- update public-api snapshot for interval formatting
+- update public-api snapshot for umalqura + locale canonicalize
+
 ## [0.5.0](https://github.com/KarpelesLab/intlrs/compare/v0.4.1...v0.5.0) - 2026-06-19
 
 ### Added
