@@ -614,6 +614,7 @@ impl<T> core::clone::CloneToUninit for intl::datetime::DateTimeRangePart where T
 pub unsafe fn intl::datetime::DateTimeRangePart::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::datetime::DateTimeRangePart
 pub fn intl::datetime::DateTimeRangePart::from(T) -> T
+pub fn intl::datetime::format_chinese_date(&str, i64, i64, i64, bool, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_date(&str, &intl::datetime::DateTime, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_datetime(&str, &intl::datetime::DateTime, intl::datetime::DateStyle, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_gmt_offset(&str, i32) -> alloc::string::String
