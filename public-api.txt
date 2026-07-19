@@ -8,6 +8,7 @@ pub fn intl::calendar::gregorian_to_hebrew(i64, i64, i64) -> (i64, i64, i64)
 pub fn intl::calendar::gregorian_to_islamic(i64, i64, i64) -> (i64, i64, i64)
 pub fn intl::calendar::gregorian_to_jdn(i64, i64, i64) -> i64
 pub fn intl::calendar::gregorian_to_persian(i64, i64, i64) -> (i64, i64, i64)
+pub fn intl::calendar::gregorian_to_umalqura(i64, i64, i64) -> (i64, i64, i64)
 pub fn intl::calendar::hebrew_to_gregorian(i64, i64, i64) -> (i64, i64, i64)
 pub fn intl::calendar::hebrew_to_jdn(i64, i64, i64) -> i64
 pub fn intl::calendar::islamic_to_gregorian(i64, i64, i64) -> (i64, i64, i64)
@@ -19,8 +20,11 @@ pub fn intl::calendar::jdn_to_gregorian(i64) -> (i64, i64, i64)
 pub fn intl::calendar::jdn_to_hebrew(i64) -> (i64, i64, i64)
 pub fn intl::calendar::jdn_to_islamic(i64) -> (i64, i64, i64)
 pub fn intl::calendar::jdn_to_persian(i64) -> (i64, i64, i64)
+pub fn intl::calendar::jdn_to_umalqura(i64) -> (i64, i64, i64)
 pub fn intl::calendar::persian_to_gregorian(i64, i64, i64) -> (i64, i64, i64)
 pub fn intl::calendar::persian_to_jdn(i64, i64, i64) -> i64
+pub fn intl::calendar::umalqura_to_gregorian(i64, i64, i64) -> (i64, i64, i64)
+pub fn intl::calendar::umalqura_to_jdn(i64, i64, i64) -> i64
 pub mod intl::datetime
 pub enum intl::datetime::DateStyle
 pub intl::datetime::DateStyle::Full
@@ -529,6 +533,7 @@ pub fn intl::datetime::format_date(&str, &intl::datetime::DateTime, intl::dateti
 pub fn intl::datetime::format_datetime(&str, &intl::datetime::DateTime, intl::datetime::DateStyle, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_gmt_offset(&str, i32) -> alloc::string::String
 pub fn intl::datetime::format_islamic_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
+pub fn intl::datetime::format_islamic_umalqura_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_options(&str, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::string::String, intl::datetime::DateTimeFormatError>
 pub fn intl::datetime::format_persian_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_skeleton(&str, &intl::datetime::DateTime, &str) -> alloc::string::String
@@ -752,6 +757,8 @@ impl<T> core::clone::CloneToUninit for intl::locale::Locale where T: core::clone
 pub unsafe fn intl::locale::Locale::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::locale::Locale
 pub fn intl::locale::Locale::from(T) -> T
+pub fn intl::locale::canonicalize(&str) -> core::option::Option<alloc::string::String>
+pub fn intl::locale::get_canonical_locales(&[&str]) -> alloc::vec::Vec<alloc::string::String>
 pub fn intl::locale::negotiate(&[&str], &[intl::locale::Locale]) -> core::option::Option<usize>
 pub mod intl::message
 pub enum intl::message::Arg<'a>
