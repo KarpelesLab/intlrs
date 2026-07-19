@@ -74,6 +74,7 @@ alloc = ["full"]
 # expressed below (e.g. collation builds on case + normalization).
 normalization = []                          # UAX #15 NFC/NFD/NFKC/NFKD
 segmentation = []                           # UAX #29 grapheme/word/sentence + UAX #14 line
+segmentation-dict = ["segmentation"]        # dictionary word segmentation for Thai (+ segment_dict.bin, ~149 KB); opt-in, not in default
 bidi = []                                   # UAX #9 bidirectional algorithm
 identifiers = []                            # UAX #31 identifiers
 case = ["normalization", "segmentation"]    # case mapping/folding (needs NFD + word breaks)

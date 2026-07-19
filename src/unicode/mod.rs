@@ -56,6 +56,8 @@ mod predicates;
 pub mod script;
 #[cfg(feature = "segmentation")]
 pub mod segment;
+#[cfg(feature = "segmentation-dict")]
+pub(crate) mod segment_dict;
 #[cfg(feature = "confusables")]
 pub mod spoof;
 pub mod width;

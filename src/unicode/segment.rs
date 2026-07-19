@@ -438,6 +438,56 @@ fn word_break(prev2: Wb, prev: &WbUnit, cur: &WbUnit, next: Wb, ri: u32) -> bool
 pub struct Words<'a> {
     s: &'a str,
     pos: usize,
+    /// End byte of a Thai dictionary run currently being subdivided (feature
+    /// `segmentation-dict`). While `pos < dict_run_end` the iterator is resuming
+    /// inside that run.
+    #[cfg(feature = "segmentation-dict")]
+    dict_run_end: usize,
+}
+
+impl<'a> Words<'a> {
+    /// Dictionary-based subdivision of Thai runs (feature `segmentation-dict`).
+    /// Returns the next word when the cursor is at/inside a run of Thai
+    /// dictionary characters, or `None` to defer to the UAX #29 rules.
+    #[cfg(feature = "segmentation-dict")]
+    fn next_dict(&mut self) -> Option<&'a str> {
+        use super::segment_dict;
+
+        // Resuming inside a run we already committed to subdividing.
+        if self.pos < self.dict_run_end {
+            let b = segment_dict::thai_next_boundary(&self.s[..self.dict_run_end], self.pos);
+            let word = &self.s[self.pos..b];
+            self.pos = b;
+            return Some(word);
+        }
+
+        // Does a Thai dictionary run start here?
+        let first = self.s[self.pos..].chars().next()?;
+        if !segment_dict::is_thai_dict_char(first) {
+            return None;
+        }
+        // Extend to the maximal run of Thai dictionary characters.
+        let mut run_end = self.pos;
+        let mut cps = 0usize;
+        for c in self.s[self.pos..].chars() {
+            if !segment_dict::is_thai_dict_char(c) {
+                break;
+            }
+            run_end += c.len_utf8();
+            cps += 1;
+        }
+        // ICU leaves a run too short for two words undivided.
+        if cps <= segment_dict::THAI_MIN_WORD_SPAN {
+            let word = &self.s[self.pos..run_end];
+            self.pos = run_end;
+            return Some(word);
+        }
+        self.dict_run_end = run_end;
+        let b = segment_dict::thai_next_boundary(&self.s[..run_end], self.pos);
+        let word = &self.s[self.pos..b];
+        self.pos = b;
+        Some(word)
+    }
 }
 
 impl<'a> Iterator for Words<'a> {
@@ -446,6 +496,10 @@ impl<'a> Iterator for Words<'a> {
     fn next(&mut self) -> Option<&'a str> {
         if self.pos >= self.s.len() {
             return None;
+        }
+        #[cfg(feature = "segmentation-dict")]
+        if let Some(word) = self.next_dict() {
+            return Some(word);
         }
         let start = self.pos;
         let mut prev2 = Wb::Other; // sot
@@ -482,7 +536,12 @@ impl<'a> Iterator for Words<'a> {
 /// [`char::is_alphanumeric`] for word-like tokens.
 #[must_use]
 pub fn words(s: &str) -> Words<'_> {
-    Words { s, pos: 0 }
+    Words {
+        s,
+        pos: 0,
+        #[cfg(feature = "segmentation-dict")]
+        dict_run_end: 0,
+    }
 }
 
 // ---- Sentence boundaries (UAX #29) ----

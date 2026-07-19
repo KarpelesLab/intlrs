@@ -221,6 +221,7 @@ fn main() {
     emit_numeric(&out_dir, &mut modules, &ucd);
     emit_properties(&out_dir, &mut modules, &ucd);
     emit_names_blob(&root, &ucd);
+    emit_segment_dict(&root);
 
     // ---- Normalization ----
     emit_normalization(&out_dir, &mut modules, &ucd);
@@ -710,6 +711,143 @@ fn emit_names_blob(root: &Path, ucd: &Path) {
     println!(
         "codegen: wrote names.bin ({} names, {} KB)",
         count,
+        blob.len() / 1024
+    );
+}
+
+/// Write `src/unicode/segment_dict.bin`: a minimized DAWG (deterministic acyclic
+/// word graph) of ICU's Thai break dictionary (`data/brkitr/thaidict.txt`), used
+/// by the `segmentation-dict` feature to drive ICU-style Thai word segmentation.
+///
+/// Layout (all little-endian):
+/// ```text
+///   u32 node_count N
+///   u32 edge_count E
+///   u32 root_id
+///   final-flag bitmap: ceil(N/8) bytes (bit i%8 of byte i/8 == node i is a word end)
+///   edge-offset table: (N+1) u16 (cumulative edge index; node i owns edges[off[i]..off[i+1]])
+///   edges: E records of 3 bytes each — [u8 sym][u16 target], sym = codepoint - 0x0E00,
+///          sorted ascending by sym within each node (binary search at runtime)
+/// ```
+/// The DAWG shares common suffixes, so it is far smaller than the raw trie while
+/// preserving exactly the set of dictionary words (word ends are per-node flags).
+fn emit_segment_dict(root: &Path) {
+    let text =
+        fs::read_to_string(root.join("data/brkitr/thaidict.txt")).expect("read thaidict.txt");
+    let mut words: Vec<Vec<char>> = Vec::new();
+    for line in text.lines() {
+        // Strip a leading UTF-8 BOM and surrounding whitespace; skip comments.
+        let line = line.trim_start_matches('\u{feff}').trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        words.push(line.chars().collect());
+    }
+    words.sort();
+    words.dedup();
+
+    // Build a trie (node 0 == root).
+    struct TNode {
+        is_final: bool,
+        edges: BTreeMap<char, usize>,
+    }
+    let mut trie: Vec<TNode> = vec![TNode {
+        is_final: false,
+        edges: BTreeMap::new(),
+    }];
+    for w in &words {
+        let mut n = 0usize;
+        for &c in w {
+            let next = match trie[n].edges.get(&c) {
+                Some(&x) => x,
+                None => {
+                    let id = trie.len();
+                    trie.push(TNode {
+                        is_final: false,
+                        edges: BTreeMap::new(),
+                    });
+                    trie[n].edges.insert(c, id);
+                    id
+                }
+            };
+            n = next;
+        }
+        trie[n].is_final = true;
+    }
+    let trie_nodes = trie.len();
+
+    // Minimize into a DAWG: canonicalize nodes bottom-up. Two subtrees are merged
+    // when they have identical finality and identical (already-canonical) edge
+    // sets. Post-order assignment guarantees every child id is < its parent id.
+    type CanonNode = (bool, Vec<(u32, u32)>); // (is_final, sorted [(sym, child_id)])
+    fn minimize(
+        t: usize,
+        trie: &[TNode],
+        map: &mut BTreeMap<CanonNode, u32>,
+        nodes: &mut Vec<CanonNode>,
+    ) -> u32 {
+        let mut edges: Vec<(u32, u32)> = Vec::new();
+        for (&c, &child) in &trie[t].edges {
+            let cid = minimize(child, trie, map, nodes);
+            edges.push((c as u32, cid));
+        }
+        edges.sort_unstable();
+        let key: CanonNode = (trie[t].is_final, edges);
+        if let Some(&id) = map.get(&key) {
+            return id;
+        }
+        let id = nodes.len() as u32;
+        nodes.push(key.clone());
+        map.insert(key, id);
+        id
+    }
+    let mut map: BTreeMap<CanonNode, u32> = BTreeMap::new();
+    let mut nodes: Vec<CanonNode> = Vec::new();
+    let root_id = minimize(0, &trie, &mut map, &mut nodes);
+
+    let n = nodes.len();
+    let e: usize = nodes.iter().map(|(_, es)| es.len()).sum();
+    assert!(n <= u16::MAX as usize, "DAWG node count {n} exceeds u16");
+    assert!(e <= u16::MAX as usize, "DAWG edge count {e} exceeds u16");
+
+    let mut blob = Vec::new();
+    blob.extend_from_slice(&(n as u32).to_le_bytes());
+    blob.extend_from_slice(&(e as u32).to_le_bytes());
+    blob.extend_from_slice(&root_id.to_le_bytes());
+    // Final-flag bitmap.
+    let mut bitmap = vec![0u8; n.div_ceil(8)];
+    for (i, (is_final, _)) in nodes.iter().enumerate() {
+        if *is_final {
+            bitmap[i / 8] |= 1 << (i % 8);
+        }
+    }
+    blob.extend_from_slice(&bitmap);
+    // Edge-offset table (N+1 cumulative u16), then the edge records.
+    let mut off = 0u32;
+    for (_, es) in &nodes {
+        blob.extend_from_slice(&(off as u16).to_le_bytes());
+        off += es.len() as u32;
+    }
+    blob.extend_from_slice(&(off as u16).to_le_bytes());
+    for (_, es) in &nodes {
+        for &(sym, target) in es {
+            let delta = sym
+                .checked_sub(0x0E00)
+                .filter(|d| *d <= 0xFF)
+                .unwrap_or_else(|| panic!("dict codepoint U+{sym:04X} out of Thai byte range"));
+            blob.push(delta as u8);
+            blob.extend_from_slice(&(target as u16).to_le_bytes());
+        }
+    }
+
+    let path = root.join("src/unicode/segment_dict.bin");
+    fs::write(&path, &blob).expect("write segment_dict.bin");
+    println!(
+        "codegen: wrote segment_dict.bin ({} words, trie {} nodes -> DAWG {} nodes / {} edges, {} KB)",
+        words.len(),
+        trie_nodes,
+        n,
+        e,
         blob.len() / 1024
     );
 }
