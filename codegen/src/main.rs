@@ -887,7 +887,9 @@ fn emit_thai_family_dict(root: &Path, dict_file: &str, out_file: &str, base: u32
             let delta = sym
                 .checked_sub(base)
                 .filter(|d| *d <= 0xFF)
-                .unwrap_or_else(|| panic!("dict codepoint U+{sym:04X} out of U+{base:04X} byte range"));
+                .unwrap_or_else(|| {
+                    panic!("dict codepoint U+{sym:04X} out of U+{base:04X} byte range")
+                });
             blob.push(delta as u8);
             if wide {
                 blob.extend_from_slice(&target.to_le_bytes());
@@ -3057,7 +3059,9 @@ fn emit_alt_calendar(cldr_dir: &Path, name: &str, raw_dir: &Path) {
             for idx in ["0", "1"] {
                 enc_str(
                     &mut p,
-                    w.and_then(|x| x.get(idx)).and_then(Json::as_str).unwrap_or(""),
+                    w.and_then(|x| x.get(idx))
+                        .and_then(Json::as_str)
+                        .unwrap_or(""),
                 );
             }
         }
@@ -3555,7 +3559,10 @@ fn zh_han_ranks(rule: &str) -> BTreeMap<u32, u16> {
     // renumber 1, 2, 3, …. Ranks stay well within `u16`.
     let mut ordered: Vec<(u32, u32)> = rank.iter().map(|(&cp, &p)| (cp, p)).collect();
     ordered.sort_by_key(|&(_, p)| p);
-    assert!(ordered.len() <= u16::MAX as usize, "too many pinyin ranks for u16");
+    assert!(
+        ordered.len() <= u16::MAX as usize,
+        "too many pinyin ranks for u16"
+    );
     let mut final_rank: BTreeMap<u32, u16> = BTreeMap::new();
     for (idx, &(cp, _)) in ordered.iter().enumerate() {
         final_rank.insert(cp, idx as u16 + 1); // 1-based; 0 reserved
@@ -3717,7 +3724,10 @@ fn emit_collation_zh_rs(root: &Path, krs_path: &Path) {
         //   residual −9..=76 → +16     → 1..=127, shifted left 1 (7 bits);
         //   is_simplified              → low bit (variant just after its base).
         let resid = (residual + 16) as u32;
-        assert!(radical < 256 && resid < 128, "RS key out of range: {radical}.{residual}");
+        assert!(
+            radical < 256 && resid < 128,
+            "RS key out of range: {radical}.{residual}"
+        );
         let packed = ((radical << 8) | (resid << 1) | u32::from(simplified)) as u16;
         table.insert(cp, packed);
     }
@@ -3954,8 +3964,9 @@ fn emit_bcp47(cldr_dir: &Path, bcp47_dir: &Path) {
     // A source value is BCP-47-legal when each `-` subtag is 2..=8 alphanumerics.
     let valid_src = |s: &str| {
         !s.is_empty()
-            && s.split('-')
-                .all(|sub| (2..=8).contains(&sub.len()) && sub.bytes().all(|b| b.is_ascii_alphanumeric()))
+            && s.split('-').all(|sub| {
+                (2..=8).contains(&sub.len()) && sub.bytes().all(|b| b.is_ascii_alphanumeric())
+            })
     };
 
     let mut files: Vec<PathBuf> = fs::read_dir(bcp47_dir)
@@ -4011,7 +4022,10 @@ fn emit_bcp47(cldr_dir: &Path, bcp47_dir: &Path) {
     }
     records.sort();
     write_blob(cldr_dir, "bcp47", &records);
-    println!("codegen: wrote bcp47.bin ({} type-value aliases)", records.len());
+    println!(
+        "codegen: wrote bcp47.bin ({} type-value aliases)",
+        records.len()
+    );
 }
 
 /// True when byte `after` follows a tag name as a real delimiter (so `<key`

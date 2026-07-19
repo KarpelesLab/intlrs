@@ -1174,7 +1174,7 @@ impl Tailoring {
     /// * `[import <locale>]` — splice in another bundled locale's parsed rules;
     /// * `[reorder <code> …]` — script reordering: whole scripts move as blocks
     ///   (e.g. `[reorder Cyrl]` sorts Cyrillic before Latin), preserving
-    ///   within-script order (see [`Reorder`]). Special low groups
+    ///   within-script order. Special low groups
     ///   (`space`/`punct`/`digit`/…) are parsed but kept in their default front
     ///   position (reordering *among* them is not modeled);
     /// * `\uXXXX` / `\UXXXXXXXX` escapes and `'…'` / `''` quoting of literals;
