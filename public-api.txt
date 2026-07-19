@@ -624,6 +624,7 @@ pub fn intl::datetime::format_datetime(&str, &intl::datetime::DateTime, intl::da
 pub fn intl::datetime::format_gmt_offset(&str, i32) -> alloc::string::String
 pub fn intl::datetime::format_islamic_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_islamic_umalqura_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
+pub fn intl::datetime::format_japanese_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_options(&str, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::string::String, intl::datetime::DateTimeFormatError>
 pub fn intl::datetime::format_persian_date(&str, i64, i64, i64, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_range(&str, &intl::datetime::DateTime, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::string::String, intl::datetime::DateTimeFormatError>
