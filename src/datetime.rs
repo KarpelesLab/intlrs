@@ -718,6 +718,26 @@ pub fn format_islamic_date(
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
 
+/// Format an Umm al-Qura (Saudi) Islamic date in `lang`, e.g.
+/// `format_islamic_umalqura_date("en", 1445, 9, 1, DateStyle::Long)` →
+/// `"Ramadan 1, 1445 AH"`. Identical to [`format_islamic_date`] but the Hijri
+/// `(year, month, day)` is resolved through the Umm al-Qura month-length table
+/// (the official Saudi calendar) instead of the civil tabular rule; the
+/// localized month names and era ("AH") are shared.
+#[cfg(feature = "calendars-extra")]
+#[must_use]
+pub fn format_islamic_umalqura_date(
+    lang: &str,
+    year: i64,
+    month: i64,
+    day: i64,
+    style: DateStyle,
+) -> String {
+    let cal = alt_spec(lang, crate::cldr::islamic_spec);
+    let jdn = crate::calendar::umalqura_to_jdn(year, month, day);
+    render_alt(&cal, style, year, month, day, jdn, &spec(lang))
+}
+
 /// Format a Persian (Solar Hijri) date in `lang`, e.g.
 /// `format_persian_date("en", 1404, 1, 1, DateStyle::Long)` →
 /// `"Farvardin 1, 1404 AP"` (localized month names + era).

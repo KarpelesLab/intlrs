@@ -162,6 +162,17 @@ fn islamic_dates() {
     assert!(fi("fr", 1445, 9, 1, Long).contains("1445"));
 }
 
+#[cfg(feature = "calendars-extra")]
+#[test]
+fn islamic_umalqura_dates() {
+    use intl::datetime::{DateStyle::*, format_islamic_umalqura_date as fu};
+    // Same localized month names and era ("AH") as the civil formatter.
+    let s = fu("en", 1445, 9, 1, Long);
+    assert!(s.contains("Ramadan") && s.contains("1445"), "{s}");
+    assert!(fu("en", 1446, 1, 1, Full).contains("Muharram"));
+    assert!(fu("fr", 1445, 9, 1, Long).contains("1445"));
+}
+
 #[test]
 fn arithmetic() {
     // Weekday (2026-06-04 is a Thursday = 4).

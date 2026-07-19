@@ -1,8 +1,9 @@
 //! Calendar date conversions (`no_std`, no `alloc`): the Julian Day Number as a
-//! pivot between the proleptic Gregorian, civil (tabular) Islamic, Persian
-//! (Solar Hijri), Hebrew, Chinese (lunisolar, 1900–2099), and Japanese-era
-//! calendars, plus the ISO-8601 week date and day of week. Pure integer
-//! arithmetic; only the Chinese calendar uses an embedded lunar table.
+//! pivot between the proleptic Gregorian, civil (tabular) Islamic, Umm al-Qura
+//! (Saudi) Islamic, Persian (Solar Hijri), Hebrew, Chinese (lunisolar,
+//! 1900–2099), and Japanese-era calendars, plus the ISO-8601 week date and day
+//! of week. Pure integer arithmetic; only the Chinese and Umm al-Qura calendars
+//! use an embedded month-length table.
 //!
 //! ```
 //! use intl::calendar::{gregorian_to_islamic, islamic_to_gregorian, day_of_week};
@@ -160,6 +161,155 @@ pub fn gregorian_to_islamic(year: i64, month: i64, day: i64) -> (i64, i64, i64) 
 #[must_use]
 pub fn islamic_to_gregorian(year: i64, month: i64, day: i64) -> (i64, i64, i64) {
     jdn_to_gregorian(islamic_to_jdn(year, month, day))
+}
+
+// ---- Umm al-Qura (Saudi) Islamic calendar, AH 1300–1600. ----
+//
+// The Umm al-Qura calendar is the official calendar of Saudi Arabia. Unlike the
+// civil (tabular) Islamic calendar above, its month lengths are not a fixed
+// arithmetic rule but a published table (astronomical new-moon calculations,
+// then codified). We embed the same month-length table ICU4C ships. Each entry
+// packs one Hijri year's 12 months, low 12 bits, one bit per month:
+//   * bit (12−m) — month m (1..=12) has 30 days (1) or 29 (0).
+// So bit 11 is Muharram (month 1) and bit 0 is Dhu al-Hijja (month 12); there is
+// no leap month. Anchored at 1 Muharram 1300 AH = 1882-11-12 (JDN 2 408 762).
+// Outside the tabulated range (AH 1300–1600) the conversion falls back to the
+// civil tabular Islamic calendar, exactly as ICU4C does. Validated against known
+// Saudi dates (1 Ramadan 1445 → 2024-03-11, 1 Shawwal 1445 → 2024-04-10,
+// 1 Muharram 1446 → 2024-07-07, 1 Ramadan 1443 → 2022-04-02, …). Source: ICU4C
+// `icu4c/source/i18n/islamcal.cpp` (`UMALQURA_MONTHLENGTH`, `UMALQURA_YEAR_START`
+// = 1300, `UMALQURA_YEAR_END` = 1600).
+const UMALQURA_FIRST_YEAR: i64 = 1300;
+const UMALQURA_LAST_YEAR: i64 = 1600;
+const UMALQURA_EPOCH_JDN: i64 = 2_408_762; // 1 Muharram 1300 AH = 1882-11-12
+#[rustfmt::skip]
+const UMALQURA_MONTH_LENGTH: [u16; 301] = [
+    0xAAA, 0xD54, 0xEC9, 0x6D4, 0x6EA, 0x36C, 0xAAD, 0x555, 0x6A9, 0x792,
+    0xBA9, 0x5D4, 0xADA, 0x55C, 0xD2D, 0x695, 0x74A, 0xB54, 0xB6A, 0x5AD,
+    0x4AE, 0xA4F, 0x517, 0x68B, 0x6A5, 0xAD5, 0x2D6, 0x95B, 0x49D, 0xA4D,
+    0xD26, 0xD95, 0x5AC, 0x9B6, 0x2BA, 0xA5B, 0x52B, 0xA95, 0x6CA, 0xAE9,
+    0x2F4, 0x976, 0x2B6, 0x956, 0xACA, 0xBA4, 0xBD2, 0x5D9, 0x2DC, 0x96D,
+    0x54D, 0xAA5, 0xB52, 0xBA5, 0x5B4, 0x9B6, 0x557, 0x297, 0x54B, 0x6A3,
+    0x752, 0xB65, 0x56A, 0xAAB, 0x52B, 0xC95, 0xD4A, 0xDA5, 0x5CA, 0xAD6,
+    0x957, 0x4AB, 0x94B, 0xAA5, 0xB52, 0xB6A, 0x575, 0x276, 0x8B7, 0x45B,
+    0x555, 0x5A9, 0x5B4, 0x9DA, 0x4DD, 0x26E, 0x936, 0xAAA, 0xD54, 0xDB2,
+    0x5D5, 0x2DA, 0x95B, 0x4AB, 0xA55, 0xB49, 0xB64, 0xB71, 0x5B4, 0xAB5,
+    0xA55, 0xD25, 0xE92, 0xEC9, 0x6D4, 0xAE9, 0x96B, 0x4AB, 0xA93, 0xD49,
+    0xDA4, 0xDB2, 0xAB9, 0x4BA, 0xA5B, 0x52B, 0xA95, 0xB2A, 0xB55, 0x55C,
+    0x4BD, 0x23D, 0x91D, 0xA95, 0xB4A, 0xB5A, 0x56D, 0x2B6, 0x93B, 0x49B,
+    0x655, 0x6A9, 0x754, 0xB6A, 0x56C, 0xAAD, 0x555, 0xB29, 0xB92, 0xBA9,
+    0x5D4, 0xADA, 0x55A, 0xAAB, 0x595, 0x749, 0x764, 0xBAA, 0x5B5, 0x2B6,
+    0xA56, 0xE4D, 0xB25, 0xB52, 0xB6A, 0x5AD, 0x2AE, 0x92F, 0x497, 0x64B,
+    0x6A5, 0x6AC, 0xAD6, 0x55D, 0x49D, 0xA4D, 0xD16, 0xD95, 0x5AA, 0x5B5,
+    0x2DA, 0x95B, 0x4AD, 0x595, 0x6CA, 0x6E4, 0xAEA, 0x4F5, 0x2B6, 0x956,
+    0xAAA, 0xB54, 0xBD2, 0x5D9, 0x2EA, 0x96D, 0x4AD, 0xA95, 0xB4A, 0xBA5,
+    0x5B2, 0x9B5, 0x4D6, 0xA97, 0x547, 0x693, 0x749, 0xB55, 0x56A, 0xA6B,
+    0x52B, 0xA8B, 0xD46, 0xDA3, 0x5CA, 0xAD6, 0x4DB, 0x26B, 0x94B, 0xAA5,
+    0xB52, 0xB69, 0x575, 0x176, 0x8B7, 0x25B, 0x52B, 0x565, 0x5B4, 0x9DA,
+    0x4ED, 0x16D, 0x8B6, 0xAA6, 0xD52, 0xDA9, 0x5D4, 0xADA, 0x95B, 0x4AB,
+    0x653, 0x729, 0x762, 0xBA9, 0x5B2, 0xAB5, 0x555, 0xB25, 0xD92, 0xEC9,
+    0x6D2, 0xAE9, 0x56B, 0x4AB, 0xA55, 0xD29, 0xD54, 0xDAA, 0x9B5, 0x4BA,
+    0xA3B, 0x49B, 0xA4D, 0xAAA, 0xAD5, 0x2DA, 0x95D, 0x45E, 0xA2E, 0xC9A,
+    0xD55, 0x6B2, 0x6B9, 0x4BA, 0xA5D, 0x52D, 0xA95, 0xB52, 0xBA8, 0xBB4,
+    0x5B9, 0x2DA, 0x95A, 0xB4A, 0xDA4, 0xED1, 0x6E8, 0xB6A, 0x56D, 0x535,
+    0x695, 0xD4A, 0xDA8, 0xDD4, 0x6DA, 0x55B, 0x29D, 0x62B, 0xB15, 0xB4A,
+    0xB95, 0x5AA, 0xAAE, 0x92E, 0xC8F, 0x527, 0x695, 0x6AA, 0xAD6, 0x55D,
+    0x29D,
+];
+
+/// The month-length bit pattern for a tabulated Umm al-Qura year, or `None` when
+/// the year is outside the embedded range (AH 1300–1600).
+fn umq_info(year: i64) -> Option<u16> {
+    if (UMALQURA_FIRST_YEAR..=UMALQURA_LAST_YEAR).contains(&year) {
+        Some(UMALQURA_MONTH_LENGTH[(year - UMALQURA_FIRST_YEAR) as usize])
+    } else {
+        None
+    }
+}
+/// Days in `month` (1..=12) of a tabulated year: 30 if the month's bit is set,
+/// else 29.
+fn umq_month_days(info: u16, month: i64) -> i64 {
+    ((info >> (12 - month)) & 1) as i64 + 29
+}
+/// Total days in a tabulated Umm al-Qura year (sum of its 12 month lengths).
+fn umq_year_days(info: u16) -> i64 {
+    let mut sum = 0;
+    let mut m = 1;
+    while m <= 12 {
+        sum += umq_month_days(info, m);
+        m += 1;
+    }
+    sum
+}
+
+/// The Julian Day Number of an Umm al-Qura (Saudi) Islamic date. Within the
+/// tabulated range (AH 1300–1600) the embedded month-length table is used;
+/// outside it the conversion falls back to the civil (tabular) Islamic calendar.
+#[must_use]
+pub fn umalqura_to_jdn(year: i64, month: i64, day: i64) -> i64 {
+    let info = match umq_info(year) {
+        Some(info) => info,
+        None => return islamic_to_jdn(year, month, day),
+    };
+    // `year` is range-checked by `umq_info`, but `day` is added unguarded
+    // (`jdn + day - 1`); a valid Umm al-Qura day is 1..=30, so clamping to the
+    // `FWD_LIMIT` band leaves every real date unchanged while preventing an
+    // extreme `day` from overflowing.
+    let day = clamp_component(day);
+    let mut jdn = UMALQURA_EPOCH_JDN;
+    let mut y = UMALQURA_FIRST_YEAR;
+    while y < year {
+        jdn += umq_year_days(UMALQURA_MONTH_LENGTH[(y - UMALQURA_FIRST_YEAR) as usize]);
+        y += 1;
+    }
+    let mut m = 1;
+    while m < month && m <= 12 {
+        jdn += umq_month_days(info, m);
+        m += 1;
+    }
+    jdn + day - 1
+}
+
+/// The Umm al-Qura (Saudi) Islamic `(year, month, day)` of a Julian Day Number.
+/// JDNs outside the tabulated range (AH 1300–1600) fall back to the civil
+/// (tabular) Islamic calendar.
+#[must_use]
+pub fn jdn_to_umalqura(jdn: i64) -> (i64, i64, i64) {
+    let mut offset = jdn - UMALQURA_EPOCH_JDN;
+    if offset < 0 {
+        return jdn_to_islamic(jdn);
+    }
+    let mut year = UMALQURA_FIRST_YEAR;
+    loop {
+        if year > UMALQURA_LAST_YEAR {
+            return jdn_to_islamic(jdn);
+        }
+        let yd = umq_year_days(UMALQURA_MONTH_LENGTH[(year - UMALQURA_FIRST_YEAR) as usize]);
+        if offset < yd {
+            break;
+        }
+        offset -= yd;
+        year += 1;
+    }
+    let info = UMALQURA_MONTH_LENGTH[(year - UMALQURA_FIRST_YEAR) as usize];
+    let mut month = 1;
+    while month < 12 && offset >= umq_month_days(info, month) {
+        offset -= umq_month_days(info, month);
+        month += 1;
+    }
+    (year, month, offset + 1)
+}
+
+/// Convert a Gregorian date to the Umm al-Qura (Saudi) Islamic calendar.
+#[must_use]
+pub fn gregorian_to_umalqura(year: i64, month: i64, day: i64) -> (i64, i64, i64) {
+    jdn_to_umalqura(gregorian_to_jdn(year, month, day))
+}
+
+/// Convert an Umm al-Qura (Saudi) Islamic date to the Gregorian calendar.
+#[must_use]
+pub fn umalqura_to_gregorian(year: i64, month: i64, day: i64) -> (i64, i64, i64) {
+    jdn_to_gregorian(umalqura_to_jdn(year, month, day))
 }
 
 // ---- Hebrew calendar (Dershowitz–Reingold arithmetic). ----

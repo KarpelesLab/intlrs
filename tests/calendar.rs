@@ -38,6 +38,57 @@ fn islamic_roundtrip_and_known() {
 }
 
 #[test]
+fn umalqura_known_and_roundtrip() {
+    // Known official Umm al-Qura (Saudi) conversions, both directions.
+    for &(iy, im, id, gy, gm, gd) in &[
+        (1445, 9, 1, 2024, 3, 11),  // 1 Ramadan 1445
+        (1445, 10, 1, 2024, 4, 10), // 1 Shawwal 1445 (Eid al-Fitr)
+        (1446, 1, 1, 2024, 7, 7),   // 1 Muharram 1446
+        (1443, 9, 1, 2022, 4, 2),   // 1 Ramadan 1443
+        (1400, 1, 1, 1979, 11, 21), // 1 Muharram 1400
+        (1420, 1, 1, 1999, 4, 17),  // 1 Muharram 1420
+    ] {
+        assert_eq!(umalqura_to_gregorian(iy, im, id), (gy, gm, gd));
+        assert_eq!(gregorian_to_umalqura(gy, gm, gd), (iy, im, id));
+    }
+    // The embedded epoch: 1 Muharram 1300 AH = 1882-11-12.
+    assert_eq!(umalqura_to_gregorian(1300, 1, 1), (1882, 11, 12));
+
+    // Round-trip every first-of-month across the tabulated range, and check
+    // month lengths (29 or 30) sum to the year length (354 or 355).
+    for iy in 1300..=1600 {
+        let mut sum = 0;
+        for im in 1..=12 {
+            let start = umalqura_to_jdn(iy, im, 1);
+            assert_eq!(jdn_to_umalqura(start), (iy, im, 1));
+            let next = if im < 12 {
+                umalqura_to_jdn(iy, im + 1, 1)
+            } else {
+                umalqura_to_jdn(iy + 1, 1, 1)
+            };
+            let ml = next - start;
+            assert!(ml == 29 || ml == 30, "AH {iy}-{im} has {ml} days");
+            // Round-trip the last day of the month too.
+            assert_eq!(jdn_to_umalqura(next - 1), (iy, im, ml));
+            sum += ml;
+        }
+        let ylen = umalqura_to_jdn(iy + 1, 1, 1) - umalqura_to_jdn(iy, 1, 1);
+        assert!(ylen == 354 || ylen == 355, "AH {iy} has {ylen} days");
+        assert_eq!(sum, ylen);
+    }
+
+    // Outside the tabulated range, Umm al-Qura falls back to the civil calendar.
+    for &(iy, im, id) in &[(1200, 1, 1), (1299, 12, 29), (1601, 1, 1), (1700, 6, 15)] {
+        assert_eq!(umalqura_to_jdn(iy, im, id), islamic_to_jdn(iy, im, id));
+    }
+    // And the reverse falls back for JDNs outside the range.
+    let far_past = islamic_to_jdn(1200, 1, 1);
+    assert_eq!(jdn_to_umalqura(far_past), jdn_to_islamic(far_past));
+    let far_future = islamic_to_jdn(1700, 1, 1);
+    assert_eq!(jdn_to_umalqura(far_future), jdn_to_islamic(far_future));
+}
+
+#[test]
 fn weekdays_and_iso_week() {
     assert_eq!(day_of_week(2000, 1, 1), 6); // Saturday
     assert_eq!(day_of_week(2026, 6, 4), 4); // Thursday
