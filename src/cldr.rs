@@ -171,6 +171,8 @@ const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
 const SKELETONS: &[u8] = include_bytes!("cldr/skeletons.bin");
 #[cfg(feature = "locale")]
 const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
+#[cfg(feature = "locale")]
+const ALIASES: &[u8] = include_bytes!("cldr/aliases.bin");
 #[cfg(feature = "datetime")]
 const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
 #[cfg(feature = "spellout")]
@@ -336,6 +338,17 @@ pub(crate) fn tz_spec(lang: &str) -> Option<TzSpec> {
 #[cfg(feature = "locale")]
 pub(crate) fn likely_subtags(key: &str) -> Option<&'static str> {
     find(LIKELY, key).map(|mut c| c.str())
+}
+
+/// Look up a CLDR deprecated-subtag alias by its type-prefixed key and return
+/// the replacement, or `None`. The 1-char prefix selects the alias kind: `'l'`
+/// language / grandfathered whole tag, `'s'` script, `'t'` territory, `'v'`
+/// variant (e.g. `"liw"` → `"he"`, `"sQaai"` → `"Zinh"`, `"tBU"` → `"MM"`). A
+/// multi-subtag or one→many replacement is returned space-separated. This module
+/// is alloc-free, so the caller (in `locale.rs`) builds the prefixed key.
+#[cfg(feature = "locale")]
+pub(crate) fn alias_lookup(prefixed_key: &str) -> Option<&'static str> {
+    find(ALIASES, prefixed_key).map(|mut c| c.str())
 }
 
 /// Number of curated units (must match codegen's `UNITS` and the `Unit` enum).

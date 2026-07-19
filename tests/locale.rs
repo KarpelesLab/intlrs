@@ -2,6 +2,7 @@
 #![cfg(feature = "locale")]
 
 use intl::locale::Locale;
+use intl::locale::{canonicalize, get_canonical_locales};
 
 #[test]
 fn parse_and_canonicalize() {
@@ -80,6 +81,87 @@ fn negotiation() {
     assert_eq!(negotiate(&["zh-TW"], &avail), Some(3)); // Traditional Chinese
     assert_eq!(negotiate(&["ja"], &avail), None);
     assert_eq!(negotiate(&[], &avail), None);
+}
+
+#[test]
+fn canonicalize_language_aliases() {
+    let c = |t: &str| canonicalize(t).unwrap();
+    // Simple deprecated language subtags.
+    assert_eq!(c("iw"), "he");
+    assert_eq!(c("in"), "id");
+    assert_eq!(c("ji"), "yi");
+    assert_eq!(c("mo"), "ro");
+    assert_eq!(c("tl"), "fil");
+    // Macrolanguage alias.
+    assert_eq!(c("cmn"), "zh");
+    // Multi-subtag replacement fills the (empty) script.
+    assert_eq!(c("sh"), "sr-Latn");
+    // ...but an explicit script is kept (replacement only fills empty fields).
+    assert_eq!(c("sh-Cyrl"), "sr-Cyrl");
+    // Language alias applies within a larger tag, keeping the region.
+    assert_eq!(c("iw-US"), "he-US");
+    assert_eq!(c("sh-fonipa"), "sr-Latn-fonipa");
+}
+
+#[test]
+fn canonicalize_grandfathered() {
+    let c = |t: &str| canonicalize(t).unwrap();
+    assert_eq!(c("i-klingon"), "tlh");
+    assert_eq!(c("zh-min-nan"), "nan");
+    assert_eq!(c("zh-cmn-Hans"), "zh-Hans");
+    assert_eq!(c("no-bok"), "nb");
+    // Grandfathered irregular tag that does not parse as a normal langtag.
+    assert_eq!(c("sgn-BR"), "bzs");
+}
+
+#[test]
+fn canonicalize_script_and_variant() {
+    let c = |t: &str| canonicalize(t).unwrap();
+    // Script alias (the only one in CLDR): Qaai -> Zinh.
+    assert_eq!(c("und-Qaai"), "und-Zinh");
+    assert_eq!(c("ru-Qaai"), "ru-Zinh");
+    // Variant alias.
+    assert_eq!(c("und-polytoni"), "und-polyton");
+}
+
+#[test]
+fn canonicalize_territory_aliases() {
+    let c = |t: &str| canonicalize(t).unwrap();
+    // One→one territory aliases.
+    assert_eq!(c("en-BU"), "en-MM");
+    assert_eq!(c("de-DD"), "de-DE");
+    // One→many: `SU` maps to a list whose first (CLDR-order) element is RU. With
+    // no informative language, the first candidate wins.
+    assert_eq!(c("und-SU"), "und-RU");
+    // One→many disambiguated by the language's likely region: Russian's likely
+    // region (RU) is among the SU candidates, so it is chosen.
+    assert_eq!(c("ru-SU"), "ru-RU");
+}
+
+#[test]
+fn canonicalize_structural() {
+    // Structural canonicalization (case/order) still applies with no aliasing.
+    assert_eq!(canonicalize("EN-us").unwrap(), "en-US");
+    assert_eq!(canonicalize("zh-hant-hk").unwrap(), "zh-Hant-HK");
+    assert_eq!(canonicalize("es-419").unwrap(), "es-419");
+    // Extensions are preserved (and reordered by the existing canonical form).
+    assert_eq!(
+        canonicalize("DE-Latn-u-co-phonebk-t-de").unwrap(),
+        "de-Latn-t-de-u-co-phonebk"
+    );
+    // Garbage fails to canonicalize.
+    assert!(canonicalize("").is_none());
+    assert!(canonicalize("toolonglang").is_none());
+}
+
+#[test]
+fn canonical_locale_list_dedupes() {
+    assert_eq!(
+        get_canonical_locales(&["en-US", "EN-us", "iw"]),
+        ["en-US", "he"]
+    );
+    // Invalid tags are dropped.
+    assert_eq!(get_canonical_locales(&["1", "fr", "fr"]), ["fr"]);
 }
 
 #[test]

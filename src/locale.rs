@@ -5,7 +5,7 @@
 //! language, Titlecase script, UPPERCASE region). Extensions and the `u-`/`t-`
 //! Unicode extension subtags are not yet modelled. Requires the `alloc` feature.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 /// A parsed locale identifier.
@@ -266,6 +266,151 @@ pub fn negotiate(requested: &[&str], available: &[Locale]) -> Option<usize> {
         }
     }
     None
+}
+
+/// Canonicalize a BCP-47 language tag per UTS #35 / ECMA-402, substituting
+/// deprecated subtags using the CLDR alias tables: language aliases (`iw`→`he`,
+/// `sh`→`sr-Latn`), grandfathered/redundant whole tags (`i-klingon`→`tlh`,
+/// `zh-min-nan`→`nan`), script aliases (`Qaai`→`Zinh`), territory aliases
+/// (`BU`→`MM`, one→many like `SU`), and variant aliases (`heploc`→`alalc97`).
+/// The result is also structurally canonicalized (case, subtag order).
+///
+/// Returns `None` if the tag (after any grandfathered replacement) fails to
+/// parse.
+///
+/// Note: Unicode extension (`-u-`/`-t-`) keyword canonicalization is **not**
+/// performed; extension sequences are preserved exactly as parsed.
+// TODO: canonicalize `-u-`/`-t-` extension keywords (sort/normalize the keys
+// and their values, e.g. deprecated `-u-ca-*` type aliases).
+#[must_use]
+pub fn canonicalize(tag: &str) -> Option<String> {
+    // 1. Whole-tag (grandfathered / redundant) alias: if the entire input tag
+    //    matches an `l`-prefixed alias key (lowercased, `-`→`_`), replace it
+    //    wholesale and canonicalize the replacement. This must run before parsing
+    //    because irregular grandfathered tags (e.g. `i-klingon`) do not parse as
+    //    normal `langtag`s.
+    let whole_key = alloc::format!("l{}", tag.to_ascii_lowercase().replace('-', "_"));
+    let working = match crate::cldr::alias_lookup(&whole_key) {
+        Some(repl) => subtags_to_tag(repl),
+        None => String::from(tag),
+    };
+
+    let mut loc = Locale::parse(&working).ok()?;
+
+    // 2. Language alias. Try the most specific key first: `lang_region` (which,
+    //    when it matches, consumes the region), then `lang`. A multi-subtag
+    //    replacement (e.g. `sh`→`sr-Latn`) fills the script/region only where the
+    //    source left them empty (UTS #35).
+    let mut lang_repl: Option<(&'static str, bool)> = None;
+    if let Some(region) = &loc.region {
+        let key = alloc::format!("l{}_{}", loc.language, region.to_ascii_lowercase());
+        if let Some(r) = crate::cldr::alias_lookup(&key) {
+            lang_repl = Some((r, true));
+        }
+    }
+    if lang_repl.is_none() && !loc.language.is_empty() {
+        let key = alloc::format!("l{}", loc.language);
+        if let Some(r) = crate::cldr::alias_lookup(&key) {
+            lang_repl = Some((r, false));
+        }
+    }
+    if let Some((repl, consumes_region)) = lang_repl
+        && let Ok(rl) = Locale::parse(&subtags_to_tag(repl))
+    {
+        loc.language = rl.language;
+        if consumes_region {
+            loc.region = None;
+        }
+        if loc.script.is_none() {
+            loc.script = rl.script;
+        }
+        if loc.region.is_none() {
+            loc.region = rl.region;
+        }
+        if loc.variants.is_empty() {
+            loc.variants = rl.variants;
+        }
+    }
+
+    // 3. Script alias.
+    if let Some(script) = &loc.script {
+        let key = alloc::format!("s{script}");
+        if let Some(r) = crate::cldr::alias_lookup(&key) {
+            loc.script = Some(String::from(r));
+        }
+    }
+
+    // 4. Variant aliases (each variant substituted independently).
+    for v in &mut loc.variants {
+        let key = alloc::format!("v{v}");
+        if let Some(r) = crate::cldr::alias_lookup(&key) {
+            *v = String::from(r);
+        }
+    }
+
+    // 5. Territory (region) alias, with the UTS #35 one→many disambiguation rule:
+    //    when a region maps to several candidate replacements, prefer the one that
+    //    matches the likely region of the (already-substituted) language/script;
+    //    otherwise fall back to the first candidate in CLDR order.
+    if let Some(region) = loc.region.clone() {
+        let key = alloc::format!("t{region}");
+        if let Some(r) = crate::cldr::alias_lookup(&key) {
+            loc.region = Some(pick_territory(&loc, r));
+        }
+    }
+
+    Some(loc.to_string())
+}
+
+/// Rewrite a space-separated subtag string (as stored in the alias blob) into a
+/// `-`-separated language tag, e.g. `"sr Latn"` → `"sr-Latn"`.
+fn subtags_to_tag(subtags: &str) -> String {
+    let mut out = String::with_capacity(subtags.len());
+    for (i, s) in subtags.split(' ').enumerate() {
+        if i > 0 {
+            out.push('-');
+        }
+        out.push_str(s);
+    }
+    out
+}
+
+/// Resolve a territory-alias replacement, applying the one→many disambiguation.
+/// `replacement` is a space-separated candidate list (a single element for the
+/// common one→one case).
+fn pick_territory(loc: &Locale, replacement: &str) -> String {
+    let first = replacement.split(' ').next().unwrap_or("");
+    if !replacement.contains(' ') {
+        return String::from(first);
+    }
+    // Disambiguate: maximize the language(+script) ignoring the region being
+    // replaced, and use its likely region if it is one of the candidates.
+    let probe = Locale {
+        language: loc.language.clone(),
+        script: loc.script.clone(),
+        ..Locale::default()
+    };
+    if let Some(likely) = probe.maximize().region
+        && replacement.split(' ').any(|c| c == likely)
+    {
+        return likely;
+    }
+    String::from(first)
+}
+
+/// Canonicalize each tag (ECMA-402 `CanonicalizeLocaleList`): drop tags that fail
+/// to parse, then dedupe preserving first-occurrence order.
+#[must_use]
+pub fn get_canonical_locales(tags: &[&str]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for &tag in tags {
+        if let Some(c) = canonicalize(tag)
+            && !out.iter().any(|x| x == &c)
+        {
+            out.push(c);
+        }
+    }
+    out
 }
 
 fn titlecase_subtag(s: &str) -> String {

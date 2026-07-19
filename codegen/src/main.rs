@@ -319,6 +319,7 @@ fn main() {
         &cldr.join("dayPeriods.json"),
     );
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
+    emit_aliases(&cldr_dir, &cldr.join("aliases.json"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
     emit_numsys(
@@ -2769,6 +2770,71 @@ fn emit_likely(cldr_dir: &Path, path: &Path) {
         records.push((key.clone(), p));
     }
     write_blob(cldr_dir, "likely", &records);
+}
+
+/// Write `cldr/aliases.bin`: the CLDR deprecated-subtag alias tables used by
+/// locale canonicalization. All kinds share one blob via a 1-char type prefix on
+/// the key: `'l'` = language (and grandfathered/redundant whole tags), `'s'` =
+/// script, `'t'` = territory, `'v'` = variant. Language keys are lowercased with
+/// `-`→`_` (so grandfathered tags like `i-klingon` become `i_klingon`).
+/// Replacement values keep CLDR casing (language lowercase, script Titlecase,
+/// region UPPER); a multi-subtag replacement (e.g. `sh`→`sr-Latn`) is stored as
+/// space-separated subtags, and a one→many territory replacement (e.g.
+/// `SU`→`RU AM AZ …`) keeps CLDR's candidate order. Keys are sorted for
+/// determinism. The `_reason`/`_replacement` metadata attributes are ignored
+/// except for `_replacement`.
+fn emit_aliases(cldr_dir: &Path, path: &Path) {
+    let text = fs::read_to_string(path).expect("read aliases.json");
+    let json = json_parse(&text);
+    let alias = json
+        .get("supplemental")
+        .and_then(|s| s.get("metadata"))
+        .and_then(|m| m.get("alias"))
+        .expect("supplemental.metadata.alias");
+
+    let mut records: Vec<(String, Vec<u8>)> = Vec::new();
+    // languageAlias: keys lowercased with `-`→`_` (covers grandfathered tags).
+    if let Some(la) = alias.get("languageAlias") {
+        for (key, entry) in la.entries() {
+            let k = key.to_ascii_lowercase().replace('-', "_");
+            push_alias(&mut records, 'l', &k, entry);
+        }
+    }
+    // scriptAlias: keys kept as-is (Titlecase).
+    if let Some(sa) = alias.get("scriptAlias") {
+        for (key, entry) in sa.entries() {
+            push_alias(&mut records, 's', key, entry);
+        }
+    }
+    // territoryAlias: keys kept as-is (UPPER / numeric).
+    if let Some(ta) = alias.get("territoryAlias") {
+        for (key, entry) in ta.entries() {
+            push_alias(&mut records, 't', key, entry);
+        }
+    }
+    // variantAlias: keys lowercased.
+    if let Some(va) = alias.get("variantAlias") {
+        for (key, entry) in va.entries() {
+            push_alias(&mut records, 'v', &key.to_ascii_lowercase(), entry);
+        }
+    }
+    records.sort();
+    write_blob(cldr_dir, "aliases", &records);
+}
+
+/// Push one alias record: `prefix + key` → the entry's `_replacement`, with the
+/// replacement's `-` subtag separators rewritten to spaces (so a multi-subtag
+/// replacement is stored as space-separated subtags; one→many territory lists
+/// already use spaces).
+fn push_alias(records: &mut Vec<(String, Vec<u8>)>, prefix: char, key: &str, entry: &Json) {
+    let repl = entry
+        .get("_replacement")
+        .and_then(Json::as_str)
+        .unwrap_or("")
+        .replace('-', " ");
+    let mut p = Vec::new();
+    enc_str(&mut p, &repl);
+    records.push((format!("{prefix}{key}"), p));
 }
 
 /// Write `cldr/display_languages.bin` and `cldr/display_territories.bin`: for
