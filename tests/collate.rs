@@ -45,3 +45,74 @@ fn sort_key_matches_compare() {
     let c = Collator::default();
     assert!(c.sort_key("apple") < c.sort_key("apply"));
 }
+
+/// Signature orderings for locales newly bundled from the official CLDR-48
+/// collation rules (see `data/cldr/48/collation.json`). Each asserts the
+/// characteristic tailored order that root DUCET does *not* produce.
+#[test]
+fn newly_added_cldr_tailorings() {
+    use intl::unicode::collate::Tailoring;
+    let lt = |t: &Tailoring, a: &str, b: &str| {
+        assert_eq!(t.compare(a, b), Ordering::Less, "expected {a} < {b}");
+    };
+
+    // Polish: ogonek/acute letters each sort right after their base letter.
+    let pl = Tailoring::for_locale("pl").unwrap();
+    lt(&pl, "a", "ą");
+    lt(&pl, "ą", "b");
+    lt(&pl, "c", "ć");
+    lt(&pl, "z", "ź");
+    lt(&pl, "ź", "ż");
+
+    // Galician: ñ after n (imported from Spanish).
+    let gl = Tailoring::for_locale("gl").unwrap();
+    lt(&gl, "n", "ñ");
+
+    // Northern Sotho / Tswana: circumflex vowels and š after their bases.
+    for loc in ["nso", "tn"] {
+        let t = Tailoring::for_locale(loc).unwrap();
+        lt(&t, "e", "ê");
+        lt(&t, "o", "ô");
+        lt(&t, "s", "š");
+    }
+
+    // Wolof: à, é/ë, ñ/ŋ, ó after their base letters.
+    let wo = Tailoring::for_locale("wo").unwrap();
+    lt(&wo, "a", "à");
+    lt(&wo, "e", "é");
+    lt(&wo, "é", "ë");
+    lt(&wo, "n", "ñ");
+    lt(&wo, "ñ", "ŋ");
+
+    // Yoruba: dotted-below vowels and the "gb" digraph.
+    let yo = Tailoring::for_locale("yo").unwrap();
+    lt(&yo, "e", "ẹ");
+    lt(&yo, "g", "gb");
+    lt(&yo, "s", "ṣ");
+
+    // Igbo: digraphs (gb/gh/gw, kp/kw, nw/ny) and dotted-below vowels.
+    let ig = Tailoring::for_locale("ig").unwrap();
+    lt(&ig, "g", "gb");
+    lt(&ig, "gb", "gh");
+    lt(&ig, "n", "nw");
+    lt(&ig, "i", "ị");
+
+    // Ewe: dz digraph and the open vowels ɛ/ɔ after e/o.
+    let ee = Tailoring::for_locale("ee").unwrap();
+    lt(&ee, "d", "dz");
+    lt(&ee, "e", "ɛ");
+    lt(&ee, "o", "ɔ");
+    lt(&ee, "n", "ŋ");
+
+    // Belarusian / Kyrgyz (Cyrillic): ё after е, ў after у.
+    let be = Tailoring::for_locale("be").unwrap();
+    lt(&be, "Е", "ё");
+    lt(&be, "у", "ў");
+    let ky = Tailoring::for_locale("ky").unwrap();
+    lt(&ky, "е", "ё");
+
+    // Macedonian (Cyrillic): ѓ and ќ as their own letters.
+    let mk = Tailoring::for_locale("mk").unwrap();
+    lt(&mk, "ԃ", "ѓ");
+    lt(&mk, "ћ", "ќ");
+}
