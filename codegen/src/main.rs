@@ -332,7 +332,11 @@ fn main() {
         &cldr.join("numbers-raw"),
     );
     emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
-    emit_collation_rules(&cldr_dir, &cldr.join("collation.json"));
+    emit_collation_rules(
+        &cldr_dir,
+        &cldr.join("collation.json"),
+        &cldr.join("collation"),
+    );
     emit_collation_zh(&root, &cldr.join("collation/zh.xml"));
     emit_collation_zh_rs(&root, &ucd.join("Unihan_kRSUnicode.txt"));
     emit_collation_zh_variant(&root, &cldr.join("collation/zh.xml"), "stroke");
@@ -3336,23 +3340,369 @@ fn emit_japanese_hist(cldr_dir: &Path, raw_dir: &Path) {
 /// Write `cldr/ordsuffix.bin`: per-locale ordinal suffix for each plural
 /// category (zero/one/two/few/many/other), filling absent categories with the
 /// `other` suffix.
-/// Write `cldr/collation.bin`: per-locale CLDR collation tailoring **rule
-/// strings** (the `<collation type="standard">` `<cr>` from CLDR), for the
-/// locales whose rules use only the relations the runtime `Tailoring` parser
-/// supports (`&`/`<`/`<<`/`<<<`/`=` + expansions; the vendoring step filtered out
-/// rules needing `[before]`/`[import]`/extensions). `Tailoring::for_locale`
-/// parses the looked-up rule at runtime — so coverage is data-driven from the
-/// official CLDR rules rather than hand-curated.
-fn emit_collation_rules(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read collation.json");
-    let json = json_parse(&text);
-    let mut records = Vec::new();
-    for (lang, rule) in json.entries() {
-        let bytes = rule.as_str().unwrap_or("").as_bytes().to_vec();
-        records.push((lang.to_ascii_lowercase(), bytes));
+/// Locales whose CLDR `standard` rule is **not** shipped in the generated table.
+/// Each entry is a rule the runtime `Tailoring` parser cannot represent, so
+/// bundling it would sort text *wrong* rather than merely coarsely; the
+/// `tests/collation_data_consistency` gate re-derives this list from the data, so
+/// a rule that stops being problematic will show up as a gate failure here.
+/// Excluded locales fall back to a hand-written rule in `Tailoring::for_locale`,
+/// or to root DUCET.
+///
+/// This list is the *only* hand-curation in the collation pipeline: everything
+/// else is the official CLDR rule verbatim (modulo comment/whitespace
+/// distillation). It deliberately does **not** filter on rule syntax — the
+/// parser's `[before]`/`[import]`/star-range/escape support means the syntax
+/// filter the first vendoring applied (and which stranded sv/fi/da/no/is/… on
+/// hand rules long after the parser caught up) is obsolete.
+const COLLATION_SKIP: &[(&str, &str)] = &[
+    // -- Reset anchor the engine cannot hang a tailoring on -------------------
+    // The tailored sort key gives each letter its anchor's DUCET *primary* plus a
+    // sub-weight. An anchor with no primary of its own leaves nothing to offset
+    // from, and `Tailoring::parse` rejects the rule rather than invent one.
+    (
+        "bo",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "dz",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "ee",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "fa",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "lt",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "ml",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "pa",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "ps",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "th",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "vi",
+        "anchored on a bare combining mark, which has no DUCET primary weight",
+    ),
+    (
+        "cu",
+        "anchored on a `[first|last … ignorable]` pseudo-anchor, which the parser \
+         does not resolve to a weight",
+    ),
+    (
+        "km",
+        "anchored on a `[first|last … ignorable]` pseudo-anchor, which the parser \
+         does not resolve to a weight",
+    ),
+    (
+        "ur",
+        "anchored on a `[first|last … ignorable]` pseudo-anchor, which the parser \
+         does not resolve to a weight",
+    ),
+    (
+        "ar",
+        "`&[before 2]` — a reset *before* an anchor at the secondary level; the \
+         engine models reset-before only at the primary level",
+    ),
+    (
+        "fr-ca",
+        "the whole rule is `[backwards 2]` (French secondary-from-the-end \
+         ordering), an option with no orderings and no runtime support",
+    ),
+    ("fa-af", "`[import ps]`, and `ps` is itself excluded below"),
+    (
+        "ja",
+        "rule is `[import ja-u-co-private-kana]` + a 6 KB kanji chain; the private \
+         kana collation is not a CLDR locale, so the import cannot resolve. \
+         `for_locale` ships a kana-collapse rule verified against V8 instead",
+    ),
+    // -- Parses, but the resulting tailoring contradicts its own rule ----------
+    // Each line is the `tests/collation_data_consistency` finding verbatim: the
+    // two elements, the relation the rule asks for, and the order we produce.
+    // Shipping these would sort text *wrong*, which is worse than sorting it
+    // coarsely, so they fall back to a hand rule or to root DUCET.
+    ("af", "gate: \"N\" (rel 3) \"ŉ\" -> Greater"),
+    ("as", "gate: \"ৎ\" (rel 0) \"ত\\u{9cd}\\u{200d}\" -> Less"),
+    ("bal", "gate: \"ا\\u{653}\" (rel 1) \"ا\" -> Greater"),
+    ("br", "gate: \"c'h\" (rel 0) \"cʼh\" -> Greater"),
+    ("da", "gate: \"Å\" (rel 3) \"aa\" -> Greater"),
+    (
+        "en-us-posix",
+        "gate: \"A\" (rel 1) \"\\\\u0020\" -> Greater",
+    ),
+    ("ff-adlm", "gate: \"𞤀\\u{1e944}\" (rel 0) \"𞤀𞤀\" -> Greater"),
+    ("fo", "gate: \"Å\" (rel 3) \"aa\" -> Greater"),
+    ("hr", "gate: \"Dž\" (rel 3) \"ǅ\" -> Greater"),
+    ("hu", "gate: \"DZ\" (rel 1) \"dzs\" -> Greater"),
+    ("my", "gate: \"အော\" (rel 3) \"ဩ\" -> Greater"),
+    ("ro", "gate: \"ş\" (rel 0) \"ș\" -> Greater"),
+    ("to", "gate: \"NG\" (rel 3) \"ŋ\" -> Greater"),
+    ("uz", "gate: \"oʻ\" (rel 0) \"o‘\" -> Less"),
+    ("yi", "gate: \"פ\\u{5bf}\" (rel 3) \"ף\" -> Greater"),
+];
+
+/// Write `cldr/collation.bin` (and the committed `data/cldr/<ver>/collation.json`
+/// mirror the consistency gate reads): per-locale CLDR collation tailoring **rule
+/// strings**, taken verbatim from each `common/collation/<locale>.xml`'s
+/// `<collation type="standard">` `<cr>`.
+///
+/// `Tailoring::for_locale` parses the looked-up rule at runtime, so locale
+/// coverage is data-driven from the official CLDR rules. Only [`COLLATION_SKIP`]
+/// is hand-curated; `root`/`zh` are handled elsewhere (root needs no tailoring,
+/// zh is distilled into a Han-weight table by [`emit_collation_zh`]).
+fn emit_collation_rules(cldr_dir: &Path, json_out: &Path, xml_dir: &Path) {
+    let skip: BTreeMap<&str, &str> = COLLATION_SKIP.iter().copied().collect();
+    let mut records: Vec<(String, Vec<u8>)> = Vec::new();
+    let mut skipped: Vec<String> = Vec::new();
+    let mut untailored = 0usize;
+
+    let mut files: Vec<PathBuf> = fs::read_dir(xml_dir)
+        .expect("read collation dir")
+        .map(|e| e.expect("dir entry").path())
+        .filter(|p| p.extension().is_some_and(|e| e == "xml"))
+        .collect();
+    files.sort();
+
+    for path in &files {
+        let stem = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .expect("collation file stem");
+        // `root` carries the DUCET order itself (no tailoring to apply), and the
+        // Chinese variants are distilled into Han-weight tables, not rule strings.
+        if matches!(stem, "root" | "zh" | "zh_Hant") {
+            continue;
+        }
+        let lang = stem.replace('_', "-").to_ascii_lowercase();
+        let xml = fs::read_to_string(path).expect("read collation xml");
+        let Some(rule) = standard_collation_rule(&xml) else {
+            // No `standard` collation: the locale sorts in root order (e.g. de,
+            // ga, nb, nl — de tailors only `phonebook`, which is `de-u-co-phonebk`,
+            // not plain `de`).
+            untailored += 1;
+            continue;
+        };
+        if let Some(why) = skip.get(lang.as_str()) {
+            skipped.push(format!("{lang} ({why})"));
+            continue;
+        }
+        records.push((lang, rule.into_bytes()));
     }
     records.sort();
+
+    // Mirror the table as JSON so the consistency gate (and a human diff) can read
+    // it without an XML parser.
+    let mut json = String::from("{\n");
+    for (i, (lang, rule)) in records.iter().enumerate() {
+        let comma = if i + 1 == records.len() { "" } else { "," };
+        json.push_str(&format!(
+            " {}: {}{comma}\n",
+            json_quote(lang),
+            json_quote(core::str::from_utf8(rule).expect("utf-8 rule"))
+        ));
+    }
+    json.push_str("}\n");
+    fs::write(json_out, json).expect("write collation.json");
+
     write_blob(cldr_dir, "collation", &records);
+    let bytes: usize = records.iter().map(|(k, v)| k.len() + v.len() + 3).sum();
+    let names: Vec<&str> = skipped
+        .iter()
+        .map(|s| s.split_once(' ').map_or(s.as_str(), |(n, _)| n))
+        .collect();
+    println!(
+        "codegen: wrote collation.bin ({} locales from CLDR, {} KB; {} skipped \
+         [{}]; {untailored} with no `standard` tailoring -> root order)",
+        records.len(),
+        bytes / 1024,
+        skipped.len(),
+        names.join(" "),
+    );
+}
+
+/// The `<collation type="standard">` rule of an LDML collation file, distilled by
+/// [`distill_collation_rule`], or `None` when the locale has no standard
+/// tailoring.
+///
+/// Hand-rolled rather than XML-parsed because CLDR's collation files are not
+/// uniformly formatted — attributes span lines (`sa.xml`), close tags carry
+/// padding (`</collation  >` in `pl.xml`), and the rule body is CDATA full of
+/// `<`. So: strip comments, index the `<collation …>` open tags, and read the
+/// `<cr>` that follows the `standard` one. A `standard` block carrying `alt=` is
+/// a *proposed* alternative, not the winning value, and is ignored; `draft=` is
+/// not filtered (CLDR ships draft collations and ICU builds them).
+fn standard_collation_rule(xml: &str) -> Option<String> {
+    let text = strip_xml_comments(xml);
+    // (tag start, body start, tag text) for every `<collation …>` — not
+    // `<collations>`, whose 11th byte is `s` rather than space or `>`.
+    let mut tags: Vec<(usize, usize, &str)> = Vec::new();
+    let mut i = 0;
+    while let Some(off) = text[i..].find("<collation") {
+        let start = i + off;
+        let rest = &text[start + "<collation".len()..];
+        if rest.starts_with([' ', '\t', '\r', '\n', '>']) {
+            let end = start + rest.find('>').expect("unterminated <collation") + "<collation".len();
+            tags.push((start, end + 1, &text[start..=end]));
+        }
+        i = start + "<collation".len();
+    }
+    for (idx, &(_, body, tag)) in tags.iter().enumerate() {
+        if collation_attr(tag, "type").as_deref() != Some("standard")
+            || collation_attr(tag, "alt").is_some()
+        {
+            continue;
+        }
+        let stop = tags.get(idx + 1).map_or(text.len(), |n| n.0);
+        let seg = &text[body..stop];
+        let open = seg.find("<cr><![CDATA[")? + "<cr><![CDATA[".len();
+        let close = seg[open..].find("]]>")? + open;
+        return Some(distill_collation_rule(&seg[open..close]));
+    }
+    None
+}
+
+/// The value of attribute `name` in an XML open tag, or `None`. Unlike
+/// [`xml_attr`] this accepts either quote style and requires a whole-name match,
+/// both of which CLDR's collation files need.
+fn collation_attr(tag: &str, name: &str) -> Option<String> {
+    let mut i = 0;
+    while let Some(off) = tag[i..].find(name) {
+        let at = i + off;
+        i = at + name.len();
+        // Must be a whole attribute name: preceded by whitespace, followed by `=`.
+        if !tag[..at].ends_with([' ', '\t', '\r', '\n']) {
+            continue;
+        }
+        let rest = tag[i..].trim_start();
+        let Some(rest) = rest.strip_prefix('=') else {
+            continue;
+        };
+        let rest = rest.trim_start();
+        let quote = rest.chars().next()?;
+        if quote != '"' && quote != '\'' {
+            continue;
+        }
+        let val = &rest[1..];
+        return Some(val[..val.find(quote)?].to_string());
+    }
+    None
+}
+
+/// Remove `<!-- … -->` comments.
+fn strip_xml_comments(xml: &str) -> String {
+    let mut out = String::with_capacity(xml.len());
+    let mut rest = xml;
+    while let Some(open) = rest.find("<!--") {
+        out.push_str(&rest[..open]);
+        match rest[open..].find("-->") {
+            Some(close) => rest = &rest[open + close + 3..],
+            None => return out,
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Shrink a CLDR rule to what the runtime parser needs, without changing what it
+/// means: drop `#` line comments and collapse whitespace runs to one space.
+///
+/// Both are done **quote-aware** (`'…'`, with `''` an escaped apostrophe) so a
+/// quoted literal keeps its spaces and a quoted `#` (root's `'#⃣'`) is not read as
+/// a comment. Comment removal is what makes the whitespace collapse safe — the
+/// parser ends a `#` comment at the newline, so newlines cannot be dropped first.
+/// `[optimize …]` and `[suppressContractions …]` are ICU performance hints that
+/// carry no ordering (ko's `[optimize …]` alone is 4 KB), so they go too.
+fn distill_collation_rule(rule: &str) -> String {
+    let mut out = String::with_capacity(rule.len());
+    let mut chars = rule.char_indices().peekable();
+    let mut quoted = false;
+    let mut pending_space = false;
+    while let Some((i, c)) = chars.next() {
+        match c {
+            '\'' if chars.peek().map(|&(_, c)| c) == Some('\'') => {
+                chars.next();
+                out.push_str("''");
+                pending_space = false;
+            }
+            '\'' => {
+                quoted = !quoted;
+                out.push('\'');
+                pending_space = false;
+            }
+            '#' if !quoted => {
+                for (_, c) in chars.by_ref() {
+                    if c == '\n' {
+                        break;
+                    }
+                }
+            }
+            _ if !quoted && c.is_whitespace() => {
+                pending_space = !out.is_empty();
+            }
+            '[' if !quoted
+                && (rule[i..].starts_with("[optimize ")
+                    || rule[i..].starts_with("[suppressContractions ")) =>
+            {
+                // Skip to the matching `]`, tracking the nested `[…]` of the
+                // UnicodeSet argument.
+                let mut depth = 1usize;
+                for (_, c) in chars.by_ref() {
+                    match c {
+                        '[' => depth += 1,
+                        ']' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {
+                if pending_space {
+                    out.push(' ');
+                    pending_space = false;
+                }
+                out.push(c);
+            }
+        }
+    }
+    out
+}
+
+/// Quote a string as a JSON scalar.
+fn json_quote(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('"');
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
 }
 
 /// Whether `cp` is a Han ideograph we assign a pinyin rank to: the CJK Unified

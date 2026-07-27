@@ -1040,17 +1040,21 @@ pub struct Tailoring {
 impl Tailoring {
     /// A built-in tailoring for a locale, or `None` if none is bundled. Two
     /// sources are consulted, in order: the **official CLDR collation rules**
-    /// (generated into a committed table for the bulk of the coverage — including
-    /// the Japanese kana collation and Croatian/Bosnian), then a small set of
-    /// hand-written rules for locales kept out of that table (e.g. the Nordic
-    /// `&z < å < ä < ö`, or `[before]`-based rules the data-consistency gate's
-    /// simple tokenizer can't validate: Icelandic, Turkish, Estonian, Kazakh).
+    /// (every `common/collation/<locale>.xml` `<collation type="standard">` rule,
+    /// generated verbatim into a committed table — 78 locales), then a small set
+    /// of hand-written rules for the locales that table cannot carry.
     ///
     /// A self-consistency gate (`tests/collation_data_consistency`) excludes from
-    /// the generated table any locale whose rule the parser would mis-order
-    /// (decomposing-letter anchors, chained multi-char expansions), so this never
-    /// returns a tailoring that sorts against its own rule — it falls back to a
-    /// hand-written rule or to root DUCET instead.
+    /// the generated table any locale whose rule the parser rejects or would
+    /// mis-order (bare-combining-mark anchors, chained multi-char expansions like
+    /// Danish `&å<<<aa`, decomposing-letter anchors), so this never returns a
+    /// tailoring that sorts against its own rule — it falls back to a hand-written
+    /// rule or to root DUCET instead.
+    ///
+    /// A locale with **no** `standard` collation in CLDR sorts in root order, and
+    /// gets no tailoring here: German tailors only `phonebook` (which is
+    /// `de-u-co-phonebk`, not plain `de`), and Irish, Dutch, Catalan, Indonesian
+    /// and ~17 others carry no collation rules at all.
     ///
     /// ```
     /// # #[cfg(feature = "alloc")] {
@@ -1089,7 +1093,18 @@ impl Tailoring {
             };
             return Some(Tailoring::zh(table));
         }
-        for key in [full.as_str(), primary] {
+        // CLDR ships some locales as an empty file that inherits its collation
+        // from a parent (`nb`/`nn` from `no`) or under a newer code (`tl` → `fil`).
+        // Follow that here rather than duplicating the parent's rule by hand.
+        let inherited = match primary {
+            "nb" | "nn" => Some("no"),
+            "tl" => Some("fil"),
+            _ => None,
+        };
+        for key in [Some(full.as_str()), Some(primary), inherited]
+            .into_iter()
+            .flatten()
+        {
             if let Some(rule) = crate::cldr::collation_rule(key)
                 && let Some(t) = Tailoring::parse(rule)
             {
@@ -1102,39 +1117,37 @@ impl Tailoring {
         // hanja with no CLDR Korean reading, which fall to DUCET (code-point) order
         // rather than V8's radical-stroke (the radical-stroke table is gated behind
         // `collation-zh`, out of the default `collation` build).
-        let lc = primary;
-        let rules = match lc {
-            "sv" | "fi" => "&z < å < ä < ö",               // Swedish, Finnish
-            "da" | "nb" | "nn" | "no" => "&z < æ < ø < å", // Danish, Norwegian
-            // Icelandic (CLDR): accented vowels reset *before* the next base letter
-            // (so ý sorts just before z's neighbor, þ after z, then æ ä ö ø å).
-            "is" => {
-                "&[before 1]b<á<<<Á &d<<đ<<<Đ<ð<<<Ð &[before 1]f<é<<<É &[before 1]j<í<<<Í \
-                 &[before 1]p<ó<<<Ó &[before 1]v<ú<<<Ú &[before 1]z<ý<<<Ý \
-                 &[before 1]ǀ<æ<<<Æ<<ä<<<Ä<ö<<<Ö<<ø<<<Ø<å<<<Å"
-            }
-            // Estonian (CLDR): š/z/ž reset before T (so they sort after s), and
-            // õ/ä/ö/ü reset before X (so they sort after w) — not all after s.
-            "et" => "&[before 1]T<š<<<Š<z<<<Z<ž<<<Ž &[before 1]X<õ<<<Õ<ä<<<Ä<ö<<<Ö<ü<<<Ü",
-            "de" => "&ae = ä &oe = ö &ue = ü &ss = ß", // German phonebook (expansions)
-            "pl" => "&a < ą &c < ć &e < ę &l < ł &n < ń &o < ó &s < ś &z < ź < ż", // Polish
-            "cs" | "sk" => "&c < č &h < ch &r < ř &s < š &z < ž", // Czech/Slovak (ch digraph)
-            // Turkish (CLDR): dotless ı resets *before* i (ı sorts between h and i).
-            "tr" => "&C<ç<<<Ç &G<ğ<<<Ğ &[before 1]i<ı<<<I &i<<<İ &O<ö<<<Ö &S<ş<<<Ş &U<ü<<<Ü",
-            "az" => "&c < ç &g < ğ &h < ı &i < i̇ &o < ö &s < ş &u < ü", // Azerbaijani
-            "lv" => "&c < č &g < ģ &i < ī &k < ķ &l < ļ &n < ņ &s < š &z < ž", // Latvian
-            "lt" => "&c < č &s < š &z < ž",                             // Lithuanian
+        // Hand-written fallbacks, reached only for the locales `codegen`'s
+        // `COLLATION_SKIP` keeps out of the table above — each entry names the
+        // clause of the official rule that the engine cannot carry. Every other
+        // locale's tailoring is CLDR's own rule, verbatim.
+        //
+        // These are approximations by construction: they capture the letter
+        // ordering that dominates real text and drop the part the parser chokes
+        // on. Where CLDR has no `standard` collation at all (`de`, `ga`, `nl`, …)
+        // there is deliberately no entry — inventing one would sort those locales
+        // differently from `Intl.Collator`, which uses root order there.
+        let rules = match primary {
+            // CLDR `da`/`fo` end with `å<<<Å<<<aa<<<Aa<<<AA`, a chained
+            // multi-char expansion the engine mis-orders (`Å <<< aa` inverts).
+            // Dropped here along with the ü→y secondary and the þ/ð variants.
+            "da" | "nb" | "nn" => "&z < æ < ø < å", // Danish, Norwegian
+            "fo" => "&a < á &d < ð &i < í &o < ó &u < ú &y < ý &z < æ < ø", // Faroese
+            // CLDR `lt` opens with `&̀=̇̀` — a reset onto a bare combining grave,
+            // which has no primary weight to anchor to. The letter rules survive.
+            "lt" => "&c < č &s < š &z < ž", // Lithuanian
+            // Likewise CLDR `vi` opens with a tone-mark reset (`&̀<<̉<<̃<<́<<̣`).
+            "vi" => "&a < ă < â &d < đ &e < ê &o < ô < ơ &u < ư", // Vietnamese (base letters)
             // Serbo-Croatian Latin digraphs (bs imports this via `[import hr]`).
-            // `sr` (default Cyrillic) is bundled from CLDR as `[reorder Cyrl]`
-            // instead, so only `hr` (Latin) uses this hand rule.
+            // CLDR `hr` spells each digraph's titlecase/uppercase ligature forms
+            // (`&D<dž<<<ǆ<<<Dž<<<ǅ<<<DŽ<<<Ǆ`), which the engine mis-orders at the
+            // tertiary level; the digraphs themselves are what matter.
+            // `sr` (default Cyrillic) is bundled from CLDR as `[reorder Cyrl]`.
             "hr" => "&c < č < ć &d < dž < đ &l < lj &n < nj &s < š &z < ž",
-            // Kazakh (CLDR): Cyrillic ё/ү after their bases, і reset before ь.
-            "kk" => "&Е<ё<<<Ё &Ұ<ү<<<Ү &[before 1]ь<і<<<І",
-            "es" => "&n < ñ", // Spanish (ñ after n)
-            // Hungarian digraphs (dzs/dz longest-match first via the engine sort),
-            // plus gemination: a doubled digraph like `ccs`/`ggy`/`ddzs` collates
-            // as the digraph doubled (`cs`+`cs`) via `/`-expansion, one tertiary
-            // step above it (CLDR `&cs<<<ccs/cs`). Verified against V8.
+            // CLDR `hu` orders `&D<dz…` then `&DZ<dzs…`, anchoring the trigraph on
+            // the *uppercase* digraph — which the engine reads as a distinct
+            // element and mis-orders. This spelling keeps dzs after dz, and adds
+            // the gemination expansions (`&cs<<<ccs/cs`), verified against V8.
             "hu" => {
                 "&c < cs &d < dz < dzs &g < gy &l < ly &n < ny &s < sz &t < ty &z < zs \
                  &O < ö <<< Ö << ő <<< Ő &U < ü <<< Ü << ű <<< Ű \
@@ -1142,20 +1155,33 @@ impl Tailoring {
                  &ly <<< lly / ly &ny <<< nny / ny &sz <<< ssz / sz &ty <<< tty / ty \
                  &zs <<< zzs / zs"
             }
+            // CLDR `ro` writes `&S<ş=ș`, equating cedilla and comma-below; the
+            // engine gives them distinct weights, so the `=` inverts. Ordering by
+            // the comma-below forms (the modern spelling) is the closer answer.
             "ro" => "&a < ă < â &i < î &s < ș &t < ț", // Romanian
-            "sq" => {
-                "&c < ç &d < dh &e < ë &g < gj &l < ll &n < nj &r < rr &s < sh &t < th &x < xh &z < zh"
-            } // Albanian
-            "uk" => "&г < ґ &е < є &и < і < ї",        // Ukrainian (Cyrillic)
-            "vi" => "&a < ă < â &d < đ &e < ê &o < ô < ơ &u < ư", // Vietnamese (base letters)
-            // Welsh digraphs (ch/dd/ff/ng/ll/ph/rh/th), each after its base letter.
-            "cy" => "&c < ch &d < dd &f < ff &g < ng &l < ll &p < ph &r < rh &t < th",
-            "fil" | "tl" => "&n < ñ < ng", // Filipino/Tagalog (ng digraph)
-            "fo" => "&a < á &d < ð &i < í &o < ó &u < ú &y < ý &z < æ < ø", // Faroese
-            "kl" => "&z < æ < ø < å",      // Greenlandic (Danish-style)
-            "gl" => "&n < ñ",              // Galician (ñ after n)
-            "ga" => "&a < á &e < é &i < í &o < ó &u < ú", // Irish (long-vowel accents)
-            "ha" => "&b < ɓ &d < ɗ &k < ƙ &s < sh &t < ts &y < ƴ", // Hausa (hooked letters)
+            // CLDR `ee` opens with `&̌<<̂` (a reset onto a bare combining caron);
+            // everything after it is the letter ordering, kept verbatim.
+            "ee" => {
+                "&D<dz<<<Dz<<<DZ<ɖ<<<Ɖ &E<ɛ<<<Ɛ &F<ƒ<<<Ƒ &G<gb<<<Gb<<<GB<ɣ<<<Ɣ &H<x<<<X \
+                 &K<kp<<<Kp<<<KP &N<ny<<<Ny<<<NY<ŋ<<<Ŋ &O<ɔ<<<Ɔ &T<ts<<<Ts<<<TS &V<ʋ<<<Ʋ"
+            }
+            // CLDR `af` is `&N<<<ŉ`, anchored on uppercase N. ŉ decomposes to
+            // `ʼn`, so anchoring it on the *lowercase* n is what actually places
+            // it just after n — the uppercase spelling inverts.
+            "af" => "&n<<<ŉ", // Afrikaans
+            // Japanese: hiragana and katakana of the same syllable collate equal,
+            // matching V8. (CLDR's own `ja` rule reaches this order through
+            // `[import ja-u-co-private-kana]`, a private collation that is not a
+            // CLDR locale and so cannot be resolved; its kanji chain is separate.)
+            "ja" => {
+                "&ぁ=ァ&あ=ア&ぃ=ィ&い=イ&ぅ=ゥ&う=ウ&ぇ=ェ&え=エ&ぉ=ォ&お=オ&か=カ&が=ガ&き=キ&ぎ=ギ\
+                 &く=ク&ぐ=グ&け=ケ&げ=ゲ&こ=コ&ご=ゴ&さ=サ&ざ=ザ&し=シ&じ=ジ&す=ス&ず=ズ&せ=セ&ぜ=ゼ\
+                 &そ=ソ&ぞ=ゾ&た=タ&だ=ダ&ち=チ&ぢ=ヂ&っ=ッ&つ=ツ&づ=ヅ&て=テ&で=デ&と=ト&ど=ド&な=ナ\
+                 &に=ニ&ぬ=ヌ&ね=ネ&の=ノ&は=ハ&ば=バ&ぱ=パ&ひ=ヒ&び=ビ&ぴ=ピ&ふ=フ&ぶ=ブ&ぷ=プ&へ=ヘ\
+                 &べ=ベ&ぺ=ペ&ほ=ホ&ぼ=ボ&ぽ=ポ&ま=マ&み=ミ&む=ム&め=メ&も=モ&ゃ=ャ&や=ヤ&ゅ=ュ&ゆ=ユ\
+                 &ょ=ョ&よ=ヨ&ら=ラ&り=リ&る=ル&れ=レ&ろ=ロ&ゎ=ヮ&わ=ワ&ゐ=ヰ&ゑ=ヱ&を=ヲ&ん=ン&ゔ=ヴ\
+                 &ゕ=ヵ&ゖ=ヶ"
+            }
             _ => return None,
         };
         Tailoring::parse(rules)

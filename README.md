@@ -264,8 +264,14 @@ codepoint would.
   handling, **strength levels** (`with_strength`: accent-/case-insensitive),
   **numeric ordering** (`with_numeric`: `file2 < file10`), and **locale
   tailoring** (`Tailoring::parse("&z < å < ä < ö")` / `Tailoring::for_locale("sv")`
-  for primary reordering). Validated against the full official `CollationTest`
-  suite (both modes). Requires the `alloc` feature.
+  for primary reordering). `for_locale` carries the official CLDR
+  `<collation type="standard">` rule for 78 locales, generated verbatim from
+  `data/cldr/<ver>/collation/*.xml`; a handful the rule engine cannot represent
+  fall back to a hand-written approximation, and locales CLDR does not tailor at
+  all (`de`, `ga`, `nl`, …) correctly return `None` and sort in root order.
+  Validated against the full official `CollationTest` suite (both modes), and each
+  bundled rule is checked against itself by `tests/collation_data_consistency`.
+  Requires the `alloc` feature.
 - **Normalization** (UAX #15) — `nfd`, `nfc`, `nfkd`, `nfkc` as streaming,
   allocation-free iterator adaptors over `Iterator<Item = char>`; quick-check
   helpers `is_nfc`/`is_nfd`/`is_nfkc`/`is_nfkd` (and tri-state
