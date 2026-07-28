@@ -645,3 +645,93 @@ fn era_relative_year() {
     assert_eq!(intl::datetime::format_skeleton("en", &at(0), "y"), "1");
     assert_eq!(intl::datetime::format_skeleton("en", &at(-1), "y"), "2");
 }
+
+/// A lone time field used to resolve to a date pattern that the field-keep pass
+/// then emptied, returning `Ok("")`. CLDR only tabulates the `availableFormats`
+/// combinations it expects to be asked for, so `m`, `s`, `B` and `S` have no
+/// entry anywhere and the pattern is synthesized from the skeleton instead.
+#[test]
+fn lone_time_fields() {
+    use intl::datetime::{NameStyle, Numeric2Digit};
+
+    const T: DateTime = DateTime {
+        year: 2024,
+        month: 6,
+        day: 15,
+        hour: 9,
+        minute: 5,
+        second: 7,
+        millisecond: 40,
+    };
+    let f = |o: &intl::datetime::DateTimeFormatOptions| {
+        intl::datetime::format_options("en", &T, o).unwrap()
+    };
+
+    assert_eq!(
+        f(&dtf(|o| o.day_period = Some(NameStyle::Long))),
+        "in the morning"
+    );
+    assert_eq!(f(&dtf(|o| o.minute = Some(Numeric2Digit::Numeric))), "5");
+    assert_eq!(f(&dtf(|o| o.minute = Some(Numeric2Digit::TwoDigit))), "05");
+    assert_eq!(f(&dtf(|o| o.second = Some(Numeric2Digit::Numeric))), "7");
+    assert_eq!(f(&dtf(|o| o.second = Some(Numeric2Digit::TwoDigit))), "07");
+    assert_eq!(f(&dtf(|o| o.fractional_second_digits = Some(3))), "040");
+    assert_eq!(f(&dtf(|o| o.fractional_second_digits = Some(2))), "04");
+
+    // The parts carry the right tag, not just the right text.
+    let parts = intl::datetime::format_to_parts(
+        "en",
+        &T,
+        &dtf(|o| o.minute = Some(Numeric2Digit::Numeric)),
+    )
+    .unwrap();
+    assert_eq!(parts.len(), 1);
+    assert_eq!(parts[0].kind, intl::datetime::DateTimePartType::Minute);
+    let parts =
+        intl::datetime::format_to_parts("en", &T, &dtf(|o| o.fractional_second_digits = Some(3)))
+            .unwrap();
+    assert_eq!(
+        parts[0].kind,
+        intl::datetime::DateTimePartType::FractionalSecond
+    );
+
+    // Other locales pick their own day-period wording.
+    let dp = dtf(|o| o.day_period = Some(NameStyle::Long));
+    assert_eq!(
+        intl::datetime::format_options("de", &T, &dp).unwrap(),
+        "morgens"
+    );
+    assert_eq!(
+        intl::datetime::format_options("fr", &T, &dp).unwrap(),
+        "du matin"
+    );
+    assert_eq!(intl::datetime::format_options("ja", &T, &dp).unwrap(), "朝");
+
+    // Combinations CLDR *does* tabulate keep resolving through availableFormats.
+    let hm = dtf(|o| {
+        o.hour = Some(Numeric2Digit::Numeric);
+        o.minute = Some(Numeric2Digit::TwoDigit);
+    });
+    assert_eq!(f(&hm), "9:05\u{202f}AM");
+    let ms = dtf(|o| {
+        o.minute = Some(Numeric2Digit::TwoDigit);
+        o.second = Some(Numeric2Digit::TwoDigit);
+    });
+    assert_eq!(f(&ms), "05:07");
+    // Hour + day period still promotes the `a` field of the `h` entry to `B`.
+    let hb = dtf(|o| {
+        o.hour = Some(Numeric2Digit::Numeric);
+        o.day_period = Some(NameStyle::Long);
+    });
+    assert_eq!(f(&hb), "9\u{202f}in the morning");
+    // Seconds plus a fraction keeps the locale decimal separator between them.
+    let sf = dtf(|o| {
+        o.second = Some(Numeric2Digit::TwoDigit);
+        o.fractional_second_digits = Some(3);
+    });
+    assert_eq!(f(&sf), "07.040");
+    assert_eq!(
+        intl::datetime::format_options("de", &T, &sf).unwrap(),
+        "07,040"
+    );
+}

@@ -75,6 +75,7 @@ impl<T> core::convert::From<T> for intl::datetime::DateStyle
 pub fn intl::datetime::DateStyle::from(T) -> T
 #[non_exhaustive] pub enum intl::datetime::DateTimeFormatError
 pub intl::datetime::DateTimeFormatError::ConflictingOptions
+pub intl::datetime::DateTimeFormatError::UnsupportedOptions
 impl core::clone::Clone for intl::datetime::DateTimeFormatError
 pub fn intl::datetime::DateTimeFormatError::clone(&self) -> intl::datetime::DateTimeFormatError
 impl core::cmp::Eq for intl::datetime::DateTimeFormatError

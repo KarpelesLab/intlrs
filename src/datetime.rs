@@ -1404,6 +1404,10 @@ pub struct DateTimeFormatOptions {
 pub enum DateTimeFormatError {
     /// `date_style`/`time_style` were combined with component options.
     ConflictingOptions,
+    /// The requested options resolved to a pattern with no fields left in it,
+    /// so formatting would produce an empty string. Reported rather than
+    /// returning `Ok("")`, which is indistinguishable from a real result.
+    UnsupportedOptions,
 }
 
 fn normalize_lang(lang: &str) -> String {
@@ -1515,6 +1519,12 @@ fn build_date_skeleton(o: &DateTimeFormatOptions) -> (String, bool) {
 /// component was requested. `loc` is the locale default hour letter.
 fn build_time_skeleton(o: &DateTimeFormatOptions, loc: char) -> (String, bool) {
     let mut sk = String::new();
+    // A day period alongside an hour needs no `B` of its own: CLDR's `h` entry
+    // carries an `a` field, which `patch_widths` promotes to `B`. On its own it
+    // is its own skeleton, which no locale tabulates — hence the synthesis path.
+    if o.day_period.is_some() && o.hour.is_none() {
+        sk.push('B');
+    }
     if o.hour.is_some() {
         sk.push(hour_letter(o, loc));
     }
@@ -1524,8 +1534,104 @@ fn build_time_skeleton(o: &DateTimeFormatOptions, loc: char) -> (String, bool) {
     if o.second.is_some() {
         sk.push('s');
     }
-    let any = o.hour.is_some() || o.minute.is_some() || o.second.is_some();
+    // A lone fractional-second request has no seconds field to hang off, so it
+    // becomes the whole skeleton; `inject_fractional` handles the `s` case.
+    if sk.is_empty() && o.fractional_second_digits.is_some() {
+        sk.push('S');
+    }
+    let any = !sk.is_empty();
     (sk, any)
+}
+
+/// Whether `pattern` still contains at least one field letter outside quotes —
+/// i.e. whether rendering it would produce anything at all.
+fn has_field(pattern: &str) -> bool {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '\'' {
+            i += 1;
+            while i < chars.len() && chars[i] != '\'' {
+                i += 1;
+            }
+            i += 1;
+        } else if chars[i].is_ascii_alphabetic() {
+            return true;
+        } else {
+            i += 1;
+        }
+    }
+    false
+}
+
+/// The literal a locale puts between its numeric time fields (usually `":"`),
+/// read from the first hour-to-minute junction in its own time patterns.
+fn time_separator(s: &CalendarSpec) -> String {
+    for pat in s.time {
+        let chars: Vec<char> = pat.chars().collect();
+        let mut i = 0;
+        let mut after_hour = false;
+        let mut sep = String::new();
+        while i < chars.len() {
+            let ch = chars[i];
+            if ch == '\'' {
+                i += 1;
+                while i < chars.len() && chars[i] != '\'' {
+                    if after_hour {
+                        sep.push(chars[i]);
+                    }
+                    i += 1;
+                }
+                i += 1;
+            } else if ch.is_ascii_alphabetic() {
+                if after_hour && ch == 'm' && !sep.is_empty() {
+                    return sep;
+                }
+                after_hour = matches!(ch, 'h' | 'H' | 'K' | 'k');
+                sep.clear();
+                while i < chars.len() && chars[i] == ch {
+                    i += 1;
+                }
+            } else {
+                if after_hour {
+                    sep.push(ch);
+                }
+                i += 1;
+            }
+        }
+    }
+    String::from(":")
+}
+
+/// Build a pattern straight from a skeleton the locale has no `availableFormats`
+/// entry for. CLDR only tabulates the field combinations it expects to be asked
+/// for, so a lone `m`, `s`, `B` or `S` resolves to nothing at all; ICU's
+/// `DateTimePatternGenerator` synthesizes a pattern instead of giving up.
+/// Adjacent numeric time fields are joined with the locale's own time separator.
+fn synthesize_time_pattern(skeleton: &str, s: &CalendarSpec) -> String {
+    const NUMERIC: [char; 6] = ['h', 'H', 'K', 'k', 'm', 's'];
+    let sep = time_separator(s);
+    let chars: Vec<char> = skeleton.chars().collect();
+    let mut out = String::new();
+    let mut prev: Option<char> = None;
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        let start = i;
+        while i < chars.len() && chars[i] == ch {
+            i += 1;
+        }
+        if let Some(p) = prev {
+            if NUMERIC.contains(&p) && NUMERIC.contains(&ch) {
+                out.push_str(&sep);
+            } else {
+                out.push(' ');
+            }
+        }
+        out.extend(&chars[start..i]);
+        prev = Some(ch);
+    }
+    out
 }
 
 /// Resolve a skeleton to a locale pattern through the fallback chain.
@@ -1539,11 +1645,30 @@ fn resolve_one(lang: &str, s: &CalendarSpec, skeleton: &str) -> String {
         match norm[..end].rfind('-') {
             Some(i) => end = i,
             None => {
-                return crate::cldr::skeleton_pattern("en", skeleton)
-                    .map_or_else(|| String::from(s.date[2]), String::from);
+                if let Some(p) = crate::cldr::skeleton_pattern("en", skeleton) {
+                    return String::from(p);
+                }
+                // Nothing tabulated anywhere. A pure-time skeleton is
+                // synthesized from its own fields; a date skeleton keeps the
+                // locale's medium date pattern, whose field *order* a naive
+                // synthesis would get wrong (`d.M.y` vs `y/M/d` vs `M/d/y`).
+                return if skeleton.chars().all(is_time_field) {
+                    synthesize_time_pattern(skeleton, s)
+                } else {
+                    String::from(s.date[2])
+                };
             }
         }
     }
+}
+
+/// Whether `c` is a time-side pattern field (as opposed to a date field), for
+/// deciding whether a skeleton can be safely synthesized field-by-field.
+const fn is_time_field(c: char) -> bool {
+    matches!(
+        c,
+        'h' | 'H' | 'K' | 'k' | 'm' | 's' | 'S' | 'A' | 'a' | 'b' | 'B'
+    )
 }
 
 /// Replace each run of a field letter (in `from`) with `to` repeated `count`,
@@ -1871,6 +1996,9 @@ fn resolve_pattern(
         if o.second.is_some() {
             keep.push('s');
         }
+        if o.fractional_second_digits.is_some() {
+            keep.extend(['S', 'A']);
+        }
         // Keep the day period when explicitly asked or implied by a 12-hour clock.
         if o.day_period.is_some() || (o.hour.is_some() && hour_letter(o, loc_hour) == 'h') {
             keep.extend(['a', 'b', 'B']);
@@ -1880,7 +2008,18 @@ fn resolve_pattern(
 
     combined = patch_widths(&combined, o, loc_hour);
     if let Some(n) = o.fractional_second_digits {
-        combined = inject_fractional(&combined, lang, n);
+        combined = if combined.contains('S') {
+            // A synthesized lone-fraction pattern: size the run, with no
+            // seconds field in front of it to hang a decimal separator on.
+            set_field(&combined, &['S'], 'S', n as usize)
+        } else {
+            inject_fractional(&combined, lang, n)
+        };
+    }
+    // Every requested field was stripped (or none resolved), so rendering would
+    // yield "" — report that instead of returning a successful empty string.
+    if !has_field(&combined) {
+        return Err(DateTimeFormatError::UnsupportedOptions);
     }
     Ok(combined)
 }

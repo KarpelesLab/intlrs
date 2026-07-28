@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- *(datetime)* `DateTimeFormatError::UnsupportedOptions`, returned when the
+  requested options resolve to a pattern with no fields left in it. Previously
+  that case produced `Ok("")`, which a caller cannot tell apart from a real
+  result.
+
 ### Fixed
+
+- *(datetime)* a lone time field no longer formats as the empty string.
+  `day_period`, `minute`, `second` and `fractional_second_digits`, each on their
+  own, resolved through CLDR `availableFormats` — which tabulates only the
+  combinations it expects to be asked for, and has no `m`, `s`, `B` or `S` entry
+  in any locale. The lookup fell through to the locale's medium *date* pattern,
+  whose fields the keep-pass then stripped in full, leaving `""`. Pure-time
+  skeletons with no tabulated entry are now synthesized from their own fields
+  (joined with the locale's time separator), the way ICU's
+  `DateTimePatternGenerator` does. `minute` alone now gives `"30"`, `day_period`
+  alone `"in the morning"` (`morgens`, `du matin`, `朝`), and
+  `fractional_second_digits: 3` alone `"123"`. Date skeletons keep falling back
+  to the locale's medium date pattern, whose field *order* a naive synthesis
+  would get wrong. Reported in
+  [#17](https://github.com/KarpelesLab/intlrs/issues/17).
 
 - *(datetime)* `y` renders the era-relative year, not the astronomical one. UTS
   #35 counts the BCE side back from 1, so year `0` now formats as `1 BC` and
