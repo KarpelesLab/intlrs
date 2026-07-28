@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- *(number)* `format_scientific` no longer hangs on an infinite input. The
+  mantissa normalization looped on `m /= 10.0` until `m < 10.0`, but `inf / 10.0`
+  is `inf`, so the loop never terminated: a release build spun forever and a
+  debug build panicked with "attempt to add with overflow" on the exponent
+  counter. Non-finite input now returns early. Reported in
+  [#17](https://github.com/KarpelesLab/intlrs/issues/17).
+- *(number)* non-finite values format as ECMA-402's `∞` / `NaN` on every path,
+  not Rust's `inf`. `format_decimal`, `format_percent`, `format_compact`,
+  `format_currency` and `unit::format_unit` all reach `format_with`, which spelled
+  the value with `{:.*}` and produced `"inf"`, `"inf%"`, `"$inf"`,
+  `"inf meters"` — disagreeing with `format`/`format_to_parts`, which already
+  emitted `"∞"`. The pattern's affixes are kept (`"∞%"`, `"$∞"`), the locale minus
+  sign is used for negative infinity, and `NaN` is unsigned per ECMA-402.
+
 ## [0.5.2](https://github.com/KarpelesLab/intlrs/compare/v0.5.1...v0.5.2) - 2026-07-27
 
 ### Added

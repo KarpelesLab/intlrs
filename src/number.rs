@@ -332,6 +332,19 @@ pub fn format_percent(lang: &str, value: f64) -> String {
 /// ```
 #[must_use]
 pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
+    // Guard before the mantissa normalization below: `inf / 10.0` is still
+    // `inf`, so the loop would never terminate (and `exp` would overflow).
+    if !value.is_finite() {
+        if value.is_nan() {
+            return String::from("NaN");
+        }
+        let s = spec(lang);
+        return if value < 0.0 {
+            alloc::format!("{}\u{221e}", s.minus)
+        } else {
+            String::from("\u{221e}")
+        };
+    }
     if value == 0.0 {
         return String::from("0");
     }
@@ -719,6 +732,29 @@ fn format_with_parts(
 ) -> Vec<NumberPart> {
     let neg = value.is_sign_negative() && value != 0.0;
     let abs = if value < 0.0 { -value } else { value };
+
+    // Non-finite input has no digits to round or group, and `{:.*}` would spell
+    // it as Rust's `inf`/`NaN`. Emit the ECMA-402 `∞` / `NaN` parts inside the
+    // pattern's affixes, so percent/currency keep their symbol ("∞%", "$∞") and
+    // this path agrees with [`format_to_parts`]. NaN is unsigned per ECMA-402.
+    if !value.is_finite() {
+        let mut parts = Vec::new();
+        if neg && !value.is_nan() {
+            parts.push(NumberPart::new(NumberPartType::MinusSign, minus));
+        }
+        if !p.prefix.is_empty() {
+            parts.push(NumberPart::new(NumberPartType::Literal, p.prefix));
+        }
+        parts.push(if value.is_nan() {
+            NumberPart::new(NumberPartType::Nan, "NaN")
+        } else {
+            NumberPart::new(NumberPartType::Infinity, "∞")
+        });
+        if !p.suffix.is_empty() {
+            parts.push(NumberPart::new(NumberPartType::Literal, p.suffix));
+        }
+        return parts;
+    }
 
     // Round to max_frac fixed decimals via the float formatter.
     let formatted = alloc::format!("{:.*}", p.max_frac as usize, abs);

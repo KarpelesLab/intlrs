@@ -223,3 +223,46 @@ fn currency_display() {
         "￥1,234"
     );
 }
+
+/// Non-finite input goes through the same ECMA-402 `∞` / `NaN` spelling on every
+/// path, not Rust's `inf`. Regression for the `format_scientific` mantissa loop,
+/// which never terminated for an infinity (`inf / 10.0 == inf`).
+#[test]
+fn non_finite() {
+    use intl::number::{format_compact, format_scientific};
+
+    // Plain decimal, both signs. NaN is unsigned per ECMA-402.
+    assert_eq!(dec("en", f64::INFINITY), "∞");
+    assert_eq!(dec("en", f64::NEG_INFINITY), "-∞");
+    assert_eq!(dec("en", f64::NAN), "NaN");
+    assert_eq!(dec("en", -f64::NAN), "NaN");
+
+    // The locale minus sign is used, not an ASCII hyphen.
+    assert_eq!(dec("sv", f64::NEG_INFINITY), "\u{2212}∞");
+
+    // The pattern affixes survive: percent keeps its suffix, currency its symbol.
+    assert_eq!(pct("en", f64::INFINITY), "∞%");
+    assert_eq!(
+        intl::number::format_currency("en", f64::INFINITY, "USD"),
+        "$∞"
+    );
+    assert_eq!(
+        intl::number::format_currency("en", f64::NEG_INFINITY, "USD"),
+        "-$∞"
+    );
+
+    // Compact delegates to the decimal path.
+    assert_eq!(format_compact("en", f64::INFINITY), "∞");
+    assert_eq!(format_compact("en", f64::NAN), "NaN");
+
+    // Scientific: the guard that keeps the normalization loop from spinning.
+    assert_eq!(format_scientific("en", f64::INFINITY, 6), "∞");
+    assert_eq!(format_scientific("en", f64::NEG_INFINITY, 6), "-∞");
+    assert_eq!(format_scientific("sv", f64::NEG_INFINITY, 6), "\u{2212}∞");
+    assert_eq!(format_scientific("en", f64::NAN, 6), "NaN");
+
+    // The `format`/`format_to_parts` path already agreed; keep the two in step.
+    let o = intl::number::NumberFormatOptions::default();
+    assert_eq!(intl::number::format("en", f64::INFINITY, &o), "∞");
+    assert_eq!(intl::number::format("en", f64::NAN, &o), "NaN");
+}
