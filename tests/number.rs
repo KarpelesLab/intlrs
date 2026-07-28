@@ -266,3 +266,33 @@ fn non_finite() {
     assert_eq!(intl::number::format("en", f64::INFINITY, &o), "∞");
     assert_eq!(intl::number::format("en", f64::NAN, &o), "NaN");
 }
+
+/// Region and script tags that carry their own CLDR number data. The tables are
+/// keyed by the vendored locale, and the lookup truncates a tag at each `-` with
+/// no script inference — so `zh-Hant` needs its own record, and `zh-TW` needs an
+/// alias onto it or it would fall through to Simplified `zh`.
+#[test]
+fn script_and_region_locales() {
+    use intl::number::format_compact as k;
+
+    // Indian grouping: 2-then-3 digits, from `en-IN`'s `#,##,##0.###` pattern.
+    assert_eq!(dec("en-IN", 12345678.0), "1,23,45,678");
+    assert_eq!(dec("hi", 12345678.0), "1,23,45,678");
+    // Plain `en` and other `en-*` regions keep uniform 3-digit grouping.
+    assert_eq!(dec("en", 12345678.0), "12,345,678");
+    assert_eq!(dec("en-GB", 12345678.0), "12,345,678");
+    // `en-IN` also abbreviates in crores rather than millions.
+    assert_eq!(k("en-IN", 123456789.0), "12.3Cr");
+    assert_eq!(k("en", 123456789.0), "123.5M");
+
+    // Traditional Chinese uses 億; Simplified uses 亿.
+    assert_eq!(k("zh-Hant", 123456789.0), "1.2億");
+    assert_eq!(k("zh", 123456789.0), "1.2亿");
+    // Region tags CLDR maximizes onto Hant reach the Traditional data...
+    assert_eq!(k("zh-TW", 123456789.0), "1.2億");
+    assert_eq!(k("zh-HK", 123456789.0), "1.2億");
+    assert_eq!(k("zh-MO", 123456789.0), "1.2億");
+    // ...and the ones it maximizes onto Hans keep falling back to `zh`.
+    assert_eq!(k("zh-CN", 123456789.0), "1.2亿");
+    assert_eq!(k("zh-SG", 123456789.0), "1.2亿");
+}

@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- *(number)* `en-IN` and `zh-Hant` number data, vendored from CLDR 48. `en-IN`
+  carries Indian digit grouping (`format_decimal("en-IN", 12345678.0)` →
+  `"1,23,45,678"`, was `"12,345,678"`) and crore/lakh compact forms; `zh-Hant`
+  carries the Traditional Chinese compact forms (`format_compact("zh-Hant",
+  123456789.0)` → `"1.2億"`, was `"1.2亿"`). Upstream ships no region files under
+  `zh-Hant`, so codegen derives `zh-TW`, `zh-HK` and `zh-MO` from it through
+  CLDR's own likelySubtags — the runtime lookup truncates a tag at each `-` and
+  does no script inference, so those would otherwise reach Simplified `zh`.
+  `zh-CN`/`zh-SG` still resolve to `zh`, as they should. Reported in
+  [#17](https://github.com/KarpelesLab/intlrs/issues/17).
 - *(datetime)* `DateTimeFormatError::UnsupportedOptions`, returned when the
   requested options resolve to a pattern with no fields left in it. Previously
   that case produced `Ok("")`, which a caller cannot tell apart from a real

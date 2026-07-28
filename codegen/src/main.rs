@@ -304,7 +304,11 @@ fn main() {
     // ---- CLDR locale formatter tables -> committed binary blobs (no_std). ----
     let cldr_dir = root.join("src/cldr");
     let cldr = root.join("data/cldr/48");
-    emit_numbers(&cldr_dir, &cldr.join("numbers-raw"));
+    emit_numbers(
+        &cldr_dir,
+        &cldr.join("numbers-raw"),
+        &cldr.join("likely.json"),
+    );
     emit_lists(&cldr_dir, &cldr.join("lists-raw"));
     emit_relative(&cldr_dir, &cldr.join("datefields-raw"));
     emit_currency(
@@ -2357,7 +2361,51 @@ const COMPACT_MAGNITUDES: [&str; 12] = [
 /// parsed decimal and percent `Pattern`s (latn numbering system).
 /// `compact.bin` payload: 12 short then 12 long compact patterns (the
 /// `count-other` form for each magnitude 10³…10¹⁴).
-fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path) {
+/// Duplicate every `lang-Script` record under the `lang-REGION` tags that CLDR's
+/// likelySubtags maximizes onto that same script. The runtime locale lookup
+/// truncates a tag at each `-` and does no script inference, so `zh-TW` would
+/// otherwise fall past the Traditional data vendored as `zh-Hant` all the way to
+/// `zh`, which is Simplified. The aliases are exact payload copies — a few dozen
+/// bytes each — and never shadow a locale that has data of its own.
+fn script_region_aliases(records: &[(String, Vec<u8>)], likely: &Json) -> Vec<(String, Vec<u8>)> {
+    let is_region = |s: &str| {
+        (s.len() == 2 && s.chars().all(|c| c.is_ascii_alphabetic()))
+            || (s.len() == 3 && s.chars().all(|c| c.is_ascii_digit()))
+    };
+    let map = likely.get("map").expect("likely map");
+    let mut out: Vec<(String, Vec<u8>)> = Vec::new();
+    for (key, payload) in records {
+        let Some((lang, script)) = key.split_once('-') else {
+            continue;
+        };
+        if script.len() != 4 || !script.chars().all(|c| c.is_ascii_alphabetic()) {
+            continue;
+        }
+        for (from, to) in map.entries() {
+            // `zh-TW` -> `zh-Hant-TW`: same language, maximizing onto this script.
+            let mut max = to.as_str().unwrap_or("").split('-');
+            let (Some(l), Some(s)) = (max.next(), max.next()) else {
+                continue;
+            };
+            if !l.eq_ignore_ascii_case(lang) || !s.eq_ignore_ascii_case(script) {
+                continue;
+            }
+            let alias = from.to_ascii_lowercase();
+            let Some((_, region)) = alias.split_once('-') else {
+                continue;
+            };
+            if !is_region(region) || records.iter().any(|(k, _)| *k == alias) {
+                continue;
+            }
+            out.push((alias, payload.clone()));
+        }
+    }
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    out.dedup_by(|a, b| a.0 == b.0);
+    out
+}
+
+fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
     let mut files: Vec<String> = fs::read_dir(numbers_dir)
         .expect("read numbers-raw dir")
         .filter_map(|e| e.ok())
@@ -2422,6 +2470,12 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path) {
         }
         compact_records.push((locale.to_ascii_lowercase(), c));
     }
+
+    let likely_text = fs::read_to_string(likely_path).expect("read likely.json");
+    let likely = json_parse(&likely_text);
+    num_records.extend(script_region_aliases(&num_records, &likely));
+    compact_records.extend(script_region_aliases(&compact_records, &likely));
+
     write_blob(cldr_dir, "numbers", &num_records);
     write_blob(cldr_dir, "compact", &compact_records);
 }
