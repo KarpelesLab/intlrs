@@ -21,7 +21,10 @@ use alloc::vec::Vec;
 /// A broken-down Gregorian date and time. Fields are not validated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DateTime {
-    /// Proleptic Gregorian year (e.g. 2026).
+    /// Proleptic Gregorian (astronomical) year, e.g. `2026`. Zero and negative
+    /// values are BCE: `0` is 1 BC and `-1` is 2 BC. Formatting renders the
+    /// era-relative year for CLDR's `y` field, so those two print as `1` and
+    /// `2` (alongside a `BC` era, when one is requested), never as `0`/`-1`.
     pub year: i32,
     /// Month, 1–12.
     pub month: u8,
@@ -302,6 +305,19 @@ fn day_period_names(s: &CalendarSpec, n: usize) -> &[Option<&'static str>; 10] {
     }
 }
 
+/// The era-relative year that UTS #35's `y` field renders. Years at or before
+/// the era boundary count backwards from 1, so the astronomical year 0 is
+/// `1 BC` and −1 is `2 BC`. The era name is chosen separately from the same
+/// sign, so `y` itself must never render a negative number. The astronomical
+/// year is still reachable through the `u` field.
+const fn era_year(year: i64) -> i64 {
+    if year > 0 {
+        year
+    } else {
+        1i64.saturating_sub(year)
+    }
+}
+
 /// Render one date-field run (`field` repeated `n` times) of a CLDR pattern.
 fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
     let m = dt.month as usize;
@@ -310,12 +326,15 @@ fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
     let mi = m.clamp(1, 12) - 1;
     match field {
         'y' | 'Y' => {
+            let y = era_year(dt.year as i64);
             if n == 2 {
-                two((dt.year.rem_euclid(100)) as i64)
+                two(y.rem_euclid(100))
             } else {
-                dt.year.to_string()
+                y.to_string()
             }
         }
+        // Extended (astronomical) year: signed, and 0 stays 0.
+        'u' => dt.year.to_string(),
         'M' | 'L' => match n {
             1 => m.to_string(),
             2 => two(m as i64),
@@ -654,7 +673,7 @@ fn render_alt(
             let (n, m) = (i - start, month as usize);
             let mi = m.clamp(1, 12) - 1; // unvalidated month must not index OOB
             match ch {
-                'y' | 'Y' => out.push_str(&year.to_string()),
+                'y' | 'Y' => out.push_str(&era_year(year).to_string()),
                 'M' | 'L' => match n {
                     1 => out.push_str(&m.to_string()),
                     2 => out.push_str(&two(m as i64)),

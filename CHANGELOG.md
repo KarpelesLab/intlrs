@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- *(datetime)* `y` renders the era-relative year, not the astronomical one. UTS
+  #35 counts the BCE side back from 1, so year `0` now formats as `1 BC` and
+  `-1` as `2 BC`; previously they rendered `0 BC` and `-1 BC`, and a negative
+  number beside a `BC` era is never right. This applies whether or not an `era`
+  is requested, since that is what the `y` field means. The astronomical year is
+  reachable through the `u` field, which is now rendered rather than dropped.
+  Non-Gregorian calendars get the same treatment (the Islamic/Persian BH/BP
+  side); the Japanese year-within-era and the Chinese cyclic year were already
+  era-relative and are unchanged. Reported in
+  [#17](https://github.com/KarpelesLab/intlrs/issues/17).
+
 - *(number)* `format_scientific` no longer hangs on an infinite input. The
   mantissa normalization looped on `m /= 10.0` until `m < 10.0`, but `inf / 10.0`
   is `inf`, so the loop never terminated: a release build spun forever and a

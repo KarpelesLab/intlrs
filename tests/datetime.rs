@@ -595,3 +595,53 @@ fn named_time_zone() {
         .ends_with("GMT-05:00")
     );
 }
+
+/// UTS #35's `y` is era-relative: on the BCE side it counts back from 1, so the
+/// astronomical year 0 renders as `1 BC` and −1 as `2 BC`. A negative number
+/// beside a `BC` era is never correct. The astronomical year stays reachable
+/// through the `u` field.
+#[test]
+fn era_relative_year() {
+    use intl::datetime::{NameStyle, Numeric2Digit};
+
+    let at = |y: i32| DateTime { year: y, ..DT };
+    let with_era = dtf(|o| {
+        o.year = Some(Numeric2Digit::Numeric);
+        o.era = Some(NameStyle::Short);
+    });
+    let fmt = |y: i32, o: &intl::datetime::DateTimeFormatOptions| {
+        intl::datetime::format_options("en", &at(y), o).unwrap()
+    };
+
+    assert_eq!(fmt(1, &with_era), "1 AD");
+    assert_eq!(fmt(0, &with_era), "1 BC");
+    assert_eq!(fmt(-1, &with_era), "2 BC");
+    assert_eq!(fmt(-99, &with_era), "100 BC");
+    assert_eq!(fmt(2026, &with_era), "2026 AD");
+
+    // The era-relative year is what `y` means whether or not an era is asked
+    // for, so a bare year never renders negative either.
+    let bare = dtf(|o| o.year = Some(Numeric2Digit::Numeric));
+    assert_eq!(fmt(0, &bare), "1");
+    assert_eq!(fmt(-1, &bare), "2");
+
+    // Two-digit year takes the last two digits of the era-relative year.
+    let two_digit = dtf(|o| {
+        o.year = Some(Numeric2Digit::TwoDigit);
+        o.era = Some(NameStyle::Short);
+    });
+    assert_eq!(fmt(0, &two_digit), "01 BC");
+    assert_eq!(fmt(-99, &two_digit), "00 BC");
+
+    // `formatToParts` agrees with the string path.
+    let parts = intl::datetime::format_to_parts("en", &at(0), &with_era).unwrap();
+    let year = parts
+        .iter()
+        .find(|p| p.kind == intl::datetime::DateTimePartType::Year)
+        .expect("year part");
+    assert_eq!(year.value, "1");
+
+    // The skeleton path shares the same field renderer.
+    assert_eq!(intl::datetime::format_skeleton("en", &at(0), "y"), "1");
+    assert_eq!(intl::datetime::format_skeleton("en", &at(-1), "y"), "2");
+}
