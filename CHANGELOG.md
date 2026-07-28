@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2](https://github.com/KarpelesLab/intlrs/compare/v0.5.1...v0.5.2) - 2026-07-27
+
+### Added
+
+- *(collation)* re-vendor locale tailorings from CLDR 48
+
 ### Changed
 
 - *(collation)* re-vendor locale tailorings from CLDR 48. The rule table is now
