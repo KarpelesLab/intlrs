@@ -45,6 +45,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requested options resolve to a pattern with no fields left in it. Previously
   that case produced `Ok("")`, which a caller cannot tell apart from a real
   result.
+- *(number)* `format_range` and `format_range_to_parts` — ECMA-402 v3
+  `Intl.NumberFormat.prototype.formatRange`/`formatRangeToParts`, driven by the
+  CLDR `miscPatterns` the tables previously did not carry.
+  `format_range("en", 2.9, 3.1, …)` with `style: currency` gives
+  `"$2.90–$3.10"`; `zh` separates with an ASCII hyphen, `ja` with U+FF1E. Per
+  `PartitionNumberRangePattern` step 5, ends that format *identically* collapse
+  to the `approximately` form rather than a degenerate range: `"~3"` in `en`,
+  `"≈3"` in `de` and `fr`, `"約 3"` in `ja` — and that is the `miscPatterns`
+  `approximately` string, which is independent of the `approximatelySign` symbol
+  (`fr` has `≈{0}` against `≃`). `format_range_to_parts` returns
+  `NumberRangePart`s carrying the spec's `source` field
+  (`NumberRangeSource::{StartRange, EndRange, Shared}`) and tags the collapse
+  marker `NumberPartType::ApproximatelySign`. Behind the new `number-range`
+  cargo feature (in `default`; ~16 KB of code + data). Reported in
+  [#17](https://github.com/KarpelesLab/intlrs/issues/17).
+- *(number)* `-u-nu-<system>` support and `native_numbering_system` /
+  `default_numbering_system`. Every `number` entry point now reads the tag's
+  UTS #35 `nu` keyword — `format_decimal("hi-u-nu-deva", …)`,
+  `format_decimal("ar-u-nu-native", …)` — and `NumberFormatOptions::
+  numbering_system` accepts the same values, including the `"native"` alias,
+  outranking the tag as ECMA-402 `ResolveLocale` requires. CLDR's
+  `otherNumberingSystems.native` is now stored, which is what makes `"native"`
+  resolvable: it is *not* the same as `defaultNumberingSystem` (`ar` defaults to
+  `latn` but is natively `arab`, `hi` to `latn` but natively `deva`, `zh` to
+  `latn` but natively `hanidec`). `number` does not depend on the `locale`
+  feature, so the `-u-` scan is a small self-contained one in `number` rather
+  than a new `Locale` accessor. Reported in
+  [#17](https://github.com/KarpelesLab/intlrs/issues/17).
+- *(number)* `NumberSpec::nan` and `NumberSpec::infinity`, the CLDR
+  `symbols/nan` and `symbols/infinity` strings.
 
 ### Changed
 
@@ -60,8 +90,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   phrase as one `unit` part, as ICU does, instead of splitting it on interior
   whitespace. `"5 kilometers per hour"` yields `integer("5") literal(" ")
   unit("kilometers per hour")`, not six parts. Single-word units are unchanged.
+- *(number)* the CLDR number table moved from the `src/cldr/numbers.bin` and
+  `src/cldr/numsys_default.bin` blobs to generated Rust
+  (`src/cldr/generated/numbers.rs`, `match` lookups), following `units`. It is
+  now keyed by *(locale, numbering system)* rather than by locale alone, which is
+  what a blob could not gate: the non-`latn` blocks sit on `#[cfg]`-ed match arms
+  behind the new `number-numsys` feature (in `default`; ~4 KB). Every record the
+  blobs held was checked field-for-field against the generated table before the
+  blobs were dropped — all 121 `numbers.bin` keys (103 locales plus the derived
+  `lang-REGION` aliases) and all 103 `numsys_default.bin` keys are byte-identical.
+  The base `number` footprint grows ~10 KB, the price of `&'static str` pointer
+  pairs over a packed blob.
+- *(number)* the `numbering_system` option, and a `-u-nu-` tag, now select the
+  numbering system's **separators and patterns** too, not just its digits. CLDR
+  keys `symbols-numberSystem-<ns>` and `decimalFormats-numberSystem-<ns>` per
+  system and they genuinely differ: `format("ar", …, numbering_system: "arab")`
+  gives `"١٬٢٣٤٫٥"` (U+066C group, U+066B decimal), not `"١,٢٣٤.٥"`; `te` groups
+  Indian-style in `latn` but not in `telu`. Requests for a system the locale
+  ships no block for keep its `latn` symbols, which is ICU's `NumberElements`
+  fallback — `format("en", …, numbering_system: "arab")` is unchanged.
+- *(number)* non-finite values use the locale's CLDR strings.
+  `format("ar", f64::NAN, …)` is `"ليس رقمًا"` and `format("fa", …)` `"ناعدد"`,
+  where all four call sites previously hardcoded `"NaN"`/`"∞"`. (`∞` happens to
+  be right for every vendored locale, but was not being *read*.)
+
+### Deprecated
+
+- *(number)* `format_decimal_native` is renamed to
+  `format_decimal_default_numbering`; the old name is kept as a deprecated
+  forwarder. It never read `otherNumberingSystems.native` — it reads
+  `defaultNumberingSystem`, and that is the ECMA-402 behaviour worth having
+  (`Intl.NumberFormat('ar')` also formats `1.5` with Latin digits, because `ar`
+  defaults to `latn` in CLDR 48). The native system is now reachable through
+  `format_decimal("<lang>-u-nu-native", …)` or `native_numbering_system`.
 
 ### Fixed
+
+- *(number)* `format_decimal_default_numbering` (ex `format_decimal_native`) uses
+  the default numbering system's *separators*, not just its digits. Persian gave
+  `"۱,۲۳۴.۵"` — `arabext` digits glued to `latn` separators, a combination no
+  locale uses; `Intl.NumberFormat('fa')` gives `"۱٬۲۳۴٫۵"`, which is now the
+  output.
 
 - *(datetime)* a lone time field no longer formats as the empty string.
   `day_period`, `minute`, `second` and `fractional_second_digits`, each on their

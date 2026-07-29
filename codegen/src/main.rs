@@ -319,6 +319,7 @@ fn main() {
     );
     emit_display(&cldr_dir, &cldr.join("localenames-raw"));
     emit_units(&cldr_dir, &cldr.join("units-raw"));
+    write_cldr_generated_mod(&cldr_dir);
     emit_dates(
         &cldr_dir,
         &cldr.join("dates"),
@@ -330,11 +331,7 @@ fn main() {
     emit_bcp47(&cldr_dir, &cldr.join("bcp47"));
     emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
-    emit_numsys(
-        &cldr_dir,
-        &cldr.join("numberingSystems.json"),
-        &cldr.join("numbers-raw"),
-    );
+    emit_numsys(&cldr_dir, &cldr.join("numberingSystems.json"));
     emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
     emit_collation_rules(
         &cldr_dir,
@@ -2368,13 +2365,30 @@ const COMPACT_MAGNITUDES: [&str; 12] = [
 /// `zh`, which is Simplified. The aliases are exact payload copies — a few dozen
 /// bytes each — and never shadow a locale that has data of its own.
 fn script_region_aliases(records: &[(String, Vec<u8>)], likely: &Json) -> Vec<(String, Vec<u8>)> {
+    let keys: Vec<String> = records.iter().map(|(k, _)| k.clone()).collect();
+    script_region_alias_keys(&keys, likely)
+        .into_iter()
+        .map(|(alias, src)| {
+            let payload = records
+                .iter()
+                .find(|(k, _)| *k == src)
+                .map(|(_, p)| p.clone())
+                .expect("alias source record");
+            (alias, payload)
+        })
+        .collect()
+}
+
+/// The `(alias, source)` key pairs behind [`script_region_aliases`], for tables
+/// that store one record per locale *index* rather than per payload copy.
+fn script_region_alias_keys(keys: &[String], likely: &Json) -> Vec<(String, String)> {
     let is_region = |s: &str| {
         (s.len() == 2 && s.chars().all(|c| c.is_ascii_alphabetic()))
             || (s.len() == 3 && s.chars().all(|c| c.is_ascii_digit()))
     };
     let map = likely.get("map").expect("likely map");
-    let mut out: Vec<(String, Vec<u8>)> = Vec::new();
-    for (key, payload) in records {
+    let mut out: Vec<(String, String)> = Vec::new();
+    for key in keys {
         let Some((lang, script)) = key.split_once('-') else {
             continue;
         };
@@ -2394,10 +2408,10 @@ fn script_region_aliases(records: &[(String, Vec<u8>)], likely: &Json) -> Vec<(S
             let Some((_, region)) = alias.split_once('-') else {
                 continue;
             };
-            if !is_region(region) || records.iter().any(|(k, _)| *k == alias) {
+            if !is_region(region) || keys.contains(&alias) {
                 continue;
             }
-            out.push((alias, payload.clone()));
+            out.push((alias, key.clone()));
         }
     }
     out.sort_by(|a, b| a.0.cmp(&b.0));
@@ -2405,20 +2419,41 @@ fn script_region_aliases(records: &[(String, Vec<u8>)], likely: &Json) -> Vec<(S
     out
 }
 
+/// One locale's number spec for a single numbering system: the CLDR
+/// `symbols-numberSystem-<ns>` block plus the decimal/percent patterns of
+/// `decimalFormats-/percentFormats-numberSystem-<ns>` (which genuinely differ
+/// per system — `te` groups Indian-style in `latn` but not in `telu`).
+struct NsSpec {
+    ns: String,
+    decimal: String,
+    group: String,
+    minus: String,
+    plus: String,
+    percent: String,
+    nan: String,
+    infinity: String,
+    dec: PatFields,
+    pct: PatFields,
+}
+
+/// Everything `src/cldr/generated/numbers.rs` holds for one locale.
+struct NumbersRecord {
+    /// `latn` first, then the other systems CLDR ships symbols for, sorted.
+    specs: Vec<NsSpec>,
+    /// `defaultNumberingSystem` and `otherNumberingSystems.native`.
+    default_ns: String,
+    native_ns: String,
+    /// The `miscPatterns` `approximately` and `range` forms.
+    approximately: String,
+    range: String,
+}
+
 fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
-    let mut files: Vec<String> = fs::read_dir(numbers_dir)
-        .expect("read numbers-raw dir")
-        .filter_map(|e| e.ok())
-        .filter_map(|e| {
-            e.file_name()
-                .to_string_lossy()
-                .strip_suffix(".json")
-                .map(String::from)
-        })
-        .collect();
+    let mut files = locale_files(numbers_dir);
     files.sort();
 
-    let mut num_records = Vec::new();
+    let mut locales: Vec<String> = Vec::new();
+    let mut records: Vec<NumbersRecord> = Vec::new();
     let mut compact_records = Vec::new();
     for locale in files {
         let path = numbers_dir.join(alloc_format(&locale));
@@ -2427,35 +2462,74 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
         let main = json.get("main").expect("main");
         let (_, loc_obj) = main.entries().first().expect("locale entry");
         let n = loc_obj.get("numbers").expect("numbers");
-
-        let sym = n
-            .get("symbols-numberSystem-latn")
-            .expect("symbols-numberSystem-latn");
         let g = |o: &Json, k: &str| o.get(k).and_then(Json::as_str).unwrap_or("").to_string();
-        let decimal = g(sym, "decimal");
-        let group = g(sym, "group");
-        let minus = g(sym, "minusSign");
-        let plus = g(sym, "plusSign");
-        let percent = g(sym, "percentSign");
+
+        // Every numbering system the locale ships symbols for, `latn` first: the
+        // runtime resolves a `-u-nu-` request against this set and falls back to
+        // `latn`, matching ICU's `NumberElements/<ns>/symbols` lookup.
+        let mut systems: Vec<String> = n
+            .entries()
+            .iter()
+            .filter_map(|(k, _)| k.strip_prefix("symbols-numberSystem-"))
+            .map(String::from)
+            .collect();
+        systems.sort();
+        systems.sort_by_key(|s| s != "latn");
+
+        let mut specs: Vec<NsSpec> = Vec::new();
+        for ns in systems {
+            let sym = n
+                .get(&alloc_concat("symbols-numberSystem-", &ns))
+                .expect("symbols block");
+            let percent = g(sym, "percentSign");
+            // A system can carry symbols without its own patterns; CLDR's
+            // resource inheritance then supplies the `latn` ones.
+            let pat = |kind: &str| {
+                n.get(&alloc_concat(kind, &alloc_concat("-numberSystem-", &ns)))
+                    .or_else(|| n.get(&alloc_concat(kind, "-numberSystem-latn")))
+                    .and_then(|x| x.get("standard"))
+                    .and_then(Json::as_str)
+                    .unwrap_or("")
+                    .to_string()
+            };
+            specs.push(NsSpec {
+                dec: parse_number_pattern(&pat("decimalFormats"), &percent),
+                pct: parse_number_pattern(&pat("percentFormats"), &percent),
+                decimal: g(sym, "decimal"),
+                group: g(sym, "group"),
+                minus: g(sym, "minusSign"),
+                plus: g(sym, "plusSign"),
+                nan: g(sym, "nan"),
+                infinity: g(sym, "infinity"),
+                percent,
+                ns,
+            });
+        }
+        assert_eq!(specs[0].ns, "latn", "{locale}: no latn symbols");
+
+        // `miscPatterns` are per numbering system in CLDR but identical across
+        // systems in all 103 vendored locales, so one per locale is enough.
+        let misc = n
+            .get("miscPatterns-numberSystem-latn")
+            .expect("miscPatterns-numberSystem-latn");
+        let other = n.get("otherNumberingSystems");
+        let default_ns = g(n, "defaultNumberingSystem");
+        records.push(NumbersRecord {
+            specs,
+            native_ns: other
+                .and_then(|o| o.get("native"))
+                .and_then(Json::as_str)
+                .unwrap_or(&default_ns)
+                .to_string(),
+            default_ns,
+            approximately: g(misc, "approximately"),
+            range: g(misc, "range"),
+        });
+
+        // Compact short then long, `count-other` per magnitude.
         let dec_fmt = n
             .get("decimalFormats-numberSystem-latn")
             .expect("decimalFormats");
-        let dec_pat = dec_fmt.get("standard").and_then(Json::as_str).unwrap_or("");
-        let pct_pat = n
-            .get("percentFormats-numberSystem-latn")
-            .and_then(|x| x.get("standard"))
-            .and_then(Json::as_str)
-            .unwrap_or("");
-
-        let mut p = Vec::new();
-        for s in [&decimal, &group, &minus, &plus, &percent] {
-            enc_str(&mut p, s);
-        }
-        enc_pattern(&mut p, &parse_number_pattern(dec_pat, &percent));
-        enc_pattern(&mut p, &parse_number_pattern(pct_pat, &percent));
-        num_records.push((locale.to_ascii_lowercase(), p));
-
-        // Compact short then long, `count-other` per magnitude.
         let mut c = Vec::new();
         for width in ["short", "long"] {
             let df = dec_fmt.get(width).and_then(|w| w.get("decimalFormat"));
@@ -2469,15 +2543,179 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
             }
         }
         compact_records.push((locale.to_ascii_lowercase(), c));
+        locales.push(locale.to_ascii_lowercase());
     }
 
     let likely_text = fs::read_to_string(likely_path).expect("read likely.json");
     let likely = json_parse(&likely_text);
-    num_records.extend(script_region_aliases(&num_records, &likely));
     compact_records.extend(script_region_aliases(&compact_records, &likely));
-
-    write_blob(cldr_dir, "numbers", &num_records);
     write_blob(cldr_dir, "compact", &compact_records);
+
+    // `lang-REGION` tags that maximize onto a vendored `lang-Script` record share
+    // that record's table index rather than duplicating its arms.
+    let aliases: Vec<(String, usize)> = script_region_alias_keys(&locales, &likely)
+        .into_iter()
+        .map(|(alias, src)| {
+            let i = locales
+                .iter()
+                .position(|l| *l == src)
+                .expect("alias source");
+            (alias, i)
+        })
+        .collect();
+
+    write_numbers_rs(cldr_dir, &locales, &records, &aliases);
+}
+
+/// Render a parsed CLDR number pattern as a `crate::cldr::Pattern` literal.
+fn rust_pattern(p: &PatFields) -> String {
+    format!(
+        "Pattern {{ prefix: {}, suffix: {}, min_int: {}, min_frac: {}, max_frac: {}, primary_group: {}, secondary_group: {} }}",
+        rust_str(&p.prefix),
+        rust_str(&p.suffix),
+        p.min_int,
+        p.min_frac,
+        p.max_frac,
+        p.primary,
+        p.secondary,
+    )
+}
+
+/// Render one numbering system's block as a `crate::cldr::NumberSpec` literal.
+fn rust_spec(s: &NsSpec) -> String {
+    format!(
+        "NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, dec: {}, pct: {} }}",
+        rust_str(&s.decimal),
+        rust_str(&s.group),
+        rust_str(&s.minus),
+        rust_str(&s.plus),
+        rust_str(&s.percent),
+        rust_str(&s.nan),
+        rust_str(&s.infinity),
+        rust_pattern(&s.dec),
+        rust_pattern(&s.pct),
+    )
+}
+
+/// Emit `cldr/generated/numbers.rs`: per-locale number symbols and patterns as
+/// `match` lookups. Unlike a blob this can be gated arm by arm, which is why the
+/// non-`latn` numbering-system blocks and the `miscPatterns` live here.
+fn write_numbers_rs(
+    cldr_dir: &Path,
+    locales: &[String],
+    records: &[NumbersRecord],
+    aliases: &[(String, usize)],
+) {
+    let mut out = String::new();
+    write_header(&mut out);
+    let _ = write!(
+        out,
+        "//! CLDR number symbols and patterns (UTS #35 `numbers.json`).\n\
+         //!\n\
+         //! Emitted as Rust rather than a blob because the per-numbering-system\n\
+         //! blocks and the `miscPatterns` are wanted only by some builds, and\n\
+         //! `#[cfg]` can drop individual match arms.\n\
+         //!\n\
+         //! Every accessor is keyed by an exact (lowercased) CLDR locale id and\n\
+         //! returns `None` for anything else; walking the fallback chain (and the\n\
+         //! final drop to `en`) is the caller's job, as for the `.bin` tables.\n\n\
+         use crate::cldr::{{NumberSpec, Pattern}};\n\n\
+         /// Table index for an exact (lowercased) CLDR locale id. `lang-REGION`\n\
+         /// tags that CLDR maximizes onto a vendored `lang-Script` record share\n\
+         /// its index (`zh-tw` -> `zh-hant`).\n\
+         fn locale_index(lang: &str) -> Option<u16> {{\n    \
+         Some(match lang {{\n"
+    );
+    let mut keys: Vec<(&str, usize)> = locales
+        .iter()
+        .enumerate()
+        .map(|(i, l)| (l.as_str(), i))
+        .chain(aliases.iter().map(|(a, i)| (a.as_str(), *i)))
+        .collect();
+    keys.sort();
+    for (key, i) in keys {
+        let _ = write!(out, "        \"{key}\" => {i},\n");
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    let _ = write!(
+        out,
+        "/// The number spec for `lang` in numbering system `ns`. CLDR only ships\n\
+         /// symbols for a handful of systems per locale; anything else resolves to\n\
+         /// the locale's `latn` block, which is ICU's `NumberElements` fallback.\n\
+         pub(crate) fn spec(lang: &str, ns: &str) -> Option<NumberSpec> {{\n    \
+         let i = locale_index(lang)?;\n    \
+         if let Some(s) = other(i, ns) {{\n        return Some(s);\n    }}\n    \
+         latn(i)\n}}\n\n\
+         /// The `latn` spec for a table index (every locale has one).\n\
+         const fn latn(i: u16) -> Option<NumberSpec> {{\n    Some(match i {{\n"
+    );
+    for (i, r) in records.iter().enumerate() {
+        let _ = write!(out, "        {i} => {},\n", rust_spec(&r.specs[0]));
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    // The non-`latn` blocks: 26 of the 103 locales carry one, always for the
+    // system named by `otherNumberingSystems.native`. Gated per arm so a build
+    // that never asks for a non-Latin numbering system does not compile them.
+    let _ = write!(
+        out,
+        "/// A non-`latn` numbering system's block, where CLDR ships one for this\n\
+         /// locale. Compiled only with the `number-numsys` feature; without it a\n\
+         /// `-u-nu-` request keeps the locale's `latn` separators (the digits are\n\
+         /// still transliterated).\n\
+         fn other(i: u16, ns: &str) -> Option<NumberSpec> {{\n    match (i, ns) {{\n"
+    );
+    for (i, r) in records.iter().enumerate() {
+        for s in &r.specs[1..] {
+            let _ = write!(
+                out,
+                "        #[cfg(feature = \"number-numsys\")]\n        ({i}, \"{}\") => Some({}),\n",
+                s.ns,
+                rust_spec(s)
+            );
+        }
+    }
+    let _ = write!(out, "        _ => None,\n    }}\n}}\n\n");
+
+    let _ = write!(
+        out,
+        "/// `(defaultNumberingSystem, otherNumberingSystems.native)` for an exact\n\
+         /// (lowercased) locale id. The two differ for e.g. `ar` (`latn` / `arab`).\n\
+         pub(crate) fn numbering_systems(lang: &str) -> Option<(&'static str, &'static str)> {{\n    \
+         Some(match locale_index(lang)? {{\n"
+    );
+    for (i, r) in records.iter().enumerate() {
+        let _ = write!(
+            out,
+            "        {i} => ({}, {}),\n",
+            rust_str(&r.default_ns),
+            rust_str(&r.native_ns)
+        );
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    let _ = write!(
+        out,
+        "/// The `miscPatterns` `(approximately, range)` forms for an exact\n\
+         /// (lowercased) locale id, e.g. `en` `(\"~{{0}}\", \"{{0}}\\u{{2013}}{{1}}\")`.\n\
+         /// Only `format_range` reads these, so they follow the `number-range`\n\
+         /// feature.\n\
+         #[cfg(feature = \"number-range\")]\n\
+         pub(crate) fn misc_patterns(lang: &str) -> Option<(&'static str, &'static str)> {{\n    \
+         Some(match locale_index(lang)? {{\n"
+    );
+    for (i, r) in records.iter().enumerate() {
+        let _ = write!(
+            out,
+            "        {i} => ({}, {}),\n",
+            rust_str(&r.approximately),
+            rust_str(&r.range)
+        );
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n");
+
+    write_cldr_generated(cldr_dir, "numbers", &out);
 }
 
 fn alloc_format(locale: &str) -> String {
@@ -3203,19 +3441,34 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path) {
         }
     }
 
+    write_cldr_generated(cldr_dir, "units", &out);
+}
+
+/// The modules under `src/cldr/generated/`, with the feature each is gated on.
+const CLDR_GENERATED: [(&str, &str); 2] = [("numbers", "number"), ("units", "units")];
+
+/// Write one `src/cldr/generated/<name>.rs`.
+fn write_cldr_generated(cldr_dir: &Path, name: &str, src: &str) {
     let gen_dir = cldr_dir.join("generated");
     fs::create_dir_all(&gen_dir).expect("create src/cldr/generated");
-    let path = gen_dir.join("units.rs");
-    fs::write(&path, &out).unwrap_or_else(|_| panic!("write {}", path.display()));
+    let path = gen_dir.join(format!("{name}.rs"));
+    fs::write(&path, src).unwrap_or_else(|_| panic!("write {}", path.display()));
     rustfmt(&path);
+}
 
-    let mut mod_out = String::new();
-    write_header(&mut mod_out);
-    let _ = write!(
-        mod_out,
-        "#[cfg(feature = \"units\")]\npub(crate) mod units;\n"
-    );
-    fs::write(gen_dir.join("mod.rs"), &mod_out).expect("write cldr/generated/mod.rs");
+/// Write `src/cldr/generated/mod.rs` declaring every generated CLDR module.
+fn write_cldr_generated_mod(cldr_dir: &Path) {
+    let mut out = String::new();
+    write_header(&mut out);
+    for (name, feature) in CLDR_GENERATED {
+        let _ = write!(
+            out,
+            "#[cfg(feature = \"{feature}\")]\npub(crate) mod {name};\n"
+        );
+    }
+    let gen_dir = cldr_dir.join("generated");
+    fs::create_dir_all(&gen_dir).expect("create src/cldr/generated");
+    fs::write(gen_dir.join("mod.rs"), &out).expect("write cldr/generated/mod.rs");
     rustfmt(&gen_dir.join("mod.rs"));
 }
 
@@ -4355,9 +4608,10 @@ fn emit_ordsuffix(cldr_dir: &Path, path: &Path) {
     write_blob(cldr_dir, "ordsuffix", &records);
 }
 
-/// Write `cldr/numsys_digits.bin` (numbering system → 10 digit glyphs) and
-/// `cldr/numsys_default.bin` (locale → default numbering system).
-fn emit_numsys(cldr_dir: &Path, numbering_systems: &Path, numbers_dir: &Path) {
+/// Write `cldr/numsys_digits.bin`: numbering system → its 10 digit glyphs. The
+/// per-locale default/native system moved into `generated/numbers.rs`, which is
+/// where the matching per-system symbol blocks live.
+fn emit_numsys(cldr_dir: &Path, numbering_systems: &Path) {
     // Digit glyphs from the supplemental numbering-systems table (numeric only).
     let ns_text = fs::read_to_string(numbering_systems).expect("read numberingSystems.json");
     let ns = json_parse(&ns_text);
@@ -4377,31 +4631,6 @@ fn emit_numsys(cldr_dir: &Path, numbering_systems: &Path, numbers_dir: &Path) {
         }
     }
     write_blob(cldr_dir, "numsys_digits", &digits);
-
-    // Per-locale default numbering system from each numbers.json.
-    let mut locales = locale_files(numbers_dir);
-    locales.sort();
-    let mut defaults = Vec::new();
-    for locale in locales {
-        let path = numbers_dir.join(alloc_format(&locale));
-        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
-        let json = json_parse(&text);
-        let (_, loc_obj) = json
-            .get("main")
-            .expect("main")
-            .entries()
-            .first()
-            .expect("locale");
-        let sys = loc_obj
-            .get("numbers")
-            .and_then(|n| n.get("defaultNumberingSystem"))
-            .and_then(Json::as_str)
-            .unwrap_or("latn");
-        let mut p = Vec::new();
-        enc_str(&mut p, sys);
-        defaults.push((locale.to_ascii_lowercase(), p));
-    }
-    write_blob(cldr_dir, "numsys_default", &defaults);
 }
 
 /// Write `cldr/rbnf.bin`: per-locale RBNF spell-out rule sets. Payload is
