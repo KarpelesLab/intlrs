@@ -9,27 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.3](https://github.com/KarpelesLab/intlrs/compare/v0.5.2...v0.5.3) - 2026-07-29
 
-### Added
-
-- *(datetime)* localized time-zone names from CLDR metazones
-- *(units)* narrow width, compound units, and the full ECMA-402 set
-- *(number)* vendor en-IN and zh-Hant, alias region tags onto scripts
-
-### Fixed
-
-- *(datetime)* key styled interval ranges off the style's own pattern
-- *(datetime)* compose date+time intervals, range seconds, half-local literals
-- *(datetime)* synthesize a pattern for lone time fields instead of ""
-- *(datetime)* render the era-relative year for `y`, not the astronomical one
-- *(number)* handle non-finite input; format_scientific no longer hangs
-
-### Other
-
-- [**breaking**] mark the spec-growing enums non_exhaustive
-- *(cldr)* [**breaking**] mark the public CLDR record types non_exhaustive
-- Merge the number-symbols/range work into the time-zone-name work
-- *(data)* vendor CLDR 48 time-zone names and metazone mapping
-- ignore /.claude/
+Released as a compatible bump, but it carries **breaking** API changes (see
+*Changed*): `unit::Unit`, `number::NumberPartType` and
+`datetime::DateTimePartType` became `#[non_exhaustive]`, as did the six public
+CLDR record types, and `TimeZoneNameStyle::Short` no longer returns the tz
+database abbreviation.
 
 ### Added
 
@@ -173,6 +157,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   own name or offset rather than the English abbreviation. This is what
   ECMA-402 specifies and what V8/ICU produce.
 
+### Deprecated
+
+- *(number)* `format_decimal_native` is renamed to
+  `format_decimal_default_numbering`; the old name is kept as a deprecated
+  forwarder. It never read `otherNumberingSystems.native` — it reads
+  `defaultNumberingSystem`, and that is the ECMA-402 behaviour worth having
+  (`Intl.NumberFormat('ar')` also formats `1.5` with Latin digits, because `ar`
+  defaults to `latn` in CLDR 48). The native system is now reachable through
+  `format_decimal("<lang>-u-nu-native", …)` or `native_numbering_system`.
+
 ### Fixed
 
 - *(datetime)* `TimeZoneNameStyle::ShortOffset` panicked for every locale whose
@@ -209,19 +203,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `format("ar", f64::NAN, …)` is `"ليس رقمًا"` and `format("fa", …)` `"ناعدد"`,
   where all four call sites previously hardcoded `"NaN"`/`"∞"`. (`∞` happens to
   be right for every vendored locale, but was not being *read*.)
-
-### Deprecated
-
-- *(number)* `format_decimal_native` is renamed to
-  `format_decimal_default_numbering`; the old name is kept as a deprecated
-  forwarder. It never read `otherNumberingSystems.native` — it reads
-  `defaultNumberingSystem`, and that is the ECMA-402 behaviour worth having
-  (`Intl.NumberFormat('ar')` also formats `1.5` with Latin digits, because `ar`
-  defaults to `latn` in CLDR 48). The native system is now reachable through
-  `format_decimal("<lang>-u-nu-native", …)` or `native_numbering_system`.
-
-### Fixed
-
 - *(number)* `format_decimal_default_numbering` (ex `format_decimal_native`) uses
   the default numbering system's *separators*, not just its digits. Persian gave
   `"۱,۲۳۴.۵"` — `arabext` digits glued to `latn` separators, a combination no
@@ -302,6 +283,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - *(collation)* re-vendor locale tailorings from CLDR 48
+- *(collation)* `nb`/`nn` inherit Norwegian (`no`) and `tl` inherits Filipino
+  (`fil`) collation, as CLDR's locale inheritance specifies.
 
 ### Changed
 
@@ -334,11 +317,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ranges, `'…'` quoting, `\uXXXX` escapes, `/` expansions) rather than scanning
   for relation characters, so it can validate the full unfiltered CLDR rule set
   instead of silently skipping the parts it could not tokenize.
-
-### Added
-
-- *(collation)* `nb`/`nn` inherit Norwegian (`no`) and `tl` inherits Filipino
-  (`fil`) collation, as CLDR's locale inheritance specifies.
 
 ## [0.5.1](https://github.com/KarpelesLab/intlrs/compare/v0.5.0...v0.5.1) - 2026-07-19
 
