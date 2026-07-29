@@ -66,6 +66,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   emitted `"∞"`. The pattern's affixes are kept (`"∞%"`, `"$∞"`), the locale minus
   sign is used for negative infinity, and `NaN` is unsigned per ECMA-402.
 
+- *(datetime)* `format_range` composes a date+time interval instead of repeating
+  the date. CLDR keys `intervalFormats` by date-only or time-only skeletons and
+  never by a mixed one, so a combined request (`{year, month, day, hour,
+  minute}`) always missed the lookup and fell back to formatting the whole
+  pattern twice — `"6/15/2024, 9:00 AM – 6/15/2024, 5:00 PM"` for two times on
+  one day. When the greatest differing field is a time field, UTS #35 §2.6.2
+  composition now applies: the date is formatted once and the time *range* is
+  glued into it with the locale's `dateTimeFormat`, giving `"6/15/2024, 9:00 AM
+  – 5:00 PM"` (`"2024/6/15 9時00分～17時00分"` in `ja`). A date-field difference
+  still carries the whole pattern on both ends, as ICU does. Reported in
+  [#17](https://github.com/KarpelesLab/intlrs/issues/17).
+
+- *(datetime)* `format_range` no longer drops the end of a seconds-only
+  interval. The greatest-difference scan stopped at the minute, so
+  `{hour, minute, second}` over `9:00:10`–`9:00:45` reported no difference at all
+  and formatted a single time, `"9:00:10 AM"`, silently losing the end point. It
+  now gives `"9:00:10 AM – 9:00:45 AM"`. Sub-second differences count too when
+  `fractional_second_digits` puts them on screen (ECMA-402 groups `s`/`S`/`A` as
+  one range field); a millisecond difference the pattern does not show still
+  collapses to a single value.
+
+- *(datetime)* `format_range_to_parts` attributes the literals inside a fallback
+  half to that half. When the two ends are formatted separately and joined by
+  `intervalFormatFallback`, every literal was tagged `Shared`, including the
+  `", "` and `":"` *within* each date. ECMA-402 substitutes each side into the
+  `{0}`/`{1}` slot wholesale, so those are `StartRange`/`EndRange` like the
+  fields they punctuate; only the fallback's own separator is `Shared`.
+  Reported in [#17](https://github.com/KarpelesLab/intlrs/issues/17).
+
 ## [0.5.2](https://github.com/KarpelesLab/intlrs/compare/v0.5.1...v0.5.2) - 2026-07-27
 
 ### Added

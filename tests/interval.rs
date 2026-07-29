@@ -6,8 +6,8 @@
 #![cfg(feature = "datetime")]
 
 use intl::datetime::{
-    DateTime, DateTimeFormatOptions, DateTimePartType, MonthStyle, Numeric2Digit, RangeSource,
-    format_range, format_range_to_parts,
+    DateTime, DateTimeFormatOptions, DateTimePartType, DateTimeRangePart, MonthStyle,
+    Numeric2Digit, RangeSource, format_range, format_range_to_parts,
 };
 
 const EPOCH: DateTime = DateTime {
@@ -38,7 +38,37 @@ fn ymmmd() -> DateTimeFormatOptions {
     o
 }
 
+/// `{year, month:'numeric', day, hour, minute:'2-digit'}` → skeleton `yMdhm`.
+fn ymdhm() -> DateTimeFormatOptions {
+    let mut o = DateTimeFormatOptions::default();
+    o.year = Some(Numeric2Digit::Numeric);
+    o.month = Some(MonthStyle::Numeric);
+    o.day = Some(Numeric2Digit::Numeric);
+    o.hour = Some(Numeric2Digit::Numeric);
+    o.minute = Some(Numeric2Digit::TwoDigit);
+    o
+}
+
+fn at(y: i32, m: u8, d: u8, hour: u8, minute: u8) -> DateTime {
+    DateTime {
+        year: y,
+        month: m,
+        day: d,
+        hour,
+        minute,
+        ..EPOCH
+    }
+}
+
+fn tagged(parts: &[DateTimeRangePart]) -> Vec<(DateTimePartType, &str, RangeSource)> {
+    parts
+        .iter()
+        .map(|p| (p.kind, p.value.as_str(), p.source))
+        .collect()
+}
+
 const DASH: &str = "\u{2009}\u{2013}\u{2009}"; // thin space + en dash + thin space
+const NNBSP: &str = "\u{202f}"; // narrow no-break space, before en am/pm
 
 #[test]
 fn same_month_different_day() {
@@ -148,4 +178,199 @@ fn parts_sources_different_month() {
     // Sanity: last part is the shared year.
     let last = parts.last().unwrap();
     assert_eq!((last.kind, last.source), (Year, Shared));
+}
+
+#[test]
+fn fallback_literals_belong_to_their_half() {
+    // No `intervalFormats` key mixes date and time fields, and the day differs, so
+    // both ends are formatted with the whole pattern and joined by
+    // `intervalFormatFallback`. Everything a half produces is that half's,
+    // literals included; only the fallback's own separator is shared.
+    let mut o = ymmmd();
+    o.hour = Some(Numeric2Digit::Numeric);
+    o.minute = Some(Numeric2Digit::TwoDigit);
+    let parts =
+        format_range_to_parts("en", &at(2024, 6, 15, 9, 0), &at(2024, 6, 16, 17, 0), &o).unwrap();
+    use DateTimePartType::*;
+    use RangeSource::*;
+    assert_eq!(
+        tagged(&parts),
+        vec![
+            (Month, "Jun", StartRange),
+            (Literal, " ", StartRange),
+            (Day, "15", StartRange),
+            (Literal, ", ", StartRange),
+            (Year, "2024", StartRange),
+            (Literal, ", ", StartRange),
+            (Hour, "9", StartRange),
+            (Literal, ":", StartRange),
+            (Minute, "00", StartRange),
+            (Literal, NNBSP, StartRange),
+            (DayPeriod, "AM", StartRange),
+            (Literal, DASH, Shared),
+            (Month, "Jun", EndRange),
+            (Literal, " ", EndRange),
+            (Day, "16", EndRange),
+            (Literal, ", ", EndRange),
+            (Year, "2024", EndRange),
+            (Literal, ", ", EndRange),
+            (Hour, "5", EndRange),
+            (Literal, ":", EndRange),
+            (Minute, "00", EndRange),
+            (Literal, NNBSP, EndRange),
+            (DayPeriod, "PM", EndRange),
+        ]
+    );
+}
+
+#[test]
+fn seconds_only_difference_is_a_range() {
+    // `s` is a range field of its own: two instants a few seconds apart must not
+    // collapse to a single time. CLDR keys no `hms` interval pattern, so the
+    // whole time pattern is repeated through the fallback.
+    let mut o = DateTimeFormatOptions::default();
+    o.hour = Some(Numeric2Digit::Numeric);
+    o.minute = Some(Numeric2Digit::TwoDigit);
+    o.second = Some(Numeric2Digit::TwoDigit);
+    let a = DateTime {
+        second: 10,
+        ..at(2024, 6, 15, 9, 0)
+    };
+    let b = DateTime { second: 45, ..a };
+    assert_eq!(
+        format_range("en", &a, &b, &o).unwrap(),
+        format!("9:00:10{NNBSP}AM{DASH}9:00:45{NNBSP}AM")
+    );
+}
+
+#[test]
+fn fractional_second_only_difference_is_a_range() {
+    // ECMA-402 groups the fractional second with `s` as one range field, so a
+    // sub-second difference the pattern displays is a difference.
+    let mut o = DateTimeFormatOptions::default();
+    o.hour = Some(Numeric2Digit::Numeric);
+    o.minute = Some(Numeric2Digit::TwoDigit);
+    o.second = Some(Numeric2Digit::TwoDigit);
+    o.fractional_second_digits = Some(3);
+    let a = DateTime {
+        second: 10,
+        millisecond: 100,
+        ..at(2024, 6, 15, 9, 0)
+    };
+    let b = DateTime {
+        millisecond: 900,
+        ..a
+    };
+    assert_eq!(
+        format_range("en", &a, &b, &o).unwrap(),
+        format!("9:00:10.100{NNBSP}AM{DASH}9:00:10.900{NNBSP}AM")
+    );
+    // A millisecond difference the pattern does not show stays a single value.
+    let mut plain = o;
+    plain.fractional_second_digits = None;
+    assert_eq!(
+        format_range("en", &a, &b, &plain).unwrap(),
+        format!("9:00:10{NNBSP}AM")
+    );
+}
+
+#[test]
+fn date_time_composition_day_period_difference() {
+    // UTS #35 §2.6.2: only the time differs, so the date is formatted once and the
+    // time range is glued into it with `dateTimeFormats.medium` (`"{1}, {0}"`).
+    // 9 AM → 5 PM crosses noon, so the greatest difference is `a`, whose `hm`
+    // pattern repeats the day period on both ends.
+    let parts = format_range_to_parts(
+        "en",
+        &at(2024, 6, 15, 9, 0),
+        &at(2024, 6, 15, 17, 0),
+        &ymdhm(),
+    )
+    .unwrap();
+    use DateTimePartType::*;
+    use RangeSource::*;
+    assert_eq!(
+        tagged(&parts),
+        vec![
+            (Month, "6", Shared),
+            (Literal, "/", Shared),
+            (Day, "15", Shared),
+            (Literal, "/", Shared),
+            (Year, "2024", Shared),
+            (Literal, ", ", Shared),
+            (Hour, "9", StartRange),
+            (Literal, ":", StartRange),
+            (Minute, "00", StartRange),
+            (Literal, NNBSP, StartRange),
+            (DayPeriod, "AM", StartRange),
+            (Literal, DASH, Shared),
+            (Hour, "5", EndRange),
+            (Literal, ":", EndRange),
+            (Minute, "00", EndRange),
+            (Literal, NNBSP, EndRange),
+            (DayPeriod, "PM", EndRange),
+        ]
+    );
+}
+
+#[test]
+fn date_time_composition_hour_difference() {
+    // Same half of the day: the greatest difference is `h`, whose `hm` pattern
+    // (`"h:mm – h:mm a"`) names the day period once, making it shared.
+    let out = format_range(
+        "en",
+        &at(2024, 6, 15, 10, 0),
+        &at(2024, 6, 15, 11, 0),
+        &ymdhm(),
+    )
+    .unwrap();
+    assert_eq!(out, format!("6/15/2024, 10:00{DASH}11:00{NNBSP}AM"));
+}
+
+#[test]
+fn date_time_composition_seconds_difference() {
+    // No `hms` interval pattern exists, so the time range goes through the
+    // fallback — but the date is still shown once, as ICU does for two instants
+    // on the same day.
+    let mut o = ymdhm();
+    o.second = Some(Numeric2Digit::TwoDigit);
+    let a = DateTime {
+        second: 10,
+        ..at(2024, 6, 15, 9, 0)
+    };
+    let b = DateTime { second: 45, ..a };
+    assert_eq!(
+        format_range("en", &a, &b, &o).unwrap(),
+        format!("6/15/2024, 9:00:10{NNBSP}AM{DASH}9:00:45{NNBSP}AM")
+    );
+}
+
+#[test]
+fn date_time_composition_localized() {
+    // ja glues with `"{1} {0}"` and ranges `Hm` as `"H時mm分～H時mm分"`.
+    let out = format_range(
+        "ja",
+        &at(2024, 6, 15, 9, 0),
+        &at(2024, 6, 15, 17, 0),
+        &ymdhm(),
+    )
+    .unwrap();
+    assert_eq!(out, "2024/6/15 9時00分～17時00分");
+}
+
+#[test]
+fn date_difference_keeps_whole_pattern_on_both_sides() {
+    // The greatest difference is a date field, so composition does not apply and
+    // both ends carry the full date+time, as ICU does.
+    let out = format_range(
+        "en",
+        &at(2024, 6, 15, 9, 0),
+        &at(2024, 6, 16, 17, 0),
+        &ymdhm(),
+    )
+    .unwrap();
+    assert_eq!(
+        out,
+        format!("6/15/2024, 9:00{NNBSP}AM{DASH}6/16/2024, 5:00{NNBSP}PM")
+    );
 }

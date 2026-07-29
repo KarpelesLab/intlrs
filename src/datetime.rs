@@ -2278,16 +2278,14 @@ fn split_interval(pattern: &str) -> Option<(String, String)> {
     None
 }
 
-/// The combined CLDR skeleton implied by `opts` (the same field letters used to
-/// key `intervalFormats`), or `"yMd"` when no component is requested.
-fn interval_skeleton(opts: &DateTimeFormatOptions, loc_hour: char) -> String {
-    let (date_sk, want_date) = build_date_skeleton(opts);
-    let (time_sk, want_time) = build_time_skeleton(opts, loc_hour);
-    if !want_date && !want_time {
+/// The combined CLDR skeleton for a date and a time skeleton (the same field
+/// letters used to key `intervalFormats`), or `"yMd"` when both are empty.
+fn interval_skeleton(date_sk: &str, time_sk: &str) -> String {
+    if date_sk.is_empty() && time_sk.is_empty() {
         String::from("yMd")
     } else {
-        let mut sk = date_sk;
-        sk.push_str(&time_sk);
+        let mut sk = String::from(date_sk);
+        sk.push_str(time_sk);
         sk
     }
 }
@@ -2295,7 +2293,11 @@ fn interval_skeleton(opts: &DateTimeFormatOptions, loc_hour: char) -> String {
 /// The CLDR field letter of the greatest calendar field in which `a` and `b`
 /// differ, restricted to fields the `skeleton` actually uses. `None` if they
 /// agree on every field the skeleton mentions (→ format as a single value).
-fn greatest_diff_field(a: &DateTime, b: &DateTime, skeleton: &str) -> Option<u8> {
+///
+/// `frac` says whether the resolved pattern also shows fractional seconds: they
+/// are part of ECMA-402's "second" range field but never appear in the skeleton
+/// used for `intervalFormats` lookups (CLDR keys none), so they travel apart.
+fn greatest_diff_field(a: &DateTime, b: &DateTime, skeleton: &str, frac: bool) -> Option<u8> {
     let era = |d: &DateTime| d.year > 0;
     if skeleton.contains('G') && era(a) != era(b) {
         return Some(b'G');
@@ -2319,6 +2321,16 @@ fn greatest_diff_field(a: &DateTime, b: &DateTime, skeleton: &str) -> Option<u8>
     }
     if skeleton.contains('m') && a.minute != b.minute {
         return Some(b'm');
+    }
+    if skeleton.contains('s') && a.second != b.second {
+        return Some(b's');
+    }
+    // ECMA-402 groups the fractional-second pattern letters (`S`/`A`) with `s`
+    // under one range field, so a sub-second difference is a real difference
+    // whenever the pattern shows it; no locale keys an interval pattern for it,
+    // hence the `s` letter (the lookup misses and the caller falls back).
+    if (frac || skeleton.contains('S')) && a.millisecond != b.millisecond {
+        return Some(b's');
     }
     None
 }
@@ -2440,13 +2452,11 @@ fn render_fallback(
             });
         }
     };
+    // Everything a half produces belongs to that half, literals included: only
+    // the fallback template's own text sits outside both dates (ECMA-402
+    // PartitionDateTimeRangePattern tags each `{0}`/`{1}` substitution wholesale).
     let push_side = |out: &mut Vec<DateTimeRangePart>, dt: &DateTime, source: RangeSource| {
         for p in render_parts(pattern, dt, s) {
-            let source = if p.kind == DateTimePartType::Literal {
-                RangeSource::Shared
-            } else {
-                source
-            };
             out.push(DateTimeRangePart {
                 kind: p.kind,
                 value: p.value,
@@ -2467,6 +2477,63 @@ fn render_fallback(
             push_lit(&mut out, "\u{2009}\u{2013}\u{2009}");
             push_side(&mut out, end, RangeSource::EndRange);
         }
+    }
+    out
+}
+
+/// Glue a once-formatted `date` and a formatted time *range* with the locale's
+/// `dateTimeFormat` template (`{1}` = date, `{0}` = time), as UTS #35 §2.6.2
+/// prescribes for an interval whose date is common to both ends. The date and
+/// the template's own text belong to neither end, so they stay
+/// [`RangeSource::Shared`]; `dt` and `s` only serve to unquote that text.
+fn compose_range(
+    glue: &str,
+    date: &[DateTimeRangePart],
+    time: &[DateTimeRangePart],
+    dt: &DateTime,
+    s: &CalendarSpec,
+) -> Vec<DateTimeRangePart> {
+    let mut out: Vec<DateTimeRangePart> = Vec::new();
+    // Adjacent literals of the same provenance are one part in ECMA-402, and the
+    // seams here are exactly where two of them can meet (ja `…d日` + `" "`).
+    fn push(out: &mut Vec<DateTimeRangePart>, part: DateTimeRangePart) {
+        if let Some(last) = out.last_mut()
+            && last.kind == DateTimePartType::Literal
+            && part.kind == DateTimePartType::Literal
+            && last.source == part.source
+        {
+            last.value.push_str(&part.value);
+            return;
+        }
+        out.push(part);
+    }
+    let mut rest = glue;
+    loop {
+        let next = match (rest.find("{0}"), rest.find("{1}")) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            (a, b) => a.or(b),
+        };
+        let (lit, slot) = match next {
+            Some(i) => (&rest[..i], Some(rest.as_bytes()[i + 1])),
+            None => (rest, None),
+        };
+        // Run the template's own text through `render_parts` so its pattern
+        // quoting is stripped, as substituting into the pattern would.
+        for p in render_parts(lit, dt, s) {
+            push(
+                &mut out,
+                DateTimeRangePart {
+                    kind: p.kind,
+                    value: p.value,
+                    source: RangeSource::Shared,
+                },
+            );
+        }
+        let Some(slot) = slot else { break };
+        for p in if slot == b'1' { date } else { time } {
+            push(&mut out, p.clone());
+        }
+        rest = &rest[lit.len() + 3..];
     }
     out
 }
@@ -2493,6 +2560,8 @@ fn single_range(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> Vec<DateTimeR
 /// tagged [`RangeSource::Shared`]. Otherwise the locale's CLDR interval pattern
 /// for the greatest differing field is used, falling back to
 /// `intervalFormatFallback` (`{0} – {1}`) when the skeleton has no such pattern.
+/// A date+time request whose ends differ only in the time is composed as UTS #35
+/// §2.6.2 describes — the date appears once, around the time range.
 ///
 /// # Errors
 /// Returns [`DateTimeFormatError::ConflictingOptions`] if `date_style`/`time_style`
@@ -2506,11 +2575,50 @@ pub fn format_range_to_parts(
     let s = spec(lang);
     let base = resolve_pattern(lang, &s, opts)?;
     let loc_hour = locale_hour_letter(&s);
-    let skeleton = interval_skeleton(opts, loc_hour);
+    let (date_sk, want_date) = build_date_skeleton(opts);
+    let (time_sk, want_time) = build_time_skeleton(opts, loc_hour);
+    let skeleton = interval_skeleton(&date_sk, &time_sk);
 
-    let Some(field) = greatest_diff_field(start, end, &skeleton) else {
+    let frac = opts.fractional_second_digits.is_some();
+    let Some(field) = greatest_diff_field(start, end, &skeleton, frac) else {
         return Ok(single_range(&base, start, &s));
     };
+
+    // CLDR keys `intervalFormats` by date-only or time-only skeletons, never by a
+    // mixed one, so a combined request has no interval pattern of its own. When
+    // only the time differs, UTS #35 §2.6.2 composes rather than falls back: the
+    // date is formatted once and the *time* range goes inside it. A date
+    // difference keeps the whole-pattern fallback on both sides, as ICU does.
+    if want_date && want_time && is_time_field(field as char) {
+        let mut date_only = *opts;
+        date_only.hour = None;
+        date_only.minute = None;
+        date_only.second = None;
+        date_only.fractional_second_digits = None;
+        date_only.day_period = None;
+        let date = single_range(&resolve_pattern(lang, &s, &date_only)?, start, &s);
+
+        let time = match resolve_interval_pattern(lang, &time_sk, field)
+            .and_then(|ip| split_interval(&ip))
+        {
+            Some((first, second)) => render_split(&first, &second, start, end, &s),
+            None => {
+                // No interval pattern for this time skeleton (CLDR tabulates none
+                // for `hms`, say). ICU still shows the date once and ranges only
+                // the time when both instants fall on the same day, which is
+                // exactly the case here.
+                let mut time_only = *opts;
+                time_only.era = None;
+                time_only.year = None;
+                time_only.month = None;
+                time_only.day = None;
+                time_only.weekday = None;
+                let pat = resolve_pattern(lang, &s, &time_only)?;
+                render_fallback(&resolve_interval_fallback(lang), &pat, start, end, &s)
+            }
+        };
+        return Ok(compose_range(s.datetime[2], &date, &time, start, &s));
+    }
 
     if let Some(ip) = resolve_interval_pattern(lang, &skeleton, field) {
         // The interval pattern is already keyed by the skeleton (which encodes the
