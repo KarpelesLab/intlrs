@@ -551,7 +551,8 @@ fn named_time_zone() {
     };
     let jul = DateTime { month: 7, ..DT };
     let jan = DateTime { month: 1, ..DT };
-    // DST-aware abbreviation from the tz database.
+    // DST-aware short specific name, from CLDR's `America_Eastern` metazone.
+    #[cfg(feature = "tz-names-america")]
     assert!(
         fo(
             "en",
@@ -561,6 +562,7 @@ fn named_time_zone() {
         .unwrap()
         .ends_with("EDT")
     );
+    #[cfg(feature = "tz-names-america")]
     assert!(
         fo(
             "en",
@@ -570,10 +572,13 @@ fn named_time_zone() {
         .unwrap()
         .ends_with("EST")
     );
+    // CLDR has no short name for the `Japan` metazone, so `short` falls back to
+    // the short localized GMT offset — not to the tz database's `JST`, which is
+    // English-only and not what ECMA-402 asks for. Matches V8/ICU.
     assert!(
         fo("en", &jul, &mk("Asia/Tokyo", TimeZoneNameStyle::Short))
             .unwrap()
-            .ends_with("JST")
+            .ends_with("GMT+9")
     );
     // Offset styles are zone-derived (DST-aware).
     assert!(

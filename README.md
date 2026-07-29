@@ -122,6 +122,15 @@ Beyond the `unicode` module:
   `timezone-data` crate): `load_zone("America/New_York")` then `offset_at` /
   `abbrev_at` / `is_dst_at` / `to_local` for any instant, with historical
   transitions (the `iana-tz` feature, on by default).
+- **Localized time-zone names** (UTS #35 §4.8) drive `DateTimeFormatOptions`'
+  `time_zone_name`: `timeZoneName: "long"` for `America/Los_Angeles` in July is
+  `"Pacific Daylight Time"` in `en` and `"heure d’été du Pacifique
+  nord-américain"` in `fr`; `"longGeneric"` is `"Pacific Time"`, `"short"` is
+  `"PDT"`. When a locale has no name for the zone the spec's own fallback chain
+  applies — the metazone's name, then the generic location format (`"heure :
+  Los Angeles"`), then the localized GMT offset. One feature per tzdb area
+  (`tz-names-america`, `tz-names-europe`, …) so a build pays only for the zones
+  it uses; see the table below.
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
   civil (tabular) Islamic, Persian (Solar Hijri), Hebrew, and Chinese (lunisolar,
   1900–2099 via an embedded lunar table) calendars through the Julian Day Number,
@@ -189,9 +198,9 @@ the CLDR table(s) it embeds, so a disabled formatter adds no code or data. All
 imply `alloc` (except `displaynames`, which is borrow-only). The always-on
 `plural` (rules) and `calendar` (arithmetic) modules need no feature and no data.
 
-Most tables are `.bin` blobs; `units` is generated Rust (`const fn` + `match`),
-so its figures below are *compiled* footprint (`.text` + `.rodata` +
-`.data.rel.ro`) rather than blob bytes.
+Most tables are `.bin` blobs; `units` and `tz-names` are generated Rust
+(`const fn` + `match`), so their figures below are *compiled* footprint
+(`.text` + `.rodata` + `.data.rel.ro`) rather than blob bytes.
 
 | feature           | what it provides                                  | gated data |
 |-------------------|---------------------------------------------------|------------|
@@ -209,8 +218,28 @@ so its figures below are *compiled* footprint (`.text` + `.rodata` +
 | `transliterate`   | script transliteration (→ normalization)          | — |
 | `locale`          | BCP-47 + likely-subtags                           | 139 KB |
 | `iana-tz`         | full IANA tz database for named zones (→ datetime) | dep |
+| `tz-names`        | localized time-zone names, all areas (→ datetime)  | **~4.4 MB** |
+
+`tz-names` is an umbrella over one feature per tzdb area, so a build carries only
+the areas it names zones in. An area that is not compiled in falls back to the
+localized GMT offset — UTS #35's own last resort — so the answer stays correct,
+just less specific.
+
+| area feature          | compiled |     | area feature          | compiled |
+|-----------------------|----------|-----|-----------------------|----------|
+| `tz-names-america`    | 1.29 MB  |     | `tz-names-australia`  | 151 KB   |
+| `tz-names-asia`       | 1.28 MB  |     | `tz-names-indian`     | 126 KB   |
+| `tz-names-pacific`    | 605 KB   |     | `tz-names-arctic`     | 27 KB    |
+| `tz-names-europe`     | 397 KB   |     | `tz-names-etc`        | 22 KB    |
+| `tz-names-africa`     | 302 KB   |     |                       |          |
+| `tz-names-antarctica` | 198 KB   |     |                       |          |
+| `tz-names-atlantic`   | 189 KB   |     |                       |          |
 
 ```toml
+# Date/time with localized zone names for the Americas and Europe only:
+intl = { version = "0.1", default-features = false, features = [
+    "datetime", "iana-tz", "tz-names-america", "tz-names-europe",
+] }
 # Just number + date/time formatting (no currency, display-names, etc.):
 intl = { version = "0.1", default-features = false, features = ["number", "datetime"] }
 # Everything except the heavy currency + display-name data:

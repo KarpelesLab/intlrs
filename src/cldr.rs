@@ -207,8 +207,6 @@ const LIKELY: &[u8] = include_bytes!("cldr/likely.bin");
 const ALIASES: &[u8] = include_bytes!("cldr/aliases.bin");
 #[cfg(feature = "locale")]
 const BCP47: &[u8] = include_bytes!("cldr/bcp47.bin");
-#[cfg(feature = "datetime")]
-const TIMEZONE: &[u8] = include_bytes!("cldr/timezone.bin");
 #[cfg(feature = "spellout")]
 const RBNF: &[u8] = include_bytes!("cldr/rbnf.bin");
 #[cfg(feature = "number")]
@@ -480,28 +478,6 @@ pub(crate) fn japanese_hist_eras(lang: &str, index: usize) -> Option<[&'static s
         }
     }
     Some(res)
-}
-
-/// Localized GMT offset formats for one locale.
-#[derive(Debug, Clone, Copy)]
-pub struct TzSpec {
-    /// The GMT pattern, e.g. `"GMT{0}"` / `"UTC{0}"`.
-    pub gmt: &'static str,
-    /// The zero-offset form, e.g. `"GMT"` / `"UTC"`.
-    pub zero: &'static str,
-    /// The `+HH:mm;-HH:mm` hour format (positive/negative subpatterns).
-    pub hour: &'static str,
-}
-
-/// Localized GMT offset formats for an exact (lowercased) locale key.
-#[cfg(feature = "datetime")]
-pub(crate) fn tz_spec(lang: &str) -> Option<TzSpec> {
-    let mut c = find(TIMEZONE, lang)?;
-    Some(TzSpec {
-        gmt: c.str(),
-        zero: c.str(),
-        hour: c.str(),
-    })
 }
 
 /// The maximized locale for a likelySubtags key (e.g. `"en"` → `"en-Latn-US"`).

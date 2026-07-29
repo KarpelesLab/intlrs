@@ -239,10 +239,24 @@ jobs:
       - name: Build each formatter alone
         run: |
           for feat in number currency units datetime calendars-extra displaynames \
-                      list relative message spellout transliterate locale iana-tz; do
+                      list relative message spellout transliterate locale iana-tz \
+                      tz-names; do
             echo "::group::features=$feat"
             cargo build --no-default-features --features "$feat"
             cargo test --no-default-features --features "$feat" --tests --no-run
+            echo "::endgroup::"
+          done
+
+      # Each tzdb area of the localized time-zone names must also stand alone:
+      # the zone/metazone tables are `#[cfg]`-gated per area, and the areas that
+      # are compiled out have to fall back to the localized GMT offset. The
+      # time-zone tests assert both sides of that, so run them here.
+      - name: Test each time-zone-name area alone
+        run: |
+          for area in africa america antarctica arctic asia atlantic australia \
+                      etc europe indian pacific; do
+            echo "::group::features=iana-tz,tz-names-$area"
+            cargo test --no-default-features --features "iana-tz,tz-names-$area" --tests
             echo "::endgroup::"
           done
 

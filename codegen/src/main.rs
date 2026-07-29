@@ -328,7 +328,13 @@ fn main() {
     emit_likely(&cldr_dir, &cldr.join("likely.json"));
     emit_aliases(&cldr_dir, &cldr.join("aliases.json"));
     emit_bcp47(&cldr_dir, &cldr.join("bcp47"));
-    emit_timezone(&cldr_dir, &cldr.join("timezone.json"));
+    emit_tz_names(
+        &cldr_dir,
+        &cldr.join("timezonenames-raw"),
+        &cldr.join("metaZones.json"),
+        &cldr.join("bcp47/timezone.xml"),
+    );
+    emit_cldr_generated_mod(&cldr_dir);
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
     emit_numsys(
         &cldr_dir,
@@ -2130,9 +2136,7 @@ fn emit_idna(out_dir: &Path, modules: &mut Vec<String>, idna: &Path) {
 
 enum Json {
     Obj(Vec<(String, Json)>),
-    // Arrays are parsed (so `[...]` syntax is consumed) but the contents are not
-    // read by any current emitter; keep the payload for completeness.
-    Arr(#[allow(dead_code)] Vec<Json>),
+    Arr(Vec<Json>),
     Str(String),
     Other,
 }
@@ -3203,20 +3207,606 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path) {
         }
     }
 
+    write_cldr_generated(cldr_dir, "units.rs", &out);
+}
+
+/// Write one `src/cldr/generated/<file>` and format it.
+fn write_cldr_generated(cldr_dir: &Path, file: &str, src: &str) {
     let gen_dir = cldr_dir.join("generated");
     fs::create_dir_all(&gen_dir).expect("create src/cldr/generated");
-    let path = gen_dir.join("units.rs");
-    fs::write(&path, &out).unwrap_or_else(|_| panic!("write {}", path.display()));
+    let path = gen_dir.join(file);
+    fs::write(&path, src).unwrap_or_else(|_| panic!("write {}", path.display()));
     rustfmt(&path);
+}
 
-    let mut mod_out = String::new();
-    write_header(&mut mod_out);
+/// Write `src/cldr/generated/mod.rs`. Each generated CLDR table is gated on the
+/// cargo feature that needs it, so a disabled formatter drops its table (and the
+/// megabytes of string data in it) from the build entirely.
+fn emit_cldr_generated_mod(cldr_dir: &Path) {
+    let mut out = String::new();
+    write_header(&mut out);
+    for (module, feature) in [("tz_names", "datetime"), ("units", "units")] {
+        let _ = write!(
+            out,
+            "#[cfg(feature = \"{feature}\")]\npub(crate) mod {module};\n"
+        );
+    }
+    write_cldr_generated(cldr_dir, "mod.rs", &out);
+}
+
+/// tzdb areas, in the order of the runtime's area-id space. Each gets its own
+/// `tz-names-<area>` cargo feature: the zone→metazone map, the zone-level names
+/// and the metazone names of an area that is compiled out are simply not
+/// emitted, and its zones fall back to the localized GMT offset — which is UTS
+/// #35's own last resort, so the answer stays correct, just less specific. A
+/// metazone reachable from several areas (`GMT`, `Europe_Central`, …) is emitted
+/// into each of their tables; that overlap is ~10% of the metazone strings.
+const TZ_AREAS: [&str; 11] = [
+    "Africa",
+    "America",
+    "Antarctica",
+    "Arctic",
+    "Asia",
+    "Atlantic",
+    "Australia",
+    "Etc",
+    "Europe",
+    "Indian",
+    "Pacific",
+];
+
+/// Name slots in key order: UTS #35's `<long>`/`<short>` × `<generic>` /
+/// `<standard>` / `<daylight>`.
+const TZ_NAME_SLOTS: [(&str, &str); 6] = [
+    ("long", "generic"),
+    ("long", "standard"),
+    ("long", "daylight"),
+    ("short", "generic"),
+    ("short", "standard"),
+    ("short", "daylight"),
+];
+
+/// Per-locale time-zone format patterns, in key order.
+const TZ_FORMATS: [&str; 7] = [
+    "gmtFormat",
+    "gmtZeroFormat",
+    "hourFormat",
+    "regionFormat",
+    "regionFormat-type-standard",
+    "regionFormat-type-daylight",
+    "fallbackFormat",
+];
+
+/// Start of the metazone key space. Zone keys are `zone * 8 + slot` and the
+/// largest area (America) holds ~150 zones, so 4096 leaves ample headroom.
+const TZ_MZ_BASE: u16 = 4096;
+
+/// A zone's metazone usage over time: `(metazone id, from, to)` in Unix seconds,
+/// `None` meaning unbounded on that side.
+type MetazoneUse = Vec<(String, Option<i64>, Option<i64>)>;
+
+/// Unix seconds for a CLDR metazone boundary (`"1971-10-31 02:00"`, always UTC).
+fn tz_instant(s: &str) -> i64 {
+    let num = |r: core::ops::Range<usize>| s[r].parse::<i64>().expect("metazone timestamp");
+    let (y, m, d) = (num(0..4), num(5..7), num(8..10));
+    // days_from_civil (Howard Hinnant): March-based year, era of 400 years.
+    let y = y - i64::from(m <= 2);
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let doy = (153 * (m + if m > 2 { -3 } else { 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    (era * 146_097 + doe - 719_468) * 86_400 + num(11..13) * 3600 + num(14..16) * 60
+}
+
+/// `path/part`, or `part` at the root.
+fn tz_join(path: &str, part: &str) -> String {
+    if path.is_empty() {
+        String::from(part)
+    } else {
+        format!("{path}/{part}")
+    }
+}
+
+/// Collect `zone id -> [(metazone, from, to)]` from the nested
+/// `metaZones.metazoneInfo.timezone` tree, whose leaves are the usage lists.
+fn tz_meta_walk(node: &Json, path: &str, out: &mut BTreeMap<String, MetazoneUse>) {
+    match node {
+        Json::Arr(items) => {
+            let segs = items
+                .iter()
+                .map(|it| {
+                    let u = it.get("usesMetazone").expect("usesMetazone");
+                    let mz = u.get("_mzone").and_then(Json::as_str).expect("_mzone");
+                    (
+                        String::from(mz),
+                        u.get("_from").and_then(Json::as_str).map(tz_instant),
+                        u.get("_to").and_then(Json::as_str).map(tz_instant),
+                    )
+                })
+                .collect();
+            out.insert(String::from(path), segs);
+        }
+        Json::Obj(entries) => {
+            for (k, v) in entries {
+                tz_meta_walk(v, &tz_join(path, k), out);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Collect a locale's `timeZoneNames.zone` tree: the six name slots plus the
+/// `exemplarCity` in slot 6. Only zones the locale actually overrides appear —
+/// CLDR trims anything inherited from root, so the runtime derives the default
+/// city from the zone id itself.
+fn tz_zone_walk(node: &Json, path: &str, out: &mut BTreeMap<String, [Option<String>; 7]>) {
+    let Json::Obj(entries) = node else { return };
+    if node.get("_type").and_then(Json::as_str) == Some("zone") {
+        let mut slots: [Option<String>; 7] = core::array::from_fn(|_| None);
+        for (i, (width, ty)) in TZ_NAME_SLOTS.iter().enumerate() {
+            slots[i] = node
+                .get(width)
+                .and_then(|w| w.get(ty))
+                .and_then(Json::as_str)
+                .map(String::from);
+        }
+        slots[6] = node
+            .get("exemplarCity")
+            .and_then(Json::as_str)
+            .map(String::from);
+        if slots.iter().any(Option::is_some) {
+            out.insert(String::from(path), slots);
+        }
+        return;
+    }
+    for (k, v) in entries {
+        if !k.starts_with('_') {
+            tz_zone_walk(v, &tz_join(path, k), out);
+        }
+    }
+}
+
+/// The `match unix { … }` body selecting a zone's metazone over time. CLDR's
+/// ranges are contiguous, so only the `_to` boundaries need testing; a leading
+/// `_from` means the zone had no metazone before it.
+fn tz_metazone_expr(segs: &[(u16, Option<i64>, Option<i64>)]) -> String {
+    let mut expr = String::new();
+    if let Some(from) = segs[0].1 {
+        let _ = write!(expr, "if unix < {from} {{ None }} else ");
+    }
+    for (i, (mz, _, to)) in segs.iter().enumerate() {
+        match to {
+            Some(t) => {
+                let _ = write!(expr, "if unix < {t} {{ Some({mz}) }} else ");
+                if i + 1 == segs.len() {
+                    expr.push_str("{ None }");
+                }
+            }
+            None => {
+                let _ = write!(expr, "{{ Some({mz}) }}");
+                break;
+            }
+        }
+    }
+    expr
+}
+
+/// Emit `cldr/generated/tz_names.rs`: the localized time-zone name data of
+/// UTS #35 §4.8 — per-locale GMT/region/fallback formats, the tzdb alias map,
+/// the zone→metazone map with its historical ranges, exemplar cities and
+/// zone-level name overrides, and the metazone names themselves.
+fn emit_tz_names(cldr_dir: &Path, names_dir: &Path, metazones: &Path, bcp47_tz: &Path) {
+    // ---- supplemental: zone -> metazone history ----
+    let mzjson = json_parse(&fs::read_to_string(metazones).expect("read metaZones.json"));
+    let info = mzjson
+        .get("supplemental")
+        .and_then(|s| s.get("metaZones"))
+        .and_then(|m| m.get("metazoneInfo"))
+        .and_then(|m| m.get("timezone"))
+        .expect("metazoneInfo.timezone");
+    let mut zone_meta = BTreeMap::new();
+    tz_meta_walk(info, "", &mut zone_meta);
+
+    // ---- bcp47: canonical ids, the alias set, and each zone's tzdb region ----
+    let xml = fs::read_to_string(bcp47_tz).expect("read bcp47/timezone.xml");
+    let mut aliases: BTreeMap<String, String> = BTreeMap::new();
+    let mut zone_region: BTreeMap<String, String> = BTreeMap::new();
+    let mut region_zones: BTreeMap<String, usize> = BTreeMap::new();
+    let mut canonical: BTreeSet<String> = BTreeSet::new();
+    for attrs in xml_self_tags(&xml, "type") {
+        // Deprecated types carry no alias list; their ids reach the canonical
+        // zone through the preferred type's own aliases.
+        if xml_attr(attrs, "deprecated") == Some("true") {
+            continue;
+        }
+        let (Some(name), Some(alias)) = (xml_attr(attrs, "name"), xml_attr(attrs, "alias")) else {
+            continue;
+        };
+        let canon = xml_attr(attrs, "iana")
+            .unwrap_or_else(|| alias.split_whitespace().next().expect("alias token"));
+        canonical.insert(String::from(canon));
+        for tok in alias.split_whitespace() {
+            if tok != canon {
+                aliases.insert(String::from(tok), String::from(canon));
+            }
+        }
+        // `Etc/…` are offset pseudo-zones with no territory; leaving them out of
+        // the region map keeps them off the generic-location path, as in ICU.
+        if !canon.starts_with("Etc/") {
+            let region = xml_attr(attrs, "region")
+                .map_or_else(|| name[..2].to_ascii_uppercase(), String::from);
+            *region_zones.entry(region.clone()).or_default() += 1;
+            zone_region.insert(String::from(canon), region);
+        }
+    }
+
+    // CLDR's supplemental and locale trees still key some zones by a tzdb link
+    // (`Asia/Calcutta`, `America/Buenos_Aires`); fold those onto the canonical id
+    // the runtime resolves to, preferring an entry already keyed canonically.
+    let canon = |z: &str| aliases.get(z).cloned().unwrap_or_else(|| String::from(z));
+    let mut folded: BTreeMap<String, MetazoneUse> = BTreeMap::new();
+    for pass_aliases in [false, true] {
+        for (z, segs) in &zone_meta {
+            if aliases.contains_key(z) == pass_aliases {
+                folded.entry(canon(z)).or_insert_with(|| segs.clone());
+            }
+        }
+    }
+    let zone_meta = folded;
+
+    // ---- per-locale names ----
+    struct LocTz {
+        fmt: [String; 7],
+        zones: BTreeMap<String, [Option<String>; 7]>,
+        mzs: BTreeMap<String, [Option<String>; 6]>,
+    }
+    let mut locales = locale_files(names_dir);
+    locales.sort();
+    let mut locdata: Vec<LocTz> = Vec::with_capacity(locales.len());
+    for locale in &locales {
+        let path = names_dir.join(alloc_format(locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let (_, loc_obj) = json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let tzn = loc_obj
+            .get("dates")
+            .and_then(|d| d.get("timeZoneNames"))
+            .expect("timeZoneNames");
+        let fmt = core::array::from_fn(|i| {
+            String::from(
+                tzn.get(TZ_FORMATS[i])
+                    .and_then(Json::as_str)
+                    .expect("time-zone format"),
+            )
+        });
+        let mut raw = BTreeMap::new();
+        if let Some(z) = tzn.get("zone") {
+            tz_zone_walk(z, "", &mut raw);
+        }
+        let mut zones: BTreeMap<String, [Option<String>; 7]> = BTreeMap::new();
+        for pass_aliases in [false, true] {
+            for (z, slots) in &raw {
+                if aliases.contains_key(z) != pass_aliases {
+                    continue;
+                }
+                let e = zones
+                    .entry(canon(z))
+                    .or_insert_with(|| core::array::from_fn(|_| None));
+                for (i, v) in slots.iter().enumerate() {
+                    if e[i].is_none() {
+                        e[i].clone_from(v);
+                    }
+                }
+            }
+        }
+        let mut mzs = BTreeMap::new();
+        for (mz, e) in tzn.get("metazone").map(Json::entries).unwrap_or(&[]) {
+            let slots: [Option<String>; 6] = core::array::from_fn(|i| {
+                let (width, ty) = TZ_NAME_SLOTS[i];
+                e.get(width)
+                    .and_then(|w| w.get(ty))
+                    .and_then(Json::as_str)
+                    .map(String::from)
+            });
+            if slots.iter().any(Option::is_some) {
+                mzs.insert(mz.clone(), slots);
+            }
+        }
+        locdata.push(LocTz { fmt, zones, mzs });
+    }
+
+    // ---- index spaces ----
+    let mut all_zones: BTreeSet<String> = BTreeSet::new();
+    all_zones.extend(zone_meta.keys().cloned());
+    all_zones.extend(canonical.iter().cloned());
+    for l in &locdata {
+        all_zones.extend(l.zones.keys().cloned());
+    }
+    // Partition by area. The stored key is the id minus its area prefix, so the
+    // prefix is not repeated once per zone in the generated `match`.
+    let mut area_zones: Vec<Vec<&str>> = vec![Vec::new(); TZ_AREAS.len()];
+    let mut zone_slot: BTreeMap<&str, (usize, u16)> = BTreeMap::new();
+    for z in &all_zones {
+        let Some((area, _)) = z.split_once('/') else {
+            continue;
+        };
+        let Some(ai) = TZ_AREAS.iter().position(|a| *a == area) else {
+            continue;
+        };
+        zone_slot.insert(z.as_str(), (ai, area_zones[ai].len() as u16));
+        area_zones[ai].push(z.as_str());
+    }
+
+    let mut mz_ids: BTreeSet<&str> = BTreeSet::new();
+    for (z, segs) in &zone_meta {
+        if zone_slot.contains_key(z.as_str()) {
+            mz_ids.extend(segs.iter().map(|(m, _, _)| m.as_str()));
+        }
+    }
+    let mz_ids: Vec<&str> = mz_ids.into_iter().collect();
+    let mz_index: BTreeMap<&str, u16> = mz_ids
+        .iter()
+        .enumerate()
+        .map(|(i, m)| (*m, i as u16))
+        .collect();
+    // The metazones reachable from each area's zones; an area's table carries
+    // the names of exactly those.
+    let mut area_mz: Vec<BTreeSet<u16>> = vec![BTreeSet::new(); TZ_AREAS.len()];
+    for (z, segs) in &zone_meta {
+        let Some(&(ai, _)) = zone_slot.get(z.as_str()) else {
+            continue;
+        };
+        for (m, _, _) in segs {
+            area_mz[ai].insert(mz_index[m.as_str()]);
+        }
+    }
+
+    let en = locales
+        .iter()
+        .position(|l| l == "en")
+        .expect("en time-zone names");
+
+    // ---- emit ----
+    let mut out = String::new();
+    write_header(&mut out);
     let _ = write!(
-        mod_out,
-        "#[cfg(feature = \"units\")]\npub(crate) mod units;\n"
+        out,
+        "#![allow(unused_variables)]\n\n\
+         //! CLDR localized time-zone names (UTS #35 §4.8).\n\
+         //!\n\
+         //! Two key spaces share one `match` per (area, locale):\n\
+         //! * `zone * 8 + slot` — zone-level names, `slot` 0..=5 being (long,\n\
+         //!   short) × (generic, standard, daylight), and slot 6 the exemplar city.\n\
+         //! * `MZ_BASE + metazone * 6 + slot` — metazone names, same slot order.\n\
+         //!\n\
+         //! Zones are grouped by tzdb area and gated on `tz-names-<area>`; an area\n\
+         //! that is not compiled in resolves to `None` throughout, and the caller\n\
+         //! falls back to the localized GMT offset.\n\n\
+         /// Start of the metazone key space.\n\
+         pub(crate) const MZ_BASE: u16 = {TZ_MZ_BASE};\n\n\
+         /// Table index of `en`, the last-resort locale fallback.\n\
+         pub(crate) const EN: u16 = {en};\n\n\
+         /// Table index for an exact (lowercased) CLDR locale id.\n\
+         pub(crate) fn locale_index(lang: &str) -> Option<u16> {{\n    \
+         Some(match lang {{\n"
     );
-    fs::write(gen_dir.join("mod.rs"), &mod_out).expect("write cldr/generated/mod.rs");
-    rustfmt(&gen_dir.join("mod.rs"));
+    for (i, locale) in locales.iter().enumerate() {
+        let _ = write!(out, "        \"{}\" => {i},\n", locale.to_ascii_lowercase());
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    // Per-locale formats: always compiled (they are what the plain localized GMT
+    // offset needs), keyed `loc * 8 + slot` over TZ_FORMATS.
+    let _ = write!(
+        out,
+        "/// A locale's time-zone format pattern. `slot` indexes gmtFormat,\n\
+         /// gmtZeroFormat, hourFormat, regionFormat, regionFormat-type-standard,\n\
+         /// regionFormat-type-daylight, fallbackFormat.\n\
+         pub(crate) const fn format(loc: u16, slot: u16) -> &'static str {{\n    \
+         match loc * 8 + slot {{\n"
+    );
+    for (li, l) in locdata.iter().enumerate() {
+        for (si, pat) in l.fmt.iter().enumerate() {
+            let _ = write!(out, "        {} => {},\n", li * 8 + si, rust_str(pat));
+        }
+    }
+    let _ = write!(out, "        _ => \"\",\n    }}\n}}\n\n");
+
+    // Zone id canonicalization (tzdb links and legacy ids -> the CLDR zone).
+    let _ = write!(
+        out,
+        "/// The canonical tzdb id for a zone id or link, e.g. `\"US/Pacific\"` →\n\
+         /// `\"America/Los_Angeles\"`. Unknown ids pass through unchanged.\n\
+         pub(crate) fn canonical(zone: &str) -> &str {{\n    match zone {{\n"
+    );
+    for (alias, canon) in &aliases {
+        let _ = write!(out, "        {} => {},\n", rust_str(alias), rust_str(canon));
+    }
+    let _ = write!(out, "        _ => zone,\n    }}\n}}\n\n");
+
+    // ---- area dispatchers ----
+    let sfx: Vec<String> = TZ_AREAS.iter().map(|a| a.to_ascii_lowercase()).collect();
+    let cfg: Vec<String> = sfx
+        .iter()
+        .map(|s| format!("        #[cfg(feature = \"tz-names-{s}\")]\n"))
+        .collect();
+
+    let _ = write!(
+        out,
+        "/// `(area, index)` for a canonical zone id, or `None` when the zone is\n\
+         /// unknown or its area is not compiled in.\n\
+         pub(crate) fn zone_index(zone: &str) -> Option<(u8, u16)> {{\n    \
+         let (area, rest) = zone.split_once('/')?;\n    \
+         Some(match area {{\n"
+    );
+    for (ai, area) in TZ_AREAS.iter().enumerate() {
+        let _ = write!(
+            out,
+            "{}        \"{area}\" => ({ai}, zi_{}(rest)?),\n",
+            cfg[ai], sfx[ai]
+        );
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    let _ = write!(
+        out,
+        "/// The metazone in effect for a zone at the UTC instant `unix`, or `None`\n\
+         /// when CLDR maps it to none.\n\
+         pub(crate) const fn metazone(area: u8, zone: u16, unix: i64) -> Option<u16> {{\n    \
+         match area {{\n"
+    );
+    for ai in 0..TZ_AREAS.len() {
+        let _ = write!(
+            out,
+            "{}        {ai} => mz_{}(zone, unix),\n",
+            cfg[ai], sfx[ai]
+        );
+    }
+    let _ = write!(out, "        _ => None,\n    }}\n}}\n\n");
+
+    let _ = write!(
+        out,
+        "/// A zone's tzdb region when that region has exactly one canonical zone —\n\
+         /// UTS #35's condition for naming the *country* rather than the exemplar\n\
+         /// city in the generic location format.\n\
+         pub(crate) const fn single_zone_region(area: u8, zone: u16) -> Option<&'static str> {{\n    \
+         match area {{\n"
+    );
+    for ai in 0..TZ_AREAS.len() {
+        let _ = write!(out, "{}        {ai} => rg_{}(zone),\n", cfg[ai], sfx[ai]);
+    }
+    let _ = write!(out, "        _ => None,\n    }}\n}}\n\n");
+
+    let _ = write!(
+        out,
+        "/// A zone-level or metazone name string; see the key spaces above.\n\
+         pub(crate) fn name(area: u8, loc: u16, key: u16) -> Option<&'static str> {{\n    \
+         match area {{\n"
+    );
+    for ai in 0..TZ_AREAS.len() {
+        let _ = write!(out, "{}        {ai} => n_{}(loc, key),\n", cfg[ai], sfx[ai]);
+    }
+    let _ = write!(out, "        _ => None,\n    }}\n}}\n");
+
+    // ---- per-area tables ----
+    let mut area_bytes = Vec::new();
+    for (ai, area) in TZ_AREAS.iter().enumerate() {
+        let start = out.len();
+        let acfg = format!("#[cfg(feature = \"tz-names-{}\")]\n", sfx[ai]);
+        let s = &sfx[ai];
+
+        let _ = write!(
+            out,
+            "\n{acfg}fn zi_{s}(rest: &str) -> Option<u16> {{\n    Some(match rest {{\n"
+        );
+        for (zi, zid) in area_zones[ai].iter().enumerate() {
+            let rest = zid.split_once('/').expect("area prefix").1;
+            let _ = write!(out, "        {} => {zi},\n", rust_str(rest));
+        }
+        let _ = write!(out, "        _ => return None,\n    }})\n}}\n");
+
+        let _ = write!(
+            out,
+            "\n{acfg}const fn mz_{s}(zone: u16, unix: i64) -> Option<u16> {{\n    match zone {{\n"
+        );
+        for (zi, zid) in area_zones[ai].iter().enumerate() {
+            let Some(segs) = zone_meta.get(*zid) else {
+                continue;
+            };
+            let segs: Vec<(u16, Option<i64>, Option<i64>)> = segs
+                .iter()
+                .map(|(m, f, t)| (mz_index[m.as_str()], *f, *t))
+                .collect();
+            let _ = write!(out, "        {zi} => {},\n", tz_metazone_expr(&segs));
+        }
+        let _ = write!(out, "        _ => None,\n    }}\n}}\n");
+
+        let _ = write!(
+            out,
+            "\n{acfg}const fn rg_{s}(zone: u16) -> Option<&'static str> {{\n    match zone {{\n"
+        );
+        for (zi, zid) in area_zones[ai].iter().enumerate() {
+            let Some(region) = zone_region.get(*zid) else {
+                continue;
+            };
+            if region_zones[region] == 1 {
+                let _ = write!(out, "        {zi} => Some(\"{region}\"),\n");
+            }
+        }
+        let _ = write!(out, "        _ => None,\n    }}\n}}\n");
+
+        // (area, locale) name tables.
+        let mut slots: Vec<Vec<(u16, &str)>> = Vec::with_capacity(locdata.len());
+        for l in &locdata {
+            let mut v: Vec<(u16, &str)> = Vec::new();
+            for (zi, zid) in area_zones[ai].iter().enumerate() {
+                if let Some(entry) = l.zones.get(*zid) {
+                    for (si, val) in entry.iter().enumerate() {
+                        if let Some(val) = val {
+                            v.push((zi as u16 * 8 + si as u16, val.as_str()));
+                        }
+                    }
+                }
+            }
+            for &mi in &area_mz[ai] {
+                if let Some(entry) = l.mzs.get(mz_ids[mi as usize]) {
+                    for (si, val) in entry.iter().enumerate() {
+                        if let Some(val) = val {
+                            v.push((TZ_MZ_BASE + mi * 6 + si as u16, val.as_str()));
+                        }
+                    }
+                }
+            }
+            v.sort();
+            slots.push(v);
+        }
+
+        let _ = write!(
+            out,
+            "\n{acfg}fn n_{s}(loc: u16, key: u16) -> Option<&'static str> {{\n    match loc {{\n"
+        );
+        for (li, locale) in locales.iter().enumerate() {
+            if !slots[li].is_empty() {
+                let _ = write!(out, "        {li} => n_{s}_{}(key),\n", ident(locale));
+            }
+        }
+        let _ = write!(out, "        _ => None,\n    }}\n}}\n");
+
+        for (li, locale) in locales.iter().enumerate() {
+            if slots[li].is_empty() {
+                continue;
+            }
+            let _ = write!(
+                out,
+                "\n{acfg}const fn n_{s}_{}(key: u16) -> Option<&'static str> {{\n    match key {{\n",
+                ident(locale)
+            );
+            for (key, val) in &slots[li] {
+                let _ = write!(out, "        {key} => Some({}),\n", rust_str(val));
+            }
+            let _ = write!(out, "        _ => None,\n    }}\n}}\n");
+        }
+        area_bytes.push((*area, out.len() - start));
+    }
+
+    write_cldr_generated(cldr_dir, "tz_names.rs", &out);
+    println!(
+        "codegen: wrote tz_names.rs ({} zones, {} metazones, {} locales; {} KB total, {})",
+        all_zones.len(),
+        mz_ids.len(),
+        locales.len(),
+        out.len() / 1024,
+        area_bytes
+            .iter()
+            .map(|(a, n)| format!("{a} {} KB", n / 1024))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
 }
 
 /// A locale id as a Rust identifier fragment (`pt-PT` → `pt_pt`), lowercased so
@@ -4432,22 +5022,6 @@ fn emit_rbnf(cldr_dir: &Path, path: &Path) {
         records.push((lang.to_ascii_lowercase(), p));
     }
     write_blob(cldr_dir, "rbnf", &records);
-}
-
-/// Write `cldr/timezone.bin`: per-locale localized GMT offset formats
-/// (gmtFormat, gmtZeroFormat, hourFormat).
-fn emit_timezone(cldr_dir: &Path, path: &Path) {
-    let text = fs::read_to_string(path).expect("read timezone.json");
-    let json = json_parse(&text);
-    let mut records = Vec::new();
-    for (lang, loc) in json.get("locales").expect("locales").entries() {
-        let mut p = Vec::new();
-        for key in ["gmt", "zero", "hour"] {
-            enc_str(&mut p, loc.get(key).and_then(Json::as_str).unwrap_or(""));
-        }
-        records.push((lang.to_ascii_lowercase(), p));
-    }
-    write_blob(cldr_dir, "timezone", &records);
 }
 
 /// Write `cldr/likely.bin`: the likelySubtags table (locale key -> maximized

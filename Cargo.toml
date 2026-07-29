@@ -45,6 +45,7 @@ default = [
     "units",
     "units-narrow",
     "datetime",
+    "tz-names",
     "calendars-extra",
     "displaynames",
     "list",
@@ -116,7 +117,7 @@ units = ["number"]                          # measurement units, long + short (+
 # separately; in `default` because that tier is the spec-complete one and without
 # it narrow silently degrades to short. Opt out via `default-features = false`.
 units-narrow = ["units"]
-datetime = ["number"]                       # date/time/skeleton + POSIX-TZ/GMT (+ calendar/skeletons/timezone.bin)
+datetime = ["number"]                       # date/time/skeleton + POSIX-TZ/GMT (+ calendar/skeletons.bin)
 calendars-extra = ["datetime"]              # Islamic + Persian calendars (+ islamic/persian.bin)
 displaynames = ["_cldr"]                    # Intl.DisplayNames (+ ~1.6 MB language/territory names)
 list = ["alloc", "_cldr"]                   # Intl.ListFormat
@@ -125,6 +126,45 @@ message = ["number"]                        # ICU MessageFormat (uses number + p
 spellout = ["alloc", "_cldr"]               # RBNF spell-out (+ rbnf.bin)
 transliterate = ["alloc", "normalization"]  # script transliteration
 locale = ["alloc", "_cldr"]                 # BCP-47 + likely-subtags (+ likely.bin)
+
+# --- Localized time-zone names (UTS #35 §4.8) -------------------------------
+# `timeZoneName: "long"` → "Pacific Standard Time" rather than "GMT-08:00":
+# CLDR's metazone names, exemplar cities and region formats for all 101 locales.
+# Split one feature per tzdb area because the tables are large (~3.6 MB of
+# generated source, +4.4 MB of compiled text+rodata for all eleven) and most
+# applications need one or two areas; an area that is not compiled in falls back
+# to the localized GMT offset, which is UTS #35's own last resort, so the result
+# stays correct, just less specific. Measured `text+data` added per area:
+# America +1.29 MB, Asia +1.28 MB, Pacific +605 KB, Europe +397 KB,
+# Africa +302 KB, Antarctica +198 KB, Atlantic +189 KB, Australia +151 KB,
+# Indian +126 KB, Arctic +27 KB, Etc +22 KB.
+# `tz-names` (all areas) is in `default` for the same reason `units-narrow` is:
+# silently answering a spec-mandated `"long"` request with an offset is worse
+# than the size. Opt out with `default-features = false`, or select areas.
+tz-names = [
+    "tz-names-africa",
+    "tz-names-america",
+    "tz-names-antarctica",
+    "tz-names-arctic",
+    "tz-names-asia",
+    "tz-names-atlantic",
+    "tz-names-australia",
+    "tz-names-etc",
+    "tz-names-europe",
+    "tz-names-indian",
+    "tz-names-pacific",
+]
+tz-names-africa = ["datetime"]          # Africa/… (53 zones)
+tz-names-america = ["datetime"]         # America/… (153 zones)
+tz-names-antarctica = ["datetime"]      # Antarctica/… (11 zones)
+tz-names-arctic = ["datetime"]          # Arctic/… (1 zone)
+tz-names-asia = ["datetime"]            # Asia/… (86 zones)
+tz-names-atlantic = ["datetime"]        # Atlantic/… (11 zones)
+tz-names-australia = ["datetime"]       # Australia/… (11 zones)
+tz-names-etc = ["datetime"]             # Etc/… (29 offset pseudo-zones)
+tz-names-europe = ["datetime"]          # Europe/… (59 zones)
+tz-names-indian = ["datetime"]          # Indian/… (11 zones)
+tz-names-pacific = ["datetime"]         # Pacific/… (41 zones)
 
 # --- Time zones -------------------------------------------------------------
 # Full IANA time-zone support via the embedded `timezone-data` crate (historical

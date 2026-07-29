@@ -14,6 +14,7 @@
 //! assert_eq!(format_time("en", &dt, DateStyle::Short), "2:30\u{202f}PM");
 //! ```
 
+use crate::cldr::generated::tz_names;
 use crate::cldr::{CalendarSpec, calendar_spec};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -1218,6 +1219,67 @@ pub fn format_japanese_date(
     )
 }
 
+/// Slots of the per-locale `timeZoneNames` format patterns, in table order.
+const TZF_GMT: u16 = 0;
+const TZF_ZERO: u16 = 1;
+const TZF_HOUR: u16 = 2;
+const TZF_REGION: u16 = 3;
+
+/// The `tz_names` table index for `lang`, walking the CLDR fallback chain
+/// (`pt-BR` → `pt`) and ending at `en`.
+fn tz_locale(lang: &str) -> u16 {
+    let norm = normalize_lang(lang);
+    let mut end = norm.len();
+    loop {
+        if let Some(i) = tz_names::locale_index(&norm[..end]) {
+            return i;
+        }
+        match norm[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return tz_names::EN,
+        }
+    }
+}
+
+/// Fill a `hourFormat` subpattern (`"+HH:mm"`, `"+H.mm"`, …) with an offset.
+/// UTS #35's *short* localized GMT form drops the hour's leading zero and the
+/// whole minute field when the minutes are zero (`GMT-7`, but `GMT+5:30`).
+fn fill_hour_format(sub: &str, h: u32, m: u32, short: bool) -> String {
+    let (Some(hpos), Some(mpos)) = (sub.find('H'), sub.find("mm")) else {
+        return String::from(sub);
+    };
+    let hlen = if sub[hpos..].starts_with("HH") { 2 } else { 1 };
+    let mut out = String::from(&sub[..hpos]);
+    if short || hlen == 1 {
+        out.push_str(&alloc::format!("{h}"));
+    } else {
+        out.push_str(&alloc::format!("{h:02}"));
+    }
+    if !(short && m == 0) {
+        out.push_str(&sub[hpos + hlen..mpos]); // the ":" / "." separator
+        out.push_str(&alloc::format!("{m:02}"));
+    }
+    out.push_str(&sub[mpos + 2..]);
+    out
+}
+
+/// The localized GMT offset for a table locale index.
+fn gmt_offset(loc: u16, offset_minutes: i32, short: bool) -> String {
+    if offset_minutes == 0 {
+        return String::from(tz_names::format(loc, TZF_ZERO));
+    }
+    let hour = tz_names::format(loc, TZF_HOUR);
+    let (pos, neg) = hour.split_once(';').unwrap_or((hour, hour));
+    let sub = if offset_minutes >= 0 { pos } else { neg };
+    let body = fill_hour_format(
+        sub,
+        offset_minutes.unsigned_abs() / 60,
+        offset_minutes.unsigned_abs() % 60,
+        short,
+    );
+    tz_names::format(loc, TZF_GMT).replace("{0}", &body)
+}
+
 /// Format a fixed UTC offset (in minutes) in the localized GMT form, e.g.
 /// `"GMT+5:30"`-style output: `format_gmt_offset("en", 330)` → `"GMT+05:30"`,
 /// `format_gmt_offset("fr", -480)` → `"UTC−08:00"`, `0` → `"GMT"` / `"UTC"`.
@@ -1225,39 +1287,7 @@ pub fn format_japanese_date(
 /// IANA zone database).
 #[must_use]
 pub fn format_gmt_offset(lang: &str, offset_minutes: i32) -> String {
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    let tz = loop {
-        if let Some(t) = crate::cldr::tz_spec(&norm[..end]) {
-            break t;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break crate::cldr::tz_spec("en").expect("root tz present"),
-        }
-    };
-    if offset_minutes == 0 {
-        return String::from(tz.zero);
-    }
-    let (pos, neg) = tz.hour.split_once(';').unwrap_or((tz.hour, tz.hour));
-    let sub = if offset_minutes >= 0 { pos } else { neg };
-    let (h, m) = (
-        offset_minutes.unsigned_abs() / 60,
-        offset_minutes.unsigned_abs() % 60,
-    );
-    let body = sub
-        .replace("HH", &alloc::format!("{h:02}"))
-        .replace("mm", &alloc::format!("{m:02}"));
-    tz.gmt.replace("{0}", &body)
+    gmt_offset(tz_locale(lang), offset_minutes, false)
 }
 
 /// Format both date and time, combined with the locale's date+time pattern.
@@ -1315,22 +1345,38 @@ pub enum NameStyle {
     Narrow,
 }
 
-/// Time-zone-name presentation (ECMA-402 `timeZoneName`). Only the offset forms
-/// are rendered today (from a caller-supplied offset); named/generic forms fall
-/// back to the offset (no metazone data).
+/// Time-zone-name presentation (ECMA-402 `timeZoneName`).
+///
+/// The named forms need a `time_zone` and the `tz-names-<area>` feature of that
+/// zone's tzdb area; they resolve through UTS #35 §4.8's fallback chain — the
+/// zone's own name, then its metazone's, then the generic location format
+/// (`"heure : Los Angeles"`), then the localized GMT offset.
+///
+/// ```
+/// # #[cfg(all(feature = "iana-tz", feature = "tz-names-america"))] {
+/// use intl::datetime::{DateTime, DateTimeFormatOptions, TimeZoneNameStyle, format_to_parts};
+/// let dt = DateTime { year: 2026, month: 7, day: 15, hour: 12, minute: 0, second: 0, millisecond: 0 };
+/// let mut o = DateTimeFormatOptions::default();
+/// o.time_zone = Some("America/Los_Angeles");
+/// o.time_zone_name = Some(TimeZoneNameStyle::Long);
+/// let name = |lang| format_to_parts(lang, &dt, &o).unwrap().pop().unwrap().value;
+/// assert_eq!(name("en"), "Pacific Daylight Time");
+/// assert_eq!(name("fr"), "heure d’été du Pacifique nord-américain");
+/// # }
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TimeZoneNameStyle {
-    /// Long specific name; falls back to the long offset.
+    /// Long specific name (`"Pacific Daylight Time"`).
     Long,
-    /// Short specific name; falls back to the short offset.
+    /// Short specific name (`"PDT"`).
     Short,
-    /// Short localized GMT offset.
+    /// Short localized GMT offset (`"GMT-7"`).
     ShortOffset,
-    /// Long localized GMT offset.
+    /// Long localized GMT offset (`"GMT-07:00"`).
     LongOffset,
-    /// Short generic name; falls back to the short offset.
+    /// Short generic name (`"PT"`).
     ShortGeneric,
-    /// Long generic name; falls back to the long offset.
+    /// Long generic name (`"Pacific Time"`).
     LongGeneric,
 }
 
@@ -1381,10 +1427,11 @@ pub struct DateTimeFormatOptions {
     pub day_period: Option<NameStyle>,
     /// Time-zone-name presentation (requires `time_zone` or `tz_offset_minutes`).
     pub time_zone_name: Option<TimeZoneNameStyle>,
-    /// IANA zone id (e.g. `"America/New_York"`) for `time_zone_name`. With the
-    /// `iana-tz` feature this yields a DST-aware abbreviation for the `Short`
-    /// style and the zone's offset otherwise; without it, or for an unknown
-    /// zone, the offset path (`tz_offset_minutes`) is used.
+    /// IANA zone id (e.g. `"America/New_York"`, or a link such as
+    /// `"US/Pacific"`) for `time_zone_name`. The `iana-tz` feature supplies the
+    /// zone's offset and its DST state, which is what selects between the
+    /// standard and daylight names; without it the zone is reported on standard
+    /// time and the offset comes from `tz_offset_minutes`.
     pub time_zone: Option<&'static str>,
     /// Hour cycle (overrides `hour12`).
     pub hour_cycle: Option<HourCycle>,
@@ -2024,55 +2071,146 @@ fn resolve_pattern(
     Ok(combined)
 }
 
-/// The time-zone-name string for an offset and presentation style.
-fn zone_string(lang: &str, style: TimeZoneNameStyle, offset: i32) -> String {
-    // Long offset = zero-padded GMT form; short offset trims leading zero in the
-    // hour. Named/generic styles fall back to the offset (no metazone data).
-    let long = format_gmt_offset(lang, offset);
-    match style {
-        TimeZoneNameStyle::LongOffset
-        | TimeZoneNameStyle::Long
-        | TimeZoneNameStyle::LongGeneric => long,
-        TimeZoneNameStyle::ShortOffset
-        | TimeZoneNameStyle::Short
-        | TimeZoneNameStyle::ShortGeneric => {
-            // "GMT-08:00" -> "GMT-8:00": drop a single leading zero after the sign.
-            if let Some(pos) = long.find(['+', '-', '\u{2212}']) {
-                let (head, tail) = long.split_at(pos + 1);
-                let trimmed = tail.strip_prefix('0').unwrap_or(tail);
-                alloc::format!("{head}{trimmed}")
-            } else {
-                long
-            }
-        }
-    }
+/// Unix seconds for `dt` read as UTC. Julian-day based, so it is exact for the
+/// whole proleptic-Gregorian range the crate accepts.
+fn utc_unix(dt: &DateTime) -> i64 {
+    const UNIX_EPOCH_JDN: i64 = 2_440_588;
+    let jdn = crate::calendar::gregorian_to_jdn(dt.year as i64, dt.month as i64, dt.day as i64);
+    (jdn - UNIX_EPOCH_JDN) * 86_400
+        + dt.hour as i64 * 3600
+        + dt.minute as i64 * 60
+        + dt.second as i64
 }
 
-/// Resolve the `time_zone_name` text for `dt`. With the `iana-tz` feature and a
-/// `time_zone` set, the `Short` style yields the DST-aware zone abbreviation
-/// (e.g. `EST`/`EDT`) and other styles use the zone's offset; otherwise the
-/// caller-supplied `tz_offset_minutes` drives the localized GMT offset.
-#[cfg_attr(not(feature = "iana-tz"), allow(unused_variables))]
+/// UTS #35's *generic location format*: the locale's `regionFormat` applied to
+/// the country name when the zone is the only one in its country, and to the
+/// zone's exemplar city otherwise (`"Los Angeles"` → `"heure : Los Angeles"`).
+/// `Etc/…` are offset pseudo-zones with no location, so they have none.
+#[cfg_attr(not(feature = "displaynames"), allow(unused_variables))]
+fn generic_location(lang: &str, loc: u16, area: u8, idx: u16, zone: &str) -> Option<String> {
+    let (prefix, rest) = zone.split_once('/')?;
+    if prefix == "Etc" {
+        return None;
+    }
+    let region_format = tz_names::format(loc, TZF_REGION);
+    #[cfg(feature = "displaynames")]
+    if let Some(region) = tz_names::single_zone_region(area, idx)
+        && let Some(country) = crate::display::region_name(lang, region)
+    {
+        return Some(region_format.replace("{0}", country));
+    }
+    // CLDR trims every exemplar city a locale inherits from root, where the city
+    // is the last segment of the tzdb id with `_` turned into a space.
+    let city = tz_names::name(area, loc, idx * 8 + 6).map_or_else(
+        || rest.rsplit('/').next().unwrap_or(rest).replace('_', " "),
+        String::from,
+    );
+    Some(region_format.replace("{0}", &city))
+}
+
+/// The UTS #35 §4.8 name of `zone` at the UTC instant `unix`, or `None` when
+/// CLDR has none for this locale (the caller then renders the GMT offset, which
+/// is the spec's own last resort).
+fn zone_name(
+    lang: &str,
+    loc: u16,
+    zone: &str,
+    unix: i64,
+    dst: bool,
+    uses_dst: bool,
+    style: TimeZoneNameStyle,
+) -> Option<String> {
+    let zone = tz_names::canonical(zone);
+    let (area, idx) = tz_names::zone_index(zone)?;
+    let width = match style {
+        TimeZoneNameStyle::Short | TimeZoneNameStyle::ShortGeneric => 3,
+        _ => 0,
+    };
+    let from_metazone = |kind: u16| {
+        tz_names::metazone(area, idx, unix)
+            .and_then(|mz| tz_names::name(area, loc, tz_names::MZ_BASE + mz * 6 + width + kind))
+    };
+    // The zone's own name wins over its metazone's, slot by slot: `Europe/London`
+    // takes "British Summer Time" from the zone and "Greenwich Mean Time" from
+    // the `GMT` metazone.
+    let slot = |kind: u16| {
+        tz_names::name(area, loc, idx * 8 + width + kind).or_else(|| from_metazone(kind))
+    };
+    if !matches!(
+        style,
+        TimeZoneNameStyle::LongGeneric | TimeZoneNameStyle::ShortGeneric
+    ) {
+        // Specific non-location (`z`/`zzzz`): standard or daylight by the state
+        // the zone is actually in at this instant.
+        return slot(1 + u16::from(dst)).map(String::from);
+    }
+    if let Some(name) = slot(0) {
+        return Some(String::from(name));
+    }
+    // Generic non-location (`v`/`vvvv`) with no generic name: a metazone whose
+    // zones never observe daylight time has only one name, so its standard name
+    // *is* the generic one ("India Standard Time"). A zone-level standard name
+    // does not generalize this way — `Etc/UTC` is "Coordinated Universal Time"
+    // but generically just "GMT".
+    if !uses_dst && let Some(name) = from_metazone(1) {
+        return Some(String::from(name));
+    }
+    generic_location(lang, loc, area, idx, zone)
+}
+
+/// Resolve the `time_zone_name` text for `dt`: a localized zone name when
+/// `time_zone` names a zone CLDR knows, otherwise the localized GMT offset.
+///
+/// Choosing between the standard and the daylight name needs the zone's DST
+/// state at the instant, which only `iana-tz` can answer; without that feature
+/// the zone is reported on standard time year-round.
 fn compute_tz_name(
     lang: &str,
     dt: &DateTime,
     opts: &DateTimeFormatOptions,
     style: TimeZoneNameStyle,
 ) -> Option<String> {
+    let loc = tz_locale(lang);
+    let short = matches!(
+        style,
+        TimeZoneNameStyle::Short | TimeZoneNameStyle::ShortOffset | TimeZoneNameStyle::ShortGeneric
+    );
+
     #[cfg(feature = "iana-tz")]
-    if let Some(zid) = opts.time_zone
-        && let Some(zone) = crate::timezone::load_zone(zid)
-    {
-        let off_min = zone.offset_for_local(dt) / 60;
-        return Some(match style {
-            // The tz database carries the specific (DST-aware) abbreviation.
-            TimeZoneNameStyle::Short => String::from(zone.abbrev_for_local(dt)),
-            // No long/generic names in the tz db — fall back to the offset form.
-            _ => zone_string(lang, style, off_min),
-        });
+    let iana = opts.time_zone.and_then(crate::timezone::load_zone);
+    #[cfg(feature = "iana-tz")]
+    let offset = match &iana {
+        Some(z) => Some(z.offset_for_local(dt) / 60),
+        None => opts.tz_offset_minutes,
+    };
+    #[cfg(not(feature = "iana-tz"))]
+    let offset = opts.tz_offset_minutes;
+
+    let named = !matches!(
+        style,
+        TimeZoneNameStyle::LongOffset | TimeZoneNameStyle::ShortOffset
+    );
+    if named && let Some(zid) = opts.time_zone {
+        // Which metazone applies is a function of the instant: `Europe/London`
+        // was `British` until 1971-10-31 and `GMT` after.
+        let unix = utc_unix(dt) - i64::from(offset.unwrap_or(0)) * 60;
+        #[cfg(feature = "iana-tz")]
+        let (dst, uses_dst) = match &iana {
+            // A year of monthly probes settles whether the zone has a daylight
+            // form at all, which decides the generic fallback below.
+            Some(z) => (
+                z.is_dst_at(unix),
+                (0..12).any(|k| z.is_dst_at(unix + k * 2_629_800)),
+            ),
+            None => (false, false),
+        };
+        #[cfg(not(feature = "iana-tz"))]
+        let (dst, uses_dst) = (false, false);
+        if let Some(name) = zone_name(lang, loc, zid, unix, dst, uses_dst, style) {
+            return Some(name);
+        }
     }
-    opts.tz_offset_minutes
-        .map(|off| zone_string(lang, style, off))
+    offset.map(|off| gmt_offset(loc, off, short))
 }
 
 /// Format `dt` in `lang` with ECMA-402-style component options, returning the

@@ -45,6 +45,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requested options resolve to a pattern with no fields left in it. Previously
   that case produced `Ok("")`, which a caller cannot tell apart from a real
   result.
+- *(datetime)* localized time-zone names (UTS #35 §4.8). `time_zone_name` now
+  resolves real names instead of always rendering a GMT offset:
+  `America/Los_Angeles` in July is `"Pacific Daylight Time"` / `"PDT"` /
+  `"Pacific Time"` / `"PT"` for `long` / `short` / `longGeneric` /
+  `shortGeneric` in `en`, and `"heure d’été du Pacifique nord-américain"` /
+  `"heure du Pacifique nord-américain"` in `fr`; `UTC` is `"Coordinated
+  Universal Time"`. All 101 CLDR locales, 447 zones and 191 metazones, with the
+  metazone ranges applied historically (`Europe/London` is `British` before
+  1971-10-31 and `GMT` after) and tzdb links canonicalized (`US/Pacific`,
+  `Asia/Calcutta`). The full fallback chain is implemented — the zone's own
+  name, then its metazone's, then the *generic location format* (the locale's
+  `regionFormat` over the country name for a single-zone country, else the
+  exemplar city: `"heure : Los Angeles"`), then the localized GMT offset. Values
+  were checked against V8/ICU. Chooses the standard or daylight name from the
+  zone's DST state at the instant, which needs `iana-tz`; without it the zone is
+  reported on standard time. Reported in
+  [#17](https://github.com/KarpelesLab/intlrs/issues/17).
+- *(datetime)* one cargo feature per tzdb area — `tz-names-africa`,
+  `tz-names-america`, `tz-names-antarctica`, `tz-names-arctic`, `tz-names-asia`,
+  `tz-names-atlantic`, `tz-names-australia`, `tz-names-etc`, `tz-names-europe`,
+  `tz-names-indian`, `tz-names-pacific` — plus the `tz-names` umbrella, which is
+  in `default`. The names are large (~3.6 MB of generated source, +4.4 MB
+  compiled for all eleven areas; America +1.29 MB, Asia +1.28 MB, Europe
+  +397 KB, Etc +22 KB), so a build can carry only the areas it uses; an area
+  that is not compiled in falls back to the localized GMT offset, which is UTS
+  #35's own last resort. The umbrella is in `default` on the same reasoning as
+  `units-narrow`: answering a spec-mandated `timeZoneName: "long"` with an
+  offset is a silently degraded result, which is worse than the size.
 
 ### Changed
 
@@ -60,9 +88,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   phrase as one `unit` part, as ICU does, instead of splitting it on interior
   whitespace. `"5 kilometers per hour"` yields `integer("5") literal(" ")
   unit("kilometers per hour")`, not six parts. Single-word units are unchanged.
+- *(datetime)* the localized GMT offset formats moved off the hand-curated
+  26-locale `data/cldr/48/timezone.json` (and its `src/cldr/timezone.bin` blob,
+  both now deleted) onto CLDR's own `timeZoneNames` for all 101 locales, in
+  `src/cldr/generated/tz_names.rs`. All 26 curated locales matched CLDR 48
+  byte-for-byte, so no locale changed; the other 75 stop falling back to
+  English. The same table carries `regionFormat` and `fallbackFormat`, which the
+  new name resolution needs.
+- *(datetime)* `TimeZoneNameStyle::Short` no longer returns the tz database's
+  abbreviation. It resolves CLDR's short metazone name, so `America/New_York`
+  still gives `"EST"`/`"EDT"`, but `Asia/Tokyo` — for which CLDR has no short
+  name — gives `"GMT+9"` rather than `"JST"`, and a non-English locale gets its
+  own name or offset rather than the English abbreviation. This is what
+  ECMA-402 specifies and what V8/ICU produce.
 
 ### Fixed
 
+- *(datetime)* `TimeZoneNameStyle::ShortOffset` panicked for every locale whose
+  `hourFormat` uses U+2212 MINUS SIGN (`et`, `fa`, `fr`, `ht`, `lt`, `sv`).
+  Trimming the hour's
+  leading zero split the string one byte past the sign, inside the multi-byte
+  character. The short offset is now built from the `hourFormat` subpattern
+  itself, which also fixes its shape: `GMT-7`, not `GMT-7:00` — UTS #35's short
+  localized GMT drops the minute field when it is zero, as ICU does.
+- *(datetime)* `format_gmt_offset` rendered the letter `H` literally for the two
+  locales whose `hourFormat` uses a single `H` rather than `HH`:
+  `format_gmt_offset("cs", 330)` gave `"GMT+H:30"` and now gives `"GMT+5:30"`
+  (likewise `fi`). Only `HH` was ever substituted.
 - *(datetime)* a lone time field no longer formats as the empty string.
   `day_period`, `minute`, `second` and `fractional_second_digits`, each on their
   own, resolved through CLDR `availableFormats` — which tabulates only the
