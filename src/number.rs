@@ -55,6 +55,9 @@ pub enum NumberPartType {
     Nan,
     /// The infinity placeholder.
     Infinity,
+    /// The "approximately" marker a collapsed range carries (see
+    /// [`format_range_to_parts`]).
+    ApproximatelySign,
 }
 
 impl NumberPartType {
@@ -78,6 +81,7 @@ impl NumberPartType {
             NumberPartType::ExponentInteger => "exponentInteger",
             NumberPartType::Nan => "nan",
             NumberPartType::Infinity => "infinity",
+            NumberPartType::ApproximatelySign => "approximatelySign",
         }
     }
 }
@@ -275,17 +279,18 @@ pub struct NumberFormatOptions {
     pub unit: Option<&'static str>,
     /// How the unit is displayed.
     pub unit_display: UnitDisplay,
-    /// Numbering system override (e.g. `"arab"`); `None` uses the locale default
-    /// for [`format`]'s plain path (Latin digits).
+    /// Numbering system override (e.g. `"arab"`, or `"native"` for the locale's
+    /// `otherNumberingSystems.native`). Selects the digits *and* that system's
+    /// CLDR separators/sign symbols for this locale, falling back to the `latn`
+    /// ones where CLDR ships no block. `None` uses the tag's `-u-nu-` keyword if
+    /// present, else `latn`. Per ECMA-402 `ResolveLocale`, this outranks the tag.
     pub numbering_system: Option<&'static str>,
 }
 
-/// Resolve the [`NumberSpec`] for `lang`, walking up the locale fallback chain
-/// and finally to the root (English) convention.
-fn spec(lang: &str) -> NumberSpec {
-    use crate::cldr::number_spec;
-    let norm: String = lang
-        .chars()
+/// Lowercase `lang` and normalize `_` to `-`, the form the CLDR tables are keyed
+/// in and the fallback chain is walked over.
+fn normalize(lang: &str) -> String {
+    lang.chars()
         .map(|c| {
             if c == '_' {
                 '-'
@@ -293,31 +298,183 @@ fn spec(lang: &str) -> NumberSpec {
                 c.to_ascii_lowercase()
             }
         })
-        .collect();
-    let mut end = norm.len();
-    loop {
-        if let Some(s) = number_spec(&norm[..end]) {
-            return s;
+        .collect()
+}
+
+/// A locale resolved against a numbering system: the CLDR symbols/patterns of
+/// the effective system plus its digit glyphs (`None` for `latn`, and for any
+/// system with no positional digits — algorithmic systems like `jpan` degrade to
+/// Latin digits rather than mis-rendering).
+struct Resolved {
+    spec: NumberSpec,
+    digits: Option<&'static str>,
+}
+
+/// Split a normalized tag into its language part and the `-u-nu-` numbering
+/// system, if any. BCP-47 §2.2.6: an extension begins at a singleton subtag, so
+/// the language part ends there; inside the `u` extension a two-letter subtag is
+/// a key and the subtag after it is its value (UTS #35 `nu`). `number` does not
+/// depend on the `locale` feature, so this is a self-contained scan rather than
+/// a `Locale` accessor.
+fn split_nu(norm: &str) -> (&str, Option<&str>) {
+    let mut lang_end = None;
+    let mut nu = None;
+    let mut in_u = false;
+    let mut want_value = false;
+    let mut off = 0usize;
+    for sub in norm.split('-') {
+        let start = off;
+        off += sub.len() + 1;
+        if sub.len() == 1 {
+            if lang_end.is_none() {
+                lang_end = Some(start.saturating_sub(1));
+            }
+            in_u = sub == "u";
+            want_value = false;
+        } else if in_u {
+            if want_value {
+                nu = Some(sub);
+                in_u = false;
+            } else if sub.len() == 2 {
+                // Two-letter subtags are keys; longer ones before the first key
+                // are `u`-extension attributes and carry no value.
+                want_value = sub == "nu";
+            }
         }
-        match norm[..end].rfind('-') {
+    }
+    (&norm[..lang_end.unwrap_or(norm.len())], nu)
+}
+
+/// Resolve `lang` (and an explicit `system` override) to the symbols, patterns
+/// and digits to format with.
+///
+/// The requested system comes from `system` if set, else from the tag's
+/// `-u-nu-` keyword, else `latn` — the tables are keyed by system and CLDR's
+/// `defaultNumberingSystem` is deliberately *not* consulted here, so the plain
+/// entry points keep rendering Latin digits (see [`format_decimal`]). Per
+/// ECMA-402 `ResolveLocale`, an explicit option outranks the `-u-` keyword.
+/// `"native"` is the UTS #35 alias for the locale's `otherNumberingSystems`
+/// native system.
+fn resolve(lang: &str, system: Option<&str>) -> Resolved {
+    use crate::cldr::{number_spec, numbering_systems};
+    let norm = normalize(lang);
+    let (base, tag_nu) = split_nu(&norm);
+    let want = system.or(tag_nu).unwrap_or("latn");
+
+    // Walk the fallback chain once; the first locale with data answers both the
+    // `native` alias and the symbol lookup, matching ICU's bundle inheritance.
+    let mut end = base.len();
+    let key = loop {
+        if numbering_systems(&base[..end]).is_some() {
+            break &base[..end];
+        }
+        match base[..end].rfind('-') {
             Some(i) => end = i,
-            None => return number_spec("en").expect("root spec present"),
+            None => break "en",
+        }
+    };
+    let system = match want {
+        "native" => numbering_systems(key).map_or("latn", |(_, native)| native),
+        other => other,
+    };
+    Resolved {
+        spec: number_spec(key, system)
+            .or_else(|| number_spec("en", system))
+            .expect("root spec present"),
+        digits: (system != "latn")
+            .then(|| crate::cldr::numbering_digits(system))
+            .flatten(),
+    }
+}
+
+/// Transliterate the ASCII digits of a formatted run into `digits`.
+fn map_digits(value: &str, digits: Option<&'static str>) -> String {
+    let Some(glyphs) = digits else {
+        return String::from(value);
+    };
+    let table: Vec<char> = glyphs.chars().collect();
+    if table.len() != 10 {
+        return String::from(value);
+    }
+    value
+        .chars()
+        .map(|c| {
+            if c.is_ascii_digit() {
+                table[(c as u8 - b'0') as usize]
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
+/// The `defaultNumberingSystem` of `lang` (UTS #35): the system CLDR formats
+/// numbers with by default, which for most locales — including `ar` and `hi` in
+/// CLDR 48 — is `"latn"`.
+///
+/// ```
+/// use intl::number::default_numbering_system as d;
+/// assert_eq!(d("en"), "latn");
+/// assert_eq!(d("ar"), "latn"); // matches `Intl.NumberFormat('ar')`
+/// assert_eq!(d("fa"), "arabext");
+/// ```
+#[must_use]
+pub fn default_numbering_system(lang: &str) -> &'static str {
+    resolve_systems(lang).0
+}
+
+/// The `otherNumberingSystems.native` system of `lang` (UTS #35): the locale's
+/// *native* digits, which are often not the default — `ar` defaults to `latn`
+/// but its native system is `arab`.
+///
+/// Format with it by requesting `-u-nu-native` (or the resolved id) through
+/// [`NumberFormatOptions::numbering_system`] or the tag itself.
+///
+/// ```
+/// use intl::number::{format_decimal, native_numbering_system as n};
+/// assert_eq!(n("en"), "latn");
+/// assert_eq!(n("ar"), "arab");
+/// assert_eq!(n("hi"), "deva");
+/// assert_eq!(format_decimal("hi-u-nu-native", 1234.0), "१,२३४");
+/// ```
+#[must_use]
+pub fn native_numbering_system(lang: &str) -> &'static str {
+    resolve_systems(lang).1
+}
+
+/// `(default, native)` numbering systems for `lang`, through the fallback chain.
+fn resolve_systems(lang: &str) -> (&'static str, &'static str) {
+    let norm = normalize(lang);
+    let (base, _) = split_nu(&norm);
+    let mut end = base.len();
+    loop {
+        if let Some(pair) = crate::cldr::numbering_systems(&base[..end]) {
+            return pair;
+        }
+        match base[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return ("latn", "latn"),
         }
     }
 }
 
 /// Format `value` as a decimal number in the conventions of `lang`.
+///
+/// Latin digits unless the tag asks otherwise: `lang` may carry a `-u-nu-`
+/// keyword (`"hi-u-nu-deva"`, `"ar-u-nu-native"`), which selects both the digits
+/// and that system's separators. CLDR's `defaultNumberingSystem` is *not*
+/// applied — use [`format_decimal_default_numbering`] for that.
 #[must_use]
 pub fn format_decimal(lang: &str, value: f64) -> String {
-    let s = spec(lang);
-    format_with(&s.dec, value, s.decimal, s.group, s.minus)
+    let r = resolve(lang, None);
+    format_with(&r.spec.dec, value, &r)
 }
 
 /// Format `value` (a ratio, so `0.5` → `50%`) as a percent in `lang`.
 #[must_use]
 pub fn format_percent(lang: &str, value: f64) -> String {
-    let s = spec(lang);
-    format_with(&s.pct, value * 100.0, s.decimal, s.group, s.minus)
+    let r = resolve(lang, None);
+    format_with(&r.spec.pct, value * 100.0, &r)
 }
 
 /// Format `value` in scientific notation (mantissa × 10ⁿ) in `lang`, e.g.
@@ -333,23 +490,23 @@ pub fn format_percent(lang: &str, value: f64) -> String {
 /// ```
 #[must_use]
 pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
+    let r = resolve(lang, None);
+    let s = r.spec;
     // Guard before the mantissa normalization below: `inf / 10.0` is still
     // `inf`, so the loop would never terminate (and `exp` would overflow).
     if !value.is_finite() {
         if value.is_nan() {
-            return String::from("NaN");
+            return String::from(s.nan);
         }
-        let s = spec(lang);
         return if value < 0.0 {
-            alloc::format!("{}\u{221e}", s.minus)
+            alloc::format!("{}{}", s.minus, s.infinity)
         } else {
-            String::from("\u{221e}")
+            String::from(s.infinity)
         };
     }
     if value == 0.0 {
-        return String::from("0");
+        return map_digits("0", r.digits);
     }
-    let s = spec(lang);
     let neg = value < 0.0;
     let mut m = if neg { -value } else { value };
     // Normalize the mantissa to 1 ≤ m < 10 without `std::f64::log10`.
@@ -370,16 +527,19 @@ pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
     if neg {
         out.push_str(s.minus);
     }
-    out.push_str(int_part);
+    out.push_str(&map_digits(int_part, r.digits));
     if !frac.is_empty() {
         out.push_str(s.decimal);
-        out.push_str(frac);
+        out.push_str(&map_digits(frac, r.digits));
     }
     out.push('E');
     if exp < 0 {
         out.push_str(s.minus);
     }
-    out.push_str(&alloc::format!("{}", exp.unsigned_abs()));
+    out.push_str(&map_digits(
+        &alloc::format!("{}", exp.unsigned_abs()),
+        r.digits,
+    ));
     out
 }
 
@@ -428,62 +588,75 @@ pub fn format_ordinal(lang: &str, n: i64) -> String {
 /// numbering `system` (e.g. `"arab"`, `"deva"`). Non-digit characters and
 /// unknown systems are left unchanged.
 ///
+/// **Digits only, by design.** Separators are deliberately untouched, even
+/// though `arab` conventionally pairs with U+066B/U+066C rather than `.`/`,`:
+/// CLDR has no locale-independent symbol table for a numbering system. Symbols
+/// live per locale under `symbols-numberSystem-<ns>` and disagree between
+/// locales for the *same* system — `ar`'s `arab` decimal separator is U+066B
+/// while `sd`'s is `.`, and `arabext`'s percent and minus differ across `fa`,
+/// `ps` and `ur`. Picking one locale's symbols here would silently impose it on
+/// every caller. Use the locale-aware path instead — a `-u-nu-` tag or
+/// [`NumberFormatOptions::numbering_system`] — which resolves symbols against
+/// the locale, as ICU does.
+///
 /// ```
-/// use intl::number::to_numbering_system;
+/// use intl::number::{format_decimal, to_numbering_system};
 /// assert_eq!(to_numbering_system("2024", "arab"), "٢٠٢٤");
 /// assert_eq!(to_numbering_system("3.14", "deva"), "३.१४");
+/// // Separators stay put; the locale-aware path supplies them.
+/// assert_eq!(to_numbering_system("1.5", "arab"), "١.٥");
+// The contrast only holds with the per-system blocks compiled in; without
+// `number-numsys` the locale-aware path also keeps the `latn` separators.
+#[cfg_attr(
+    feature = "number-numsys",
+    doc = r#"assert_eq!(format_decimal("ar-u-nu-arab", 1.5), "١٫٥");"#
+)]
+#[cfg_attr(
+    feature = "number-numsys",
+    doc = r#"assert_eq!(format_decimal("sd-u-nu-arab", 1.5), "١.٥"); // same system, other symbols"#
+)]
 /// ```
 #[must_use]
 pub fn to_numbering_system(s: &str, system: &str) -> String {
-    let Some(glyphs) = crate::cldr::numbering_digits(system) else {
-        return String::from(s);
-    };
-    let table: alloc::vec::Vec<char> = glyphs.chars().collect();
-    if table.len() != 10 {
-        return String::from(s);
-    }
-    s.chars()
-        .map(|c| {
-            if c.is_ascii_digit() {
-                table[(c as u8 - b'0') as usize]
-            } else {
-                c
-            }
-        })
-        .collect()
+    map_digits(s, crate::cldr::numbering_digits(system))
 }
 
-/// Format `value` as a decimal in `lang`, using the locale's default numbering
-/// system (so e.g. Persian renders with Extended Arabic-Indic digits). Most
-/// locales default to Latin digits, where this matches [`format_decimal`].
+/// Format `value` as a decimal in `lang` using the locale's CLDR
+/// `defaultNumberingSystem` — digits *and* that system's separators (so Persian
+/// renders `"۱٬۲۳۴٫۵"`, not Latin separators with Persian digits). Most locales
+/// default to `latn`, where this matches [`format_decimal`].
+///
+/// This is the ECMA-402 default: `Intl.NumberFormat('ar')` also formats with
+/// Latin digits, because `ar`'s CLDR default is `latn`. For the locale's
+/// *native* system (`arab` for `ar`), ask for it: `format_decimal("ar-u-nu-native", …)`.
+///
+/// ```
+/// use intl::number::format_decimal_default_numbering as f;
+/// assert_eq!(f("en", 1234.5), "1,234.5");
+/// assert_eq!(f("ar", 1234.5), "1,234.5");   // ar defaults to latn in CLDR 48
+// The arabext separators need the per-system blocks (`number-numsys`).
+#[cfg_attr(
+    feature = "number-numsys",
+    doc = r#"assert_eq!(f("fa", 1234.5), "۱٬۲۳۴٫۵");   // fa defaults to arabext"#
+)]
+/// ```
 #[must_use]
+pub fn format_decimal_default_numbering(lang: &str, value: f64) -> String {
+    let r = resolve(lang, Some(default_numbering_system(lang)));
+    format_with(&r.spec.dec, value, &r)
+}
+
+/// Format `value` as a decimal in `lang` using the locale's default numbering
+/// system.
+#[must_use]
+#[deprecated(
+    since = "0.6.0",
+    note = "misnamed: it reads `defaultNumberingSystem`, not `otherNumberingSystems.native`. \
+            Use `format_decimal_default_numbering`, or `format_decimal(\"<lang>-u-nu-native\", …)` \
+            for the native system."
+)]
 pub fn format_decimal_native(lang: &str, value: f64) -> String {
-    let formatted = format_decimal(lang, value);
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    let system = loop {
-        if let Some(s) = crate::cldr::default_numbering(&norm[..end]) {
-            break s;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break "latn",
-        }
-    };
-    if system == "latn" {
-        formatted
-    } else {
-        to_numbering_system(&formatted, system)
-    }
+    format_decimal_default_numbering(lang, value)
 }
 
 /// Format `value` in compact (short) form in `lang`, e.g.
@@ -505,28 +678,9 @@ pub fn format_compact(lang: &str, value: f64) -> String {
     if !abs.is_finite() || abs < 1000.0 {
         return format_decimal(lang, value);
     }
-    let s = spec(lang);
-    // Resolve the compact pattern table through the locale fallback chain.
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    let table = loop {
-        if let Some(t) = crate::cldr::compact_patterns(&norm[..end]) {
-            break t;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break crate::cldr::compact_patterns("en").expect("root compact present"),
-        }
-    };
+    let r = resolve(lang, None);
+    let s = r.spec;
+    let table = compact_table(lang);
 
     // Magnitude exponent (3..=14) without `std::f64::log10`.
     let mut exp = 0usize;
@@ -565,10 +719,10 @@ pub fn format_compact(lang: &str, value: f64) -> String {
                     chars.next();
                 }
                 if !wrote_num {
-                    out.push_str(mi);
+                    out.push_str(&map_digits(mi, r.digits));
                     if !mf.is_empty() {
                         out.push_str(s.decimal);
-                        out.push_str(mf);
+                        out.push_str(&map_digits(mf, r.digits));
                     }
                     wrote_num = true;
                 }
@@ -601,7 +755,23 @@ pub fn format_compact(lang: &str, value: f64) -> String {
 /// ```
 #[must_use]
 pub fn parse_decimal(lang: &str, input: &str) -> Option<f64> {
-    parse_decimal_with(&spec(lang), input)
+    parse_decimal_with(&resolve(lang, None).spec, input)
+}
+
+/// The locale's compact-notation pattern table, through the fallback chain.
+fn compact_table(lang: &str) -> [&'static str; 24] {
+    let norm = normalize(lang);
+    let (base, _) = split_nu(&norm);
+    let mut end = base.len();
+    loop {
+        if let Some(t) = crate::cldr::compact_patterns(&base[..end]) {
+            return t;
+        }
+        match base[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return crate::cldr::compact_patterns("en").expect("root compact present"),
+        }
+    }
 }
 
 /// Inner parser for [`parse_decimal`], split out so the separator-progress guard
@@ -669,19 +839,11 @@ fn parse_decimal_with(s: &NumberSpec, input: &str) -> Option<f64> {
 #[cfg(feature = "currency")]
 pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
     use crate::cldr as cur;
-    let s = spec(lang);
+    let r = resolve(lang, None);
 
     // Resolve the currency pattern and symbol through the locale fallback chain.
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
+    let norm = normalize(lang);
+    let norm = String::from(split_nu(&norm).0);
     let mut pat = cur::currency_pattern("en").expect("root currency pattern");
     let mut symbol = code;
     let mut end = norm.len();
@@ -712,25 +874,20 @@ pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
     pat.min_frac = digits;
     pat.max_frac = digits;
 
-    let formatted = format_with(&pat, value, s.decimal, s.group, s.minus);
+    let formatted = format_with(&pat, value, &r);
     // The pattern carries the ¤ placeholder; replace it with the symbol.
     formatted.replace('\u{a4}', symbol)
 }
 
-fn format_with(p: &Pattern, value: f64, decimal: &str, group: &str, minus: &str) -> String {
-    join_parts(&format_with_parts(p, value, decimal, group, minus))
+fn format_with(p: &Pattern, value: f64, r: &Resolved) -> String {
+    join_parts(&format_with_parts(p, value, r))
 }
 
 /// Behavior-preserving parts core of [`format_with`]: produces the same output
 /// as the historical string builder, but as tagged [`NumberPart`]s. Joining the
 /// values reproduces the legacy string exactly.
-fn format_with_parts(
-    p: &Pattern,
-    value: f64,
-    decimal: &str,
-    group: &str,
-    minus: &str,
-) -> Vec<NumberPart> {
+fn format_with_parts(p: &Pattern, value: f64, r: &Resolved) -> Vec<NumberPart> {
+    let s = &r.spec;
     let neg = value.is_sign_negative() && value != 0.0;
     let abs = if value < 0.0 { -value } else { value };
 
@@ -741,15 +898,15 @@ fn format_with_parts(
     if !value.is_finite() {
         let mut parts = Vec::new();
         if neg && !value.is_nan() {
-            parts.push(NumberPart::new(NumberPartType::MinusSign, minus));
+            parts.push(NumberPart::new(NumberPartType::MinusSign, s.minus));
         }
         if !p.prefix.is_empty() {
             parts.push(NumberPart::new(NumberPartType::Literal, p.prefix));
         }
         parts.push(if value.is_nan() {
-            NumberPart::new(NumberPartType::Nan, "NaN")
+            NumberPart::new(NumberPartType::Nan, s.nan)
         } else {
-            NumberPart::new(NumberPartType::Infinity, "∞")
+            NumberPart::new(NumberPartType::Infinity, s.infinity)
         });
         if !p.suffix.is_empty() {
             parts.push(NumberPart::new(NumberPartType::Literal, p.suffix));
@@ -787,20 +944,23 @@ fn format_with_parts(
 
     let mut parts = Vec::new();
     if neg {
-        parts.push(NumberPart::new(NumberPartType::MinusSign, minus));
+        parts.push(NumberPart::new(NumberPartType::MinusSign, s.minus));
     }
     if !p.prefix.is_empty() {
         parts.push(NumberPart::new(NumberPartType::Literal, p.prefix));
     }
-    parts.extend(group_parts(
-        int_str,
-        p.primary_group,
-        p.secondary_group,
-        group,
-    ));
+    for mut part in group_parts(int_str, p.primary_group, p.secondary_group, s.group) {
+        if part.kind == NumberPartType::Integer {
+            part.value = map_digits(&part.value, r.digits);
+        }
+        parts.push(part);
+    }
     if !frac.is_empty() {
-        parts.push(NumberPart::new(NumberPartType::Decimal, decimal));
-        parts.push(NumberPart::new(NumberPartType::Fraction, frac));
+        parts.push(NumberPart::new(NumberPartType::Decimal, s.decimal));
+        parts.push(NumberPart::new(
+            NumberPartType::Fraction,
+            map_digits(frac, r.digits),
+        ));
     }
     if !p.suffix.is_empty() {
         parts.push(NumberPart::new(NumberPartType::Literal, p.suffix));
@@ -1025,17 +1185,9 @@ fn effective_grouping(opts: &NumberFormatOptions, pattern: &Pattern, int_len: us
     }
 }
 
-/// Apply a numbering-system transliteration to a digit run's value, if requested.
-fn map_digits(value: &str, opts: &NumberFormatOptions) -> String {
-    match opts.numbering_system {
-        Some(sys) if sys != "latn" => to_numbering_system(value, sys),
-        _ => String::from(value),
-    }
-}
-
 /// Build the numeric core (sign, grouped integer, decimal + fraction) common to
-/// all standard-notation styles. The numbering system is applied to the digit
-/// runs only (separators keep the locale symbols).
+/// all standard-notation styles. The numbering system supplies both the digits
+/// and — through [`resolve`] — the separators, as ICU's `NumberElements` does.
 #[allow(clippy::too_many_arguments)]
 fn core_parts(
     int_digits: &str,
@@ -1045,15 +1197,16 @@ fn core_parts(
     primary: u8,
     secondary: u8,
     opts: &NumberFormatOptions,
-    s: &NumberSpec,
+    r: &Resolved,
 ) -> Vec<NumberPart> {
+    let s = &r.spec;
     let mut parts = Vec::new();
     if let Some(sign) = sign_part(negative, is_zero, opts, s) {
         parts.push(sign);
     }
     for mut p in group_parts(int_digits, primary, secondary, s.group) {
         if p.kind == NumberPartType::Integer {
-            p.value = map_digits(&p.value, opts);
+            p.value = map_digits(&p.value, r.digits);
         }
         parts.push(p);
     }
@@ -1061,7 +1214,7 @@ fn core_parts(
         parts.push(NumberPart::new(NumberPartType::Decimal, s.decimal));
         parts.push(NumberPart::new(
             NumberPartType::Fraction,
-            map_digits(frac_digits, opts),
+            map_digits(frac_digits, r.digits),
         ));
     }
     parts
@@ -1171,19 +1324,11 @@ fn currency_unit_wrap(
     lang: &str,
     value: f64,
     opts: &NumberFormatOptions,
-    s: &NumberSpec,
+    r: &Resolved,
 ) -> Vec<NumberPart> {
     let code = opts.currency.unwrap_or("XXX");
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
+    let norm = normalize(lang);
+    let norm = String::from(split_nu(&norm).0);
     let mut forms: Option<(&str, &str, &str)> = None;
     let mut unit = "{0} {1}";
     let mut end = norm.len();
@@ -1233,8 +1378,8 @@ fn currency_unit_wrap(
         neg,
     );
     let is_zero = int_d.bytes().all(|b| b == b'0') && frac_d.bytes().all(|b| b == b'0');
-    let (pri, sec) = effective_grouping(opts, &s.dec, int_d.len());
-    let core = core_parts(&int_d, &frac_d, neg, is_zero, pri, sec, opts, s);
+    let (pri, sec) = effective_grouping(opts, &r.spec.dec, int_d.len());
+    let core = core_parts(&int_d, &frac_d, neg, is_zero, pri, sec, opts, r);
 
     // Splice into the two-placeholder unit pattern ({0} number, {1} currency).
     let mut parts = Vec::new();
@@ -1278,16 +1423,8 @@ fn resolve_style(
         #[cfg(feature = "currency")]
         NumberStyle::Currency => {
             let code = opts.currency.unwrap_or("XXX");
-            let norm: String = lang
-                .chars()
-                .map(|c| {
-                    if c == '_' {
-                        '-'
-                    } else {
-                        c.to_ascii_lowercase()
-                    }
-                })
-                .collect();
+            let norm = normalize(lang);
+            let norm = String::from(split_nu(&norm).0);
             let mut pat = crate::cldr::currency_pattern("en").expect("root currency pattern");
             // (symbol, narrow symbol, display name) for the requested currency.
             let mut forms: Option<(&str, &str, &str)> = None;
@@ -1331,9 +1468,10 @@ fn resolve_style(
 fn standard_parts(
     lang: &str,
     value: f64,
-    s: &NumberSpec,
+    r: &Resolved,
     opts: &NumberFormatOptions,
 ) -> Vec<NumberPart> {
+    let s = &r.spec;
     // Currency code/name use the unit pattern ("{0} {1}"), not the ¤ pattern.
     #[cfg(feature = "currency")]
     if opts.style == NumberStyle::Currency
@@ -1342,7 +1480,7 @@ fn standard_parts(
             CurrencyDisplay::Code | CurrencyDisplay::Name
         )
     {
-        return currency_unit_wrap(lang, value, opts, s);
+        return currency_unit_wrap(lang, value, opts, r);
     }
     let (pattern, scaled, currency) = resolve_style(lang, value, s, opts);
     let min_frac = opts
@@ -1372,7 +1510,7 @@ fn standard_parts(
     let (pri, sec) = effective_grouping(opts, &pattern, int_d.len());
 
     let mut parts = Vec::new();
-    let core = core_parts(&int_d, &frac_d, negative, is_zero, pri, sec, opts, s);
+    let core = core_parts(&int_d, &frac_d, negative, is_zero, pri, sec, opts, r);
     // Unit style wraps the numeric core in the locale's unit pattern.
     #[cfg(feature = "units")]
     if opts.style == NumberStyle::Unit {
@@ -1397,10 +1535,11 @@ fn standard_parts(
 /// Scientific (`base = 1`) or engineering (`base = 3`) notation.
 fn exponent_parts(
     value: f64,
-    s: &NumberSpec,
+    r: &Resolved,
     opts: &NumberFormatOptions,
     base: i32,
 ) -> Vec<NumberPart> {
+    let s = &r.spec;
     let negative = value.is_sign_negative() && value != 0.0;
     let abs = if value < 0.0 { -value } else { value };
     let mut exp = 0i32;
@@ -1459,13 +1598,13 @@ fn exponent_parts(
     }
     parts.push(NumberPart::new(
         NumberPartType::Integer,
-        map_digits(&int_d, opts),
+        map_digits(&int_d, r.digits),
     ));
     if !frac_d.is_empty() {
         parts.push(NumberPart::new(NumberPartType::Decimal, s.decimal));
         parts.push(NumberPart::new(
             NumberPartType::Fraction,
-            map_digits(&frac_d, opts),
+            map_digits(&frac_d, r.digits),
         ));
     }
     parts.push(NumberPart::new(NumberPartType::ExponentSeparator, "E"));
@@ -1474,7 +1613,7 @@ fn exponent_parts(
     }
     parts.push(NumberPart::new(
         NumberPartType::ExponentInteger,
-        map_digits(&alloc::format!("{}", exp.unsigned_abs()), opts),
+        map_digits(&alloc::format!("{}", exp.unsigned_abs()), r.digits),
     ));
     parts
 }
@@ -1483,33 +1622,15 @@ fn exponent_parts(
 fn compact_parts(
     lang: &str,
     value: f64,
-    s: &NumberSpec,
+    r: &Resolved,
     opts: &NumberFormatOptions,
 ) -> Vec<NumberPart> {
+    let s = &r.spec;
     let abs = if value < 0.0 { -value } else { value };
     if !abs.is_finite() || abs < 1000.0 {
-        return standard_parts(lang, value, s, opts);
+        return standard_parts(lang, value, r, opts);
     }
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    let table = loop {
-        if let Some(t) = crate::cldr::compact_patterns(&norm[..end]) {
-            break t;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break crate::cldr::compact_patterns("en").expect("root compact present"),
-        }
-    };
+    let table = compact_table(lang);
     let mut exp = 0usize;
     let mut t = abs;
     while t >= 10.0 && exp < 14 {
@@ -1528,7 +1649,7 @@ fn compact_parts(
         .chars()
         .any(|c| c != '0' && c != '\'' && !c.is_whitespace());
     if zeros == 0 || !has_suffix {
-        return standard_parts(lang, value, s, opts);
+        return standard_parts(lang, value, r, opts);
     }
     let mut divisor = 1.0f64;
     for _ in 0..(exp + 1).saturating_sub(zeros) {
@@ -1581,13 +1702,13 @@ fn compact_parts(
                     flush_lit(&mut lit, &mut parts);
                     parts.push(NumberPart::new(
                         NumberPartType::Integer,
-                        map_digits(&int_d, opts),
+                        map_digits(&int_d, r.digits),
                     ));
                     if !frac_d.is_empty() {
                         parts.push(NumberPart::new(NumberPartType::Decimal, s.decimal));
                         parts.push(NumberPart::new(
                             NumberPartType::Fraction,
-                            map_digits(&frac_d, opts),
+                            map_digits(&frac_d, r.digits),
                         ));
                     }
                     wrote = true;
@@ -1621,23 +1742,23 @@ fn compact_parts(
 /// ```
 #[must_use]
 pub fn format_to_parts(lang: &str, value: f64, opts: &NumberFormatOptions) -> Vec<NumberPart> {
-    let s = spec(lang);
+    let r = resolve(lang, opts.numbering_system);
     if value.is_nan() {
-        return alloc::vec![NumberPart::new(NumberPartType::Nan, "NaN")];
+        return alloc::vec![NumberPart::new(NumberPartType::Nan, r.spec.nan)];
     }
     if value.is_infinite() {
         let mut parts = Vec::new();
-        if let Some(sign) = sign_part(value < 0.0, false, opts, &s) {
+        if let Some(sign) = sign_part(value < 0.0, false, opts, &r.spec) {
             parts.push(sign);
         }
-        parts.push(NumberPart::new(NumberPartType::Infinity, "∞"));
+        parts.push(NumberPart::new(NumberPartType::Infinity, r.spec.infinity));
         return parts;
     }
     match opts.notation {
-        Notation::Standard => standard_parts(lang, value, &s, opts),
-        Notation::Scientific => exponent_parts(value, &s, opts, 1),
-        Notation::Engineering => exponent_parts(value, &s, opts, 3),
-        Notation::Compact => compact_parts(lang, value, &s, opts),
+        Notation::Standard => standard_parts(lang, value, &r, opts),
+        Notation::Scientific => exponent_parts(value, &r, opts, 1),
+        Notation::Engineering => exponent_parts(value, &r, opts, 3),
+        Notation::Compact => compact_parts(lang, value, &r, opts),
     }
 }
 
@@ -1653,6 +1774,203 @@ pub fn format_to_parts(lang: &str, value: f64, opts: &NumberFormatOptions) -> Ve
 #[must_use]
 pub fn format(lang: &str, value: f64, opts: &NumberFormatOptions) -> String {
     join_parts(&format_to_parts(lang, value, opts))
+}
+
+/// Which end of a range a [`NumberRangePart`] came from (the ECMA-402
+/// `formatRangeToParts` `source` field).
+#[cfg(feature = "number-range")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NumberRangeSource {
+    /// From the formatted start value.
+    StartRange,
+    /// From the formatted end value.
+    EndRange,
+    /// Glue that belongs to neither end (the separator, or everything in a
+    /// collapsed range).
+    Shared,
+}
+
+#[cfg(feature = "number-range")]
+impl NumberRangeSource {
+    /// The ECMA-402 `source` string for this origin.
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            NumberRangeSource::StartRange => "startRange",
+            NumberRangeSource::EndRange => "endRange",
+            NumberRangeSource::Shared => "shared",
+        }
+    }
+}
+
+/// One tagged segment of a formatted range (see [`format_range_to_parts`]).
+#[cfg(feature = "number-range")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NumberRangePart {
+    /// What this segment represents.
+    pub kind: NumberPartType,
+    /// Which end it came from.
+    pub source: NumberRangeSource,
+    /// The literal text of this segment.
+    pub value: String,
+}
+
+/// The locale's CLDR `miscPatterns` `(approximately, range)`, through the
+/// fallback chain (`en` last).
+#[cfg(feature = "number-range")]
+fn misc_patterns(lang: &str) -> (&'static str, &'static str) {
+    let norm = normalize(lang);
+    let (base, _) = split_nu(&norm);
+    let mut end = base.len();
+    loop {
+        if let Some(p) = crate::cldr::misc_patterns(&base[..end]) {
+            return p;
+        }
+        match base[..end].rfind('-') {
+            Some(i) => end = i,
+            None => return crate::cldr::misc_patterns("en").expect("root misc patterns"),
+        }
+    }
+}
+
+/// Split the literal text around a `miscPatterns` placeholder into an
+/// `ApproximatelySign` part and the whitespace that separates it from the
+/// number. ICU tags only the sign itself, so `ja`'s `"約 {0}"` yields
+/// `approximatelySign("約") literal(" ")`.
+#[cfg(feature = "number-range")]
+fn approx_literal(text: &str, before: bool, out: &mut Vec<NumberRangePart>) {
+    let (sign, space) = if before {
+        let sign = text.trim_end_matches(char::is_whitespace);
+        (sign, &text[sign.len()..])
+    } else {
+        let sign = text.trim_start_matches(char::is_whitespace);
+        (sign, &text[..text.len() - sign.len()])
+    };
+    let mut push = |kind, s: &str| {
+        if !s.is_empty() {
+            out.push(NumberRangePart {
+                kind,
+                source: NumberRangeSource::Shared,
+                value: String::from(s),
+            });
+        }
+    };
+    if before {
+        push(NumberPartType::ApproximatelySign, sign);
+        push(NumberPartType::Literal, space);
+    } else {
+        push(NumberPartType::Literal, space);
+        push(NumberPartType::ApproximatelySign, sign);
+    }
+}
+
+/// Format the range `start`–`end` in `lang` per `opts`, returning the tagged
+/// parts (`Intl.NumberFormat.prototype.formatRangeToParts`).
+///
+/// Both ends are formatted with [`format_to_parts`] and spliced into the CLDR
+/// `miscPatterns` `range` form (`en` `"{0}–{1}"`, `zh` an ASCII hyphen). Per
+/// ECMA-402 `PartitionNumberRangePattern` step 5, when the two ends format
+/// *identically* the result is not a range but the `approximately` form
+/// (`en` `"~{0}"`, `de`/`fr` `"≈{0}"`), with every part marked `Shared`.
+///
+/// Unlike ECMA-402 this cannot throw on a NaN endpoint; a NaN simply formats as
+/// the locale's `nan` string and flows through the same rules.
+///
+/// ```
+/// use intl::number::{format_range_to_parts, NumberPartType, NumberRangeSource};
+/// let parts = format_range_to_parts("en", 3.0, 5.0, &Default::default());
+/// assert_eq!(parts[0].source, NumberRangeSource::StartRange);
+/// assert_eq!(parts[1].kind, NumberPartType::Literal); // the en dash
+/// assert_eq!(parts[2].source, NumberRangeSource::EndRange);
+/// ```
+#[cfg(feature = "number-range")]
+#[must_use]
+pub fn format_range_to_parts(
+    lang: &str,
+    start: f64,
+    end: f64,
+    opts: &NumberFormatOptions,
+) -> Vec<NumberRangePart> {
+    let sp = format_to_parts(lang, start, opts);
+    let ep = format_to_parts(lang, end, opts);
+    let (approx, range) = misc_patterns(lang);
+    let tag = |parts: &[NumberPart], source| -> Vec<NumberRangePart> {
+        parts
+            .iter()
+            .map(|p| NumberRangePart {
+                kind: p.kind,
+                source,
+                value: p.value.clone(),
+            })
+            .collect()
+    };
+
+    if join_parts(&sp) == join_parts(&ep) {
+        let mut out = Vec::new();
+        let (pre, post) = approx.split_once("{0}").unwrap_or(("", approx));
+        approx_literal(pre, true, &mut out);
+        out.extend(tag(&sp, NumberRangeSource::Shared));
+        approx_literal(post, false, &mut out);
+        return out;
+    }
+
+    // Walk the `range` pattern, substituting each end at its placeholder. Text
+    // between/around them (the separator) is shared literal glue.
+    let mut out = Vec::new();
+    let mut rest = range;
+    while !rest.is_empty() {
+        let Some(i) = rest.find('{') else {
+            out.push(NumberRangePart {
+                kind: NumberPartType::Literal,
+                source: NumberRangeSource::Shared,
+                value: String::from(rest),
+            });
+            break;
+        };
+        if i > 0 {
+            out.push(NumberRangePart {
+                kind: NumberPartType::Literal,
+                source: NumberRangeSource::Shared,
+                value: String::from(&rest[..i]),
+            });
+        }
+        if let Some(r) = rest[i..].strip_prefix("{0}") {
+            out.extend(tag(&sp, NumberRangeSource::StartRange));
+            rest = r;
+        } else if let Some(r) = rest[i..].strip_prefix("{1}") {
+            out.extend(tag(&ep, NumberRangeSource::EndRange));
+            rest = r;
+        } else {
+            out.push(NumberRangePart {
+                kind: NumberPartType::Literal,
+                source: NumberRangeSource::Shared,
+                value: String::from("{"),
+            });
+            rest = &rest[i + 1..];
+        }
+    }
+    out
+}
+
+/// Format the range `start`–`end` in `lang` per `opts`
+/// (`Intl.NumberFormat.prototype.formatRange`).
+///
+/// ```
+/// use intl::number::{format_range, NumberFormatOptions, NumberStyle};
+/// assert_eq!(format_range("en", 3.0, 5.0, &Default::default()), "3\u{2013}5");
+/// assert_eq!(format_range("zh", 3.0, 5.0, &Default::default()), "3-5"); // zh uses a hyphen
+/// // Equal-formatting ends collapse to the `approximately` form.
+/// assert_eq!(format_range("en", 3.0, 3.0, &Default::default()), "~3");
+/// assert_eq!(format_range("de", 3.0, 3.0, &Default::default()), "\u{2248}3");
+/// ```
+#[cfg(feature = "number-range")]
+#[must_use]
+pub fn format_range(lang: &str, start: f64, end: f64, opts: &NumberFormatOptions) -> String {
+    let mut out = String::new();
+    for p in format_range_to_parts(lang, start, end, opts) {
+        out.push_str(&p.value);
+    }
+    out
 }
 
 #[cfg(test)]
@@ -1678,6 +1996,8 @@ mod tests {
             minus: "-",
             plus: "+",
             percent: "%",
+            nan: "NaN",
+            infinity: "∞",
             dec: pat,
             pct: pat,
         }
@@ -1694,6 +2014,32 @@ mod tests {
         // A separator/non-digit it can't normalize: still terminates, returns None.
         assert_eq!(parse_decimal_with(&s, "1.5"), None);
         assert_eq!(parse_decimal_with(&s, "abc"), None);
+    }
+
+    #[test]
+    fn split_nu_finds_the_keyword() {
+        // The language part ends at the first singleton; inside `u`, two-letter
+        // subtags are keys and the one after `nu` is its value (BCP-47 §2.2.6).
+        assert_eq!(split_nu("ar"), ("ar", None));
+        assert_eq!(split_nu("ar-eg"), ("ar-eg", None));
+        assert_eq!(split_nu("ar-u-nu-arab"), ("ar", Some("arab")));
+        assert_eq!(
+            split_nu("zh-hant-hk-u-nu-hanidec"),
+            ("zh-hant-hk", Some("hanidec"))
+        );
+        assert_eq!(split_nu("en-u-ca-islamic-nu-arab"), ("en", Some("arab")));
+        assert_eq!(split_nu("en-u-nu-arab-ca-islamic"), ("en", Some("arab")));
+        // Attributes (3-8 chars) before the first key are not keys.
+        assert_eq!(split_nu("en-u-attr-nu-thai"), ("en", Some("thai")));
+        // `nu` outside the `u` extension, and other singletons, are ignored.
+        assert_eq!(split_nu("en-t-nu-arab"), ("en", None));
+        assert_eq!(split_nu("en-x-nu"), ("en", None));
+        assert_eq!(split_nu("en-u-ca-islamic"), ("en", None));
+        // A dangling key has no value.
+        assert_eq!(split_nu("en-u-nu"), ("en", None));
+        // Degenerate input must not panic or slice mid-boundary.
+        assert_eq!(split_nu(""), ("", None));
+        assert_eq!(split_nu("u-nu-arab"), ("", Some("arab")));
     }
 
     #[test]

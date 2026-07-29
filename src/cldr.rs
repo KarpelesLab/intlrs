@@ -21,8 +21,9 @@
 
 /// Codegen output that is Rust rather than a blob: `const fn` + `match` lookups,
 /// like `crate::unicode::generated`. A blob is all-or-nothing, so data that only
-/// some builds want (the narrow unit width) lives here, where `#[cfg]` can drop
-/// individual match arms.
+/// some builds want (the narrow unit width, the non-`latn` numbering-system
+/// symbols, the range patterns) lives here, where `#[cfg]` can drop individual
+/// match arms.
 pub(crate) mod generated;
 
 // ---- Shared formatter record types (plain data, borrowing from the blobs). ----
@@ -46,7 +47,12 @@ pub struct Pattern {
     pub secondary_group: u8,
 }
 
-/// The number symbols and patterns for one locale.
+/// The number symbols and patterns for one locale in one numbering system.
+///
+/// CLDR keys these under `symbols-numberSystem-<ns>` / `decimalFormats-…`, and
+/// the blocks genuinely differ per system: `ar`'s `arab` decimal separator is
+/// U+066B while its `latn` one is `.`, and `te` groups Indian-style in `latn`
+/// but not in `telu`.
 #[derive(Debug, Clone, Copy)]
 pub struct NumberSpec {
     /// Decimal separator.
@@ -59,6 +65,10 @@ pub struct NumberSpec {
     pub plus: &'static str,
     /// Percent sign.
     pub percent: &'static str,
+    /// The "not a number" placeholder (`en` `"NaN"`, `ar` `"ليس رقمًا"`).
+    pub nan: &'static str,
+    /// The infinity placeholder (`"∞"` in every vendored locale).
+    pub infinity: &'static str,
     /// The standard decimal pattern.
     pub dec: Pattern,
     /// The standard percent pattern.
@@ -181,8 +191,6 @@ pub struct RelativeSpec {
 
 // ---- Embedded blobs. ----
 
-#[cfg(feature = "number")]
-const NUMBERS: &[u8] = include_bytes!("cldr/numbers.bin");
 #[cfg(feature = "list")]
 const LISTS: &[u8] = include_bytes!("cldr/lists.bin");
 #[cfg(feature = "relative")]
@@ -213,8 +221,6 @@ const RBNF: &[u8] = include_bytes!("cldr/rbnf.bin");
 const COMPACT: &[u8] = include_bytes!("cldr/compact.bin");
 #[cfg(feature = "number")]
 const NUMSYS_DIGITS: &[u8] = include_bytes!("cldr/numsys_digits.bin");
-#[cfg(feature = "number")]
-const NUMSYS_DEFAULT: &[u8] = include_bytes!("cldr/numsys_default.bin");
 #[cfg(feature = "number")]
 const ORDSUFFIX: &[u8] = include_bytes!("cldr/ordsuffix.bin");
 #[cfg(feature = "collation")]
@@ -276,12 +282,6 @@ pub(crate) fn ordinal_suffix(lang: &str, category: usize) -> Option<&'static str
 #[cfg(feature = "number")]
 pub(crate) fn numbering_digits(system: &str) -> Option<&'static str> {
     find(NUMSYS_DIGITS, system).map(|mut c| c.str())
-}
-
-/// The default numbering system for an exact (lowercased) locale key.
-#[cfg(feature = "number")]
-pub(crate) fn default_numbering(lang: &str) -> Option<&'static str> {
-    find(NUMSYS_DEFAULT, lang).map(|mut c| c.str())
 }
 
 /// Compact (short) decimal patterns for magnitudes 10³…10¹⁴ in an exact
@@ -593,19 +593,26 @@ fn find(blob: &'static [u8], key: &str) -> Option<Cursor> {
     None
 }
 
-/// Number symbols + patterns for an exact (lowercased) locale key.
+/// Number symbols + patterns for an exact (lowercased) locale key in numbering
+/// system `system`. A locale that ships no `symbols-numberSystem-<system>` block
+/// resolves to its `latn` one, which is ICU's `NumberElements` fallback.
 #[cfg(feature = "number")]
-pub(crate) fn number_spec(lang: &str) -> Option<NumberSpec> {
-    let mut c = find(NUMBERS, lang)?;
-    Some(NumberSpec {
-        decimal: c.str(),
-        group: c.str(),
-        minus: c.str(),
-        plus: c.str(),
-        percent: c.str(),
-        dec: c.pattern(),
-        pct: c.pattern(),
-    })
+pub(crate) fn number_spec(lang: &str, system: &str) -> Option<NumberSpec> {
+    generated::numbers::spec(lang, system)
+}
+
+/// `(defaultNumberingSystem, otherNumberingSystems.native)` for an exact
+/// (lowercased) locale key.
+#[cfg(feature = "number")]
+pub(crate) fn numbering_systems(lang: &str) -> Option<(&'static str, &'static str)> {
+    generated::numbers::numbering_systems(lang)
+}
+
+/// The CLDR `miscPatterns` `(approximately, range)` forms for an exact
+/// (lowercased) locale key.
+#[cfg(feature = "number-range")]
+pub(crate) fn misc_patterns(lang: &str) -> Option<(&'static str, &'static str)> {
+    generated::numbers::misc_patterns(lang)
 }
 
 fn list_patterns(c: &mut Cursor) -> ListPatterns {

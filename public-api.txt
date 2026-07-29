@@ -1028,6 +1028,7 @@ pub unsafe fn intl::number::Notation::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::Notation
 pub fn intl::number::Notation::from(T) -> T
 pub enum intl::number::NumberPartType
+pub intl::number::NumberPartType::ApproximatelySign
 pub intl::number::NumberPartType::Compact
 pub intl::number::NumberPartType::Currency
 pub intl::number::NumberPartType::Decimal
@@ -1084,6 +1085,50 @@ impl<T> core::clone::CloneToUninit for intl::number::NumberPartType where T: cor
 pub unsafe fn intl::number::NumberPartType::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::NumberPartType
 pub fn intl::number::NumberPartType::from(T) -> T
+pub enum intl::number::NumberRangeSource
+pub intl::number::NumberRangeSource::EndRange
+pub intl::number::NumberRangeSource::Shared
+pub intl::number::NumberRangeSource::StartRange
+impl intl::number::NumberRangeSource
+pub fn intl::number::NumberRangeSource::as_str(&self) -> &'static str
+impl core::clone::Clone for intl::number::NumberRangeSource
+pub fn intl::number::NumberRangeSource::clone(&self) -> intl::number::NumberRangeSource
+impl core::cmp::Eq for intl::number::NumberRangeSource
+impl core::cmp::PartialEq for intl::number::NumberRangeSource
+pub fn intl::number::NumberRangeSource::eq(&self, &intl::number::NumberRangeSource) -> bool
+impl core::fmt::Debug for intl::number::NumberRangeSource
+pub fn intl::number::NumberRangeSource::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::NumberRangeSource
+impl core::marker::StructuralPartialEq for intl::number::NumberRangeSource
+impl core::marker::Freeze for intl::number::NumberRangeSource
+impl core::marker::Send for intl::number::NumberRangeSource
+impl core::marker::Sync for intl::number::NumberRangeSource
+impl core::marker::Unpin for intl::number::NumberRangeSource
+impl core::marker::UnsafeUnpin for intl::number::NumberRangeSource
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::NumberRangeSource
+impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberRangeSource
+impl<T, U> core::convert::Into<U> for intl::number::NumberRangeSource where U: core::convert::From<T>
+pub fn intl::number::NumberRangeSource::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::NumberRangeSource where U: core::convert::Into<T>
+pub type intl::number::NumberRangeSource::Error = core::convert::Infallible
+pub fn intl::number::NumberRangeSource::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::NumberRangeSource where U: core::convert::TryFrom<T>
+pub type intl::number::NumberRangeSource::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::NumberRangeSource::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::NumberRangeSource where T: core::clone::Clone
+pub type intl::number::NumberRangeSource::Owned = T
+pub fn intl::number::NumberRangeSource::clone_into(&self, &mut T)
+pub fn intl::number::NumberRangeSource::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::NumberRangeSource where T: 'static + ?core::marker::Sized
+pub fn intl::number::NumberRangeSource::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::NumberRangeSource where T: ?core::marker::Sized
+pub fn intl::number::NumberRangeSource::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::NumberRangeSource where T: ?core::marker::Sized
+pub fn intl::number::NumberRangeSource::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::NumberRangeSource where T: core::clone::Clone
+pub unsafe fn intl::number::NumberRangeSource::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::NumberRangeSource
+pub fn intl::number::NumberRangeSource::from(T) -> T
 pub enum intl::number::NumberStyle
 pub intl::number::NumberStyle::Currency
 pub intl::number::NumberStyle::Decimal
@@ -1411,11 +1456,54 @@ impl<T> core::clone::CloneToUninit for intl::number::NumberPart where T: core::c
 pub unsafe fn intl::number::NumberPart::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::NumberPart
 pub fn intl::number::NumberPart::from(T) -> T
+pub struct intl::number::NumberRangePart
+pub intl::number::NumberRangePart::kind: intl::number::NumberPartType
+pub intl::number::NumberRangePart::source: intl::number::NumberRangeSource
+pub intl::number::NumberRangePart::value: alloc::string::String
+impl core::clone::Clone for intl::number::NumberRangePart
+pub fn intl::number::NumberRangePart::clone(&self) -> intl::number::NumberRangePart
+impl core::cmp::Eq for intl::number::NumberRangePart
+impl core::cmp::PartialEq for intl::number::NumberRangePart
+pub fn intl::number::NumberRangePart::eq(&self, &intl::number::NumberRangePart) -> bool
+impl core::fmt::Debug for intl::number::NumberRangePart
+pub fn intl::number::NumberRangePart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for intl::number::NumberRangePart
+impl core::marker::Freeze for intl::number::NumberRangePart
+impl core::marker::Send for intl::number::NumberRangePart
+impl core::marker::Sync for intl::number::NumberRangePart
+impl core::marker::Unpin for intl::number::NumberRangePart
+impl core::marker::UnsafeUnpin for intl::number::NumberRangePart
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::NumberRangePart
+impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberRangePart
+impl<T, U> core::convert::Into<U> for intl::number::NumberRangePart where U: core::convert::From<T>
+pub fn intl::number::NumberRangePart::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::NumberRangePart where U: core::convert::Into<T>
+pub type intl::number::NumberRangePart::Error = core::convert::Infallible
+pub fn intl::number::NumberRangePart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::number::NumberRangePart where U: core::convert::TryFrom<T>
+pub type intl::number::NumberRangePart::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::NumberRangePart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::NumberRangePart where T: core::clone::Clone
+pub type intl::number::NumberRangePart::Owned = T
+pub fn intl::number::NumberRangePart::clone_into(&self, &mut T)
+pub fn intl::number::NumberRangePart::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::NumberRangePart where T: 'static + ?core::marker::Sized
+pub fn intl::number::NumberRangePart::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::NumberRangePart where T: ?core::marker::Sized
+pub fn intl::number::NumberRangePart::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::NumberRangePart where T: ?core::marker::Sized
+pub fn intl::number::NumberRangePart::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::NumberRangePart where T: core::clone::Clone
+pub unsafe fn intl::number::NumberRangePart::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::NumberRangePart
+pub fn intl::number::NumberRangePart::from(T) -> T
 pub struct intl::number::NumberSpec
 pub intl::number::NumberSpec::dec: intl::number::Pattern
 pub intl::number::NumberSpec::decimal: &'static str
 pub intl::number::NumberSpec::group: &'static str
+pub intl::number::NumberSpec::infinity: &'static str
 pub intl::number::NumberSpec::minus: &'static str
+pub intl::number::NumberSpec::nan: &'static str
 pub intl::number::NumberSpec::pct: intl::number::Pattern
 pub intl::number::NumberSpec::percent: &'static str
 pub intl::number::NumberSpec::plus: &'static str
@@ -1495,15 +1583,20 @@ impl<T> core::clone::CloneToUninit for intl::number::Pattern where T: core::clon
 pub unsafe fn intl::number::Pattern::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::Pattern
 pub fn intl::number::Pattern::from(T) -> T
+pub fn intl::number::default_numbering_system(&str) -> &'static str
 pub fn intl::number::format(&str, f64, &intl::number::NumberFormatOptions) -> alloc::string::String
 pub fn intl::number::format_compact(&str, f64) -> alloc::string::String
 pub fn intl::number::format_currency(&str, f64, &str) -> alloc::string::String
 pub fn intl::number::format_decimal(&str, f64) -> alloc::string::String
+pub fn intl::number::format_decimal_default_numbering(&str, f64) -> alloc::string::String
 pub fn intl::number::format_decimal_native(&str, f64) -> alloc::string::String
 pub fn intl::number::format_ordinal(&str, i64) -> alloc::string::String
 pub fn intl::number::format_percent(&str, f64) -> alloc::string::String
+pub fn intl::number::format_range(&str, f64, f64, &intl::number::NumberFormatOptions) -> alloc::string::String
+pub fn intl::number::format_range_to_parts(&str, f64, f64, &intl::number::NumberFormatOptions) -> alloc::vec::Vec<intl::number::NumberRangePart>
 pub fn intl::number::format_scientific(&str, f64, usize) -> alloc::string::String
 pub fn intl::number::format_to_parts(&str, f64, &intl::number::NumberFormatOptions) -> alloc::vec::Vec<intl::number::NumberPart>
+pub fn intl::number::native_numbering_system(&str) -> &'static str
 pub fn intl::number::parse_decimal(&str, &str) -> core::option::Option<f64>
 pub fn intl::number::to_numbering_system(&str, &str) -> alloc::string::String
 pub mod intl::plural

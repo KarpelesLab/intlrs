@@ -1839,7 +1839,7 @@ fn patch_widths(pattern: &str, o: &DateTimeFormatOptions, loc: char) -> String {
 /// Inject a locale decimal separator + `n` `S` digits right after the seconds
 /// run (skeletons carry no `S`), for `fractionalSecondDigits`.
 fn inject_fractional(pattern: &str, lang: &str, n: u8) -> String {
-    let dec = crate::cldr::number_spec(lang).map_or(".", |s| s.decimal);
+    let dec = crate::cldr::number_spec(lang, "latn").map_or(".", |s| s.decimal);
     let chars: Vec<char> = pattern.chars().collect();
     let mut out = String::new();
     let mut i = 0;

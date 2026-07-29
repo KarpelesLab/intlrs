@@ -238,9 +238,9 @@ jobs:
       # pulling in only its own data.
       - name: Build each formatter alone
         run: |
-          for feat in number currency units datetime calendars-extra displaynames \
-                      list relative message spellout transliterate locale iana-tz \
-                      tz-names; do
+          for feat in number number-numsys number-range currency units units-narrow \
+                      datetime calendars-extra displaynames list relative message \
+                      spellout transliterate locale iana-tz tz-names; do
             echo "::group::features=$feat"
             cargo build --no-default-features --features "$feat"
             cargo test --no-default-features --features "$feat" --tests --no-run

@@ -81,8 +81,10 @@ Beyond the `unicode` module:
   → `"12,34,567"` (Indian grouping), `format_percent("en", 0.5)` → `"50%"`,
   `format_currency("en", 1234.5, "USD")` → `"$1,234.50"`, `format_scientific`
   (`"1.2345E4"`), `format_compact` (`"1.5K"`, `"2.3M"`), and `parse_decimal`
-  back to an `f64` (`parse_decimal("de", "1.234,5")` → `1234.5`), plus native
-  digit systems (`to_numbering_system("2024", "arab")` → `"٢٠٢٤"`) and ordinals
+  back to an `f64` (`parse_decimal("de", "1.234,5")` → `1234.5`), plus ranges
+  (`format_range("en", 2.9, 3.1, …)` → `"2.9–3.1"`), numbering systems
+  (`format_decimal("ar-u-nu-native", 1.5)` → `"١٫٥"`,
+  `to_numbering_system("2024", "arab")` → `"٢٠٢٤"`) and ordinals
   (`format_ordinal("en", 21)` → `"21st"`).
 
 - `intl::list` (alloc) joins items with locale connectors —
@@ -198,13 +200,15 @@ the CLDR table(s) it embeds, so a disabled formatter adds no code or data. All
 imply `alloc` (except `displaynames`, which is borrow-only). The always-on
 `plural` (rules) and `calendar` (arithmetic) modules need no feature and no data.
 
-Most tables are `.bin` blobs; `units` and `tz-names` are generated Rust
-(`const fn` + `match`), so their figures below are *compiled* footprint
-(`.text` + `.rodata` + `.data.rel.ro`) rather than blob bytes.
+Most tables are `.bin` blobs; `number`, `units` and `tz-names` are generated
+Rust (`const fn` + `match` lookups), so their figures below are *compiled*
+footprint (`.text` + `.rodata` + `.data.rel.ro`) rather than blob bytes.
 
 | feature           | what it provides                                  | gated data |
 |-------------------|---------------------------------------------------|------------|
-| `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~35 KB |
+| `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~50 KB |
+| `number-numsys`   | + non-`latn` numbering-system symbols (→ number)  | ~4 KB |
+| `number-range`    | + `formatRange`/`formatRangeToParts` (→ number)   | ~16 KB |
 | `currency`        | currency formatting (→ number)                    | **~0.9 MB** |
 | `units`           | measurement units, long + short (→ number)        | ~905 KB |
 | `units-narrow`    | + the narrow unit width (→ units)                 | ~315 KB |

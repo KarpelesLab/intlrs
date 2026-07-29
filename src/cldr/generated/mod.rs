@@ -5,6 +5,8 @@
 #![allow(unused_parens)]
 #![allow(dead_code)]
 
+#[cfg(feature = "number")]
+pub(crate) mod numbers;
 #[cfg(feature = "datetime")]
 pub(crate) mod tz_names;
 #[cfg(feature = "units")]
