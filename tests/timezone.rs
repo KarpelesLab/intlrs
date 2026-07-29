@@ -275,3 +275,81 @@ fn primary_zone_names_its_country() {
     #[cfg(feature = "tz-names-asia")]
     assert_eq!(name("en", "Asia/Urumqi", LongGeneric, 1), "Ürümqi Time");
 }
+
+/// A style pattern carries its own zone field (`timeStyle: 'full'` resolves to
+/// `h:mm:ss a zzzz`), and the name belongs where the pattern puts it. It used to
+/// render as nothing and be appended at the end instead, which left a trailing
+/// space when no `timeZoneName` was asked for and a doubled one when it was.
+/// Values match V8/ICU.
+#[cfg(all(feature = "iana-tz", feature = "tz-names-america"))]
+#[test]
+fn zone_name_renders_in_pattern_position() {
+    use intl::datetime::{DateStyle, format_options};
+
+    let when = DateTime {
+        year: 2026,
+        month: 7,
+        day: 15,
+        hour: 12,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+    };
+    let styled = |style, name| {
+        let mut o = DateTimeFormatOptions::default();
+        o.time_style = Some(style);
+        o.time_zone = Some("America/Los_Angeles");
+        o.time_zone_name = name;
+        format_options("en", &when, &o).unwrap()
+    };
+
+    // The style's own field decides the presentation: `full` is `zzzz` (long
+    // specific), `long` is `z` (short specific), `medium` has no zone field.
+    assert_eq!(
+        styled(DateStyle::Full, None),
+        "12:00:00\u{202f}PM Pacific Daylight Time"
+    );
+    assert_eq!(styled(DateStyle::Long, None), "12:00:00\u{202f}PM PDT");
+    assert_eq!(styled(DateStyle::Medium, None), "12:00:00\u{202f}PM");
+
+    // An explicit `time_zone_name` overrides the presentation the pattern asked
+    // for, and still fills the pattern's slot rather than appending.
+    assert_eq!(
+        styled(DateStyle::Long, Some(TimeZoneNameStyle::Long)),
+        "12:00:00\u{202f}PM Pacific Daylight Time"
+    );
+    // With no zone field to fill, the name is appended, as before.
+    assert_eq!(
+        styled(DateStyle::Medium, Some(TimeZoneNameStyle::Long)),
+        "12:00:00\u{202f}PM Pacific Daylight Time"
+    );
+}
+
+/// `format_time`/`format_datetime` take no zone, so the full/long patterns' zone
+/// field can never be filled. It is stripped rather than left to render as a
+/// dangling separator — but only the separator goes: a literal belonging to the
+/// preceding field (Japanese `秒` after `ss`) has to survive.
+#[test]
+fn plain_time_apis_drop_the_unfillable_zone_field() {
+    use intl::datetime::{DateStyle, format_datetime, format_time};
+
+    let when = DateTime {
+        year: 2026,
+        month: 7,
+        day: 15,
+        hour: 12,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+    };
+    assert_eq!(
+        format_time("en", &when, DateStyle::Full),
+        "12:00:00\u{202f}PM"
+    );
+    assert_eq!(format_time("de", &when, DateStyle::Full), "12:00:00");
+    assert_eq!(format_time("ja", &when, DateStyle::Full), "12時00分00秒");
+    assert_eq!(
+        format_datetime("en", &when, DateStyle::Full, DateStyle::Full),
+        "Wednesday, July 15, 2026, 12:00:00\u{202f}PM"
+    );
+}

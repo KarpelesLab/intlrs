@@ -325,7 +325,13 @@ const fn era_year(year: i64) -> i64 {
 }
 
 /// Render one date-field run (`field` repeated `n` times) of a CLDR pattern.
-fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec) -> String {
+fn field(field: char, n: usize, dt: &DateTime, s: &CalendarSpec, zone: Option<&str>) -> String {
+    // A resolved zone name, when the caller has one, renders in the position the
+    // pattern puts it (`timeStyle: 'full'` is `h:mm:ss a zzzz`). Callers with no
+    // zone context pass `None` and the field stays empty, as before.
+    if matches!(field, 'z' | 'Z' | 'O' | 'v' | 'V') {
+        return zone.unwrap_or("").into();
+    }
     let m = dt.month as usize;
     // Index for the 12-element month-name arrays, clamped so an out-of-range
     // (unvalidated) month never indexes out of bounds.
@@ -500,6 +506,17 @@ fn part_type(ch: char) -> DateTimePartType {
 /// (unsupported letters) are dropped, so joining the part values reproduces
 /// [`render`]'s string exactly.
 fn render_parts(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> Vec<DateTimePart> {
+    render_parts_zone(pattern, dt, s, None)
+}
+
+/// [`render_parts`] with a resolved time-zone name to place at the pattern's
+/// zone field, if it has one.
+fn render_parts_zone(
+    pattern: &str,
+    dt: &DateTime,
+    s: &CalendarSpec,
+    zone: Option<&str>,
+) -> Vec<DateTimePart> {
     fn push_lit(parts: &mut Vec<DateTimePart>, text: &str) {
         if text.is_empty() {
             return;
@@ -540,7 +557,7 @@ fn render_parts(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> Vec<DateTimeP
             while i < c.len() && c[i] == ch {
                 i += 1;
             }
-            let val = field(ch, i - start, dt, s);
+            let val = field(ch, i - start, dt, s, zone);
             if !val.is_empty() {
                 parts.push(DateTimePart {
                     kind: part_type(ch),
@@ -599,7 +616,10 @@ pub fn format_date(lang: &str, dt: &DateTime, style: DateStyle) -> String {
 #[must_use]
 pub fn format_time(lang: &str, dt: &DateTime, style: DateStyle) -> String {
     let s = spec(lang);
-    render(s.time[style.idx()], dt, &s)
+    // The full/long time patterns carry a zone field, and this API takes no zone
+    // to put there; strip it rather than leave its separator dangling. Use
+    // `format_options` with `time_zone` for a pattern that keeps the name.
+    render(&strip_zone_field(s.time[style.idx()]), dt, &s)
 }
 
 /// Format `dt` with a CLDR *skeleton* (e.g. `"yMMMd"`, `"Hm"`, `"MMMEd"`) — the
@@ -1305,7 +1325,8 @@ pub fn format_datetime(
 ) -> String {
     let s = spec(lang);
     let date = render(s.date[date_style.idx()], dt, &s);
-    let time = render(s.time[time_style.idx()], dt, &s);
+    // As in `format_time`: no zone is available, so the field is stripped.
+    let time = render(&strip_zone_field(s.time[time_style.idx()]), dt, &s);
     s.datetime[date_style.idx()]
         .replace("{1}", &date)
         .replace("{0}", &time)
@@ -2163,6 +2184,118 @@ fn zone_name(
     generic_location(lang, loc, area, idx, zone)
 }
 
+/// The zone field a pattern carries, as `(letter, run length)`. A CLDR pattern
+/// has at most one — `timeStyle: 'full'` resolves to `h:mm:ss a zzzz`. Quoted
+/// literals are skipped.
+fn pattern_zone_field(pattern: &str) -> Option<(char, usize)> {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            i += 1;
+            while i < chars.len() && chars[i] != '\'' {
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+            if matches!(ch, 'z' | 'Z' | 'O' | 'v' | 'V') {
+                return Some((ch, i - start));
+            }
+        } else {
+            i += 1;
+        }
+    }
+    None
+}
+
+/// The presentation a zone field letter asks for (UTS #35 §4.8): `z`/`zzzz` are
+/// the specific non-location forms, `v`/`vvvv` the generic ones, `O`/`OOOO` the
+/// localized GMT offset, and `VVVV` the generic location format — which is what
+/// [`TimeZoneNameStyle::LongGeneric`] already falls back to.
+const fn zone_field_style(letter: char, n: usize) -> TimeZoneNameStyle {
+    match letter {
+        'v' => {
+            if n >= 4 {
+                TimeZoneNameStyle::LongGeneric
+            } else {
+                TimeZoneNameStyle::ShortGeneric
+            }
+        }
+        'V' => TimeZoneNameStyle::LongGeneric,
+        'O' | 'Z' => {
+            if n >= 4 {
+                TimeZoneNameStyle::LongOffset
+            } else {
+                TimeZoneNameStyle::ShortOffset
+            }
+        }
+        // `z`, and anything unexpected, is the specific non-location form.
+        _ => {
+            if n >= 4 {
+                TimeZoneNameStyle::Long
+            } else {
+                TimeZoneNameStyle::Short
+            }
+        }
+    }
+}
+
+/// Drop the zone field (and tidy the separators around it) from a pattern whose
+/// zone name could not be resolved, so its adjacent literal does not survive as
+/// a dangling space.
+fn strip_zone_field(pattern: &str) -> String {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            // Quoted literal: copy it whole, including the quotes, so a field
+            // letter inside it is not mistaken for a zone run.
+            out.push(ch);
+            i += 1;
+            while i < chars.len() && chars[i] != '\'' {
+                out.push(chars[i]);
+                i += 1;
+            }
+            if i < chars.len() {
+                out.push('\'');
+                i += 1;
+            }
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+            if !matches!(ch, 'z' | 'Z' | 'O' | 'v' | 'V') {
+                out.extend(&chars[start..i]);
+            }
+        } else {
+            out.push(ch);
+            i += 1;
+        }
+    }
+    // Only the separator that abutted the zone is surplus; a literal belonging to
+    // the field before it (`ss` + `秒`) must survive, so collapse runs of spaces
+    // rather than dropping trailing literals wholesale.
+    let mut cleaned = String::with_capacity(out.len());
+    let mut prev_space = false;
+    for c in out.chars() {
+        let space = c == ' ' || c == '\u{202f}' || c == '\u{a0}';
+        if space && prev_space {
+            continue;
+        }
+        prev_space = space;
+        cleaned.push(c);
+    }
+    String::from(cleaned.trim_matches([' ', '\u{202f}', '\u{a0}']))
+}
+
 /// Resolve the `time_zone_name` text for `dt`: a localized zone name when
 /// `time_zone` names a zone CLDR knows, otherwise the localized GMT offset.
 ///
@@ -2243,10 +2376,29 @@ pub fn format_to_parts(
 ) -> Result<Vec<DateTimePart>, DateTimeFormatError> {
     let s = spec(lang);
     let pattern = resolve_pattern(lang, &s, opts)?;
+
+    // A style pattern carries its own zone field (`timeStyle: 'full'` resolves to
+    // `h:mm:ss a zzzz`), and that is where the name belongs. An explicit
+    // `time_zone_name` overrides the presentation the pattern asked for, as
+    // ECMA-402's option does; with no field to fill, the name is appended.
+    let zone_field = pattern_zone_field(&pattern);
+    let style = opts
+        .time_zone_name
+        .or_else(|| zone_field.map(|(c, n)| zone_field_style(c, n)));
+    let name = style.and_then(|style| compute_tz_name(lang, dt, opts, style));
+
+    if let Some((_, _)) = zone_field {
+        // Nothing to put there (no zone and no fallback offset): drop the field
+        // so its separator does not survive as a dangling space.
+        let pattern = match &name {
+            Some(_) => pattern,
+            None => strip_zone_field(&pattern),
+        };
+        return Ok(render_parts_zone(&pattern, dt, &s, name.as_deref()));
+    }
+
     let mut parts = render_parts(&pattern, dt, &s);
-    if let Some(style) = opts.time_zone_name
-        && let Some(name) = compute_tz_name(lang, dt, opts, style)
-    {
+    if let Some(name) = name {
         parts.push(DateTimePart {
             kind: DateTimePartType::Literal,
             value: String::from(" "),
