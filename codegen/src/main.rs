@@ -333,6 +333,7 @@ fn main() {
         &cldr.join("timezonenames-raw"),
         &cldr.join("metaZones.json"),
         &cldr.join("bcp47/timezone.xml"),
+        &cldr.join("primaryZones.json"),
     );
     emit_cldr_generated_mod(&cldr_dir);
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
@@ -3643,7 +3644,13 @@ fn tz_metazone_expr(segs: &[(u16, Option<i64>, Option<i64>)]) -> String {
 /// UTS #35 §4.8 — per-locale GMT/region/fallback formats, the tzdb alias map,
 /// the zone→metazone map with its historical ranges, exemplar cities and
 /// zone-level name overrides, and the metazone names themselves.
-fn emit_tz_names(cldr_dir: &Path, names_dir: &Path, metazones: &Path, bcp47_tz: &Path) {
+fn emit_tz_names(
+    cldr_dir: &Path,
+    names_dir: &Path,
+    metazones: &Path,
+    bcp47_tz: &Path,
+    primary_zones: &Path,
+) {
     // ---- supplemental: zone -> metazone history ----
     let mzjson = json_parse(&fs::read_to_string(metazones).expect("read metaZones.json"));
     let info = mzjson
@@ -3692,6 +3699,24 @@ fn emit_tz_names(cldr_dir: &Path, names_dir: &Path, metazones: &Path, bcp47_tz: 
     // (`Asia/Calcutta`, `America/Buenos_Aires`); fold those onto the canonical id
     // the runtime resolves to, preferring an entry already keyed canonically.
     let canon = |z: &str| aliases.get(z).cloned().unwrap_or_else(|| String::from(z));
+
+    // A country with several zones still names the *country* for the one CLDR
+    // designates primary (UTS #35 §4.8: "China Time", not "Shanghai Time"), so
+    // those join the single-zone regions below. Keyed by canonical zone, since
+    // CLDR lists some by tzdb link (`Europe/Kiev` → `Europe/Kyiv`).
+    let pz_text = fs::read_to_string(primary_zones).expect("read primaryZones.json");
+    let pz_json = json_parse(&pz_text);
+    let mut primary_zone: BTreeMap<String, String> = BTreeMap::new();
+    if let Some(map) = pz_json
+        .get("supplemental")
+        .and_then(|s| s.get("primaryZones"))
+    {
+        for (region, zone) in map.entries() {
+            if let Some(z) = zone.as_str() {
+                primary_zone.insert(canon(z), region.clone());
+            }
+        }
+    }
     let mut folded: BTreeMap<String, MetazoneUse> = BTreeMap::new();
     for pass_aliases in [false, true] {
         for (z, segs) in &zone_meta {
@@ -3982,7 +4007,7 @@ fn emit_tz_names(cldr_dir: &Path, names_dir: &Path, metazones: &Path, bcp47_tz: 
             let Some(region) = zone_region.get(*zid) else {
                 continue;
             };
-            if region_zones[region] == 1 {
+            if region_zones[region] == 1 || primary_zone.get(*zid) == Some(region) {
                 let _ = write!(out, "        {zi} => Some(\"{region}\"),\n");
             }
         }

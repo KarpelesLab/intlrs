@@ -237,3 +237,41 @@ fn uncompiled_area_falls_back_to_offset() {
         "GMT"
     );
 }
+
+/// UTS #35 §4.8 names the *country* rather than the exemplar city in the generic
+/// location format when the zone is the only one in its territory — or when CLDR
+/// designates it that territory's **primary** zone, which is what
+/// `primaryZones.json` records. Without it `Asia/Shanghai` read "Shanghai Time"
+/// where ICU says "China Time". Values match V8/ICU.
+#[cfg(all(feature = "iana-tz", feature = "displaynames"))]
+#[test]
+fn primary_zone_names_its_country() {
+    use TimeZoneNameStyle::LongGeneric;
+
+    // Multi-zone countries whose primary zone CLDR designates. These have no
+    // generic metazone name, so resolution reaches the location format.
+    #[cfg(feature = "tz-names-asia")]
+    {
+        assert_eq!(name("en", "Asia/Shanghai", LongGeneric, 1), "China Time");
+        assert_eq!(
+            name("fr", "Asia/Shanghai", LongGeneric, 1),
+            "heure de la Chine"
+        );
+        assert_eq!(
+            name("en", "Asia/Kuala_Lumpur", LongGeneric, 1),
+            "Malaysia Time"
+        );
+    }
+    #[cfg(feature = "tz-names-america")]
+    assert_eq!(name("en", "America/Santiago", LongGeneric, 1), "Chile Time");
+    #[cfg(feature = "tz-names-pacific")]
+    assert_eq!(
+        name("en", "Pacific/Auckland", LongGeneric, 1),
+        "New Zealand Time"
+    );
+
+    // A non-primary zone in a multi-zone country still uses its exemplar city —
+    // CLDR's spelling of it, not the tzdb id ("Ürümqi", not "Urumqi").
+    #[cfg(feature = "tz-names-asia")]
+    assert_eq!(name("en", "Asia/Urumqi", LongGeneric, 1), "Ürümqi Time");
+}
