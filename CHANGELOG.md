@@ -106,6 +106,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- *(cldr)* the six public CLDR record types — `number::NumberSpec`,
+  `number::Pattern`, `list::ListPatterns`, `list::ListSpec`, `relative::RelUnit`
+  and `relative::RelativeSpec` — are now `#[non_exhaustive]`. They are views onto
+  the embedded tables, obtained from the crate and read; nothing outside it has
+  reason to construct one. Their all-public fields nevertheless made every
+  addition to the CLDR data a breaking change, which `NumberSpec::nan` /
+  `::infinity` had just demonstrated. Fields stay public and readable, and
+  pattern matching still works with a trailing `..`; only struct-literal
+  construction from other crates is closed off, so future data growth is additive.
 - *(unit)* the CLDR unit table moved from the `src/cldr/units.bin` blob to
   generated Rust (`src/cldr/generated/units.rs`, `const fn` + `match`), matching
   how the Unicode property tables are shipped. `#[cfg]` sits on individual width

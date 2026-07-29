@@ -29,7 +29,12 @@ pub(crate) mod generated;
 // ---- Shared formatter record types (plain data, borrowing from the blobs). ----
 
 /// A resolved CLDR number pattern (affixes + grouping / fraction-digit counts).
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
+/// tables, which gain fields as the data does, so it is obtained from the
+/// crate rather than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct Pattern {
     /// Literal text before the number.
     pub prefix: &'static str,
@@ -53,7 +58,12 @@ pub struct Pattern {
 /// the blocks genuinely differ per system: `ar`'s `arab` decimal separator is
 /// U+066B while its `latn` one is `.`, and `te` groups Indian-style in `latn`
 /// but not in `telu`.
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
+/// tables, which gain fields as the data does, so it is obtained from the crate
+/// rather than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct NumberSpec {
     /// Decimal separator.
     pub decimal: &'static str,
@@ -76,7 +86,12 @@ pub struct NumberSpec {
 }
 
 /// The four CLDR list connector patterns (each contains `{0}` and `{1}`).
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
+/// tables, which gain fields as the data does, so it is obtained from the
+/// crate rather than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct ListPatterns {
     /// Joins the first two items of a 3+ list.
     pub start: &'static str,
@@ -89,7 +104,12 @@ pub struct ListPatterns {
 }
 
 /// The list patterns for one locale (both styles).
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
+/// tables, which gain fields as the data does, so it is obtained from the
+/// crate rather than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct ListSpec {
     /// Conjunction ("and") patterns.
     pub and: ListPatterns,
@@ -99,7 +119,12 @@ pub struct ListSpec {
 
 /// CLDR relative-time strings for one unit. `past`/`future` are indexed by the
 /// `PluralCategory` discriminant.
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
+/// tables, which gain fields as the data does, so it is obtained from the
+/// crate rather than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct RelUnit {
     /// Literal for offset −1 ("yesterday"), if any.
     pub prev: Option<&'static str>,
@@ -182,7 +207,12 @@ impl CalendarSpec {
 }
 
 /// CLDR relative-time strings for all units of one locale.
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
+/// tables, which gain fields as the data does, so it is obtained from the
+/// crate rather than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct RelativeSpec {
     /// One [`RelUnit`] per relative unit (year, month, week, day, hour, minute,
     /// second).

@@ -679,7 +679,7 @@ impl<T> core::clone::CloneToUninit for intl::list::ListStyle where T: core::clon
 pub unsafe fn intl::list::ListStyle::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::list::ListStyle
 pub fn intl::list::ListStyle::from(T) -> T
-pub struct intl::list::ListPatterns
+#[non_exhaustive] pub struct intl::list::ListPatterns
 pub intl::list::ListPatterns::end: &'static str
 pub intl::list::ListPatterns::middle: &'static str
 pub intl::list::ListPatterns::start: &'static str
@@ -718,7 +718,7 @@ impl<T> core::clone::CloneToUninit for intl::list::ListPatterns where T: core::c
 pub unsafe fn intl::list::ListPatterns::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::list::ListPatterns
 pub fn intl::list::ListPatterns::from(T) -> T
-pub struct intl::list::ListSpec
+#[non_exhaustive] pub struct intl::list::ListSpec
 pub intl::list::ListSpec::and: intl::list::ListPatterns
 pub intl::list::ListSpec::or: intl::list::ListPatterns
 impl core::clone::Clone for intl::list::ListSpec
@@ -1497,7 +1497,7 @@ impl<T> core::clone::CloneToUninit for intl::number::NumberRangePart where T: co
 pub unsafe fn intl::number::NumberRangePart::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::NumberRangePart
 pub fn intl::number::NumberRangePart::from(T) -> T
-pub struct intl::number::NumberSpec
+#[non_exhaustive] pub struct intl::number::NumberSpec
 pub intl::number::NumberSpec::dec: intl::number::Pattern
 pub intl::number::NumberSpec::decimal: &'static str
 pub intl::number::NumberSpec::group: &'static str
@@ -1541,7 +1541,7 @@ impl<T> core::clone::CloneToUninit for intl::number::NumberSpec where T: core::c
 pub unsafe fn intl::number::NumberSpec::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::NumberSpec
 pub fn intl::number::NumberSpec::from(T) -> T
-pub struct intl::number::Pattern
+#[non_exhaustive] pub struct intl::number::Pattern
 pub intl::number::Pattern::max_frac: u8
 pub intl::number::Pattern::min_frac: u8
 pub intl::number::Pattern::min_int: u8
@@ -1742,7 +1742,7 @@ impl<T> core::clone::CloneToUninit for intl::relative::RelativeUnit where T: cor
 pub unsafe fn intl::relative::RelativeUnit::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::relative::RelativeUnit
 pub fn intl::relative::RelativeUnit::from(T) -> T
-pub struct intl::relative::RelUnit
+#[non_exhaustive] pub struct intl::relative::RelUnit
 pub intl::relative::RelUnit::cur: core::option::Option<&'static str>
 pub intl::relative::RelUnit::future: [core::option::Option<&'static str>; 6]
 pub intl::relative::RelUnit::next: core::option::Option<&'static str>
@@ -1782,7 +1782,7 @@ impl<T> core::clone::CloneToUninit for intl::relative::RelUnit where T: core::cl
 pub unsafe fn intl::relative::RelUnit::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::relative::RelUnit
 pub fn intl::relative::RelUnit::from(T) -> T
-pub struct intl::relative::RelativeSpec
+#[non_exhaustive] pub struct intl::relative::RelativeSpec
 pub intl::relative::RelativeSpec::units: [intl::relative::RelUnit; 7]
 impl core::clone::Clone for intl::relative::RelativeSpec
 pub fn intl::relative::RelativeSpec::clone(&self) -> intl::relative::RelativeSpec
