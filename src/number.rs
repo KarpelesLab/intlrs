@@ -170,7 +170,8 @@ pub enum UnitDisplay {
     /// Short form.
     #[default]
     Short,
-    /// Narrow form; falls back to `Short`.
+    /// Narrow form (`"5km"`). Needs the `units-narrow` cargo feature; without it
+    /// the narrow patterns are not compiled in and this falls back to `Short`.
     Narrow,
     /// Long form.
     Long,
@@ -1099,80 +1100,41 @@ fn affix_parts(text: &str, style: NumberStyle, s: &NumberSpec, currency: &str) -
     parts
 }
 
-/// Map an ECMA-402 sanctioned unit identifier to the embedded unit-table index
-/// (the order of `crate::unit::Unit`). Returns `None` for unsupported units.
+/// Split a unit-pattern affix into the whitespace `Literal` that separates it
+/// from the number and the `Unit` remainder. ICU tags the whole unit phrase —
+/// interior spaces included — as one `unit` field, so `"1.5 m"` is
+/// `… literal(" ") unit("m")` and `"5 meters per second"` is
+/// `… literal(" ") unit("meters per second")`. `prefix` says which end abuts the
+/// number: a prefix affix is separated on its right, a suffix affix on its left.
 #[cfg(feature = "units")]
-fn unit_index(id: &str) -> Option<usize> {
-    Some(match id {
-        "second" => 0,
-        "minute" => 1,
-        "hour" => 2,
-        "day" => 3,
-        "week" => 4,
-        "month" => 5,
-        "year" => 6,
-        "millimeter" => 7,
-        "centimeter" => 8,
-        "meter" => 9,
-        "kilometer" => 10,
-        "inch" => 11,
-        "foot" => 12,
-        "mile" => 13,
-        "gram" => 14,
-        "kilogram" => 15,
-        "ounce" => 16,
-        "pound" => 17,
-        "byte" => 18,
-        "kilobyte" => 19,
-        "megabyte" => 20,
-        "gigabyte" => 21,
-        "celsius" => 22,
-        "fahrenheit" => 23,
-        "kilometer-per-hour" => 24,
-        "mile-per-hour" => 25,
-        "liter" => 26,
-        "milliliter" => 27,
-        _ => return None,
-    })
-}
-
-/// Split a unit-pattern affix into `Unit` (non-whitespace) and `Literal`
-/// (whitespace) runs, matching ECMA-402's tagging of `"1.5 m"` as
-/// `… literal(" ") unit("m")`.
-#[cfg(feature = "units")]
-fn unit_affix(text: &str) -> Vec<NumberPart> {
+fn unit_affix(text: &str, prefix: bool) -> Vec<NumberPart> {
     let mut parts = Vec::new();
-    let mut buf = String::new();
-    let mut in_ws = false;
-    for ch in text.chars() {
-        let ws = ch.is_whitespace();
-        if buf.is_empty() {
-            in_ws = ws;
-        } else if ws != in_ws {
-            let kind = if in_ws {
-                NumberPartType::Literal
-            } else {
-                NumberPartType::Unit
-            };
-            parts.push(NumberPart::new(kind, core::mem::take(&mut buf)));
-            in_ws = ws;
+    let (unit, sep) = if prefix {
+        let unit = text.trim_end_matches(char::is_whitespace);
+        (unit, &text[unit.len()..])
+    } else {
+        let unit = text.trim_start_matches(char::is_whitespace);
+        (unit, &text[..text.len() - unit.len()])
+    };
+    let mut push = |kind, s: &str| {
+        if !s.is_empty() {
+            parts.push(NumberPart::new(kind, String::from(s)));
         }
-        buf.push(ch);
-    }
-    if !buf.is_empty() {
-        let kind = if in_ws {
-            NumberPartType::Literal
-        } else {
-            NumberPartType::Unit
-        };
-        parts.push(NumberPart::new(kind, buf));
+    };
+    if prefix {
+        push(NumberPartType::Unit, unit);
+        push(NumberPartType::Literal, sep);
+    } else {
+        push(NumberPartType::Literal, sep);
+        push(NumberPartType::Unit, unit);
     }
     parts
 }
 
 /// Wrap the numeric `core` parts with the locale's CLDR unit pattern (e.g.
-/// `"{0} km"`), choosing the plural-correct wording. An unknown/missing unit
-/// degrades to the bare number.
+/// `"{0} km"`, `"{0} meters per second"`), choosing the plural-correct wording.
+/// Resolution — locale fallback, width, compound assembly — is shared with
+/// [`crate::unit`]. An unknown/missing unit degrades to the bare number.
 #[cfg(feature = "units")]
 fn unit_wrap(
     lang: &str,
@@ -1180,51 +1142,23 @@ fn unit_wrap(
     core: Vec<NumberPart>,
     opts: &NumberFormatOptions,
 ) -> Vec<NumberPart> {
-    let Some(uidx) = opts.unit.and_then(unit_index) else {
+    let width = match opts.unit_display {
+        UnitDisplay::Short => crate::unit::UnitWidth::Short,
+        UnitDisplay::Narrow => crate::unit::UnitWidth::Narrow,
+        UnitDisplay::Long => crate::unit::UnitWidth::Long,
+    };
+    let cat = crate::unit::category(lang, value);
+    let Some(pattern) = opts
+        .unit
+        .and_then(|id| crate::unit::pattern_for_id(lang, id, width, cat))
+    else {
         return core;
     };
-    // Long form when requested; short/narrow share the short table (no narrow data).
-    let width = usize::from(opts.unit_display != UnitDisplay::Long);
-    let ops = if value % 1.0 == 0.0 && value > -1e15 && value < 1e15 {
-        crate::plural::PluralOperands::from_int(value as i64)
-    } else {
-        crate::plural::PluralOperands::parse(&alloc::format!("{value}"))
-            .unwrap_or_else(|| crate::plural::PluralOperands::from_int(value as i64))
-    };
-    let cat = crate::plural::plural_category(lang, &ops) as usize;
 
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut pattern = "{0}";
-    let mut end = norm.len();
-    loop {
-        if let Some(p) = crate::cldr::unit_pattern(&norm[..end], width, uidx, cat) {
-            pattern = p;
-            break;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => {
-                if let Some(p) = crate::cldr::unit_pattern("en", width, uidx, cat) {
-                    pattern = p;
-                }
-                break;
-            }
-        }
-    }
-
-    let (pre, post) = pattern.split_once("{0}").unwrap_or(("", pattern));
-    let mut parts = unit_affix(pre);
+    let (pre, post) = pattern.split_once("{0}").unwrap_or(("", &pattern));
+    let mut parts = unit_affix(pre, true);
     parts.extend(core);
-    parts.extend(unit_affix(post));
+    parts.extend(unit_affix(post, false));
     parts
 }
 

@@ -2998,41 +2998,75 @@ fn emit_intervals(cldr_dir: &Path, dates_dir: &Path) {
     write_blob(cldr_dir, "intervals", &records);
 }
 
-/// The curated measurement units, in the order the runtime `Unit` enum expects.
-const UNITS: [&str; 28] = [
-    "duration-second",
-    "duration-minute",
-    "duration-hour",
-    "duration-day",
-    "duration-week",
-    "duration-month",
-    "duration-year",
-    "length-millimeter",
-    "length-centimeter",
-    "length-meter",
-    "length-kilometer",
-    "length-inch",
-    "length-foot",
-    "length-mile",
-    "mass-gram",
-    "mass-kilogram",
-    "mass-ounce",
-    "mass-pound",
-    "digital-byte",
-    "digital-kilobyte",
-    "digital-megabyte",
-    "digital-gigabyte",
-    "temperature-celsius",
-    "temperature-fahrenheit",
-    "speed-kilometer-per-hour",
-    "speed-mile-per-hour",
-    "volume-liter",
-    "volume-milliliter",
+/// The ECMA-402 sanctioned measurement units — `(unit identifier, CLDR key)` —
+/// in the order the runtime `Unit` enum expects. The CLDR category prefix is
+/// irregular (`concentr-percent`, `angle-degree`, …), so the mapping has to be
+/// tabulated rather than derived. Indices 24/25 are the two `speed-…` compounds
+/// CLDR ships pre-composed; keeping them avoids deriving `"{0} mi/h"` where the
+/// locale data says `"{0} mph"`.
+const UNITS: [(&str, &str); 47] = [
+    ("second", "duration-second"),
+    ("minute", "duration-minute"),
+    ("hour", "duration-hour"),
+    ("day", "duration-day"),
+    ("week", "duration-week"),
+    ("month", "duration-month"),
+    ("year", "duration-year"),
+    ("millimeter", "length-millimeter"),
+    ("centimeter", "length-centimeter"),
+    ("meter", "length-meter"),
+    ("kilometer", "length-kilometer"),
+    ("inch", "length-inch"),
+    ("foot", "length-foot"),
+    ("mile", "length-mile"),
+    ("gram", "mass-gram"),
+    ("kilogram", "mass-kilogram"),
+    ("ounce", "mass-ounce"),
+    ("pound", "mass-pound"),
+    ("byte", "digital-byte"),
+    ("kilobyte", "digital-kilobyte"),
+    ("megabyte", "digital-megabyte"),
+    ("gigabyte", "digital-gigabyte"),
+    ("celsius", "temperature-celsius"),
+    ("fahrenheit", "temperature-fahrenheit"),
+    ("kilometer-per-hour", "speed-kilometer-per-hour"),
+    ("mile-per-hour", "speed-mile-per-hour"),
+    ("liter", "volume-liter"),
+    ("milliliter", "volume-milliliter"),
+    ("acre", "area-acre"),
+    ("bit", "digital-bit"),
+    ("degree", "angle-degree"),
+    ("fluid-ounce", "volume-fluid-ounce"),
+    ("gallon", "volume-gallon"),
+    ("gigabit", "digital-gigabit"),
+    ("hectare", "area-hectare"),
+    ("kilobit", "digital-kilobit"),
+    ("megabit", "digital-megabit"),
+    ("microsecond", "duration-microsecond"),
+    ("mile-scandinavian", "length-mile-scandinavian"),
+    ("millisecond", "duration-millisecond"),
+    ("nanosecond", "duration-nanosecond"),
+    ("percent", "concentr-percent"),
+    ("petabyte", "digital-petabyte"),
+    ("stone", "mass-stone"),
+    ("terabit", "digital-terabit"),
+    ("terabyte", "digital-terabyte"),
+    ("yard", "length-yard"),
 ];
 
-/// Write `cldr/units.bin`: per-locale unit patterns. Payload is
-/// `width(long, short) × unit(28) × plural-count(6)` optional strings, in that
-/// nested order.
+/// CLDR unit widths, in `crate::unit::UnitWidth` order. `narrow` is gated on the
+/// `units-narrow` cargo feature so size-sensitive builds pay for long+short only.
+const UNIT_WIDTHS: [(&str, &str, Option<&str>); 3] = [
+    ("long", "long", None),
+    ("short", "short", None),
+    ("narrow", "narrow", Some("units-narrow")),
+];
+
+/// Emit `cldr/generated/units.rs`: every locale's unit patterns as `const fn`
+/// `match` lookups (no runtime blob). One function per (locale, width) keyed by
+/// `unit * 8 + slot`, where slot 0..=5 is the plural category and slot 6 is the
+/// unit's `perUnitPattern`; the locale's `per` `compoundUnitPattern` sits at the
+/// pseudo-unit index `UNITS.len()`, slot 0.
 fn emit_units(cldr_dir: &Path, units_dir: &Path) {
     let counts = [
         "unitPattern-count-zero",
@@ -3044,9 +3078,11 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path) {
     ];
     let mut locales = locale_files(units_dir);
     locales.sort();
-    let mut records = Vec::new();
-    for locale in locales {
-        let path = units_dir.join(alloc_format(&locale));
+
+    // [locale][width] -> sorted (key, pattern) slots.
+    let mut table: Vec<[Vec<(u16, String)>; 3]> = Vec::with_capacity(locales.len());
+    for locale in &locales {
+        let path = units_dir.join(alloc_format(locale));
         let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
         let json = json_parse(&text);
         let (_, loc_obj) = json
@@ -3056,20 +3092,168 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path) {
             .first()
             .expect("locale");
         let units = loc_obj.get("units").expect("units");
-        let mut p = Vec::new();
-        for width in ["long", "short"] {
-            let w = units.get(width).expect("width");
-            for unit in UNITS {
-                let f = w.get(unit);
-                for count in counts {
-                    let pat = f.and_then(|x| x.get(count)).and_then(Json::as_str);
-                    enc_opt(&mut p, pat);
+        let widths = std::array::from_fn::<_, 3, _>(|wi| {
+            let w = units.get(UNIT_WIDTHS[wi].1).expect("width");
+            let mut slots: Vec<(u16, String)> = Vec::new();
+            for (ui, (_, key)) in UNITS.iter().enumerate() {
+                let Some(f) = w.get(key) else { continue };
+                let base = (ui as u16) * 8;
+                for (ci, count) in counts.iter().enumerate() {
+                    if let Some(pat) = f.get(count).and_then(Json::as_str) {
+                        slots.push((base + ci as u16, pat.to_string()));
+                    }
+                }
+                if let Some(pat) = f.get("perUnitPattern").and_then(Json::as_str) {
+                    slots.push((base + 6, pat.to_string()));
                 }
             }
-        }
-        records.push((locale.to_ascii_lowercase(), p));
+            // The `per` compound pattern ("{0} per {1}", "{0}/{1}", "{0}毎{1}").
+            if let Some(pat) = w
+                .get("per")
+                .and_then(|p| p.get("compoundUnitPattern"))
+                .and_then(Json::as_str)
+            {
+                slots.push(((UNITS.len() as u16) * 8, pat.to_string()));
+            }
+            slots.sort();
+            slots
+        });
+        table.push(widths);
     }
-    write_blob(cldr_dir, "units", &records);
+
+    let en = locales
+        .iter()
+        .position(|l| l == "en")
+        .expect("en units data");
+
+    let mut out = String::new();
+    write_header(&mut out);
+    let _ = write!(
+        out,
+        "//! CLDR measurement-unit patterns (UTS #35 `units.json`).\n\
+         //!\n\
+         //! A slot key is `unit * 8 + slot`: slots 0..=5 are the plural categories\n\
+         //! (zero, one, two, few, many, other) and slot 6 is the unit's\n\
+         //! `perUnitPattern`. The pseudo-unit `UNIT_COUNT` holds the locale's `per`\n\
+         //! `compoundUnitPattern` in slot 0.\n\n\
+         /// Unit slots per (locale, width): the 45 ECMA-402 sanctioned units plus the\n\
+         /// two `speed-…` compounds CLDR ships pre-composed.\n\
+         pub(crate) const UNIT_COUNT: u16 = {};\n\n\
+         /// Table index of `en`, the last-resort locale fallback.\n\
+         pub(crate) const EN: u16 = {en};\n\n",
+        UNITS.len()
+    );
+
+    // Locale key -> index. Keys are the CLDR locale ids, lowercased; the runtime
+    // walks the fallback chain by trimming `-` subtags.
+    let _ = write!(
+        out,
+        "/// Table index for an exact (lowercased) CLDR locale id.\n\
+         pub(crate) fn locale_index(lang: &str) -> Option<u16> {{\n    \
+         Some(match lang {{\n"
+    );
+    for (i, locale) in locales.iter().enumerate() {
+        let _ = write!(out, "        \"{}\" => {i},\n", locale.to_ascii_lowercase());
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    let _ = write!(
+        out,
+        "/// The pattern for `(locale, width, key)`, or `None` when CLDR has no such\n\
+         /// string. `width` is 0 (long), 1 (short) or 2 (narrow).\n\
+         #[inline]\n\
+         pub(crate) const fn pattern(loc: u16, width: usize, key: u16) -> Option<&'static str> {{\n    \
+         match width {{\n"
+    );
+    for (wi, (name, _, feature)) in UNIT_WIDTHS.iter().enumerate() {
+        if let Some(f) = feature {
+            let _ = write!(out, "        #[cfg(feature = \"{f}\")]\n");
+        }
+        let _ = write!(out, "        {wi} => {name}(loc, key),\n");
+    }
+    let _ = write!(out, "        _ => None,\n    }}\n}}\n");
+
+    for (wi, (name, _, feature)) in UNIT_WIDTHS.iter().enumerate() {
+        let cfg = feature.map_or(String::new(), |f| format!("#[cfg(feature = \"{f}\")]\n"));
+        let _ = write!(
+            out,
+            "\n{cfg}const fn {name}(loc: u16, key: u16) -> Option<&'static str> {{\n    match loc {{\n"
+        );
+        for (li, locale) in locales.iter().enumerate() {
+            if table[li][wi].is_empty() {
+                continue;
+            }
+            let _ = write!(out, "        {li} => u_{}_{name}(key),\n", ident(locale));
+        }
+        let _ = write!(out, "        _ => None,\n    }}\n}}\n");
+
+        for (li, locale) in locales.iter().enumerate() {
+            if table[li][wi].is_empty() {
+                continue;
+            }
+            let _ = write!(
+                out,
+                "\n{cfg}const fn u_{}_{name}(key: u16) -> Option<&'static str> {{\n    match key {{\n",
+                ident(locale)
+            );
+            for (key, pat) in &table[li][wi] {
+                let _ = write!(out, "        {key} => Some({}),\n", rust_str(pat));
+            }
+            let _ = write!(out, "        _ => None,\n    }}\n}}\n");
+        }
+    }
+
+    let gen_dir = cldr_dir.join("generated");
+    fs::create_dir_all(&gen_dir).expect("create src/cldr/generated");
+    let path = gen_dir.join("units.rs");
+    fs::write(&path, &out).unwrap_or_else(|_| panic!("write {}", path.display()));
+    rustfmt(&path);
+
+    let mut mod_out = String::new();
+    write_header(&mut mod_out);
+    let _ = write!(
+        mod_out,
+        "#[cfg(feature = \"units\")]\npub(crate) mod units;\n"
+    );
+    fs::write(gen_dir.join("mod.rs"), &mod_out).expect("write cldr/generated/mod.rs");
+    rustfmt(&gen_dir.join("mod.rs"));
+}
+
+/// A locale id as a Rust identifier fragment (`pt-PT` → `pt_pt`), lowercased so
+/// generated function names are stable across platforms.
+fn ident(locale: &str) -> String {
+    locale
+        .to_ascii_lowercase()
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect()
+}
+
+/// Render `s` as a Rust string literal. Invisible characters (NBSP, narrow NBSP,
+/// bidi marks, soft hyphen, ZWJ/ZWNJ) are spelled out as `\u{…}` escapes so the
+/// generated source stays reviewable; other non-ASCII is left verbatim.
+fn rust_str(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('"');
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            c if c == ' ' || c.is_ascii_graphic() => out.push(c),
+            c if c.is_ascii()
+                || matches!(c,
+                    '\u{a0}' | '\u{ad}' | '\u{61c}' | '\u{feff}'
+                    | '\u{200b}'..='\u{200f}'
+                    | '\u{2028}'..='\u{202f}'
+                    | '\u{2066}'..='\u{2069}') =>
+            {
+                let _ = write!(out, "\\u{{{:x}}}", c as u32);
+            }
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
 }
 
 /// Write `cldr/<name>.bin` for a non-Gregorian calendar: per-locale month names

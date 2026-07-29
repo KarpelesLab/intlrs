@@ -4893,34 +4893,56 @@ pub fn intl::unicode::uppercase_str_lang(&str, &str) -> alloc::string::String
 pub fn intl::unicode::words(&str) -> intl::unicode::segment::Words<'_>
 pub mod intl::unit
 pub enum intl::unit::Unit
+pub intl::unit::Unit::Acre
+pub intl::unit::Unit::Bit
 pub intl::unit::Unit::Byte
 pub intl::unit::Unit::Celsius
 pub intl::unit::Unit::Centimeter
 pub intl::unit::Unit::Day
+pub intl::unit::Unit::Degree
 pub intl::unit::Unit::Fahrenheit
+pub intl::unit::Unit::FluidOunce
 pub intl::unit::Unit::Foot
+pub intl::unit::Unit::Gallon
+pub intl::unit::Unit::Gigabit
 pub intl::unit::Unit::Gigabyte
 pub intl::unit::Unit::Gram
+pub intl::unit::Unit::Hectare
 pub intl::unit::Unit::Hour
 pub intl::unit::Unit::Inch
+pub intl::unit::Unit::Kilobit
 pub intl::unit::Unit::Kilobyte
 pub intl::unit::Unit::Kilogram
 pub intl::unit::Unit::Kilometer
 pub intl::unit::Unit::KilometerPerHour
 pub intl::unit::Unit::Liter
+pub intl::unit::Unit::Megabit
 pub intl::unit::Unit::Megabyte
 pub intl::unit::Unit::Meter
+pub intl::unit::Unit::Microsecond
 pub intl::unit::Unit::Mile
 pub intl::unit::Unit::MilePerHour
+pub intl::unit::Unit::MileScandinavian
 pub intl::unit::Unit::Milliliter
 pub intl::unit::Unit::Millimeter
+pub intl::unit::Unit::Millisecond
 pub intl::unit::Unit::Minute
 pub intl::unit::Unit::Month
+pub intl::unit::Unit::Nanosecond
 pub intl::unit::Unit::Ounce
+pub intl::unit::Unit::Percent
+pub intl::unit::Unit::Petabyte
 pub intl::unit::Unit::Pound
 pub intl::unit::Unit::Second
+pub intl::unit::Unit::Stone
+pub intl::unit::Unit::Terabit
+pub intl::unit::Unit::Terabyte
 pub intl::unit::Unit::Week
+pub intl::unit::Unit::Yard
 pub intl::unit::Unit::Year
+impl intl::unit::Unit
+pub const fn intl::unit::Unit::ecma_id(self) -> &'static str
+pub fn intl::unit::Unit::from_ecma_id(&str) -> core::option::Option<Self>
 impl core::clone::Clone for intl::unit::Unit
 pub fn intl::unit::Unit::clone(&self) -> intl::unit::Unit
 impl core::cmp::Eq for intl::unit::Unit
@@ -4961,6 +4983,7 @@ impl<T> core::convert::From<T> for intl::unit::Unit
 pub fn intl::unit::Unit::from(T) -> T
 pub enum intl::unit::UnitWidth
 pub intl::unit::UnitWidth::Long
+pub intl::unit::UnitWidth::Narrow
 pub intl::unit::UnitWidth::Short
 impl core::clone::Clone for intl::unit::UnitWidth
 pub fn intl::unit::UnitWidth::clone(&self) -> intl::unit::UnitWidth
@@ -5000,5 +5023,7 @@ impl<T> core::clone::CloneToUninit for intl::unit::UnitWidth where T: core::clon
 pub unsafe fn intl::unit::UnitWidth::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::unit::UnitWidth
 pub fn intl::unit::UnitWidth::from(T) -> T
+pub fn intl::unit::format_compound_unit(&str, f64, intl::unit::Unit, intl::unit::Unit, intl::unit::UnitWidth) -> alloc::string::String
 pub fn intl::unit::format_duration(&str, i64, intl::unit::UnitWidth) -> alloc::string::String
 pub fn intl::unit::format_unit(&str, f64, intl::unit::Unit, intl::unit::UnitWidth) -> alloc::string::String
+pub fn intl::unit::format_unit_id(&str, f64, &str, intl::unit::UnitWidth) -> core::option::Option<alloc::string::String>

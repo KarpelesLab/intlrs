@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- *(unit)* the full ECMA-402 sanctioned unit set and general compound units.
+  `Unit` grew from 28 to 47 variants, completing the 45 sanctioned identifiers —
+  `acre`, `bit`, `degree`, `fluid-ounce`, `gallon`, `gigabit`, `hectare`,
+  `kilobit`, `megabit`, `microsecond`, `mile-scandinavian`, `millisecond`,
+  `nanosecond`, `percent`, `petabyte`, `stone`, `terabit`, `terabyte`, `yard` —
+  alongside the two `speed-…` compounds CLDR ships pre-composed. Any
+  `<unit>-per-<unit>` ratio now formats via `format_unit_id` /
+  `format_compound_unit`, and through `NumberFormat`'s `unit` option:
+  `format_unit_id("en", 5.0, "meter-per-second", UnitWidth::Long)` →
+  `"5 meters per second"`, `("gallon-per-mile", Short)` → `"5 gal/mi"`,
+  `("gallon-per-mile", Long)` in German → `"5 Gallonen pro Meile"`. Both UTS #35
+  assembly paths are implemented: the denominator's `perUnitPattern` when it has
+  one (18 of the 45 units do) and the locale's `per` `compoundUnitPattern`
+  otherwise. `Unit::from_ecma_id` / `Unit::ecma_id` expose the identifier
+  mapping. Reported in [#17](https://github.com/KarpelesLab/intlrs/issues/17).
+- *(unit)* `UnitWidth::Narrow` — ECMA-402 `unitDisplay: "narrow"` is now a real
+  third width instead of an alias for short: `format_unit("en", 5.0,
+  Unit::Kilometer, UnitWidth::Narrow)` → `"5km"` (short gives `"5 km"`), `"5°"`
+  for degrees, `"3h"` for hours. `number::UnitDisplay::Narrow` resolves to it.
+  The narrow patterns are a third of the unit table, so they sit behind the new
+  `units-narrow` cargo feature (in `default`); without it the width falls back to
+  short, which is UTS #35's own narrow → short fallback.
 - *(number)* `en-IN` and `zh-Hant` number data, vendored from CLDR 48. `en-IN`
   carries Indian digit grouping (`format_decimal("en-IN", 12345678.0)` →
   `"1,23,45,678"`, was `"12,345,678"`) and crore/lakh compact forms; `zh-Hant`
@@ -23,6 +45,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requested options resolve to a pattern with no fields left in it. Previously
   that case produced `Ok("")`, which a caller cannot tell apart from a real
   result.
+
+### Changed
+
+- *(unit)* the CLDR unit table moved from the `src/cldr/units.bin` blob to
+  generated Rust (`src/cldr/generated/units.rs`, `const fn` + `match`), matching
+  how the Unicode property tables are shipped. `#[cfg]` sits on individual width
+  dispatch arms, so `units` without `units-narrow` never compiles the narrow
+  patterns. The table also gained the `perUnitPattern` and `compoundUnitPattern`
+  strings and 19 more units, so the compiled footprint is ~905 KB for long+short
+  and ~315 KB more for narrow, against 175 KB for the old (long+short only,
+  28-unit) blob.
+- *(number)* `format_to_parts` with `style: "unit"` now tags the whole unit
+  phrase as one `unit` part, as ICU does, instead of splitting it on interior
+  whitespace. `"5 kilometers per hour"` yields `integer("5") literal(" ")
+  unit("kilometers per hour")`, not six parts. Single-word units are unchanged.
 
 ### Fixed
 

@@ -4,7 +4,8 @@
 //! helpers need no allocator; the `alloc` feature enables the allocating APIs
 //! (most formatters). UCD and CLDR data are compiled by an offline code
 //! generator into committed tables — `const fn` `match` lookups for the Unicode
-//! properties and embedded binary blobs for the CLDR data — so lookups allocate
+//! properties and the CLDR tables that have been migrated to generated code,
+//! embedded binary blobs for the rest of the CLDR data — so lookups allocate
 //! nothing and need no runtime initialization.
 //!
 //! Modules:

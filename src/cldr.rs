@@ -12,9 +12,18 @@
 //! `[u8 key_len][key][u16 payload_len][payload]`. Within a payload a string is
 //! `[u8 len][bytes]` and an optional string uses a leading `0xFF` for `None`.
 //!
+//! Tables whose contents need finer feature gating than "one blob, one feature"
+//! are emitted as Rust instead — see [`generated`].
+//!
 //! The whole module is `no_std`/no-`alloc` and always compiled; its accessors
 //! are unused when the (alloc-gated) formatters are not built.
 #![allow(dead_code)]
+
+/// Codegen output that is Rust rather than a blob: `const fn` + `match` lookups,
+/// like `crate::unicode::generated`. A blob is all-or-nothing, so data that only
+/// some builds want (the narrow unit width) lives here, where `#[cfg]` can drop
+/// individual match arms.
+pub(crate) mod generated;
 
 // ---- Shared formatter record types (plain data, borrowing from the blobs). ----
 
@@ -186,8 +195,6 @@ const CURRENCY_DIGITS: &[u8] = include_bytes!("cldr/currency_digits.bin");
 const DISPLAY_LANG: &[u8] = include_bytes!("cldr/display_languages.bin");
 #[cfg(feature = "displaynames")]
 const DISPLAY_TERR: &[u8] = include_bytes!("cldr/display_territories.bin");
-#[cfg(feature = "units")]
-const UNITS: &[u8] = include_bytes!("cldr/units.bin");
 #[cfg(feature = "datetime")]
 const CALENDAR: &[u8] = include_bytes!("cldr/calendar.bin");
 #[cfg(feature = "datetime")]
@@ -523,9 +530,6 @@ pub(crate) fn bcp47_type_alias(keyword_and_value: &str) -> Option<&'static str> 
     find(BCP47, keyword_and_value).map(|mut c| c.str())
 }
 
-/// Number of curated units (must match codegen's `UNITS` and the `Unit` enum).
-pub(crate) const UNIT_COUNT: usize = 28;
-
 fn rd_u16(b: &[u8], o: usize) -> usize {
     u16::from_le_bytes([b[o], b[o + 1]]) as usize
 }
@@ -798,23 +802,4 @@ pub(crate) fn calendar_spec(lang: &str) -> Option<CalendarSpec> {
         day_periods_narrow: core::array::from_fn(|_| c.opt()),
         day_period_rules: c.dp_rules(),
     })
-}
-
-/// Unit pattern for `(width, unit, plural category)` in an exact locale key,
-/// falling back to the `other` category. `width` is 0 (long) or 1 (short).
-#[cfg(feature = "units")]
-pub(crate) fn unit_pattern(
-    lang: &str,
-    width: usize,
-    unit: usize,
-    cat: usize,
-) -> Option<&'static str> {
-    let mut c = find(UNITS, lang)?;
-    // Skip to this (width, unit)'s block of 6 plural-count slots.
-    let base = (width * UNIT_COUNT + unit) * 6;
-    for _ in 0..base {
-        c.skip_opt();
-    }
-    let slots: [Option<&'static str>; 6] = core::array::from_fn(|_| c.opt());
-    slots[cat].or(slots[5])
 }

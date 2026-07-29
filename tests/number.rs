@@ -175,6 +175,114 @@ fn unit_style() {
     assert_eq!(parts.last().unwrap().value, "m");
     // Unknown unit degrades to the bare number.
     assert_eq!(format("en", 5.0, &mk("furlong", UnitDisplay::Long)), "5");
+    // ... including an unsanctioned half of a compound.
+    assert_eq!(
+        format("en", 5.0, &mk("meter-per-furlong", UnitDisplay::Long)),
+        "5"
+    );
+}
+
+/// ECMA-402 `unit` identifiers that are not a single CLDR unit: any
+/// `<unit>-per-<unit>` pair. Values match V8/ICU.
+#[cfg(feature = "units")]
+#[test]
+fn unit_style_compound() {
+    use intl::number::{NumberPartType, NumberStyle, UnitDisplay, format, format_to_parts};
+    let mk = |unit, disp| {
+        nf(move |o| {
+            o.style = NumberStyle::Unit;
+            o.unit = Some(unit);
+            o.unit_display = disp;
+        })
+    };
+    // perUnitPattern path (`second` has one).
+    assert_eq!(
+        format("en", 5.0, &mk("meter-per-second", UnitDisplay::Long)),
+        "5 meters per second"
+    );
+    assert_eq!(
+        format("en", 5.0, &mk("meter-per-second", UnitDisplay::Short)),
+        "5 m/s"
+    );
+    // compoundUnitPattern path (`mile` has none).
+    assert_eq!(
+        format("en", 5.0, &mk("gallon-per-mile", UnitDisplay::Long)),
+        "5 gallons per mile"
+    );
+    assert_eq!(
+        format("de", 5.0, &mk("gallon-per-mile", UnitDisplay::Long)),
+        "5\u{a0}Gallonen pro Meile"
+    );
+    // ICU tags the whole unit phrase, interior spaces included, as one part.
+    let parts = format_to_parts("en", 5.0, &mk("meter-per-second", UnitDisplay::Long));
+    assert_eq!(parts.len(), 3);
+    assert_eq!(parts[0].kind, NumberPartType::Integer);
+    assert_eq!(parts[1].kind, NumberPartType::Literal);
+    assert_eq!(parts[1].value, " ");
+    assert_eq!(parts[2].kind, NumberPartType::Unit);
+    assert_eq!(parts[2].value, "meters per second");
+}
+
+/// Units added to complete the ECMA-402 sanctioned set, reached through the
+/// string identifier `NumberFormat` takes.
+#[cfg(feature = "units")]
+#[test]
+fn unit_style_sanctioned_set() {
+    use intl::number::{NumberStyle, UnitDisplay, format};
+    let mk = |unit, disp| {
+        nf(move |o| {
+            o.style = NumberStyle::Unit;
+            o.unit = Some(unit);
+            o.unit_display = disp;
+        })
+    };
+    assert_eq!(format("en", 5.0, &mk("acre", UnitDisplay::Long)), "5 acres");
+    assert_eq!(
+        format("en", 5.0, &mk("degree", UnitDisplay::Short)),
+        "5 deg"
+    );
+    assert_eq!(
+        format("en", 5.0, &mk("fluid-ounce", UnitDisplay::Long)),
+        "5 fluid ounces"
+    );
+    assert_eq!(
+        format("en", 5.0, &mk("mile-scandinavian", UnitDisplay::Short)),
+        "5 smi"
+    );
+    assert_eq!(format("en", 5.0, &mk("percent", UnitDisplay::Short)), "5%");
+    assert_eq!(format("en", 5.0, &mk("stone", UnitDisplay::Short)), "5 st");
+    assert_eq!(format("en", 5.0, &mk("yard", UnitDisplay::Long)), "5 yards");
+}
+
+/// `unitDisplay: "narrow"` is a distinct width, not an alias for `"short"`.
+#[cfg(feature = "units-narrow")]
+#[test]
+fn unit_style_narrow() {
+    use intl::number::{NumberStyle, UnitDisplay, format};
+    let mk = |unit, disp| {
+        nf(move |o| {
+            o.style = NumberStyle::Unit;
+            o.unit = Some(unit);
+            o.unit_display = disp;
+        })
+    };
+    assert_eq!(
+        format("en", 5.0, &mk("kilometer", UnitDisplay::Narrow)),
+        "5km"
+    );
+    assert_eq!(format("en", 3.0, &mk("hour", UnitDisplay::Narrow)), "3h");
+    assert_eq!(
+        format("de", 5.0, &mk("kilometer", UnitDisplay::Narrow)),
+        "5 km"
+    );
+    assert_eq!(
+        format("en", 5.0, &mk("meter-per-second", UnitDisplay::Narrow)),
+        "5m/s"
+    );
+    assert_ne!(
+        format("en", 5.0, &mk("kilometer", UnitDisplay::Narrow)),
+        format("en", 5.0, &mk("kilometer", UnitDisplay::Short))
+    );
 }
 
 #[test]
@@ -242,14 +350,17 @@ fn non_finite() {
 
     // The pattern affixes survive: percent keeps its suffix, currency its symbol.
     assert_eq!(pct("en", f64::INFINITY), "∞%");
-    assert_eq!(
-        intl::number::format_currency("en", f64::INFINITY, "USD"),
-        "$∞"
-    );
-    assert_eq!(
-        intl::number::format_currency("en", f64::NEG_INFINITY, "USD"),
-        "-$∞"
-    );
+    #[cfg(feature = "currency")]
+    {
+        assert_eq!(
+            intl::number::format_currency("en", f64::INFINITY, "USD"),
+            "$∞"
+        );
+        assert_eq!(
+            intl::number::format_currency("en", f64::NEG_INFINITY, "USD"),
+            "-$∞"
+        );
+    }
 
     // Compact delegates to the decimal path.
     assert_eq!(format_compact("en", f64::INFINITY), "∞");

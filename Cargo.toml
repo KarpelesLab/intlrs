@@ -43,6 +43,7 @@ default = [
     "number",
     "currency",
     "units",
+    "units-narrow",
     "datetime",
     "calendars-extra",
     "displaynames",
@@ -109,7 +110,12 @@ names = ["alloc"]
 _cldr = []                                  # internal: shared CLDR reader + structs
 number = ["alloc", "_cldr"]                 # decimal/percent/scientific/compact/ordinal/parse + NumberFormat
 currency = ["number"]                       # currency formatting (+ ~0.9 MB currency.bin)
-units = ["number"]                          # measurement units (+ units.bin)
+units = ["number"]                          # measurement units, long + short (+ ~857 KB generated)
+# The narrow unit width (ECMA-402 `unitDisplay: "narrow"`, e.g. "5km"). Its match
+# arms are a further ~357 KB of generated source, so they are `#[cfg]`-gated
+# separately; in `default` because that tier is the spec-complete one and without
+# it narrow silently degrades to short. Opt out via `default-features = false`.
+units-narrow = ["units"]
 datetime = ["number"]                       # date/time/skeleton + POSIX-TZ/GMT (+ calendar/skeletons/timezone.bin)
 calendars-extra = ["datetime"]              # Islamic + Persian calendars (+ islamic/persian.bin)
 displaynames = ["_cldr"]                    # Intl.DisplayNames (+ ~1.6 MB language/territory names)

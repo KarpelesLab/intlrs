@@ -96,7 +96,11 @@ Beyond the `unicode` module:
   → `Some("Japan")`.
 - `intl::unit` (alloc) formats measurement units —
   `format_unit("en", 5.0, Unit::Kilometer, UnitWidth::Long)` → `"5 kilometers"`
-  (plural- and number-aware, long/short widths) — and durations:
+  (plural- and number-aware; long / short / narrow widths). All 45 ECMA-402
+  sanctioned units are covered, plus arbitrary `<unit>-per-<unit>` compounds:
+  `format_unit_id("en", 5.0, "meter-per-second", UnitWidth::Long)` →
+  `"5 meters per second"`, `format_unit_id("en", 5.0, "gallon-per-mile",
+  UnitWidth::Short)` → `"5 gal/mi"`. Also durations:
   `format_duration("en", 3661, UnitWidth::Long)` → `"1 hour 1 minute 1 second"`.
 - `intl::message` (alloc) is a subset of ICU MessageFormat — `{arg}`
   substitution, `plural`/`selectordinal` (with `=N` and `#`), and `select`,
@@ -181,15 +185,20 @@ intl = { version = "0.1", default-features = false, features = [
 ### CLDR formatters (opt out individually)
 
 The locale-aware formatters are each their own feature, gating the module **and**
-the CLDR `.bin` table(s) it embeds, so a disabled formatter adds no code or data.
-All imply `alloc` (except `displaynames`, which is borrow-only). The always-on
+the CLDR table(s) it embeds, so a disabled formatter adds no code or data. All
+imply `alloc` (except `displaynames`, which is borrow-only). The always-on
 `plural` (rules) and `calendar` (arithmetic) modules need no feature and no data.
+
+Most tables are `.bin` blobs; `units` is generated Rust (`const fn` + `match`),
+so its figures below are *compiled* footprint (`.text` + `.rodata` +
+`.data.rel.ro`) rather than blob bytes.
 
 | feature           | what it provides                                  | gated data |
 |-------------------|---------------------------------------------------|------------|
 | `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~35 KB |
 | `currency`        | currency formatting (→ number)                    | **~0.9 MB** |
-| `units`           | measurement units (→ number)                      | 175 KB |
+| `units`           | measurement units, long + short (→ number)        | ~905 KB |
+| `units-narrow`    | + the narrow unit width (→ units)                 | ~315 KB |
 | `datetime`        | date/time/skeleton + POSIX-TZ/GMT (→ number)      | 219 KB |
 | `calendars-extra` | Islamic + Persian calendars (→ datetime)          | 60 KB |
 | `displaynames`    | `Intl.DisplayNames` (languages/regions)           | **~1.6 MB** |
