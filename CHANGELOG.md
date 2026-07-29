@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4](https://github.com/KarpelesLab/intlrs/compare/v0.5.3...v0.5.4) - 2026-07-29
+
+### Fixed
+
+- *(datetime)* render the zone name where the pattern puts it
+- *(datetime)* name the country for a territory's primary zone
+
 ## [0.5.3](https://github.com/KarpelesLab/intlrs/compare/v0.5.2...v0.5.3) - 2026-07-29
 
 Released as a compatible bump, but it carries **breaking** API changes (see
