@@ -21,7 +21,12 @@ pub use crate::cldr::{NumberSpec, Pattern};
 
 /// The kind of a [`NumberPart`] produced by [`format_to_parts`], matching the
 /// ECMA-402 `Intl.NumberFormat.prototype.formatToParts` part `type` values.
+///
+/// The enum is `#[non_exhaustive]`: ECMA-402 keeps adding part types (the range
+/// formatters brought [`NumberPartType::ApproximatelySign`]), and a formatter can
+/// always emit a kind the caller does not know, so match with a fallback arm.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum NumberPartType {
     /// An integer-digit run (between grouping separators).
     Integer,

@@ -192,7 +192,12 @@ impl DateTime {
 
 /// The kind of a [`DateTimePart`] produced by [`format_to_parts`], matching the
 /// ECMA-402 `Intl.DateTimeFormat.prototype.formatToParts` part `type` values.
+///
+/// The enum is `#[non_exhaustive]`, for the same reason as
+/// [`crate::number::NumberPartType`]: ECMA-402 keeps adding part types, and a
+/// formatter can always emit a kind the caller does not know.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum DateTimePartType {
     /// Weekday name.
     Weekday,

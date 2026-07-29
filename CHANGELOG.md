@@ -106,6 +106,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- *(unit, number, datetime)* `unit::Unit`, `number::NumberPartType` and
+  `datetime::DateTimePartType` are now `#[non_exhaustive]`. All three enumerate
+  sets that the specs keep growing — `Unit` gained 19 sanctioned units and
+  `NumberPartType` gained `ApproximatelySign` in this very release — so callers
+  should match the variants they handle and leave a fallback arm. `UnitWidth` is
+  deliberately *not* marked: ECMA-402's `unitDisplay` is exactly
+  `long | short | narrow`, a closed set, and an unreachable `_` arm would buy
+  nothing.
 - *(cldr)* the six public CLDR record types — `number::NumberSpec`,
   `number::Pattern`, `list::ListPatterns`, `list::ListSpec`, `relative::RelUnit`
   and `relative::RelativeSpec` — are now `#[non_exhaustive]`. They are views onto

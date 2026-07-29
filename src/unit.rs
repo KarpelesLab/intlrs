@@ -29,8 +29,13 @@ use alloc::string::{String, ToString};
 /// pre-composed (`"5 mph"`, not the derived `"5 mi/h"`). Other ratios are formed
 /// with [`format_compound_unit`] or an `"<unit>-per-<unit>"` string passed to
 /// [`format_unit_id`].
+///
+/// The enum is `#[non_exhaustive]`: the sanctioned list is CLDR data rather than
+/// a closed set, and grows with the spec, so match on the variants you handle
+/// and leave a fallback arm.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(missing_docs)]
+#[non_exhaustive]
 pub enum Unit {
     Second,
     Minute,

@@ -114,7 +114,7 @@ impl<T> core::clone::CloneToUninit for intl::datetime::DateTimeFormatError where
 pub unsafe fn intl::datetime::DateTimeFormatError::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::datetime::DateTimeFormatError
 pub fn intl::datetime::DateTimeFormatError::from(T) -> T
-pub enum intl::datetime::DateTimePartType
+#[non_exhaustive] pub enum intl::datetime::DateTimePartType
 pub intl::datetime::DateTimePartType::Day
 pub intl::datetime::DateTimePartType::DayPeriod
 pub intl::datetime::DateTimePartType::Era
@@ -1027,7 +1027,7 @@ impl<T> core::clone::CloneToUninit for intl::number::Notation where T: core::clo
 pub unsafe fn intl::number::Notation::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::Notation
 pub fn intl::number::Notation::from(T) -> T
-pub enum intl::number::NumberPartType
+#[non_exhaustive] pub enum intl::number::NumberPartType
 pub intl::number::NumberPartType::ApproximatelySign
 pub intl::number::NumberPartType::Compact
 pub intl::number::NumberPartType::Currency
@@ -4985,7 +4985,7 @@ pub fn intl::unicode::uppercase<I: core::iter::traits::iterator::Iterator<Item =
 pub fn intl::unicode::uppercase_str_lang(&str, &str) -> alloc::string::String
 pub fn intl::unicode::words(&str) -> intl::unicode::segment::Words<'_>
 pub mod intl::unit
-pub enum intl::unit::Unit
+#[non_exhaustive] pub enum intl::unit::Unit
 pub intl::unit::Unit::Acre
 pub intl::unit::Unit::Bit
 pub intl::unit::Unit::Byte
