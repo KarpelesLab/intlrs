@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3](https://github.com/KarpelesLab/intlrs/compare/v0.5.2...v0.5.3) - 2026-07-29
+
+### Added
+
+- *(datetime)* localized time-zone names from CLDR metazones
+- *(units)* narrow width, compound units, and the full ECMA-402 set
+- *(number)* vendor en-IN and zh-Hant, alias region tags onto scripts
+
+### Fixed
+
+- *(datetime)* key styled interval ranges off the style's own pattern
+- *(datetime)* compose date+time intervals, range seconds, half-local literals
+- *(datetime)* synthesize a pattern for lone time fields instead of ""
+- *(datetime)* render the era-relative year for `y`, not the astronomical one
+- *(number)* handle non-finite input; format_scientific no longer hangs
+
+### Other
+
+- [**breaking**] mark the spec-growing enums non_exhaustive
+- *(cldr)* [**breaking**] mark the public CLDR record types non_exhaustive
+- Merge the number-symbols/range work into the time-zone-name work
+- *(data)* vendor CLDR 48 time-zone names and metazone mapping
+- ignore /.claude/
+
 ### Added
 
 - *(unit)* the full ECMA-402 sanctioned unit set and general compound units.
