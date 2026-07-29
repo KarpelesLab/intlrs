@@ -2428,6 +2428,106 @@ fn interval_skeleton(date_sk: &str, time_sk: &str) -> String {
     }
 }
 
+/// The width of the year field in `pattern` (the length of its `y` run), or 0
+/// if it has none. Quoted literals are skipped.
+fn year_width(pattern: &str) -> usize {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '\'' {
+            i += 1;
+            while i < chars.len() && chars[i] != '\'' {
+                i += 1;
+            }
+            i += 1;
+        } else if chars[i] == 'y' {
+            let start = i;
+            while i < chars.len() && chars[i] == 'y' {
+                i += 1;
+            }
+            return i - start;
+        } else {
+            i += 1;
+        }
+    }
+    0
+}
+
+/// Recover a CLDR skeleton from a resolved pattern, in the canonical field order
+/// `intervalFormats` is keyed by. `date_style`/`time_style` name a whole pattern
+/// rather than a set of components, so they leave the component skeletons empty;
+/// this reads the fields back out of the pattern they chose.
+///
+/// Widths are normalized the way CLDR keys them: `yy` and `y` are both `y`,
+/// numeric months of either width are `M`, and the am/pm field is dropped (the
+/// `h` key already implies it). `split` says which half to take, so a combined
+/// date+time pattern can be keyed as its two halves.
+fn skeleton_from_pattern(pattern: &str, want_time: bool) -> String {
+    let mut counts = [0usize; 128];
+    let mut hour = '\0';
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            i += 1;
+            while i < chars.len() && chars[i] != '\'' {
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+            let n = i - start;
+            if is_time_field(ch) == want_time {
+                match ch {
+                    'h' | 'H' | 'K' | 'k' => {
+                        // The skeleton names the 12-vs-24 family, not the exact
+                        // cycle: `K` keys as `h`, `k` as `H`.
+                        hour = if ch == 'K' {
+                            'h'
+                        } else if ch == 'k' {
+                            'H'
+                        } else {
+                            ch
+                        };
+                    }
+                    _ => counts[ch as usize] = n,
+                }
+            }
+            continue;
+        } else {
+            i += 1;
+        }
+    }
+    fn push(sk: &mut String, c: char, n: usize) {
+        for _ in 0..n {
+            sk.push(c);
+        }
+    }
+    let mut sk = String::new();
+    let c = |ch: char| counts[ch as usize];
+    if want_time {
+        push(&mut sk, 'B', c('B').min(1));
+        if hour != '\0' {
+            sk.push(hour);
+        }
+        push(&mut sk, 'm', c('m').min(1));
+        push(&mut sk, 's', c('s').min(1));
+    } else {
+        push(&mut sk, 'G', c('G').min(1));
+        push(&mut sk, 'y', c('y').min(1));
+        // Numeric months key as `M` at either width; named months keep theirs.
+        let m = c('M').max(c('L'));
+        push(&mut sk, 'M', if m <= 2 { usize::from(m > 0) } else { m });
+        push(&mut sk, 'E', c('E').max(c('e')).max(c('c')).min(1));
+        push(&mut sk, 'd', c('d').min(1));
+    }
+    sk
+}
+
 /// The CLDR field letter of the greatest calendar field in which `a` and `b`
 /// differ, restricted to fields the `skeleton` actually uses. `None` if they
 /// agree on every field the skeleton mentions (→ format as a single value).
@@ -2713,8 +2813,27 @@ pub fn format_range_to_parts(
     let s = spec(lang);
     let base = resolve_pattern(lang, &s, opts)?;
     let loc_hour = locale_hour_letter(&s);
-    let (date_sk, want_date) = build_date_skeleton(opts);
-    let (time_sk, want_time) = build_time_skeleton(opts, loc_hour);
+    let styled = opts.date_style.is_some() || opts.time_style.is_some();
+    // The style shortcuts set no components, so the component skeletons come back
+    // empty and every range would key as `yMd` — dropping the end of a time-only
+    // range and discarding the style on a date one. Read the fields back out of
+    // the patterns the styles resolved to instead.
+    let (date_sk, want_date, time_sk, want_time) = if styled {
+        let d = opts
+            .date_style
+            .map(|d| skeleton_from_pattern(s.date[d.idx()], false))
+            .unwrap_or_default();
+        let t = opts
+            .time_style
+            .map(|t| skeleton_from_pattern(s.time[t.idx()], true))
+            .unwrap_or_default();
+        let (wd, wt) = (!d.is_empty(), !t.is_empty());
+        (d, wd, t, wt)
+    } else {
+        let (d, wd) = build_date_skeleton(opts);
+        let (t, wt) = build_time_skeleton(opts, loc_hour);
+        (d, wd, t, wt)
+    };
     let skeleton = interval_skeleton(&date_sk, &time_sk);
 
     let frac = opts.fractional_second_digits.is_some();
@@ -2729,11 +2848,15 @@ pub fn format_range_to_parts(
     // difference keeps the whole-pattern fallback on both sides, as ICU does.
     if want_date && want_time && is_time_field(field as char) {
         let mut date_only = *opts;
-        date_only.hour = None;
-        date_only.minute = None;
-        date_only.second = None;
-        date_only.fractional_second_digits = None;
-        date_only.day_period = None;
+        if styled {
+            date_only.time_style = None;
+        } else {
+            date_only.hour = None;
+            date_only.minute = None;
+            date_only.second = None;
+            date_only.fractional_second_digits = None;
+            date_only.day_period = None;
+        }
         let date = single_range(&resolve_pattern(lang, &s, &date_only)?, start, &s);
 
         let time = match resolve_interval_pattern(lang, &time_sk, field)
@@ -2746,11 +2869,15 @@ pub fn format_range_to_parts(
                 // the time when both instants fall on the same day, which is
                 // exactly the case here.
                 let mut time_only = *opts;
-                time_only.era = None;
-                time_only.year = None;
-                time_only.month = None;
-                time_only.day = None;
-                time_only.weekday = None;
+                if styled {
+                    time_only.date_style = None;
+                } else {
+                    time_only.era = None;
+                    time_only.year = None;
+                    time_only.month = None;
+                    time_only.day = None;
+                    time_only.weekday = None;
+                }
                 let pat = resolve_pattern(lang, &s, &time_only)?;
                 render_fallback(&resolve_interval_fallback(lang), &pat, start, end, &s)
             }
@@ -2762,6 +2889,13 @@ pub fn format_range_to_parts(
         // The interval pattern is already keyed by the skeleton (which encodes the
         // requested field widths), so it is used as-is — re-patching widths would
         // corrupt locales whose numeric field abuts a literal (e.g. ja `M月`).
+        // The one exception is the year under `date_style`: CLDR keys both `y`
+        // and `yy` as `y`, so a short style (which asks for `yy`) would otherwise
+        // come back with a four-digit year.
+        let ip = match opts.date_style {
+            Some(d) if styled && year_width(s.date[d.idx()]) == 2 => set_field(&ip, &['y'], 'y', 2),
+            _ => ip,
+        };
         return Ok(match split_interval(&ip) {
             Some((first, second)) => render_split(&first, &second, start, end, &s),
             None => single_range(&ip, start, &s),

@@ -374,3 +374,68 @@ fn date_difference_keeps_whole_pattern_on_both_sides() {
         format!("6/15/2024, 9:00{NNBSP}AM{DASH}6/16/2024, 5:00{NNBSP}PM")
     );
 }
+
+/// `date_style`/`time_style` name a whole pattern rather than a set of
+/// components, so they left both component skeletons empty and every styled
+/// range keyed as `yMd`: a time-only difference found no differing field at all
+/// and silently formatted a single instant, and a date difference was rendered
+/// with the `yMd` interval pattern, discarding the style. The skeleton is now
+/// recovered from the pattern the style resolved to. Values match V8/ICU.
+#[test]
+fn style_shortcuts_range() {
+    use intl::datetime::DateStyle;
+
+    let styled = |d: Option<DateStyle>, t: Option<DateStyle>| {
+        let mut o = DateTimeFormatOptions::default();
+        o.date_style = d;
+        o.time_style = t;
+        o
+    };
+    let nine = at(2024, 6, 15, 9, 0);
+    let five = at(2024, 6, 15, 17, 0);
+    let next = at(2024, 6, 16, 17, 0);
+
+    // Date + time, same day: the date is shown once and only the time ranges.
+    let both = styled(Some(DateStyle::Medium), Some(DateStyle::Short));
+    assert_eq!(
+        format_range("en", &nine, &five, &both).unwrap(),
+        format!("Jun 15, 2024, 9:00{NNBSP}AM{DASH}5:00{NNBSP}PM")
+    );
+    // Different days: the whole pattern on both ends, style intact.
+    assert_eq!(
+        format_range("en", &nine, &next, &both).unwrap(),
+        format!("Jun 15, 2024, 9:00{NNBSP}AM{DASH}Jun 16, 2024, 5:00{NNBSP}PM")
+    );
+    // A time style alone over a time-only difference used to drop the end.
+    let time_only = styled(None, Some(DateStyle::Short));
+    assert_eq!(
+        format_range("en", &nine, &five, &time_only).unwrap(),
+        format!("9:00{NNBSP}AM{DASH}5:00{NNBSP}PM")
+    );
+    // A date style alone keeps its own width: `short` asks for a 2-digit year,
+    // which CLDR keys as plain `y`, and `medium` collapses the shared month.
+    assert_eq!(
+        format_range("en", &nine, &next, &styled(Some(DateStyle::Short), None)).unwrap(),
+        format!("6/15/24{DASH}6/16/24")
+    );
+    assert_eq!(
+        format_range("en", &nine, &next, &styled(Some(DateStyle::Medium), None)).unwrap(),
+        format!("Jun 15{DASH}16, 2024")
+    );
+
+    // Other locales compose with their own glue and separators.
+    assert_eq!(
+        format_range("ja", &nine, &five, &both).unwrap(),
+        "2024/06/15 9\u{6642}00\u{5206}\u{ff5e}17\u{6642}00\u{5206}"
+    );
+    assert_eq!(
+        format_range("de", &nine, &five, &both).unwrap(),
+        "15.06.2024, 09:00\u{2013}17:00 Uhr"
+    );
+
+    // Identical instants still collapse to a single formatted value.
+    assert_eq!(
+        format_range("en", &nine, &nine, &both).unwrap(),
+        format!("Jun 15, 2024, 9:00{NNBSP}AM")
+    );
+}
