@@ -311,16 +311,24 @@ codepoint would.
 - **Collation** (UTS #10) — DUCET root collation via `collate::compare` /
   `collate::Collator` (and `sort_key`), with non-ignorable or shifted variable
   handling, **strength levels** (`with_strength`: accent-/case-insensitive),
-  **numeric ordering** (`with_numeric`: `file2 < file10`), and **locale
-  tailoring** (`Tailoring::parse("&z < å < ä < ö")` / `Tailoring::for_locale("sv")`
-  for primary reordering). `for_locale` carries the official CLDR
+  a **case level** (`with_case_level`, UTS #10 §5.1 `caseLevel` — with primary
+  strength that is "accents ignored, case significant", ECMA-402's
+  `sensitivity: "case"`), **numeric ordering** (`with_numeric`:
+  `file2 < file10`), and **locale tailoring**
+  (`Tailoring::parse("&z < å < ä < ö")` / `Tailoring::for_locale("sv")` for
+  primary reordering). `for_locale` carries the official CLDR
   `<collation type="standard">` rule for 78 locales, generated verbatim from
   `data/cldr/<ver>/collation/*.xml`; a handful the rule engine cannot represent
   fall back to a hand-written approximation, and locales CLDR does not tailor at
-  all (`de`, `ga`, `nl`, …) correctly return `None` and sort in root order.
-  Validated against the full official `CollationTest` suite (both modes), and each
-  bundled rule is checked against itself by `tests/collation_data_consistency`.
-  Requires the `alloc` feature.
+  all (`ga`, `nl`, …) correctly return `None` and sort in root order. The BCP-47
+  **`-u-co-` collation keyword** selects a locale's named collation where CLDR
+  ships one — `de-u-co-phonebk` (German has *only* a phonebook tailoring, so
+  plain `de` stays root order), `sv-u-co-trad`, `es-u-co-trad`, `si-u-co-dict`,
+  `fi-u-co-trad`, `ar-u-co-compat`, plus zh `stroke`/`zhuyin`/`unihan` under
+  `collation-zh` — and falls back to the locale's standard collation when it has
+  no collation by that name, as ICU does. Validated against the full official
+  `CollationTest` suite (both modes), and each bundled rule is checked against
+  itself by `tests/collation_data_consistency`. Requires the `alloc` feature.
 - **Normalization** (UAX #15) — `nfd`, `nfc`, `nfkd`, `nfkc` as streaming,
   allocation-free iterator adaptors over `Iterator<Item = char>`; quick-check
   helpers `is_nfc`/`is_nfd`/`is_nfkc`/`is_nfkd` (and tri-state

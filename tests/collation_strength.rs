@@ -276,3 +276,61 @@ fn tailoring_cldr_data_driven() {
     // resolve to root rather than ship a wrong order: ff-Adlm has no fallback.
     assert!(Tailoring::for_locale("ff-Adlm").is_none());
 }
+
+/// The UTS #10 §5.1 `caseLevel` parameter: a case level between the secondary
+/// and tertiary levels. With primary strength it is ECMA-402's
+/// `sensitivity: "case"` — accents ignored, case significant — which no strength
+/// on its own can express.
+///
+/// Every expectation here is `new Intl.Collator('en', {sensitivity: 'case'})
+/// .compare(a, b)` under node 22 / ICU 77.
+#[test]
+fn case_level() {
+    let case = |alt| {
+        Collator::new(alt)
+            .with_strength(Strength::Primary)
+            .with_case_level(true)
+    };
+    // Both variable-handling modes agree: the case level reads the tertiary
+    // weights, which shifting does not touch for letters.
+    for alt in [AlternateHandling::Shifted, AlternateHandling::NonIgnorable] {
+        let c = case(alt);
+        // Accents are ignored…
+        assert_eq!(c.compare("café", "cafe"), Ordering::Equal, "{alt:?}");
+        assert_eq!(c.compare("a", "á"), Ordering::Equal, "{alt:?}");
+        assert_eq!(c.compare("resume", "résumé"), Ordering::Equal, "{alt:?}");
+        // …case is not.
+        assert_eq!(c.compare("a", "A"), Ordering::Less, "{alt:?}");
+        assert_eq!(c.compare("á", "A"), Ordering::Less, "{alt:?}");
+        assert_eq!(c.compare("cafe", "CAFE"), Ordering::Less, "{alt:?}");
+        assert_eq!(c.compare("café", "CAFE"), Ordering::Less, "{alt:?}");
+        assert_eq!(c.compare("Hi", "hI"), Ordering::Greater, "{alt:?}");
+        // Case is compared per element, most significant first, so a title-case
+        // digraph ([upper][lower]) lands between its lower and upper forms.
+        assert_eq!(c.compare("ǆ", "ǅ"), Ordering::Less, "{alt:?}");
+        assert_eq!(c.compare("ǅ", "Ǆ"), Ordering::Less, "{alt:?}");
+        // Compatibility case pairs are cased at the case level as well: circled
+        // and capital-sharp-s forms, whose tertiary weights are the wide /
+        // compat / circled members of DUCET's upper-case band.
+        assert_eq!(c.compare("ⓐ", "Ⓐ"), Ordering::Less, "{alt:?}");
+        assert_eq!(c.compare("ß", "ẞ"), Ordering::Less, "{alt:?}");
+        // Primary differences still dominate: small-capital A is its own letter.
+        assert_eq!(c.compare("ᴀ", "A"), Ordering::Greater, "{alt:?}");
+    }
+
+    // The default (no case level) is untouched: primary strength alone still
+    // ignores case, and the tertiary sort key is byte-for-byte what it was.
+    let plain = Collator::default().with_strength(Strength::Primary);
+    assert_eq!(plain.compare("a", "A"), Ordering::Equal);
+    assert_eq!(
+        Collator::default().sort_key("Straße"),
+        Collator::default()
+            .with_case_level(false)
+            .sort_key("Straße"),
+    );
+    // At tertiary strength the case level is a *finer* first cut, never a
+    // coarser one: it can only agree with the order tertiary already gives.
+    let ter = Collator::default().with_case_level(true);
+    assert_eq!(ter.compare("cafe", "CAFE"), Ordering::Less);
+    assert_eq!(ter.compare("café", "cafe"), Ordering::Greater);
+}

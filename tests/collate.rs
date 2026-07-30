@@ -365,3 +365,88 @@ fn parser_extensions() {
     let c = Tailoring::parse("# leading comment\n&a < b # trailing").unwrap();
     assert_eq!(c.compare("a", "b"), Ordering::Less);
 }
+
+/// The BCP-47 `-u-co-` collation keyword (UTS #35 §3.6.1 key `co`) for locales
+/// other than zh. Every ordering below was checked against node 22 / ICU 77 via
+/// `[...words].sort(new Intl.Collator(tag).compare)`.
+#[test]
+fn named_collations_via_u_co_keyword() {
+    use intl::unicode::collate::Tailoring;
+    let lt = |t: &Tailoring, a: &str, b: &str| {
+        assert_eq!(t.compare(a, b), Ordering::Less, "expected {a} < {b}");
+    };
+
+    // German has no `standard` collation in CLDR — plain `de` sorts in root
+    // order, and must keep doing so — but it does tailor `phonebook`, where the
+    // umlauts collate as "ae"/"oe"/"ue" with a secondary difference.
+    assert!(Tailoring::for_locale("de").is_none());
+    let de = Tailoring::for_locale("de-u-co-phonebk").unwrap();
+    lt(&de, "ad", "ae");
+    lt(&de, "ae", "ä");
+    lt(&de, "äa", "af"); // ä sorts inside "ae", so before "af"
+    lt(&de, "ä", "Ä");
+    lt(&de, "Ozean", "sa");
+    lt(&de, "Öl", "Ost"); // ö is "oe", so before "os"
+
+    // Swedish and Spanish `traditional`: ü as a variant of y rather than of u,
+    // and ch/ll as letters of their own after c/l.
+    let sv = Tailoring::for_locale("sv-u-co-trad").unwrap();
+    lt(&sv, "vy", "über");
+    lt(&sv, "über", "zoo");
+    let es = Tailoring::for_locale("es-u-co-trad").unwrap();
+    lt(&es, "cuna", "chico");
+    lt(&es, "luz", "llama");
+    // Spanish `standard` dropped the ch/ll digraphs in 1994, so that is exactly
+    // the difference the keyword selects.
+    lt(&Tailoring::for_locale("es").unwrap(), "chico", "cuna");
+
+    // Sinhala `dictionary` and Arabic `compat` come from CLDR data too.
+    lt(&Tailoring::for_locale("si-u-co-dict").unwrap(), "ඖ", "ං");
+    lt(
+        &Tailoring::for_locale("ar-u-co-compat").unwrap(),
+        "تاج",
+        "يا",
+    );
+
+    // A keyword the locale has no collation for falls back to its `standard`
+    // one, as ICU does: `new Intl.Collator('en-u-co-phonebk').resolvedOptions()`
+    // reports collation `default`. English has no standard tailoring either, so
+    // the answer is `None` — the same as for plain `en`.
+    assert!(Tailoring::for_locale("en-u-co-phonebk").is_none());
+    assert!(Tailoring::for_locale("en").is_none());
+    // …and where the locale does have one, that is what comes back.
+    assert_eq!(
+        Tailoring::for_locale("sv-u-co-phonebk")
+            .unwrap()
+            .sort_key("ö"),
+        Tailoring::for_locale("sv").unwrap().sort_key("ö"),
+    );
+
+    // `standard`, `search` and `searchjl` are not selectable as `co` values;
+    // they resolve to the locale's default order (for de, to nothing).
+    assert!(Tailoring::for_locale("de-u-co-standard").is_none());
+    assert!(Tailoring::for_locale("de-u-co-search").is_none());
+
+    // Tag shapes: the keyword is found after a region, before or after another
+    // `-u-` key, and independently of case or of the `_` separator.
+    for tag in [
+        "de-DE-u-co-phonebk",
+        "de-u-co-phonebk-kn-true",
+        "de-u-ka-shifted-co-phonebk",
+        "DE-U-CO-PHONEBK",
+        "de_u_co_phonebk",
+    ] {
+        let t = Tailoring::for_locale(tag).unwrap_or_else(|| panic!("{tag} unresolved"));
+        assert_eq!(t.sort_key("ä"), de.sort_key("ä"), "{tag}");
+    }
+    // de-AT tailors phonebook too, but with `&ss<ß` — a primary relation onto a
+    // multi-character anchor the engine cannot place (see codegen's
+    // COLLATION_SKIP). It falls back to the German phonebook rather than
+    // sorting ß wrongly.
+    assert_eq!(
+        Tailoring::for_locale("de-AT-u-co-phonebk")
+            .unwrap()
+            .sort_key("ä"),
+        de.sort_key("ä"),
+    );
+}

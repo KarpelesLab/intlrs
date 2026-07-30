@@ -2421,6 +2421,7 @@ impl intl::unicode::collate::Collator
 pub fn intl::unicode::collate::Collator::compare(&self, &str, &str) -> core::cmp::Ordering
 pub fn intl::unicode::collate::Collator::new(intl::unicode::collate::AlternateHandling) -> Self
 pub fn intl::unicode::collate::Collator::sort_key(&self, &str) -> alloc::vec::Vec<u16>
+pub fn intl::unicode::collate::Collator::with_case_level(self, bool) -> Self
 pub fn intl::unicode::collate::Collator::with_numeric(self, bool) -> Self
 pub fn intl::unicode::collate::Collator::with_strength(self, intl::unicode::collate::Strength) -> Self
 impl core::clone::Clone for intl::unicode::collate::Collator
@@ -4473,6 +4474,7 @@ impl intl::unicode::collate::Collator
 pub fn intl::unicode::collate::Collator::compare(&self, &str, &str) -> core::cmp::Ordering
 pub fn intl::unicode::collate::Collator::new(intl::unicode::collate::AlternateHandling) -> Self
 pub fn intl::unicode::collate::Collator::sort_key(&self, &str) -> alloc::vec::Vec<u16>
+pub fn intl::unicode::collate::Collator::with_case_level(self, bool) -> Self
 pub fn intl::unicode::collate::Collator::with_numeric(self, bool) -> Self
 pub fn intl::unicode::collate::Collator::with_strength(self, intl::unicode::collate::Strength) -> Self
 impl core::clone::Clone for intl::unicode::collate::Collator

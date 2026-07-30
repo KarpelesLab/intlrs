@@ -17,6 +17,7 @@
 
 use super::generated::collation as tables;
 use super::normalize::{canonical_combining_class as ccc, nfd};
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::cmp::Ordering;
@@ -798,6 +799,9 @@ pub fn index_bucket(lang: &str, s: &str) -> alloc::string::String {
 /// ignores accents and case, [`Secondary`](Strength::Secondary) ignores case
 /// (but not accents), [`Tertiary`](Strength::Tertiary) (the default) compares
 /// everything.
+///
+/// "Accents ignored, case significant" is not a point on this scale; it is
+/// `Primary` plus [`Collator::with_case_level`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Strength {
     /// Level 1 only: base letters (`a` = `A` = `á`).
@@ -810,9 +814,54 @@ pub enum Strength {
     Quaternary,
 }
 
+/// The **case weight** of a collation element with tertiary weight `t`, for the
+/// UTS #10 §5.1 `caseLevel` parameter: the case characteristic is derived from
+/// the tertiary weight, and in DUCET the tertiary weights `0x0008..=0x000C` are
+/// the upper-case band (`0x08` UPPER, plus its wide / compat / font / circled
+/// variants — `A` `Ａ` `Ǆ` `Ⓐ`), while `0x0002..=0x0007` are the lower-case and
+/// caseless ones and `0x000D` upwards are uncased modifiers and symbols.
+///
+/// Two values, not ICU's three: DUCET gives a title-case letter the same tertiary
+/// as its upper-case sibling (`ǅ` and `Ǆ` are both `0x000A`), so "mixed" cannot be
+/// read off a single weight. It falls out anyway for the digraphs that motivate
+/// it, because their *second* element differs — `ǅ` is `[UPPER][lower]` where `Ǆ`
+/// is `[UPPER][UPPER]`, so `ǅ < Ǆ` as ICU has it.
+///
+/// Both values are non-zero: zero terminates a level, and a zero weight is
+/// skipped at every other level.
+fn case_weight(t: u16) -> u16 {
+    if (0x0008..=0x000C).contains(&t) { 2 } else { 1 }
+}
+
+/// Append one element's case weight to the case level, or nothing if the element
+/// does not take part.
+///
+/// A completely ignorable element (`t == 0`, also every shifted variable under
+/// [`Shifted`](AlternateHandling::Shifted)) never contributes. At
+/// [`Primary`](Strength::Primary) strength a *primary-ignorable* one does not
+/// either: with accents ignored, letting a combining mark add a case weight would
+/// make `ä > a` again and defeat the accent-insensitive, case-sensitive
+/// comparison the combination exists for. (ICU makes the same exception, for the
+/// same reason.) At secondary strength and above the accents are already
+/// significant, so every element with a tertiary weight counts.
+fn push_case_weight(key: &mut Vec<u16>, p: u16, t: u16, strength: Strength) {
+    if t == 0 || (strength == Strength::Primary && p == 0) {
+        return;
+    }
+    key.push(case_weight(t));
+}
+
 /// Build the sort key (a sequence of 16-bit weights) for a collation element
-/// array under the given variable handling, truncated at `strength`.
-fn build_sort_key(cea: &[u64], alternate: AlternateHandling, strength: Strength) -> Vec<u16> {
+/// array under the given variable handling, truncated at `strength`. With
+/// `case_level`, a case level (UTS #10 §5.1) is inserted in front of the tertiary
+/// level; `strength` [`Primary`](Strength::Primary) plus `case_level` is
+/// ECMA-402's `sensitivity: "case"`.
+fn build_sort_key(
+    cea: &[u64],
+    alternate: AlternateHandling,
+    strength: Strength,
+    case_level: bool,
+) -> Vec<u16> {
     let mut key = Vec::new();
     match alternate {
         AlternateHandling::NonIgnorable => {
@@ -822,17 +871,22 @@ fn build_sort_key(cea: &[u64], alternate: AlternateHandling, strength: Strength)
                     key.push(p);
                 }
             }
-            if strength == Strength::Primary {
-                return key;
-            }
-            key.push(0);
-            for &ce in cea {
-                let s = secondary(ce);
-                if s != 0 {
-                    key.push(s);
+            if strength >= Strength::Secondary {
+                key.push(0);
+                for &ce in cea {
+                    let s = secondary(ce);
+                    if s != 0 {
+                        key.push(s);
+                    }
                 }
             }
-            if strength == Strength::Secondary {
+            if case_level {
+                key.push(0);
+                for &ce in cea {
+                    push_case_weight(&mut key, primary(ce), tertiary(ce), strength);
+                }
+            }
+            if strength < Strength::Tertiary {
                 return key;
             }
             key.push(0);
@@ -873,16 +927,21 @@ fn build_sort_key(cea: &[u64], alternate: AlternateHandling, strength: Strength)
                     key.push(p);
                 }
             }
-            if strength == Strength::Primary {
-                return key;
-            }
-            key.push(0);
-            for &(_, s, ..) in &rows {
-                if s != 0 {
-                    key.push(s);
+            if strength >= Strength::Secondary {
+                key.push(0);
+                for &(_, s, ..) in &rows {
+                    if s != 0 {
+                        key.push(s);
+                    }
                 }
             }
-            if strength == Strength::Secondary {
+            if case_level {
+                key.push(0);
+                for &(p, _, t, _) in &rows {
+                    push_case_weight(&mut key, p, t, strength);
+                }
+            }
+            if strength < Strength::Tertiary {
                 return key;
             }
             key.push(0);
@@ -911,6 +970,7 @@ pub struct Collator {
     alternate: AlternateHandling,
     strength: Strength,
     numeric: bool,
+    case_level: bool,
 }
 
 impl Default for Collator {
@@ -919,6 +979,7 @@ impl Default for Collator {
             alternate: AlternateHandling::Shifted,
             strength: Strength::Tertiary,
             numeric: false,
+            case_level: false,
         }
     }
 }
@@ -929,8 +990,7 @@ impl Collator {
     pub fn new(alternate: AlternateHandling) -> Self {
         Collator {
             alternate,
-            strength: Strength::Tertiary,
-            numeric: false,
+            ..Collator::default()
         }
     }
 
@@ -939,6 +999,32 @@ impl Collator {
     #[must_use]
     pub fn with_strength(mut self, strength: Strength) -> Self {
         self.strength = strength;
+        self
+    }
+
+    /// Enable the **case level** (UTS #10 §5.1 `caseLevel`, CLDR `kc`): a level
+    /// carrying just the case of each collation element, inserted between the
+    /// secondary and tertiary levels.
+    ///
+    /// Its reason to exist is the combination with
+    /// [`Strength::Primary`], which no strength alone can
+    /// express: accents ignored, case still significant — ECMA-402's
+    /// `sensitivity: "case"`.
+    ///
+    /// ```
+    /// # #[cfg(feature = "alloc")] {
+    /// use intl::unicode::collate::{Collator, Strength};
+    /// use core::cmp::Ordering;
+    /// let c = Collator::default()
+    ///     .with_strength(Strength::Primary)
+    ///     .with_case_level(true);
+    /// assert_eq!(c.compare("café", "cafe"), Ordering::Equal); // accents ignored
+    /// assert_eq!(c.compare("a", "A"), Ordering::Less); // case is not
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn with_case_level(mut self, case_level: bool) -> Self {
+        self.case_level = case_level;
         self
     }
 
@@ -952,6 +1038,13 @@ impl Collator {
 
     /// The DUCET sort key for `s`: comparing two sort keys lexicographically
     /// yields the same order as [`compare`](Self::compare).
+    ///
+    /// Keys are comparable only between collators configured alike — the level
+    /// layout follows the settings, so [`with_case_level`](Self::with_case_level)
+    /// inserts an extra level (and its `0` separator) that a collator without it
+    /// does not emit. That is the only way the key layout has ever varied by
+    /// setting other than [`Strength`], and a default collator's key is
+    /// unchanged.
     #[must_use]
     pub fn sort_key(&self, s: &str) -> Vec<u16> {
         let cv: Vec<char> = nfd(s.chars()).collect();
@@ -960,7 +1053,7 @@ impl Collator {
         } else {
             collation_elements(cv)
         };
-        build_sort_key(&cea, self.alternate, self.strength)
+        build_sort_key(&cea, self.alternate, self.strength, self.case_level)
     }
 
     /// Compare two strings in DUCET collation order.
@@ -1040,16 +1133,27 @@ pub struct Tailoring {
 impl Tailoring {
     /// A built-in tailoring for a locale, or `None` if none is bundled. Two
     /// sources are consulted, in order: the **official CLDR collation rules**
-    /// (every `common/collation/<locale>.xml` `<collation type="standard">` rule,
-    /// generated verbatim into a committed table — 78 locales), then a small set
-    /// of hand-written rules for the locales that table cannot carry.
+    /// (every `common/collation/<locale>.xml` rule, generated verbatim into a
+    /// committed table), then a small set of hand-written rules for the locales
+    /// that table cannot carry.
+    ///
+    /// The BCP-47 **`-u-co-` collation keyword** (UTS #35 §3.6.1 key `co`) selects
+    /// a locale's *named* collation where CLDR ships one: `de-u-co-phonebk`
+    /// (German phonebook), `sv-u-co-trad` / `es-u-co-trad` (traditional),
+    /// `si-u-co-dict`, `ln-u-co-phonetic`, `ar-u-co-compat`, and the zh
+    /// `stroke`/`zhuyin`/`unihan` Han-weight tables under `collation-zh`. A
+    /// keyword the locale does not have falls back to its `standard` collation,
+    /// matching ICU — `new Intl.Collator('en-u-co-phonebk').resolvedOptions()`
+    /// reports collation `default`, so `for_locale("en-u-co-phonebk")` is `None`
+    /// exactly as `for_locale("en")` is. `standard`, `search` and `searchjl` are
+    /// not selectable this way (`search`/`searchjl` serve `usage: "search"`).
     ///
     /// A self-consistency gate (`tests/collation_data_consistency`) excludes from
-    /// the generated table any locale whose rule the parser rejects or would
-    /// mis-order (bare-combining-mark anchors, chained multi-char expansions like
-    /// Danish `&å<<<aa`, decomposing-letter anchors), so this never returns a
-    /// tailoring that sorts against its own rule — it falls back to a hand-written
-    /// rule or to root DUCET instead.
+    /// the generated table any rule the parser rejects or would mis-order
+    /// (bare-combining-mark anchors, chained multi-char expansions like Danish
+    /// `&å<<<aa`, decomposing-letter anchors), so this never returns a tailoring
+    /// that sorts against its own rule — it falls back to a hand-written rule or
+    /// to root DUCET instead.
     ///
     /// A locale with **no** `standard` collation in CLDR sorts in root order, and
     /// gets no tailoring here: German tailors only `phonebook` (which is
@@ -1064,6 +1168,11 @@ impl Tailoring {
     /// assert_eq!(sv.compare("z", "å"), Ordering::Less);
     /// let es = Tailoring::for_locale("es").unwrap(); // from CLDR data
     /// assert_eq!(es.compare("n", "ñ"), Ordering::Less);
+    /// // German has no `standard` tailoring — but it does have a phonebook one,
+    /// // where ä sorts with "ae" rather than with a.
+    /// assert!(Tailoring::for_locale("de").is_none());
+    /// let de = Tailoring::for_locale("de-u-co-phonebk").unwrap();
+    /// assert_eq!(de.compare("äa", "af"), Ordering::Less);
     /// # }
     /// ```
     #[must_use]
@@ -1072,7 +1181,10 @@ impl Tailoring {
         // (`ff-adlm`), then the primary subtag (`es`) — before the hand-written
         // fallbacks. A plain `[..2]` truncation would alias "fil" to "fi".
         let full = lang.replace('_', "-").to_ascii_lowercase();
-        let primary = full.split('-').next().unwrap_or(&full);
+        // The language/script/region part, with any `-u-`/`-t-`/`-x-` extension
+        // split off, and the `co` keyword's value if the tag carries one.
+        let (base, co) = split_collation_keyword(&full);
+        let primary = base.split('-').next().unwrap_or(base);
         // Chinese defaults to pinyin collation (feature `collation-zh`); the
         // `-u-co-stroke` / `-u-co-zhuyin` BCP-47 collation keywords select the
         // stroke / zhuyin variants. Handled before the CLDR rule table since zh's
@@ -1081,10 +1193,10 @@ impl Tailoring {
         if primary == "zh" {
             // `zh-u-co-unihan` orders every Han by radical-stroke (readings
             // ignored) — a distinct code path, not a ranked Han-weight table.
-            if full.find("-u-co-").map(|i| &full[i + 6..]) == Some("unihan") {
+            if co == Some("unihan") {
                 return Some(Tailoring::zh_unihan());
             }
-            let table = match full.find("-u-co-").map(|i| &full[i + 6..]) {
+            let table = match co {
                 Some("stroke") => ZH_STROKE,
                 Some("zhuyin") => ZH_ZHUYIN,
                 // `pinyin`, `standard`, an unknown/unsupported keyword, or none →
@@ -1101,10 +1213,20 @@ impl Tailoring {
             "tl" => Some("fil"),
             _ => None,
         };
-        for key in [Some(full.as_str()), Some(primary), inherited]
-            .into_iter()
-            .flatten()
-        {
+        // A named collation is looked up for the full tag then the language alone
+        // (`de-at-u-co-phonebk`, then `de-u-co-phonebk`) — and, when the locale
+        // has none by that name, we fall through to its `standard` collation
+        // below, which is what ICU resolves such a request to.
+        if let Some(co) = co.filter(|c| !matches!(*c, "standard" | "search" | "searchjl")) {
+            for stem in [base, primary] {
+                if let Some(rule) = crate::cldr::collation_rule(&format!("{stem}-u-co-{co}"))
+                    && let Some(t) = Tailoring::parse(rule)
+                {
+                    return Some(t);
+                }
+            }
+        }
+        for key in [Some(base), Some(primary), inherited].into_iter().flatten() {
             if let Some(rule) = crate::cldr::collation_rule(key)
                 && let Some(t) = Tailoring::parse(rule)
             {
@@ -1425,14 +1547,16 @@ impl Tailoring {
         // below cannot express. Only fires for a plain (non-tailored) anchor with
         // two or more non-ignorable primaries and a secondary/tertiary relation —
         // no single-letter Latin/Cyrillic rule qualifies, so their order is
-        // unchanged.
+        // unchanged. It must also still be the *anchor* being varied: once a `<`
+        // has moved us off it (`p_off > 0`), the relation varies the last tailored
+        // letter instead, which the sub-weight path below places correctly
+        // (Austrian phonebook's `&ss<ß<<<ẞ` — ẞ is a variant of ß, not of "ss").
         if anchor_ce.is_none()
             && level >= 2
+            && *p_off == 0
             && anchor_ces.iter().filter(|&&ce| primary(ce) != 0).count() >= 2
         {
-            Self::push_anchor_expansion(
-                entries, target, anchor_ces, level, *s_off, *t_off, &exp_ces,
-            );
+            Self::push_anchor_expansion(entries, target, anchor_ces, *s_off, *t_off, &exp_ces);
             return;
         }
         // A secondary/tertiary variant of a *tailored* anchor copies that anchor's
@@ -1567,7 +1691,6 @@ impl Tailoring {
         entries: &mut Vec<(Vec<char>, Vec<u64>)>,
         target: &[char],
         anchor_ces: &[u64],
-        level: u8,
         s_off: u32,
         t_off: u32,
         exp_ces: &[u64],
@@ -1577,15 +1700,14 @@ impl Tailoring {
             return;
         }
         let mut ces = anchor_ces.to_vec();
-        // Primary-ignorable distinguisher: a secondary bump for `<<`, a tertiary
-        // bump for `<<<` (each offset is ≥ 1 here, so the target never collides
-        // with the bare anchor).
-        let dist = if level == 2 {
-            pack(0, 0x0020 + s_off, 0x0002)
-        } else {
-            pack(0, 0x0020, 0x0002 + t_off)
-        };
-        ces.push(dist);
+        // Primary-ignorable distinguisher carrying *both* running offsets, so a
+        // `<<<` chained onto a `<<` stays inside its secondary variant rather than
+        // falling back to the anchor's own secondary. German phonebook's
+        // `&AE<<ä<<<Ä` is exactly that shape: Ä is a tertiary variant of ä, so it
+        // must keep ä's secondary bump (`0x21`) and only raise the tertiary. Each
+        // offset is ≥ 1 for its own level, so a target never collides with the
+        // bare anchor. (Only `<<`/`<<<` reach here — see the caller.)
+        ces.push(pack(0, 0x0020 + s_off, 0x0002 + t_off));
         ces.extend_from_slice(exp_ces);
         entries.push((seq, ces));
     }
@@ -2247,19 +2369,65 @@ fn lex(rules: &str) -> Option<Vec<Tok>> {
     Some(out)
 }
 
+/// Split a normalized (lowercased, `-`-separated) language tag into its
+/// language/script/region part and the value of the BCP-47 Unicode-extension
+/// `co` keyword — the collation type of UTS #35 §3.6.1, as in `de-u-co-phonebk`.
+///
+/// The value runs to the next *key* (a two-character subtag) or to the next
+/// singleton, so `de-u-co-phonebk-kn-true` yields `phonebk` while CLDR's own
+/// two-subtag spellings (`ja-u-co-private-kana`) survive whole.
+fn split_collation_keyword(tag: &str) -> (&str, Option<&str>) {
+    // (byte offset, subtag) for each subtag of `tag`.
+    let mut subs: Vec<(usize, &str)> = Vec::new();
+    let mut off = 0;
+    for s in tag.split('-') {
+        subs.push((off, s));
+        off += s.len() + 1;
+    }
+    // The language/script/region part ends at the first singleton subtag — the
+    // start of an extension (`-u-`, `-t-`) or of private use (`-x-`).
+    let first_singleton = subs.iter().position(|(_, s)| s.len() == 1);
+    let base = match first_singleton {
+        Some(i) => &tag[..subs[i].0.saturating_sub(1)],
+        None => tag,
+    };
+    // Only the `-u-` extension carries `co`, and it is alternating two-character
+    // keys followed by their (3–8 character) value subtags.
+    let mut co = None;
+    if first_singleton.is_some_and(|i| subs[i].1 == "u") {
+        let mut j = first_singleton.unwrap_or(0) + 1;
+        while j < subs.len() && subs[j].1.len() == 2 {
+            let key = subs[j].1;
+            let mut k = j + 1;
+            while k < subs.len() && subs[k].1.len() > 2 {
+                k += 1;
+            }
+            if key == "co" && k > j + 1 {
+                let (last_off, last) = subs[k - 1];
+                co = Some(&tag[subs[j + 1].0..last_off + last.len()]);
+                break;
+            }
+            j = k;
+        }
+    }
+    (base, co)
+}
+
 /// Resolve an `[import <locale>]` target to a bundled rule string. Accepts a bare
-/// locale (`es`) or a BCP-47 collation tag (`da-u-co-standard`); only the
-/// `standard` collation is bundled, so private/other `-u-co-*` types (e.g. the
-/// Japanese `ja-u-co-private-kana`) resolve to `None` and are skipped.
+/// locale (`es`) or a BCP-47 collation tag — named collations are bundled under
+/// that same `<locale>-u-co-<type>` key (`de-u-co-phonebk`, `und-u-co-eor`), so
+/// the tag is looked up verbatim and only `-u-co-standard` needs rewriting to the
+/// bare locale key. A type that is not bundled (CLDR's private `-u-co-private-*`)
+/// resolves to `None` and is skipped.
 fn import_rule(loc: &str) -> Option<&'static str> {
     let full = loc.replace('_', "-").to_ascii_lowercase();
-    if let Some(idx) = full.find("-u-co-") {
-        if &full[idx + 6..] != "standard" {
-            return None;
-        }
-        return crate::cldr::collation_rule(&full[..idx]);
+    if let Some(rule) = crate::cldr::collation_rule(&full) {
+        return Some(rule);
     }
-    crate::cldr::collation_rule(&full)
+    match full.find("-u-co-") {
+        Some(idx) if &full[idx + 6..] == "standard" => crate::cldr::collation_rule(&full[..idx]),
+        _ => None,
+    }
 }
 
 /// Resolve an `[import <locale>]` target that has no bundled rule string to its

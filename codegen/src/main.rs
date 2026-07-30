@@ -349,6 +349,7 @@ fn main() {
         &cldr_dir,
         &cldr.join("collation.json"),
         &cldr.join("collation"),
+        &cldr.join("bcp47/collation.xml"),
     );
     emit_collation_zh(&root, &cldr.join("collation/zh.xml"));
     emit_collation_zh_rs(&root, &ucd.join("Unihan_kRSUnicode.txt"));
@@ -4662,7 +4663,9 @@ fn emit_japanese_hist(cldr_dir: &Path, raw_dir: &Path) {
 /// Write `cldr/ordsuffix.bin`: per-locale ordinal suffix for each plural
 /// category (zero/one/two/few/many/other), filling absent categories with the
 /// `other` suffix.
-/// Locales whose CLDR `standard` rule is **not** shipped in the generated table.
+/// Rules **not** shipped in the generated table, keyed exactly as
+/// [`emit_collation_rules`] would key them — a bare locale for a `standard`
+/// collation, `<locale>-u-co-<type>` for a named one.
 /// Each entry is a rule the runtime `Tailoring` parser cannot represent, so
 /// bundling it would sort text *wrong* rather than merely coarsely; the
 /// `tests/collation_data_consistency` gate re-derives this list from the data, so
@@ -4737,6 +4740,49 @@ const COLLATION_SKIP: &[(&str, &str)] = &[
          does not resolve to a weight",
     ),
     (
+        "und-u-co-eor",
+        "anchored on `&[last tertiary ignorable]`, a pseudo-anchor the parser does \
+         not resolve to a weight",
+    ),
+    (
+        "de-u-co-eor",
+        "`[import und-u-co-eor]`, and `und-u-co-eor` is itself excluded above",
+    ),
+    (
+        "und-u-co-emoji",
+        "anchored on `&[last primary ignorable]` and `&[before 1]\\uFDD1`, \
+         pseudo-anchors the parser does not resolve to a weight. The CLDR emoji \
+         order is a wholesale reordering of the emoji block rather than a \
+         letter-level tailoring",
+    ),
+    (
+        "vi-u-co-trad",
+        "opens with the same tone-mark reset (`&\\u0300<<\\u0309…`) that excludes \
+         `vi` above — a bare combining mark has no DUCET primary to anchor on",
+    ),
+    (
+        "ja-u-co-unihan",
+        "`[import und-u-co-private-unihan]` + `[import ja-u-co-private-kana]`, \
+         neither a CLDR locale, so neither import resolves. The unihan order is \
+         ICU's root CJK radical-stroke table, not a rule string — CLDR's \
+         `private-unihan` holds only the AlphabeticIndex radical boundaries",
+    ),
+    (
+        "ko-u-co-unihan",
+        "same: the rule is `[import und-u-co-private-unihan]` (unresolvable) plus \
+         `[reorder Hang Hani]`, so bundling it would answer a radical-stroke \
+         request with hanja in code-point order — less accurate than falling back \
+         to ko's hanja-by-reading `standard` collation",
+    ),
+    (
+        "de-at-u-co-phonebk",
+        "`&ss<\\u00DF` — a *primary* relation onto a multi-character anchor. The \
+         engine hangs the target on the anchor's first primary plus a sub-weight, \
+         which sorts \\u00DF after `st` where ICU puts it between `ss` and `st`. \
+         Falls back to `de-u-co-phonebk`, which differs only in making \
+         \\u00E4/\\u00F6/\\u00FC secondary rather than primary differences",
+    ),
+    (
         "ar",
         "`&[before 2]` — a reset *before* an anchor at the secondary level; the \
          engine models reset-before only at the primary level",
@@ -4759,6 +4805,15 @@ const COLLATION_SKIP: &[(&str, &str)] = &[
     // Shipping these would sort text *wrong*, which is worse than sorting it
     // coarsely, so they fall back to a hand rule or to root DUCET.
     ("af", "gate: \"N\" (rel 3) \"ŉ\" -> Greater"),
+    (
+        "bn-u-co-trad",
+        "gate: \"ৎ\" (rel 0) \"ত\\u{9cd}\\u{200d}\" -> Greater",
+    ),
+    ("kn-u-co-trad", "gate: \"ಕ\\u{ccd}ಅ\" (rel 0) \"ಕ\" -> Less"),
+    (
+        "ln-u-co-phonetic",
+        "gate: \"NgB\" (rel 3) \"NGB\" -> Greater",
+    ),
     ("as", "gate: \"ৎ\" (rel 0) \"ত\\u{9cd}\\u{200d}\" -> Less"),
     ("bal", "gate: \"ا\\u{653}\" (rel 1) \"ا\" -> Greater"),
     ("br", "gate: \"c'h\" (rel 0) \"cʼh\" -> Greater"),
@@ -4780,18 +4835,30 @@ const COLLATION_SKIP: &[(&str, &str)] = &[
 
 /// Write `cldr/collation.bin` (and the committed `data/cldr/<ver>/collation.json`
 /// mirror the consistency gate reads): per-locale CLDR collation tailoring **rule
-/// strings**, taken verbatim from each `common/collation/<locale>.xml`'s
-/// `<collation type="standard">` `<cr>`.
+/// strings**, taken verbatim from each `common/collation/<locale>.xml`'s `<cr>`.
+///
+/// Two kinds of key are emitted:
+///
+/// * `<locale>` — the locale's `<collation type="standard">`, its default order;
+/// * `<locale>-u-co-<type>` — every **named** collation the locale also ships
+///   (`de-u-co-phonebk`, `sv-u-co-trad`, `si-u-co-dict`, …), keyed by the BCP-47
+///   `co` type name from `bcp47/collation.xml` rather than the LDML element name
+///   (`phonebook` → `phonebk`). That is both the spelling a `-u-co-` request
+///   arrives in and the spelling CLDR's own `[import de-u-co-phonebk]` uses, so
+///   one key form serves lookup and import alike.
 ///
 /// `Tailoring::for_locale` parses the looked-up rule at runtime, so locale
 /// coverage is data-driven from the official CLDR rules. Only [`COLLATION_SKIP`]
-/// is hand-curated; `root`/`zh` are handled elsewhere (root needs no tailoring,
-/// zh is distilled into a Han-weight table by [`emit_collation_zh`]).
-fn emit_collation_rules(cldr_dir: &Path, json_out: &Path, xml_dir: &Path) {
+/// is hand-curated; `zh` is handled elsewhere (distilled into a Han-weight table
+/// by [`emit_collation_zh`]). `root` contributes no `standard` rule (it *is* the
+/// DUCET order) but does contribute its named collations, under `und-…`.
+fn emit_collation_rules(cldr_dir: &Path, json_out: &Path, xml_dir: &Path, bcp47_xml: &Path) {
     let skip: BTreeMap<&str, &str> = COLLATION_SKIP.iter().copied().collect();
+    let co_types = bcp47_collation_types(bcp47_xml);
     let mut records: Vec<(String, Vec<u8>)> = Vec::new();
     let mut skipped: Vec<String> = Vec::new();
     let mut untailored = 0usize;
+    let mut named = 0usize;
 
     let mut files: Vec<PathBuf> = fs::read_dir(xml_dir)
         .expect("read collation dir")
@@ -4805,25 +4872,57 @@ fn emit_collation_rules(cldr_dir: &Path, json_out: &Path, xml_dir: &Path) {
             .file_stem()
             .and_then(|s| s.to_str())
             .expect("collation file stem");
-        // `root` carries the DUCET order itself (no tailoring to apply), and the
-        // Chinese variants are distilled into Han-weight tables, not rule strings.
-        if matches!(stem, "root" | "zh" | "zh_Hant") {
+        // The Chinese variants are distilled into Han-weight tables, not rule
+        // strings. `root` stays in — for its *named* collations only (see below).
+        if matches!(stem, "zh" | "zh_Hant") {
             continue;
         }
-        let lang = stem.replace('_', "-").to_ascii_lowercase();
+        // CLDR's own `[import …]` targets spell root as `und` (`[import
+        // und-u-co-eor]`), so key it that way and the import resolves for free.
+        let lang = match stem {
+            "root" => "und".to_string(),
+            s => s.replace('_', "-").to_ascii_lowercase(),
+        };
         let xml = fs::read_to_string(path).expect("read collation xml");
-        let Some(rule) = standard_collation_rule(&xml) else {
+        let rules = collation_rules(&xml);
+
+        // The `standard` collation, keyed by the bare locale. `root`'s is the
+        // DUCET order itself, with no tailoring to apply.
+        match rules.iter().find(|(ty, _)| ty == "standard") {
+            Some((_, rule)) if stem != "root" => {
+                if let Some(why) = skip.get(lang.as_str()) {
+                    skipped.push(format!("{lang} ({why})"));
+                } else {
+                    records.push((lang.clone(), rule.clone().into_bytes()));
+                }
+            }
             // No `standard` collation: the locale sorts in root order (e.g. de,
             // ga, nb, nl — de tailors only `phonebook`, which is `de-u-co-phonebk`,
             // not plain `de`).
-            untailored += 1;
-            continue;
-        };
-        if let Some(why) = skip.get(lang.as_str()) {
-            skipped.push(format!("{lang} ({why})"));
-            continue;
+            _ if stem != "root" => untailored += 1,
+            _ => {}
         }
-        records.push((lang, rule.into_bytes()));
+
+        // Every named collation, keyed `<locale>-u-co-<bcp47 type>`. `search` and
+        // `searchjl` are excluded: they serve `usage: "search"` (ECMA-402 rejects
+        // them as `co` values, and ICU resolves `de-u-co-search` to the default
+        // collation), and CLDR's `private-*` types are not BCP-47 types at all —
+        // both fall out of the `co_types` lookup rather than needing a list.
+        for (ty, rule) in &rules {
+            if ty == "standard" || ty == "search" || ty == "searchjl" {
+                continue;
+            }
+            let Some(co) = co_types.get(ty.as_str()) else {
+                continue;
+            };
+            let key = format!("{lang}-u-co-{co}");
+            if let Some(why) = skip.get(key.as_str()) {
+                skipped.push(format!("{key} ({why})"));
+                continue;
+            }
+            named += 1;
+            records.push((key, rule.clone().into_bytes()));
+        }
     }
     records.sort();
 
@@ -4848,27 +4947,56 @@ fn emit_collation_rules(cldr_dir: &Path, json_out: &Path, xml_dir: &Path) {
         .map(|s| s.split_once(' ').map_or(s.as_str(), |(n, _)| n))
         .collect();
     println!(
-        "codegen: wrote collation.bin ({} locales from CLDR, {} KB; {} skipped \
-         [{}]; {untailored} with no `standard` tailoring -> root order)",
+        "codegen: wrote collation.bin ({} rules from CLDR — {} standard + {named} \
+         named (-u-co-) — {} KB; {} skipped [{}]; {untailored} with no `standard` \
+         tailoring -> root order)",
         records.len(),
+        records.len() - named,
         bytes / 1024,
         skipped.len(),
         names.join(" "),
     );
 }
 
-/// The `<collation type="standard">` rule of an LDML collation file, distilled by
-/// [`distill_collation_rule`], or `None` when the locale has no standard
-/// tailoring.
+/// Map every LDML collation element name to its BCP-47 `co` type name, read from
+/// `common/bcp47/collation.xml`'s `<key name="co">`: `phonebook` → `phonebk`,
+/// `traditional` → `trad`, `dictionary` → `dict`, and the (majority) identity
+/// cases. A type absent from this map is not addressable as `-u-co-…` at all
+/// (CLDR's `private-kana` / `private-unihan`, cs's `digits-after`), so it is not
+/// bundled.
+fn bcp47_collation_types(path: &Path) -> BTreeMap<String, String> {
+    let xml = strip_xml_comments(&fs::read_to_string(path).expect("read bcp47/collation.xml"));
+    // The `co` key's block: from its `<key name="co"` to the next `<key `.
+    let start = xml.find("<key name=\"co\"").expect("bcp47 co key");
+    let rest = &xml[start + 1..];
+    let end = rest.find("<key ").map_or(xml.len(), |o| start + 1 + o);
+    let mut out = BTreeMap::new();
+    for chunk in xml[start..end].split("<type ").skip(1) {
+        let tag = &chunk[..chunk.find('>').expect("unterminated <type")];
+        let Some(name) = xml_attr(tag, "name") else {
+            continue;
+        };
+        // `alias` is the long LDML spelling the collation files use.
+        if let Some(alias) = xml_attr(tag, "alias") {
+            out.insert(alias.to_string(), name.to_string());
+        }
+        out.insert(name.to_string(), name.to_string());
+    }
+    out
+}
+
+/// Every `<collation type="…">` rule of an LDML collation file as
+/// `(type, distilled rule)`, in document order.
 ///
 /// Hand-rolled rather than XML-parsed because CLDR's collation files are not
 /// uniformly formatted — attributes span lines (`sa.xml`), close tags carry
 /// padding (`</collation  >` in `pl.xml`), and the rule body is CDATA full of
 /// `<`. So: strip comments, index the `<collation …>` open tags, and read the
-/// `<cr>` that follows the `standard` one. A `standard` block carrying `alt=` is
-/// a *proposed* alternative, not the winning value, and is ignored; `draft=` is
-/// not filtered (CLDR ships draft collations and ICU builds them).
-fn standard_collation_rule(xml: &str) -> Option<String> {
+/// `<cr>` that follows each. A block carrying `alt=` is a *proposed* alternative,
+/// not the winning value, and is ignored (es ships a second, proposed
+/// `traditional`); `draft=` is not filtered (CLDR ships draft collations and ICU
+/// builds them). A type seen twice keeps its first, winning block.
+fn collation_rules(xml: &str) -> Vec<(String, String)> {
     let text = strip_xml_comments(xml);
     // (tag start, body start, tag text) for every `<collation …>` — not
     // `<collations>`, whose 11th byte is `s` rather than space or `>`.
@@ -4883,19 +5011,25 @@ fn standard_collation_rule(xml: &str) -> Option<String> {
         }
         i = start + "<collation".len();
     }
+    let mut out: Vec<(String, String)> = Vec::new();
     for (idx, &(_, body, tag)) in tags.iter().enumerate() {
-        if collation_attr(tag, "type").as_deref() != Some("standard")
-            || collation_attr(tag, "alt").is_some()
-        {
+        let Some(ty) = collation_attr(tag, "type") else {
+            continue;
+        };
+        if collation_attr(tag, "alt").is_some() || out.iter().any(|(t, _)| *t == ty) {
             continue;
         }
         let stop = tags.get(idx + 1).map_or(text.len(), |n| n.0);
         let seg = &text[body..stop];
-        let open = seg.find("<cr><![CDATA[")? + "<cr><![CDATA[".len();
-        let close = seg[open..].find("]]>")? + open;
-        return Some(distill_collation_rule(&seg[open..close]));
+        let Some(open) = seg.find("<cr><![CDATA[").map(|o| o + "<cr><![CDATA[".len()) else {
+            continue; // an alias-only block, with no rule of its own
+        };
+        let Some(close) = seg[open..].find("]]>").map(|o| o + open) else {
+            continue;
+        };
+        out.push((ty, distill_collation_rule(&seg[open..close])));
     }
-    None
+    out
 }
 
 /// The value of attribute `name` in an XML open tag, or `None`. Unlike
