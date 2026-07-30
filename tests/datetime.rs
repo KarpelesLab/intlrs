@@ -744,3 +744,292 @@ fn lone_time_fields() {
         "7,040"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Field-level calendar names (ECMA-402 `era` / `month`, UTS #35 §"Calendar
+// Fields"). Expected values are the exact `Intl.DateTimeFormat(loc-u-ca-<cal>,
+// {era|month: width}).formatToParts()` output of Node 22 / ICU 77 unless a
+// comment says otherwise; where CLDR 48 and ICU 77 (CLDR 47) disagree the
+// assertion follows the vendored CLDR 48 data, as in `tests/timezone.rs`.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn calendar_bcp47_keys_round_trip() {
+    use intl::datetime::Calendar;
+    for k in [
+        "buddhist",
+        "chinese",
+        "coptic",
+        "dangi",
+        "ethiopic",
+        "ethioaa",
+        "gregory",
+        "hebrew",
+        "indian",
+        "islamic",
+        "islamic-civil",
+        "islamic-rgsa",
+        "islamic-tbla",
+        "islamic-umalqura",
+        "iso8601",
+        "japanese",
+        "persian",
+        "roc",
+    ] {
+        let c = Calendar::from_bcp47(k).unwrap_or_else(|| panic!("{k}"));
+        assert_eq!(c.as_bcp47(), k);
+    }
+    // The CLDR deprecated spellings older tags carry, and ASCII case folding.
+    assert_eq!(Calendar::from_bcp47("gregorian"), Some(Calendar::Gregory));
+    assert_eq!(
+        Calendar::from_bcp47("islamicc"),
+        Some(Calendar::IslamicCivil)
+    );
+    assert_eq!(
+        Calendar::from_bcp47("ethiopic-amete-alem"),
+        Some(Calendar::EthiopicAmeteAlem)
+    );
+    assert_eq!(Calendar::from_bcp47("GREGORY"), Some(Calendar::Gregory));
+    // Not a BCP-47 calendar key.
+    assert_eq!(Calendar::from_bcp47("julian"), None);
+    assert_eq!(Calendar::from_bcp47(""), None);
+}
+
+#[test]
+fn era_names_gregorian_need_no_extra_calendars() {
+    use intl::datetime::{Calendar::*, NameStyle::*, era_name};
+    // `gregory` and `iso8601` read `calendar.bin`, so they resolve with the
+    // `datetime` feature alone.
+    assert_eq!(era_name("en", Gregory, 0, Long), Some("Before Christ"));
+    assert_eq!(era_name("en", Gregory, 1, Long), Some("Anno Domini"));
+    assert_eq!(era_name("en", Gregory, 1, Short), Some("AD"));
+    assert_eq!(era_name("en", Gregory, 1, Narrow), Some("A"));
+    assert_eq!(era_name("en", Iso8601, 1, Long), Some("Anno Domini"));
+    assert_eq!(era_name("fr", Gregory, 1, Long), Some("après Jésus-Christ"));
+    assert_eq!(era_name("ja", Gregory, 1, Long), Some("西暦"));
+    // Gregorian has exactly two eras.
+    assert_eq!(era_name("en", Gregory, 2, Long), None);
+}
+
+#[cfg(feature = "calendars-extra")]
+#[test]
+fn era_names_across_calendars() {
+    use intl::datetime::{Calendar::*, NameStyle::*, era_name};
+
+    // Islamic: CLDR 48 gives `eraNames` a full spelling and a second era; ICU 77
+    // (CLDR 47) has only "AH" at every width and no era 1.
+    assert_eq!(era_name("en", Islamic, 0, Long), Some("Anno Hegirae"));
+    assert_eq!(era_name("en", Islamic, 0, Short), Some("AH"));
+    assert_eq!(era_name("en", Islamic, 1, Short), Some("BH"));
+    assert_eq!(era_name("fr", Islamic, 0, Long), Some("ère de l’Hégire"));
+    // The four Islamic variants are distinct calendars sharing one name set.
+    for c in [IslamicCivil, IslamicRgsa, IslamicTbla, IslamicUmalqura] {
+        assert_eq!(era_name("en", c, 0, Short), Some("AH"));
+    }
+
+    assert_eq!(era_name("en", Persian, 0, Long), Some("AP"));
+    assert_eq!(era_name("en", Buddhist, 0, Long), Some("BE"));
+    assert_eq!(era_name("fr", Buddhist, 0, Long), Some("ère bouddhique"));
+    assert_eq!(era_name("th", Buddhist, 0, Long), Some("พุทธศักราช"));
+    assert_eq!(era_name("en", Roc, 1, Long), Some("Minguo"));
+    assert_eq!(era_name("en", Roc, 0, Long), Some("B.R.O.C."));
+    assert_eq!(era_name("ja", Roc, 1, Long), Some("民国"));
+    // CLDR 48 spells the Indian era with the diacritic; ICU 77 has "Saka".
+    assert_eq!(era_name("en", Indian, 0, Long), Some("Śaka"));
+    assert_eq!(era_name("ja", Indian, 0, Long), Some("サカ"));
+    assert_eq!(era_name("en", Hebrew, 0, Long), Some("AM"));
+    assert_eq!(era_name("fr", Hebrew, 0, Long), Some("Anno Mundi"));
+
+    // Coptic's only era is CLDR index 1, so index 0 is a real gap. (CLDR 48
+    // localized the name; ICU 77 still renders the "ERA1" placeholder in `en`.)
+    assert_eq!(era_name("en", Coptic, 0, Long), None);
+    assert_eq!(era_name("en", Coptic, 1, Long), Some("Anno Martyrum"));
+    assert_eq!(era_name("en", Coptic, 1, Short), Some("AM"));
+    assert_eq!(era_name("fr", Coptic, 1, Long), Some("après Dioclétien"));
+
+    // Ethiopic has both; `ethioaa` is the same name set counted from era 0.
+    // CLDR 48 replaced the localized Ethiopic era names with "AA"/"AM"
+    // everywhere — ICU 77 still has e.g. `fr` "après l’Incarnation".
+    assert_eq!(era_name("en", Ethiopic, 0, Long), Some("AA"));
+    assert_eq!(era_name("en", Ethiopic, 1, Long), Some("AM"));
+    assert_eq!(era_name("fr", Ethiopic, 1, Long), Some("AM"));
+    assert_eq!(era_name("en", EthiopicAmeteAlem, 0, Long), Some("AA"));
+
+    // The lunisolar calendars have no eras at all in CLDR; ICU emits no `era`
+    // part for them either.
+    for c in [Chinese, Dangi] {
+        for e in 0..3 {
+            assert_eq!(era_name("en", c, e, Long), None);
+        }
+    }
+}
+
+#[cfg(feature = "calendars-extra")]
+#[test]
+fn japanese_era_names_span_all_237_nengo() {
+    use intl::datetime::{Calendar::Japanese, NameStyle::*, era_name};
+    // Modern eras (CLDR 232 Meiji … 236 Reiwa).
+    assert_eq!(era_name("en", Japanese, 236, Long), Some("Reiwa"));
+    assert_eq!(era_name("en", Japanese, 236, Narrow), Some("R"));
+    assert_eq!(era_name("ja", Japanese, 236, Long), Some("令和"));
+    assert_eq!(era_name("ja", Japanese, 235, Long), Some("平成"));
+    assert_eq!(era_name("ja", Japanese, 232, Long), Some("明治"));
+    // Historical nengō, from the same call: 226 is Kaei (1848–1854).
+    assert_eq!(
+        era_name("en", Japanese, 226, Long),
+        Some("Kaei (1848–1854)")
+    );
+    assert_eq!(era_name("ja", Japanese, 226, Long), Some("嘉永"));
+    // CLDR gives the historical nengō the same string at all three widths in
+    // `en` (the year range is part of the name), unlike the modern five.
+    assert_eq!(
+        era_name("en", Japanese, 226, Short),
+        era_name("en", Japanese, 226, Long)
+    );
+    assert_eq!(era_name("en", Japanese, 0, Long), Some("Taika (645–650)"));
+    // 0..=236, and nothing past it.
+    assert!(
+        (0..=236).all(|e| era_name("en", Japanese, e, Long).is_some()),
+        "every CLDR Japanese era index resolves"
+    );
+    assert_eq!(era_name("en", Japanese, 237, Long), None);
+}
+
+#[cfg(feature = "calendars-extra")]
+#[test]
+fn month_names_across_calendars() {
+    use intl::datetime::{Calendar::*, MonthStyle::*, month_name};
+    let m = |lang, cal, n, w| month_name(lang, cal, n, false, w);
+
+    // The `dateStyle: "long"` month a Temporal `PlainYearMonth` needs.
+    assert_eq!(m("en", Islamic, 9, Long), Some("Ramadan".into()));
+    assert_eq!(m("en", Islamic, 9, Short), Some("Ram.".into()));
+    assert_eq!(m("ar", Islamic, 10, Long), Some("شوال".into()));
+    assert_eq!(m("en", Persian, 5, Long), Some("Mordad".into()));
+    assert_eq!(m("fa", Persian, 5, Long), Some("مرداد".into()));
+    assert_eq!(m("en", Indian, 5, Long), Some("Sravana".into()));
+
+    // 13-month calendars.
+    assert_eq!(m("en", Coptic, 11, Long), Some("Epep".into()));
+    assert_eq!(m("en", Coptic, 13, Long), Some("Nasie".into()));
+    assert_eq!(m("en", Ethiopic, 11, Long), Some("Hamle".into()));
+    assert_eq!(m("am", Ethiopic, 11, Long), Some("ሐምሌ".into()));
+    assert_eq!(m("en", Hebrew, 12, Long), Some("Av".into()));
+    assert_eq!(m("he", Hebrew, 12, Long), Some("אב".into()));
+    assert_eq!(m("en", Hebrew, 13, Long), Some("Elul".into()));
+    // …and the 12-month ones stop at 12.
+    assert_eq!(m("en", Islamic, 13, Long), None);
+    assert_eq!(m("en", Gregory, 13, Long), None);
+    assert_eq!(m("en", Coptic, 14, Long), None);
+    assert_eq!(m("en", Islamic, 0, Long), None);
+
+    // Buddhist, ROC and Japanese reuse the locale's Gregorian month names, which
+    // is why codegen stores none for them.
+    for c in [Buddhist, Roc, Japanese, Gregory, Iso8601] {
+        assert_eq!(m("en", c, 9, Long), Some("September".into()));
+        assert_eq!(m("en", c, 9, Short), Some("Sep".into()));
+        assert_eq!(m("en", c, 9, Narrow), Some("S".into()));
+        assert_eq!(m("de", c, 9, Short), Some("Sept.".into()));
+    }
+
+    // The numeric widths render the number, for every calendar.
+    assert_eq!(m("en", Islamic, 9, Numeric), Some("9".into()));
+    assert_eq!(m("en", Islamic, 9, TwoDigit), Some("09".into()));
+    // CLDR's narrow month for the non-Gregorian calendars is the month number —
+    // but written in the locale's own digits, so it is stored rather than
+    // synthesized from the index.
+    assert_eq!(m("en", Islamic, 12, Narrow), Some("12".into()));
+    assert_eq!(m("ar", Islamic, 12, Narrow), Some("١٢".into()));
+}
+
+#[cfg(feature = "calendars-extra")]
+#[test]
+fn leap_month_names() {
+    use intl::datetime::{Calendar::*, MonthStyle::*, month_name};
+
+    // UTS #35 `monthPatterns`: the lunisolar marker *wraps* the ordinary name.
+    for c in [Chinese, Dangi] {
+        assert_eq!(month_name("en", c, 5, true, Numeric), Some("5bis".into()));
+        assert_eq!(month_name("en", c, 5, true, TwoDigit), Some("05bis".into()));
+        assert_eq!(
+            month_name("en", c, 5, true, Long),
+            Some("Fifth Monthbis".into())
+        );
+        assert_eq!(month_name("en", c, 5, true, Short), Some("Mo5bis".into()));
+        assert_eq!(month_name("en", c, 5, true, Narrow), Some("5b".into()));
+        // …and is a no-op when the month is not intercalary.
+        assert_eq!(
+            month_name("en", c, 5, false, Long),
+            Some("Fifth Month".into())
+        );
+    }
+    assert_eq!(
+        month_name("zh", Chinese, 2, true, Long),
+        Some("闰二月".into())
+    );
+    assert_eq!(
+        month_name("ja", Chinese, 2, true, Long),
+        Some("閏二月".into())
+    );
+    assert_eq!(month_name("ko", Dangi, 2, true, Long), Some("윤2월".into()));
+
+    // UTS #35 `yeartype="leap"`: the Hebrew variant *replaces* the name. Month 7
+    // is Adar in a common year and Adar II in a leap year; month 6 (Adar I)
+    // exists only in leap years and needs no variant.
+    assert_eq!(
+        month_name("en", Hebrew, 7, false, Long),
+        Some("Adar".into())
+    );
+    assert_eq!(
+        month_name("en", Hebrew, 7, true, Long),
+        Some("Adar II".into())
+    );
+    assert_eq!(
+        month_name("en", Hebrew, 6, true, Long),
+        Some("Adar I".into())
+    );
+    // Only month 7 has one, and the numeric widths are unaffected.
+    assert_eq!(
+        month_name("en", Hebrew, 8, true, Long),
+        Some("Nisan".into())
+    );
+    assert_eq!(month_name("en", Hebrew, 7, true, Numeric), Some("7".into()));
+
+    // A solar calendar has no leap variant at all, so the flag is inert.
+    assert_eq!(
+        month_name("en", Islamic, 9, true, Long),
+        month_name("en", Islamic, 9, false, Long)
+    );
+}
+
+#[cfg(feature = "calendars-extra")]
+#[test]
+fn cyclic_year_names() {
+    use intl::datetime::{Calendar::*, cyclic_year_name as cy};
+    // 2024 is cycle position 41, 甲辰 / jia-chen.
+    assert_eq!(cy("en", Chinese, 41), Some("jia-chen"));
+    assert_eq!(cy("zh", Chinese, 41), Some("甲辰"));
+    assert_eq!(cy("ja", Chinese, 41), Some("甲辰"));
+    assert_eq!(cy("en", Chinese, 1), Some("jia-zi"));
+    assert_eq!(cy("en", Chinese, 60), Some("gui-hai"));
+    // Out of the 60-name cycle, and calendars that do not name years this way.
+    assert_eq!(cy("en", Chinese, 0), None);
+    assert_eq!(cy("en", Chinese, 61), None);
+    assert_eq!(cy("en", Gregory, 41), None);
+    assert_eq!(cy("en", Islamic, 41), None);
+}
+
+/// Without `calendars-extra` the non-Gregorian tables are not compiled in, and
+/// the field lookups say so with `None` rather than an empty string.
+#[cfg(not(feature = "calendars-extra"))]
+#[test]
+fn alternate_calendars_report_absent_data_as_none() {
+    use intl::datetime::{Calendar::*, MonthStyle, NameStyle, era_name, month_name};
+    assert_eq!(era_name("en", Islamic, 0, NameStyle::Long), None);
+    assert_eq!(month_name("en", Islamic, 9, false, MonthStyle::Long), None);
+    // Gregorian still works: it is `calendar.bin`, which `datetime` embeds.
+    assert_eq!(
+        month_name("en", Gregory, 9, false, MonthStyle::Long),
+        Some("September".into())
+    );
+}

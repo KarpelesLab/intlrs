@@ -120,6 +120,19 @@ Beyond the `unicode` module:
   formatting), and renders **Islamic (Hijri)** and **Persian** dates with
   localized month names (`format_islamic_date("en", 1445, 9, 1, DateStyle::Long)`
   → `"Ramadan 1, 1445 AH"`; `format_persian_date` likewise).
+- **Calendar fields, one at a time** — what a Temporal/ECMA-402 layer needs to
+  build its own `formatToParts`. A `Calendar` names the calendar by its BCP-47
+  `-u-ca-` key (`Calendar::from_bcp47("islamic-umalqura")`), and
+  `era_name` / `month_name` / `cyclic_year_name` return that one field in that
+  one calendar: `month_name("en", Calendar::Islamic, 9, false, MonthStyle::Long)`
+  → `"Ramadan"`, `era_name("en", Calendar::Japanese, 226, NameStyle::Long)` →
+  `"Kaei (1848–1854)"`, and the lunisolar leap-month marker (UTS #35
+  `monthPatterns`) via the `leap` flag —
+  `month_name("zh", Calendar::Chinese, 5, true, MonthStyle::Long)` → `"闰五月"`,
+  `"5bis"` in `en`. Eighteen BCP-47 calendars resolve; each call returns `None`
+  rather than an empty string where CLDR has no such field (the Chinese and
+  `dangi` calendars have no eras at all, Coptic's only era is index 1). Needs
+  `calendars-extra` for everything but `gregory`/`iso8601`.
 - `intl::spellout` spells integers out in words via the CLDR RBNF rules
   (locale-driven) — `spell_cardinal("en", 1234)` → `"one thousand two hundred
   thirty-four"`, `spell_cardinal("fr", 80)` → `"quatre-vingts"`, and ordinals via `spell_ordinal("en", 21)` → `"twenty-first"`. *(alloc)*
@@ -135,7 +148,9 @@ Beyond the `unicode` module:
   nord-américain"` in `fr`; `"longGeneric"` is `"Pacific Time"`, `"short"` is
   `"PDT"`. When a locale has no name for the zone the spec's own fallback chain
   applies — the metazone's name, then the generic location format (`"heure :
-  Los Angeles"`), then the localized GMT offset. **Not in `default`** — the
+  Los Angeles"`), then the localized GMT offset. Standard vs daylight (`PST` vs
+  `PDT`) comes from `iana-tz`, or from `tz_is_dst` when the host already has its
+  own tzdb and would rather not link a second copy. **Not in `default`** — the
   tables are large, so opt in with `tz-names`, or with one feature per tzdb area
   (`tz-names-america`, `tz-names-europe`, …) to pay only for the zones you use;
   see the table below.
@@ -225,7 +240,7 @@ the corpus is what kept 3.4× the data to 2.5× the bytes.
 | `units`           | measurement units, long + short (→ number)        | ~905 KB |
 | `units-narrow`    | + the narrow unit width (→ units)                 | ~315 KB |
 | `datetime`        | date/time/skeleton + POSIX-TZ/GMT (→ number)      | 219 KB |
-| `calendars-extra` | Islamic + Persian calendars (→ datetime)          | 60 KB |
+| `calendars-extra` | non-Gregorian calendar names (→ datetime)          | 705 KB |
 | `displaynames`    | `Intl.DisplayNames` (languages/regions)           | **~1.6 MB** |
 | `list`            | `Intl.ListFormat`, all 9 `type` × `style`         | 15 KB |
 | `relative`        | `Intl.RelativeTimeFormat`, 8 units × 3 styles (→ number) | 243 KB |

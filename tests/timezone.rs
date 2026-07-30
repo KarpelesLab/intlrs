@@ -361,3 +361,183 @@ fn plain_time_apis_drop_the_unfillable_zone_field() {
         "Wednesday, July 15, 2026, 12:00:00\u{202f}PM"
     );
 }
+
+/// 2021-08-04, when `America/Los_Angeles` is on daylight time.
+const AUG: DateTime = DateTime {
+    year: 2021,
+    month: 8,
+    day: 4,
+    hour: 12,
+    minute: 0,
+    second: 0,
+    millisecond: 0,
+};
+
+/// Standard-vs-daylight name selection from a host-supplied DST flag.
+///
+/// UTS #35 §4.8's specific non-location forms need a tzdb to pick between the
+/// two names. `iana-tz` is one source; a host that already carries its own
+/// tzdb — and does not want a second copy linked in — is the other, and had no
+/// way to say so: `tz_offset_minutes` alone always produced the standard name.
+#[cfg(feature = "tz-names-america")]
+#[test]
+fn host_supplied_dst_selects_the_daylight_name() {
+    use TimeZoneNameStyle::*;
+    let name = |style, dst| {
+        let mut o = DateTimeFormatOptions::default();
+        o.time_zone = Some("America/Los_Angeles");
+        o.time_zone_name = Some(style);
+        // The offset a host reports is the real one at the instant, DST already
+        // in it; `tz_is_dst` must not be applied on top of it.
+        o.tz_offset_minutes = Some(-420);
+        o.tz_is_dst = dst;
+        format_to_parts("en", &AUG, &o)
+            .unwrap()
+            .last()
+            .unwrap()
+            .value
+            .clone()
+    };
+    assert_eq!(name(Long, Some(true)), "Pacific Daylight Time");
+    assert_eq!(name(Short, Some(true)), "PDT");
+    assert_eq!(name(Long, Some(false)), "Pacific Standard Time");
+    assert_eq!(name(Short, Some(false)), "PST");
+
+    // The flag drives the *name* only. Both offset styles keep rendering the
+    // caller's own offset, and the generic styles have no daylight form to pick.
+    for dst in [None, Some(false), Some(true)] {
+        assert_eq!(name(ShortOffset, dst), "GMT-7");
+        assert_eq!(name(LongOffset, dst), "GMT-07:00");
+        assert_eq!(name(LongGeneric, dst), "Pacific Time");
+        assert_eq!(name(ShortGeneric, dst), "PT");
+    }
+
+    // Unset is exactly the previous behaviour: `iana-tz` answers if it is
+    // compiled in, and standard time year-round if it is not.
+    #[cfg(feature = "iana-tz")]
+    assert_eq!(name(Short, None), "PDT");
+    #[cfg(not(feature = "iana-tz"))]
+    assert_eq!(name(Short, None), "PST");
+}
+
+/// `iana-tz` knows the zone is on daylight time in August; an explicit
+/// `tz_is_dst` still wins, because the host's own tzdb is the authority when it
+/// bothers to state one.
+#[cfg(all(feature = "iana-tz", feature = "tz-names-america"))]
+#[test]
+fn host_supplied_dst_overrides_the_embedded_tzdb() {
+    let mut o = DateTimeFormatOptions::default();
+    o.time_zone = Some("America/Los_Angeles");
+    o.time_zone_name = Some(TimeZoneNameStyle::Short);
+    let name = |o: &DateTimeFormatOptions| {
+        format_to_parts("en", &AUG, o)
+            .unwrap()
+            .last()
+            .unwrap()
+            .value
+            .clone()
+    };
+    assert_eq!(name(&o), "PDT");
+    o.tz_is_dst = Some(false);
+    assert_eq!(name(&o), "PST");
+}
+
+/// With no zone field in the resolved pattern the name is glued on with the
+/// locale's `dateTimeFormat`, not a bare space — UTS #35 classes the zone with
+/// the time fields, so a date-only pattern combines with it exactly as it would
+/// with a time. All values are V8/ICU's.
+#[cfg(feature = "tz-names-america")]
+#[test]
+fn appended_zone_name_uses_the_locale_combiner() {
+    use intl::datetime::{MonthStyle, NameStyle, Numeric2Digit, format_options};
+
+    let f = |lang: &str, build: &dyn Fn(&mut DateTimeFormatOptions)| {
+        let mut o = DateTimeFormatOptions::default();
+        o.time_zone = Some("America/Los_Angeles");
+        o.time_zone_name = Some(TimeZoneNameStyle::Short);
+        o.tz_offset_minutes = Some(-420);
+        o.tz_is_dst = Some(true);
+        build(&mut o);
+        format_options(lang, &AUG, &o).unwrap()
+    };
+    let ymd = |o: &mut DateTimeFormatOptions| {
+        o.year = Some(Numeric2Digit::Numeric);
+        o.month = Some(MonthStyle::Numeric);
+        o.day = Some(Numeric2Digit::Numeric);
+    };
+
+    // The whole point: `8/4/2021, PDT`, not `8/4/2021 PDT`.
+    assert_eq!(f("en", &ymd), "8/4/2021, PDT");
+    assert_eq!(f("de", &ymd), "4.8.2021, GMT-7");
+    // Finnish glues with a word, which a hard-coded space could never produce.
+    assert_eq!(f("fi", &ymd), "4.8.2021 klo UTC-7");
+
+    // Which of the four combiners applies follows ICU: the month field's width
+    // picks the length, and a wide month with a weekday picks `full` over
+    // `long`. In `en` both long forms are `{1} 'at' {0}`.
+    assert_eq!(
+        f("en", &|o| o.month = Some(MonthStyle::Long)),
+        "August at PDT"
+    );
+    assert_eq!(
+        f("en", &|o| {
+            o.weekday = Some(NameStyle::Long);
+            o.month = Some(MonthStyle::Long);
+            o.day = Some(Numeric2Digit::Numeric);
+        }),
+        "Wednesday, August 4 at PDT"
+    );
+    assert_eq!(
+        f("en", &|o| {
+            o.month = Some(MonthStyle::Short);
+            o.day = Some(Numeric2Digit::Numeric);
+        }),
+        "Aug 4, PDT"
+    );
+    // `fr` and `nn` distinguish the lengths with different literals, so they
+    // catch a wrong length that `en` would hide.
+    assert_eq!(
+        f("fr", &|o| {
+            o.month = Some(MonthStyle::Long);
+            o.day = Some(Numeric2Digit::Numeric);
+        }),
+        "4 août à UTC\u{2212}7"
+    );
+    assert_eq!(
+        f("fr", &|o| {
+            o.month = Some(MonthStyle::Short);
+            o.day = Some(Numeric2Digit::Numeric);
+        }),
+        "4 août, UTC\u{2212}7"
+    );
+    assert_eq!(
+        f("nn", &|o| {
+            o.month = Some(MonthStyle::Long);
+            o.day = Some(Numeric2Digit::Numeric);
+        }),
+        "4. august kl. PDT"
+    );
+
+    // A pattern that already has time fields keeps the plain space: there the
+    // zone appends to the time run (CLDR `appendItems/Timezone`, `{0} {1}`),
+    // which is what it did before and what ICU still does.
+    assert_eq!(
+        f("en", &|o| {
+            o.hour = Some(Numeric2Digit::Numeric);
+            o.minute = Some(Numeric2Digit::Numeric);
+        }),
+        "12:00\u{202f}PM PDT"
+    );
+
+    // The glue is a `literal` part, so `formatToParts` stays joinable.
+    let mut o = DateTimeFormatOptions::default();
+    o.time_zone = Some("America/Los_Angeles");
+    o.time_zone_name = Some(TimeZoneNameStyle::Short);
+    o.tz_offset_minutes = Some(-420);
+    o.tz_is_dst = Some(true);
+    ymd(&mut o);
+    let parts = format_to_parts("en", &AUG, &o).unwrap();
+    let joined: String = parts.iter().map(|p| p.value.as_str()).collect();
+    assert_eq!(joined, "8/4/2021, PDT");
+    assert_eq!(parts[parts.len() - 2].value, ", ");
+}

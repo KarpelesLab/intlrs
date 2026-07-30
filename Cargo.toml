@@ -131,7 +131,14 @@ units = ["number"]                          # measurement units, long + short (+
 # it narrow silently degrades to short. Opt out via `default-features = false`.
 units-narrow = ["units"]
 datetime = ["number"]                       # date/time/skeleton + POSIX-TZ/GMT (+ calendar/skeletons.bin)
-calendars-extra = ["datetime"]              # Islamic + Persian calendars (+ islamic/persian.bin)
+# The non-Gregorian calendars: the whole-date formatters (Islamic/Umm al-Qura,
+# Persian, Chinese, Japanese) and the field-level `era_name`/`month_name`/
+# `cyclic_year_name` for all eighteen BCP-47 `-u-ca-` calendars the crate knows.
+# Adds ~705 KB of CLDR tables — alt_calendars.bin (Buddhist, Coptic, Ethiopic,
+# Hebrew, Indian, Islamic, Persian, ROC; 231 KB), lunisolar.bin (Chinese, dangi;
+# 145 KB) and japanese{,_hist}.bin (the 237 nengō; 328 KB). `gregory`/`iso8601`
+# need only `datetime`, which already carries the Gregorian names.
+calendars-extra = ["datetime"]              # non-Gregorian calendar names + formatters
 displaynames = ["_cldr"]                    # Intl.DisplayNames (+ ~1.6 MB language/territory names)
 # Intl.ListFormat, all nine ECMA-402 `type` × `style` combinations (~15 KB).
 # CLDR ships the nine independently — `es` writes a unit list "a, b y c" where

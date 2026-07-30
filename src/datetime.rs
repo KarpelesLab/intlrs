@@ -697,13 +697,15 @@ fn render_alt(
                 i += 1;
             }
             let (n, m) = (i - start, month as usize);
-            let mi = m.clamp(1, 12) - 1; // unvalidated month must not index OOB
+            // An unvalidated month must not index out of the name table.
+            let mi = m.clamp(1, cal.month_count.max(1) as usize) - 1;
             match ch {
                 'y' | 'Y' => out.push_str(&era_year(year).to_string()),
                 'M' | 'L' => match n {
                     1 => out.push_str(&m.to_string()),
                     2 => out.push_str(&two(m as i64)),
                     3 => out.push_str(cal.months_abbr[mi]),
+                    5 => out.push_str(cal.months_narrow[mi]),
                     _ => out.push_str(cal.months_wide[mi]),
                 },
                 'd' => out.push_str(&day.to_string()),
@@ -715,7 +717,9 @@ fn render_alt(
                 'G' => {
                     // Era by year sign (0 = current era AH/AP, 1 = pre-era
                     // BH/BP) and width (G/GG/GGG = abbr, GGGG = wide,
-                    // GGGGG = narrow).
+                    // GGGGG = narrow). Both calendars this renders (Islamic,
+                    // Persian) start at CLDR era index 0, so the sign is the
+                    // index; `AltCalSpec::era` is the general form.
                     let ei = usize::from(year <= 0);
                     out.push_str(if n >= 5 {
                         cal.eras_narrow[ei]
@@ -735,26 +739,19 @@ fn render_alt(
     out
 }
 
+/// The [`crate::cldr::AltCalSpec`] for calendar `cal` (a BCP-47 `ca-` key) in
+/// `lang`, via the CLDR locale fallback chain (`fr-CA` → `fr` → `en`).
 #[cfg(feature = "calendars-extra")]
-fn alt_spec(lang: &str, f: fn(&str) -> Option<crate::cldr::AltCalSpec>) -> crate::cldr::AltCalSpec {
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
+fn alt_spec(lang: &str, cal: &str) -> crate::cldr::AltCalSpec {
+    let norm = normalize_lang(lang);
     let mut end = norm.len();
     loop {
-        if let Some(s) = f(&norm[..end]) {
+        if let Some(s) = crate::cldr::alt_cal_spec(cal, &norm[..end]) {
             return s;
         }
         match norm[..end].rfind('-') {
             Some(i) => end = i,
-            None => return f("en").expect("root calendar present"),
+            None => return crate::cldr::alt_cal_spec(cal, "en").expect("root calendar present"),
         }
     }
 }
@@ -771,7 +768,7 @@ pub fn format_islamic_date(
     day: i64,
     style: DateStyle,
 ) -> String {
-    let cal = alt_spec(lang, crate::cldr::islamic_spec);
+    let cal = alt_spec(lang, "islamic");
     let jdn = crate::calendar::islamic_to_jdn(year, month, day);
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
@@ -791,7 +788,7 @@ pub fn format_islamic_umalqura_date(
     day: i64,
     style: DateStyle,
 ) -> String {
-    let cal = alt_spec(lang, crate::cldr::islamic_spec);
+    let cal = alt_spec(lang, "islamic");
     let jdn = crate::calendar::umalqura_to_jdn(year, month, day);
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
@@ -907,7 +904,7 @@ pub fn format_chinese_date(
     is_leap_month: bool,
     style: DateStyle,
 ) -> String {
-    let cal = chinese_alt_spec(lang);
+    let cal = chinese_alt_spec(lang, "chinese");
     // The Gregorian year in which this Chinese year begins (its 1st month, 1st
     // day). Falls back to `year` itself if the conversion is out of range.
     let related = crate::calendar::chinese_to_gregorian(year, 1, 1, false).map_or(year, |g| g.0);
@@ -927,18 +924,21 @@ pub fn format_chinese_date(
     )
 }
 
-/// Chinese-calendar spec for `lang` via the locale fallback chain (to `en`).
+/// Lunisolar-calendar spec (`"chinese"` or `"dangi"`) for `lang` via the locale
+/// fallback chain (to `en`).
 #[cfg(feature = "calendars-extra")]
-fn chinese_alt_spec(lang: &str) -> crate::cldr::ChineseCalSpec {
+fn chinese_alt_spec(lang: &str, cal: &str) -> crate::cldr::ChineseCalSpec {
     let norm = normalize_lang(lang);
     let mut end = norm.len();
     loop {
-        if let Some(s) = crate::cldr::chinese_spec(&norm[..end]) {
+        if let Some(s) = crate::cldr::chinese_spec(cal, &norm[..end]) {
             return s;
         }
         match norm[..end].rfind('-') {
             Some(i) => end = i,
-            None => return crate::cldr::chinese_spec("en").expect("root chinese calendar present"),
+            None => {
+                return crate::cldr::chinese_spec(cal, "en").expect("root lunisolar calendar");
+            }
         }
     }
 }
@@ -955,7 +955,7 @@ pub fn format_persian_date(
     day: i64,
     style: DateStyle,
 ) -> String {
-    let cal = alt_spec(lang, crate::cldr::persian_spec);
+    let cal = alt_spec(lang, "persian");
     let jdn = crate::calendar::persian_to_jdn(year, month, day);
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
@@ -1244,6 +1244,435 @@ pub fn format_japanese_date(
     )
 }
 
+// ---------------------------------------------------------------------------
+// Field-level calendar names (era / month / cyclic year)
+// ---------------------------------------------------------------------------
+
+/// A calendar system, named by its BCP-47 `-u-ca-` key.
+///
+/// This is the identifier ECMA-402 passes around (`Intl.DateTimeFormat`'s
+/// `calendar` option, `Temporal.Calendar`'s id), so it is what
+/// [`era_name`]/[`month_name`]/[`cyclic_year_name`] take; use [`Calendar::from_bcp47`]
+/// to parse one out of a locale's `-u-ca-` extension and [`Calendar::as_bcp47`]
+/// to get it back. It is an enum rather than a bare `&str` so the lookups are a
+/// `match` and not a string compare, and so an unknown calendar is rejected once,
+/// at parse time, instead of silently formatting as Gregorian.
+///
+/// Distinct variants that share CLDR names are kept distinct because they are
+/// distinct *calendars* — the arithmetic differs even where the localized names
+/// do not. The four Islamic variants share the Islamic month/era names, and
+/// `ethioaa` shares the Ethiopic ones (differing only in which era is in use);
+/// `iso8601` shares `gregory`'s.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Calendar {
+    /// Thai Buddhist (`buddhist`).
+    Buddhist,
+    /// Chinese lunisolar (`chinese`).
+    Chinese,
+    /// Coptic (`coptic`).
+    Coptic,
+    /// Korean lunisolar (`dangi`).
+    Dangi,
+    /// Ethiopic, Amete Mihret (`ethiopic`).
+    Ethiopic,
+    /// Ethiopic, Amete Alem (`ethioaa`).
+    EthiopicAmeteAlem,
+    /// Gregorian (`gregory`).
+    Gregory,
+    /// Hebrew (`hebrew`).
+    Hebrew,
+    /// Indian national / Saka (`indian`).
+    Indian,
+    /// Islamic, unspecified civil (`islamic`).
+    Islamic,
+    /// Islamic, tabular, civil epoch (`islamic-civil`).
+    IslamicCivil,
+    /// Islamic, Saudi sighting (`islamic-rgsa`).
+    IslamicRgsa,
+    /// Islamic, tabular, astronomical epoch (`islamic-tbla`).
+    IslamicTbla,
+    /// Islamic, Umm al-Qura (`islamic-umalqura`).
+    IslamicUmalqura,
+    /// ISO 8601 — proleptic Gregorian (`iso8601`).
+    Iso8601,
+    /// Japanese imperial (`japanese`).
+    Japanese,
+    /// Persian / Solar Hijri (`persian`).
+    Persian,
+    /// Republic of China / Minguo (`roc`).
+    Roc,
+}
+
+impl Calendar {
+    /// The canonical BCP-47 `-u-ca-` key for this calendar.
+    #[must_use]
+    pub fn as_bcp47(self) -> &'static str {
+        match self {
+            Calendar::Buddhist => "buddhist",
+            Calendar::Chinese => "chinese",
+            Calendar::Coptic => "coptic",
+            Calendar::Dangi => "dangi",
+            Calendar::Ethiopic => "ethiopic",
+            Calendar::EthiopicAmeteAlem => "ethioaa",
+            Calendar::Gregory => "gregory",
+            Calendar::Hebrew => "hebrew",
+            Calendar::Indian => "indian",
+            Calendar::Islamic => "islamic",
+            Calendar::IslamicCivil => "islamic-civil",
+            Calendar::IslamicRgsa => "islamic-rgsa",
+            Calendar::IslamicTbla => "islamic-tbla",
+            Calendar::IslamicUmalqura => "islamic-umalqura",
+            Calendar::Iso8601 => "iso8601",
+            Calendar::Japanese => "japanese",
+            Calendar::Persian => "persian",
+            Calendar::Roc => "roc",
+        }
+    }
+
+    /// Parse a BCP-47 `-u-ca-` key (ASCII case-insensitive). The CLDR deprecated
+    /// spellings are accepted alongside the canonical ones — `"gregorian"`,
+    /// `"islamicc"` and `"ethiopic-amete-alem"` are what older tags and ICU4C
+    /// locale ids carry for `gregory`, `islamic-civil` and `ethioaa`.
+    ///
+    /// ```
+    /// use intl::datetime::Calendar;
+    /// assert_eq!(Calendar::from_bcp47("islamic-umalqura"), Some(Calendar::IslamicUmalqura));
+    /// assert_eq!(Calendar::from_bcp47("GREGORIAN"), Some(Calendar::Gregory));
+    /// assert_eq!(Calendar::from_bcp47("julian"), None);
+    /// ```
+    #[must_use]
+    pub fn from_bcp47(key: &str) -> Option<Calendar> {
+        let k = normalize_lang(key); // lowercases and maps `_` to `-`
+        Some(match k.as_str() {
+            "buddhist" => Calendar::Buddhist,
+            "chinese" => Calendar::Chinese,
+            "coptic" => Calendar::Coptic,
+            "dangi" => Calendar::Dangi,
+            "ethiopic" => Calendar::Ethiopic,
+            "ethioaa" | "ethiopic-amete-alem" => Calendar::EthiopicAmeteAlem,
+            "gregory" | "gregorian" => Calendar::Gregory,
+            "hebrew" => Calendar::Hebrew,
+            "indian" => Calendar::Indian,
+            "islamic" => Calendar::Islamic,
+            "islamic-civil" | "islamicc" => Calendar::IslamicCivil,
+            "islamic-rgsa" => Calendar::IslamicRgsa,
+            "islamic-tbla" => Calendar::IslamicTbla,
+            "islamic-umalqura" => Calendar::IslamicUmalqura,
+            "iso8601" => Calendar::Iso8601,
+            "japanese" => Calendar::Japanese,
+            "persian" => Calendar::Persian,
+            "roc" => Calendar::Roc,
+            _ => return None,
+        })
+    }
+
+    /// Which embedded table holds this calendar's field names.
+    #[cfg(feature = "calendars-extra")]
+    fn names(self) -> CalNames {
+        match self {
+            Calendar::Gregory | Calendar::Iso8601 => CalNames::Gregorian,
+            Calendar::Japanese => CalNames::Japanese,
+            Calendar::Chinese => CalNames::Lunisolar("chinese"),
+            Calendar::Dangi => CalNames::Lunisolar("dangi"),
+            Calendar::Buddhist => CalNames::Alt("buddhist"),
+            Calendar::Coptic => CalNames::Alt("coptic"),
+            Calendar::Ethiopic | Calendar::EthiopicAmeteAlem => CalNames::Alt("ethiopic"),
+            Calendar::Hebrew => CalNames::Alt("hebrew"),
+            Calendar::Indian => CalNames::Alt("indian"),
+            Calendar::Islamic
+            | Calendar::IslamicCivil
+            | Calendar::IslamicRgsa
+            | Calendar::IslamicTbla
+            | Calendar::IslamicUmalqura => CalNames::Alt("islamic"),
+            Calendar::Persian => CalNames::Alt("persian"),
+            Calendar::Roc => CalNames::Alt("roc"),
+        }
+    }
+}
+
+/// Where a [`Calendar`]'s localized field names come from.
+#[cfg(feature = "calendars-extra")]
+enum CalNames {
+    /// `calendar.bin` — the Gregorian names, also used for the calendars that
+    /// reuse them (Buddhist, ROC and Japanese share the Gregorian months).
+    Gregorian,
+    /// `alt_calendars.bin`, under this CLDR calendar key.
+    Alt(&'static str),
+    /// `lunisolar.bin`, under this CLDR calendar key.
+    Lunisolar(&'static str),
+    /// `japanese{,_hist}.bin` — 237 eras, Gregorian months.
+    Japanese,
+}
+
+/// The CLDR name-width index a [`NameStyle`] selects: 0 wide, 1 abbreviated,
+/// 2 narrow. This is ECMA-402's `era: "long" | "short" | "narrow"` mapping onto
+/// UTS #35's `GGGG` / `G` / `GGGGG` field widths.
+const fn name_width(w: NameStyle) -> usize {
+    match w {
+        NameStyle::Long => 0,
+        NameStyle::Short => 1,
+        NameStyle::Narrow => 2,
+    }
+}
+
+/// The localized era name for CLDR era index `era` of `calendar` in `lang`, or
+/// `None` when that calendar has no such era.
+///
+/// `era` is the numeric index UTS #35 gives the era in `<eras>` — not a Temporal
+/// era *code*. It is 0-based for every calendar but Coptic, whose single era is
+/// index 1; Gregorian and ISO 8601 use 0 = BC/BCE and 1 = AD/CE; Japanese runs
+/// 0 (Taika) … 236 (Reiwa).
+///
+/// `None` is returned, rather than an empty string, for every genuine gap:
+/// - the Chinese and Korean (`dangi`) calendars, which CLDR gives no eras at all
+///   (ICU emits no `era` part for them either);
+/// - an `era` outside the calendar's range;
+/// - any non-Gregorian calendar when the `calendars-extra` feature is off.
+///
+/// ```
+/// # #[cfg(feature = "calendars-extra")] {
+/// use intl::datetime::{Calendar, NameStyle, era_name};
+/// assert_eq!(era_name("en", Calendar::Islamic, 0, NameStyle::Long), Some("Anno Hegirae"));
+/// assert_eq!(era_name("en", Calendar::Islamic, 0, NameStyle::Short), Some("AH"));
+/// assert_eq!(era_name("en", Calendar::Japanese, 236, NameStyle::Long), Some("Reiwa"));
+/// assert_eq!(era_name("fr", Calendar::Buddhist, 0, NameStyle::Long), Some("ère bouddhique"));
+/// // Coptic's only era is index 1.
+/// assert_eq!(era_name("en", Calendar::Coptic, 0, NameStyle::Long), None);
+/// assert_eq!(era_name("en", Calendar::Coptic, 1, NameStyle::Long), Some("Anno Martyrum"));
+/// // The lunisolar calendars are named by cycle, not by era.
+/// assert_eq!(era_name("en", Calendar::Chinese, 0, NameStyle::Long), None);
+/// # }
+/// ```
+#[must_use]
+pub fn era_name(
+    lang: &str,
+    calendar: Calendar,
+    era: u32,
+    width: NameStyle,
+) -> Option<&'static str> {
+    era_name_inner(lang, calendar, era, width).filter(|s| !s.is_empty())
+}
+
+/// [`era_name`] before the "no empty strings" filter; every gap in the vendored
+/// CLDR 48 data is already a missing record rather than a present-but-empty one
+/// (checked over all 101 locales), so the filter is there to keep the `Option`
+/// contract unconditional if a future CLDR ships a blank.
+fn era_name_inner(
+    lang: &str,
+    calendar: Calendar,
+    era: u32,
+    width: NameStyle,
+) -> Option<&'static str> {
+    let w = name_width(width);
+    let gregorian = |era: u32| {
+        let s = spec(lang);
+        let table = match w {
+            0 => s.eras_wide,
+            1 => s.eras_abbr,
+            _ => s.eras_narrow,
+        };
+        table.get(era as usize).copied()
+    };
+    #[cfg(not(feature = "calendars-extra"))]
+    {
+        return match calendar {
+            Calendar::Gregory | Calendar::Iso8601 => gregorian(era),
+            _ => None,
+        };
+    }
+    #[cfg(feature = "calendars-extra")]
+    match calendar.names() {
+        CalNames::Gregorian => gregorian(era),
+        CalNames::Alt(cal) => alt_spec(lang, cal).era(era, w),
+        CalNames::Lunisolar(_) => None,
+        CalNames::Japanese => {
+            let idx = era as usize;
+            if let Some(modern) = idx.checked_sub(JAPANESE_FIRST_MODERN) {
+                let cal = japanese_alt_spec(lang);
+                let table = match w {
+                    0 => cal.eras_wide,
+                    1 => cal.eras_abbr,
+                    _ => cal.eras_narrow,
+                };
+                table.get(modern).copied()
+            } else {
+                // The pre-Meiji nengō are stored `[wide, abbr, narrow]`, which is
+                // already the `name_width` order.
+                let e = japanese_hist_eras(lang, idx)[w];
+                (!e.is_empty()).then_some(e)
+            }
+        }
+    }
+}
+
+/// The localized month name (or number) for 1-based `month` of `calendar` in
+/// `lang`, or `None` when that calendar has no such month.
+///
+/// This is ECMA-402's `month` option applied to one field: `width` selects among
+/// `"numeric"`, `"2-digit"`, `"long"`, `"short"` and `"narrow"` exactly as
+/// `Intl.DateTimeFormat` does, so the result is the `month` part a
+/// `formatToParts` over `Temporal.PlainYearMonth`/`PlainMonthDay` would carry.
+///
+/// `leap` asks for the leap-year variant of the month, UTS #35's two mechanisms
+/// for which this call unifies because a caller cannot correctly pick between
+/// them from outside:
+/// - the lunisolar `monthPatterns` marker, which *wraps* the ordinary name — the
+///   Chinese/`dangi` intercalary month after month 5 is `"5bis"` in `en`,
+///   `"闰五月"` in `zh`;
+/// - the `yeartype="leap"` alternate name, which *replaces* it — Hebrew month 7
+///   is "Adar" in a common year and "Adar II" in a leap year.
+///
+/// For a calendar with neither (all the solar ones) `leap` has no effect.
+/// `None` means a real gap, never an empty string: a `month` outside the
+/// calendar's range (Coptic, Ethiopic and Hebrew have 13, everything else 12), or
+/// a non-Gregorian calendar with `calendars-extra` off.
+///
+/// ```
+/// # #[cfg(feature = "calendars-extra")] {
+/// use intl::datetime::{Calendar, MonthStyle, month_name};
+/// let m = |cal, n, leap, w| month_name("en", cal, n, leap, w);
+/// assert_eq!(m(Calendar::Islamic, 9, false, MonthStyle::Long), Some("Ramadan".into()));
+/// assert_eq!(m(Calendar::Islamic, 9, false, MonthStyle::Short), Some("Ram.".into()));
+/// // The lunisolar leap-month marker (UTS #35 `monthPatterns`).
+/// assert_eq!(m(Calendar::Chinese, 5, true, MonthStyle::Numeric), Some("5bis".into()));
+/// assert_eq!(m(Calendar::Chinese, 5, true, MonthStyle::Long), Some("Fifth Monthbis".into()));
+/// assert_eq!(month_name("zh", Calendar::Chinese, 5, true, MonthStyle::Long), Some("闰五月".into()));
+/// // The Hebrew `yeartype="leap"` alternate name.
+/// assert_eq!(m(Calendar::Hebrew, 7, false, MonthStyle::Long), Some("Adar".into()));
+/// assert_eq!(m(Calendar::Hebrew, 7, true, MonthStyle::Long), Some("Adar II".into()));
+/// assert_eq!(m(Calendar::Hebrew, 13, false, MonthStyle::Long), Some("Elul".into()));
+/// assert_eq!(m(Calendar::Islamic, 13, false, MonthStyle::Long), None);
+/// # }
+/// ```
+#[must_use]
+pub fn month_name(
+    lang: &str,
+    calendar: Calendar,
+    month: u32,
+    leap: bool,
+    width: MonthStyle,
+) -> Option<String> {
+    month_name_inner(lang, calendar, month, leap, width).filter(|s| !s.is_empty())
+}
+
+/// [`month_name`] before the "no empty strings" filter; see [`era_name_inner`].
+fn month_name_inner(
+    lang: &str,
+    calendar: Calendar,
+    month: u32,
+    leap: bool,
+    width: MonthStyle,
+) -> Option<String> {
+    // The numeric widths render the month *number*; only the three name widths
+    // index a table, and they map onto UTS #35's `MMMM` / `MMM` / `MMMMM`.
+    let numeric = match width {
+        MonthStyle::Numeric => Some(alloc::format!("{month}")),
+        MonthStyle::TwoDigit => Some(two(i64::from(month))),
+        _ => None,
+    };
+    let w = match width {
+        MonthStyle::Long => 0,
+        MonthStyle::Short => 1,
+        MonthStyle::Narrow => 2,
+        // The lunisolar marker has a fourth, numeric-only width in CLDR
+        // (`monthPatterns/numeric/all`), which is this slot.
+        MonthStyle::Numeric | MonthStyle::TwoDigit => 3,
+    };
+    let gregorian = || {
+        if month == 0 || month > 12 {
+            return None;
+        }
+        if let Some(n) = numeric.clone() {
+            return Some(n);
+        }
+        let s = spec(lang);
+        let table = match w {
+            0 => s.months_wide,
+            1 => s.months_abbr,
+            _ => s.months_narrow,
+        };
+        Some(String::from(table[month as usize - 1]))
+    };
+    #[cfg(not(feature = "calendars-extra"))]
+    {
+        return match calendar {
+            Calendar::Gregory | Calendar::Iso8601 => gregorian(),
+            _ => None,
+        };
+    }
+    #[cfg(feature = "calendars-extra")]
+    match calendar.names() {
+        // Buddhist, ROC and Japanese reuse the Gregorian month names, and CLDR
+        // ships them verbatim under those calendar keys (codegen checks this and
+        // stores nothing when it holds).
+        CalNames::Gregorian | CalNames::Japanese => gregorian(),
+        CalNames::Alt(cal) => {
+            let s = alt_spec(lang, cal);
+            if s.month_count == 0 {
+                return gregorian();
+            }
+            let name = s.month(month, leap, w.min(2))?;
+            Some(numeric.unwrap_or_else(|| String::from(name)))
+        }
+        CalNames::Lunisolar(cal) => {
+            if month == 0 || month > 12 {
+                return None;
+            }
+            let s = chinese_alt_spec(lang, cal);
+            let name = numeric.unwrap_or_else(|| {
+                let table = match w {
+                    0 => s.months_wide,
+                    1 => s.months_abbr,
+                    _ => s.months_narrow,
+                };
+                String::from(table[month as usize - 1])
+            });
+            Some(if leap {
+                s.leap(w).replace("{0}", &name)
+            } else {
+                name
+            })
+        }
+    }
+}
+
+/// The localized sexagenary (stem-branch) cycle name for 1-based `cyclic`
+/// (1..=60) of a lunisolar `calendar` in `lang`, or `None` for any other
+/// calendar.
+///
+/// This is UTS #35's `U` field and the `yearName` part ECMA-402 emits for the
+/// Chinese and `dangi` calendars, which name years by cycle position instead of
+/// by era: 2024 is 甲辰 / `jia-chen`, cycle number 41.
+///
+/// ```
+/// # #[cfg(feature = "calendars-extra")] {
+/// use intl::datetime::{Calendar, cyclic_year_name};
+/// assert_eq!(cyclic_year_name("en", Calendar::Chinese, 41), Some("jia-chen"));
+/// assert_eq!(cyclic_year_name("zh", Calendar::Chinese, 41), Some("甲辰"));
+/// assert_eq!(cyclic_year_name("en", Calendar::Chinese, 61), None);
+/// assert_eq!(cyclic_year_name("en", Calendar::Gregory, 41), None);
+/// # }
+/// ```
+#[must_use]
+pub fn cyclic_year_name(lang: &str, calendar: Calendar, cyclic: u32) -> Option<&'static str> {
+    #[cfg(not(feature = "calendars-extra"))]
+    {
+        let _ = (lang, calendar, cyclic);
+        None
+    }
+    #[cfg(feature = "calendars-extra")]
+    {
+        let CalNames::Lunisolar(cal) = calendar.names() else {
+            return None;
+        };
+        if cyclic == 0 || cyclic > 60 {
+            return None;
+        }
+        Some(chinese_alt_spec(lang, cal).cyclic[cyclic as usize - 1]).filter(|s| !s.is_empty())
+    }
+}
+
 /// Slots of the per-locale `timeZoneNames` format patterns, in table order.
 const TZF_GMT: u16 = 0;
 const TZF_ZERO: u16 = 1;
@@ -1456,8 +1885,8 @@ pub struct DateTimeFormatOptions {
     /// IANA zone id (e.g. `"America/New_York"`, or a link such as
     /// `"US/Pacific"`) for `time_zone_name`. The `iana-tz` feature supplies the
     /// zone's offset and its DST state, which is what selects between the
-    /// standard and daylight names; without it the zone is reported on standard
-    /// time and the offset comes from `tz_offset_minutes`.
+    /// standard and daylight names; without it, supply them yourself through
+    /// `tz_offset_minutes` and `tz_is_dst`.
     pub time_zone: Option<&'static str>,
     /// Hour cycle (overrides `hour12`).
     pub hour_cycle: Option<HourCycle>,
@@ -1467,8 +1896,26 @@ pub struct DateTimeFormatOptions {
     pub date_style: Option<DateStyle>,
     /// Time-style shortcut (mutually exclusive with components).
     pub time_style: Option<DateStyle>,
-    /// Caller-supplied UTC offset in minutes, used for `time_zone_name`.
+    /// Caller-supplied UTC offset in minutes, used for `time_zone_name`. This is
+    /// the *actual* offset at this instant, daylight saving already included
+    /// (`-420`, not `-480`, for `America/Los_Angeles` in August), so it is what
+    /// the offset forms (`GMT-7`, `GMT-07:00`) render directly and what
+    /// `tz_is_dst` must not be applied on top of.
     pub tz_offset_minutes: Option<i32>,
+    /// Caller-supplied daylight-saving state at this instant: `Some(true)` when
+    /// the zone is on summer time.
+    ///
+    /// UTS #35 §4.8's specific non-location forms have a standard and a daylight
+    /// name per zone (`PST` / `PDT`), and picking between them needs a tzdb.
+    /// With `iana-tz` the crate answers that itself; a host that already carries
+    /// its own tzdb — and does not want a second copy linked in — sets this
+    /// instead, alongside `tz_offset_minutes`.
+    ///
+    /// Left `None` (the default) nothing changes: `iana-tz` decides, or, without
+    /// it, the zone is reported on standard time year-round. Set, it overrides
+    /// `iana-tz` for the name choice only; the offset always comes from the zone
+    /// or from `tz_offset_minutes`, never from this flag.
+    pub tz_is_dst: Option<bool>,
 }
 
 /// Error returned by [`format_options`] / [`format_to_parts`].
@@ -2291,8 +2738,9 @@ fn strip_zone_field(pattern: &str) -> String {
 /// `time_zone` names a zone CLDR knows, otherwise the localized GMT offset.
 ///
 /// Choosing between the standard and the daylight name needs the zone's DST
-/// state at the instant, which only `iana-tz` can answer; without that feature
-/// the zone is reported on standard time year-round.
+/// state at the instant. `iana-tz` answers that from the embedded tzdb;
+/// [`DateTimeFormatOptions::tz_is_dst`] lets a host that has its own tzdb answer
+/// it instead. With neither, the zone is reported on standard time year-round.
 fn compute_tz_name(
     lang: &str,
     dt: &DateTime,
@@ -2324,7 +2772,7 @@ fn compute_tz_name(
         // was `British` until 1971-10-31 and `GMT` after.
         let unix = utc_unix(dt) - i64::from(offset.unwrap_or(0)) * 60;
         #[cfg(feature = "iana-tz")]
-        let (dst, uses_dst) = match &iana {
+        let (mut dst, mut uses_dst) = match &iana {
             // A year of monthly probes settles whether the zone has a daylight
             // form at all, which decides the generic fallback below.
             Some(z) => (
@@ -2334,7 +2782,16 @@ fn compute_tz_name(
             None => (false, false),
         };
         #[cfg(not(feature = "iana-tz"))]
-        let (dst, uses_dst) = (false, false);
+        let (mut dst, mut uses_dst) = (false, false);
+        // A host with its own tzdb answers "is it summer time *now*" itself. It
+        // cannot answer "does this zone ever observe summer time", which is a
+        // different question and only narrows the generic-name fallback, so that
+        // stays with `iana-tz` — except that a zone on daylight time obviously
+        // observes it.
+        if let Some(b) = opts.tz_is_dst {
+            dst = b;
+            uses_dst |= b;
+        }
         if let Some(name) = zone_name(lang, loc, zid, unix, dst, uses_dst, style) {
             return Some(name);
         }
@@ -2390,16 +2847,157 @@ pub fn format_to_parts(
 
     let mut parts = render_parts(&pattern, dt, &s);
     if let Some(name) = name {
-        parts.push(DateTimePart {
-            kind: DateTimePartType::Literal,
-            value: String::from(" "),
-        });
-        parts.push(DateTimePart {
-            kind: DateTimePartType::TimeZoneName,
-            value: name,
-        });
+        append_zone_name(&mut parts, &pattern, &s, name);
     }
     Ok(parts)
+}
+
+/// Attach a zone name to a pattern that has no zone field of its own.
+///
+/// UTS #35 classes the zone with the *time* fields, so this is the same join the
+/// generator makes for any date+time skeleton. When the pattern already carries
+/// time fields the name goes on the end of the time run, via CLDR's
+/// `appendItems/Timezone` (`"{0} {1}"` in every vendored locale — a plain
+/// space). When it is date-only, the two halves are combined with the locale's
+/// `dateTimeFormat`: `{1}` is the date, `{0}` the name, giving `en`
+/// `"8/4/2021, PDT"` and `fi` `"4.8.2021 klo UTC-7"` rather than a bare space.
+fn append_zone_name(parts: &mut Vec<DateTimePart>, pattern: &str, s: &CalendarSpec, name: String) {
+    let zone = DateTimePart {
+        kind: DateTimePartType::TimeZoneName,
+        value: name,
+    };
+    let lit = |v: &str| DateTimePart {
+        kind: DateTimePartType::Literal,
+        value: String::from(v),
+    };
+    if !has_field_of(pattern, is_time_field) {
+        // `{1}` (the date) always precedes `{0}` (the zone) in the vendored
+        // data, but the `qu` combiner is `"{0} {1}"`, so honour the real order.
+        let glue = s.datetime_at[glue_style(pattern)];
+        if let Some((pre, mid, post)) = split_combiner(glue) {
+            if !pre.is_empty() {
+                parts.insert(0, lit(&pre));
+            }
+            if !mid.is_empty() {
+                parts.push(lit(&mid));
+            }
+            parts.push(zone);
+            if !post.is_empty() {
+                parts.push(lit(&post));
+            }
+            return;
+        }
+    }
+    parts.push(lit(" "));
+    parts.push(zone);
+}
+
+/// Split a `dateTimeFormat` combiner into the literals around its two
+/// placeholders, as `(before the date, between, after the zone)`, unquoting
+/// UTS #35 literal quoting (`"{1} 'at' {0}"` → `("", " at ", "")`). `None` if the
+/// pattern is not of the expected `{1}`-then-`{0}` shape.
+fn split_combiner(glue: &str) -> Option<(String, String, String)> {
+    let date = glue.find("{1}")?;
+    let zone = glue.find("{0}")?;
+    if zone < date {
+        return None; // `{0} {1}`: the zone would lead, which is not this join
+    }
+    Some((
+        unquote(&glue[..date]),
+        unquote(&glue[date + 3..zone]),
+        unquote(&glue[zone + 3..]),
+    ))
+}
+
+/// Strip UTS #35 pattern quoting from a literal run (`'at'` → `at`, `''` → `'`).
+fn unquote(s: &str) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '\'' {
+            i += 1;
+            if i < chars.len() && chars[i] == '\'' {
+                out.push('\'');
+                i += 1;
+                continue;
+            }
+            while i < chars.len() && chars[i] != '\'' {
+                out.push(chars[i]);
+                i += 1;
+            }
+            i += 1;
+        } else {
+            out.push(chars[i]);
+            i += 1;
+        }
+    }
+    out
+}
+
+/// Whether `pattern` contains a field run matching `pred`, outside quotes.
+fn has_field_of(pattern: &str, pred: fn(char) -> bool) -> bool {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            i += 1;
+            while i < chars.len() && chars[i] != '\'' {
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            if pred(ch) {
+                return true;
+            }
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+        } else {
+            i += 1;
+        }
+    }
+    false
+}
+
+/// The `dateTimeFormat` length (0 full … 3 short) to combine `pattern` with,
+/// by the rule ICU's `DateTimePatternGenerator` uses: the month field's width
+/// decides — a wide month (`MMMM`) means full when a weekday is present and long
+/// otherwise, an abbreviated month (`MMM`) means medium, and anything else
+/// (numeric, narrow, or no month at all) means short.
+fn glue_style(pattern: &str) -> usize {
+    let chars: Vec<char> = pattern.chars().collect();
+    let mut i = 0;
+    let mut month = 0;
+    let mut weekday = false;
+    while i < chars.len() {
+        let ch = chars[i];
+        if ch == '\'' {
+            i += 1;
+            while i < chars.len() && chars[i] != '\'' {
+                i += 1;
+            }
+            i += 1;
+        } else if ch.is_ascii_alphabetic() {
+            let start = i;
+            while i < chars.len() && chars[i] == ch {
+                i += 1;
+            }
+            match ch {
+                'M' | 'L' => month = i - start,
+                'E' | 'e' | 'c' => weekday = true,
+                _ => {}
+            }
+        } else {
+            i += 1;
+        }
+    }
+    match month {
+        4 => usize::from(!weekday), // full when a weekday is present, else long
+        3 => 2,                     // medium
+        _ => 3,                     // short
+    }
 }
 
 /// Format `dt` in `lang` with ECMA-402-style component options.

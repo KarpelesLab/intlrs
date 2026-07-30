@@ -30,6 +30,68 @@ pub fn intl::calendar::persian_to_jdn(i64, i64, i64) -> i64
 pub fn intl::calendar::umalqura_to_gregorian(i64, i64, i64) -> (i64, i64, i64)
 pub fn intl::calendar::umalqura_to_jdn(i64, i64, i64) -> i64
 pub mod intl::datetime
+#[non_exhaustive] pub enum intl::datetime::Calendar
+pub intl::datetime::Calendar::Buddhist
+pub intl::datetime::Calendar::Chinese
+pub intl::datetime::Calendar::Coptic
+pub intl::datetime::Calendar::Dangi
+pub intl::datetime::Calendar::Ethiopic
+pub intl::datetime::Calendar::EthiopicAmeteAlem
+pub intl::datetime::Calendar::Gregory
+pub intl::datetime::Calendar::Hebrew
+pub intl::datetime::Calendar::Indian
+pub intl::datetime::Calendar::Islamic
+pub intl::datetime::Calendar::IslamicCivil
+pub intl::datetime::Calendar::IslamicRgsa
+pub intl::datetime::Calendar::IslamicTbla
+pub intl::datetime::Calendar::IslamicUmalqura
+pub intl::datetime::Calendar::Iso8601
+pub intl::datetime::Calendar::Japanese
+pub intl::datetime::Calendar::Persian
+pub intl::datetime::Calendar::Roc
+impl intl::datetime::Calendar
+pub fn intl::datetime::Calendar::as_bcp47(self) -> &'static str
+pub fn intl::datetime::Calendar::from_bcp47(&str) -> core::option::Option<intl::datetime::Calendar>
+impl core::clone::Clone for intl::datetime::Calendar
+pub fn intl::datetime::Calendar::clone(&self) -> intl::datetime::Calendar
+impl core::cmp::Eq for intl::datetime::Calendar
+impl core::cmp::PartialEq for intl::datetime::Calendar
+pub fn intl::datetime::Calendar::eq(&self, &intl::datetime::Calendar) -> bool
+impl core::fmt::Debug for intl::datetime::Calendar
+pub fn intl::datetime::Calendar::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for intl::datetime::Calendar
+pub fn intl::datetime::Calendar::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for intl::datetime::Calendar
+impl core::marker::StructuralPartialEq for intl::datetime::Calendar
+impl core::marker::Freeze for intl::datetime::Calendar
+impl core::marker::Send for intl::datetime::Calendar
+impl core::marker::Sync for intl::datetime::Calendar
+impl core::marker::Unpin for intl::datetime::Calendar
+impl core::marker::UnsafeUnpin for intl::datetime::Calendar
+impl core::panic::unwind_safe::RefUnwindSafe for intl::datetime::Calendar
+impl core::panic::unwind_safe::UnwindSafe for intl::datetime::Calendar
+impl<T, U> core::convert::Into<U> for intl::datetime::Calendar where U: core::convert::From<T>
+pub fn intl::datetime::Calendar::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::datetime::Calendar where U: core::convert::Into<T>
+pub type intl::datetime::Calendar::Error = core::convert::Infallible
+pub fn intl::datetime::Calendar::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::datetime::Calendar where U: core::convert::TryFrom<T>
+pub type intl::datetime::Calendar::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::datetime::Calendar::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::datetime::Calendar where T: core::clone::Clone
+pub type intl::datetime::Calendar::Owned = T
+pub fn intl::datetime::Calendar::clone_into(&self, &mut T)
+pub fn intl::datetime::Calendar::to_owned(&self) -> T
+impl<T> core::any::Any for intl::datetime::Calendar where T: 'static + ?core::marker::Sized
+pub fn intl::datetime::Calendar::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::datetime::Calendar where T: ?core::marker::Sized
+pub fn intl::datetime::Calendar::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::datetime::Calendar where T: ?core::marker::Sized
+pub fn intl::datetime::Calendar::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::datetime::Calendar where T: core::clone::Clone
+pub unsafe fn intl::datetime::Calendar::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::datetime::Calendar
+pub fn intl::datetime::Calendar::from(T) -> T
 pub enum intl::datetime::DateStyle
 pub intl::datetime::DateStyle::Full
 pub intl::datetime::DateStyle::Long
@@ -495,6 +557,7 @@ pub intl::datetime::DateTimeFormatOptions::second: core::option::Option<intl::da
 pub intl::datetime::DateTimeFormatOptions::time_style: core::option::Option<intl::datetime::DateStyle>
 pub intl::datetime::DateTimeFormatOptions::time_zone: core::option::Option<&'static str>
 pub intl::datetime::DateTimeFormatOptions::time_zone_name: core::option::Option<intl::datetime::TimeZoneNameStyle>
+pub intl::datetime::DateTimeFormatOptions::tz_is_dst: core::option::Option<bool>
 pub intl::datetime::DateTimeFormatOptions::tz_offset_minutes: core::option::Option<i32>
 pub intl::datetime::DateTimeFormatOptions::weekday: core::option::Option<intl::datetime::NameStyle>
 pub intl::datetime::DateTimeFormatOptions::year: core::option::Option<intl::datetime::Numeric2Digit>
@@ -619,6 +682,8 @@ impl<T> core::clone::CloneToUninit for intl::datetime::DateTimeRangePart where T
 pub unsafe fn intl::datetime::DateTimeRangePart::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::datetime::DateTimeRangePart
 pub fn intl::datetime::DateTimeRangePart::from(T) -> T
+pub fn intl::datetime::cyclic_year_name(&str, intl::datetime::Calendar, u32) -> core::option::Option<&'static str>
+pub fn intl::datetime::era_name(&str, intl::datetime::Calendar, u32, intl::datetime::NameStyle) -> core::option::Option<&'static str>
 pub fn intl::datetime::format_chinese_date(&str, i64, i64, i64, bool, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_date(&str, &intl::datetime::DateTime, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_datetime(&str, &intl::datetime::DateTime, intl::datetime::DateStyle, intl::datetime::DateStyle) -> alloc::string::String
@@ -634,6 +699,7 @@ pub fn intl::datetime::format_skeleton(&str, &intl::datetime::DateTime, &str) ->
 pub fn intl::datetime::format_skeleton_to_parts(&str, &intl::datetime::DateTime, &str) -> alloc::vec::Vec<intl::datetime::DateTimePart>
 pub fn intl::datetime::format_time(&str, &intl::datetime::DateTime, intl::datetime::DateStyle) -> alloc::string::String
 pub fn intl::datetime::format_to_parts(&str, &intl::datetime::DateTime, &intl::datetime::DateTimeFormatOptions) -> core::result::Result<alloc::vec::Vec<intl::datetime::DateTimePart>, intl::datetime::DateTimeFormatError>
+pub fn intl::datetime::month_name(&str, intl::datetime::Calendar, u32, bool, intl::datetime::MonthStyle) -> core::option::Option<alloc::string::String>
 pub mod intl::display
 pub fn intl::display::language_name(&str, &str) -> core::option::Option<&'static str>
 pub fn intl::display::region_name(&str, &str) -> core::option::Option<&'static str>

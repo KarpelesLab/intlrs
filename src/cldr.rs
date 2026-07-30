@@ -148,7 +148,12 @@ impl RelUnit {
 
 /// Gregorian calendar names and patterns for one locale (full/long/medium/short
 /// styles are indexed 0..4).
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
+/// tables, which gain fields as the data does, so it is obtained from the crate
+/// rather than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct CalendarSpec {
     /// Wide month names (January…), indexed by month−1.
     pub months_wide: [&'static str; 12],
@@ -192,6 +197,12 @@ pub struct CalendarSpec {
     /// `period_index` (an index into the `day_periods_*` arrays). The `_at`
     /// midnight/noon points are applied by the caller at the exact instant.
     pub day_period_rules: &'static [u8],
+    /// The `atTime` variant of [`CalendarSpec::datetime`] (UTS #35
+    /// `<dateTimeFormat type="atTime">`), by style: the combining pattern to use
+    /// when `{0}` is a *time of day* — `"{1} 'at' {0}"` in `en`, `"{1} klo {0}"`
+    /// in `fi`, against a plain slot of `"{1}, {0}"`. It differs from `datetime`
+    /// in 74 of the 101 vendored locales.
+    pub datetime_at: [&'static str; 4],
 }
 
 impl CalendarSpec {
@@ -247,11 +258,9 @@ const ORDSUFFIX: &[u8] = include_bytes!("cldr/ordsuffix.bin");
 #[cfg(feature = "collation")]
 const COLLATION: &[u8] = include_bytes!("cldr/collation.bin");
 #[cfg(feature = "calendars-extra")]
-const ISLAMIC: &[u8] = include_bytes!("cldr/islamic.bin");
+const ALT_CALENDARS: &[u8] = include_bytes!("cldr/alt_calendars.bin");
 #[cfg(feature = "calendars-extra")]
-const PERSIAN: &[u8] = include_bytes!("cldr/persian.bin");
-#[cfg(feature = "calendars-extra")]
-const CHINESE: &[u8] = include_bytes!("cldr/chinese.bin");
+const LUNISOLAR: &[u8] = include_bytes!("cldr/lunisolar.bin");
 #[cfg(feature = "calendars-extra")]
 const JAPANESE: &[u8] = include_bytes!("cldr/japanese.bin");
 #[cfg(feature = "calendars-extra")]
@@ -334,55 +343,153 @@ pub(crate) fn rbnf_payload(lang: &str) -> Option<&'static [u8]> {
     None
 }
 
-/// Month names + patterns for a non-Gregorian calendar (Islamic, Persian) in one
-/// locale. Calendars with at most 12 named months share this shape.
+/// The widest month list any [`AltCalSpec`] calendar names: Coptic, Ethiopic and
+/// Hebrew have 13. Must match codegen's `ALT_MAX_MONTHS`.
+pub const ALT_MAX_MONTHS: usize = 13;
+
+/// Month names, era names and patterns for one non-lunisolar, non-Gregorian
+/// calendar in one locale — the shape shared by every calendar in
+/// `alt_calendars.bin` (Buddhist, Coptic, Ethiopic, Hebrew, Indian, Islamic,
+/// Persian, ROC).
+///
+/// The month and era lists are fixed-size arrays with an explicit count rather
+/// than slices, because the blob is read into a value on the stack; entries at or
+/// past the count are `""` and must not be shown. See [`AltCalSpec::month`] and
+/// [`AltCalSpec::era`], which apply the bounds.
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR tables,
+/// which gain fields as the data does, so it is obtained from the crate rather
+/// than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct AltCalSpec {
     /// Wide month names, indexed by month−1.
-    pub months_wide: [&'static str; 12],
+    pub months_wide: [&'static str; ALT_MAX_MONTHS],
     /// Abbreviated month names.
-    pub months_abbr: [&'static str; 12],
-    /// Wide era names, indexed 0 = current era (`"Anno Hegirae"` / `"AP"`),
-    /// 1 = pre-era (`"Before Hijrah"` / `"BP"`; empty when the calendar defines
-    /// only one era, as Persian does).
+    pub months_abbr: [&'static str; ALT_MAX_MONTHS],
+    /// Narrow month names (for most of these calendars CLDR's narrow form is the
+    /// month *number*, but not in every locale, so it is stored).
+    pub months_narrow: [&'static str; ALT_MAX_MONTHS],
+    /// How many of the `months_*` entries are populated: 12, 13, or 0 when this
+    /// calendar reuses the locale's Gregorian month names verbatim (Buddhist and
+    /// ROC do, in every vendored locale — codegen checks rather than assumes).
+    pub month_count: u8,
+    /// The 1-based month that has a distinct name in a leap year (UTS #35
+    /// `yeartype="leap"`), or 0 for none. Only Hebrew uses it: month 7 is "Adar"
+    /// in a common year and "Adar II" in a leap year.
+    pub leap_month: u8,
+    /// That month's leap-year name in `[wide, abbreviated, narrow]` order; all
+    /// `""` when `leap_month` is 0.
+    pub leap_names: [&'static str; 3],
+    /// Wide era names, indexed from [`AltCalSpec::era_base`] (e.g. Islamic
+    /// 0 = `"Anno Hegirae"`, 1 = `"Before Hijrah"`; Coptic's only era is CLDR
+    /// index 1, so `era_base` is 1 and this is `["Anno Martyrum", ""]`).
     pub eras_wide: [&'static str; 2],
     /// Abbreviated era names (e.g. `"AH"`/`"BH"`, `"AP"`).
     pub eras_abbr: [&'static str; 2],
     /// Narrow era names.
     pub eras_narrow: [&'static str; 2],
+    /// The CLDR era index that `eras_*[0]` carries (0 for all but Coptic, whose
+    /// single era is index 1).
+    pub era_base: u8,
+    /// How many of the `eras_*` entries are populated (1 or 2).
+    pub era_count: u8,
     /// Date patterns by style (full/long/medium/short).
     pub date: [&'static str; 4],
 }
 
+impl AltCalSpec {
+    /// The name of 1-based `month` at width `w` (0 = wide, 1 = abbreviated,
+    /// 2 = narrow), or `None` if this calendar has no month of that number (or
+    /// borrows the Gregorian ones — `month_count == 0`). `leap` selects the
+    /// leap-year variant where the calendar has one.
+    #[cfg(feature = "calendars-extra")]
+    pub(crate) fn month(&self, month: u32, leap: bool, w: usize) -> Option<&'static str> {
+        if month == 0 || month > u32::from(self.month_count) {
+            return None;
+        }
+        if leap && u32::from(self.leap_month) == month {
+            return Some(self.leap_names[w]);
+        }
+        let table = match w {
+            0 => &self.months_wide,
+            1 => &self.months_abbr,
+            _ => &self.months_narrow,
+        };
+        Some(table[month as usize - 1])
+    }
+
+    /// The name of CLDR era index `era` at width `w` (0 = wide, 1 = abbreviated,
+    /// 2 = narrow), or `None` if this calendar has no such era.
+    #[cfg(feature = "calendars-extra")]
+    pub(crate) fn era(&self, era: u32, w: usize) -> Option<&'static str> {
+        let i = era.checked_sub(u32::from(self.era_base))?;
+        if i >= u32::from(self.era_count) {
+            return None;
+        }
+        let table = match w {
+            0 => &self.eras_wide,
+            1 => &self.eras_abbr,
+            _ => &self.eras_narrow,
+        };
+        Some(table[i as usize])
+    }
+}
+
+/// Names + patterns for calendar `cal` (a BCP-47 `ca-` key such as `"islamic"`)
+/// in an exact (lowercased) locale key.
 #[cfg(feature = "calendars-extra")]
-fn alt_cal_spec(blob: &'static [u8], lang: &str) -> Option<AltCalSpec> {
-    let mut c = find(blob, lang)?;
+pub(crate) fn alt_cal_spec(cal: &str, lang: &str) -> Option<AltCalSpec> {
+    let mut c = find2(ALT_CALENDARS, cal, lang)?;
+    let month_count = c.u8();
+    let n = month_count as usize;
+    let mut months = [[""; ALT_MAX_MONTHS]; 3];
+    for w in &mut months {
+        for slot in w.iter_mut().take(n) {
+            *slot = c.str();
+        }
+    }
+    let leap_month = c.u8();
+    let leap_names = if leap_month == 0 {
+        [""; 3]
+    } else {
+        [c.str(), c.str(), c.str()]
+    };
+    let era_base = c.u8();
+    let era_count = c.u8();
+    let mut eras = [[""; 2]; 3];
+    for w in &mut eras {
+        for slot in w.iter_mut().take(era_count as usize) {
+            *slot = c.str();
+        }
+    }
     Some(AltCalSpec {
-        months_wide: core::array::from_fn(|_| c.str()),
-        months_abbr: core::array::from_fn(|_| c.str()),
-        eras_wide: [c.str(), c.str()],
-        eras_abbr: [c.str(), c.str()],
-        eras_narrow: [c.str(), c.str()],
+        months_wide: months[0],
+        months_abbr: months[1],
+        months_narrow: months[2],
+        month_count,
+        leap_month,
+        leap_names,
+        eras_wide: eras[0],
+        eras_abbr: eras[1],
+        eras_narrow: eras[2],
+        era_base,
+        era_count,
         date: core::array::from_fn(|_| c.str()),
     })
 }
 
-/// Islamic-calendar names + patterns for an exact (lowercased) locale key.
-#[cfg(feature = "calendars-extra")]
-pub(crate) fn islamic_spec(lang: &str) -> Option<AltCalSpec> {
-    alt_cal_spec(ISLAMIC, lang)
-}
-
-/// Persian-calendar names + patterns for an exact (lowercased) locale key.
-#[cfg(feature = "calendars-extra")]
-pub(crate) fn persian_spec(lang: &str) -> Option<AltCalSpec> {
-    alt_cal_spec(PERSIAN, lang)
-}
-
-/// Chinese-calendar names + patterns for one locale: the 60 sexagenary (cyclic)
-/// year names (the `U` field), numeric month names (wide + abbreviated), the
-/// leap-month marker pattern (wide + abbreviated) and the four date patterns.
+/// Lunisolar-calendar names + patterns for one locale — the shape shared by the
+/// Chinese and Korean (`dangi`) calendars: the 60 sexagenary (cyclic) year names
+/// (the `U` field), numeric month names in three widths, the leap-month marker
+/// pattern in four widths and the four date patterns. Neither calendar has eras
+/// in CLDR.
+///
+/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR tables,
+/// which gain fields as the data does, so it is obtained from the crate rather
+/// than constructed.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct ChineseCalSpec {
     /// The 60 sexagenary cyclic year names, indexed by the 1-based
     /// stem-branch number minus 1 (e.g. index 40 → 甲辰 / `jia-chen`). The CLDR
@@ -392,24 +499,49 @@ pub struct ChineseCalSpec {
     pub months_wide: [&'static str; 12],
     /// Abbreviated numeric month names (e.g. `"Mo1"`), indexed month−1.
     pub months_abbr: [&'static str; 12],
+    /// Narrow numeric month names (e.g. `"1"`), indexed month−1.
+    pub months_narrow: [&'static str; 12],
     /// Wide leap-month marker pattern (contains `{0}`, e.g. `"闰{0}"` / `"{0}bis"`).
     pub leap_wide: &'static str,
     /// Abbreviated leap-month marker pattern.
     pub leap_abbr: &'static str,
+    /// Narrow leap-month marker pattern (e.g. `"{0}b"`).
+    pub leap_narrow: &'static str,
+    /// The marker used with a *numeric* month, CLDR's separate `numeric/all`
+    /// entry (e.g. `"{0}bis"`, so month 2 of a leap year prints `"2bis"`).
+    pub leap_numeric: &'static str,
     /// Date patterns by style (full/long/medium/short).
     pub date: [&'static str; 4],
 }
 
-/// Chinese-calendar names + patterns for an exact (lowercased) locale key.
+impl ChineseCalSpec {
+    /// The leap-month marker pattern at width `w` (0 = wide, 1 = abbreviated,
+    /// 2 = narrow, 3 = numeric).
+    #[cfg(feature = "calendars-extra")]
+    pub(crate) fn leap(&self, w: usize) -> &'static str {
+        match w {
+            0 => self.leap_wide,
+            1 => self.leap_abbr,
+            2 => self.leap_narrow,
+            _ => self.leap_numeric,
+        }
+    }
+}
+
+/// Lunisolar-calendar names + patterns for calendar `cal` (`"chinese"` or
+/// `"dangi"`) in an exact (lowercased) locale key.
 #[cfg(feature = "calendars-extra")]
-pub(crate) fn chinese_spec(lang: &str) -> Option<ChineseCalSpec> {
-    let mut c = find(CHINESE, lang)?;
+pub(crate) fn chinese_spec(cal: &str, lang: &str) -> Option<ChineseCalSpec> {
+    let mut c = find2(LUNISOLAR, cal, lang)?;
     Some(ChineseCalSpec {
         cyclic: core::array::from_fn(|_| c.str()),
         months_wide: core::array::from_fn(|_| c.str()),
         months_abbr: core::array::from_fn(|_| c.str()),
+        months_narrow: core::array::from_fn(|_| c.str()),
         leap_wide: c.str(),
         leap_abbr: c.str(),
+        leap_narrow: c.str(),
+        leap_numeric: c.str(),
         date: core::array::from_fn(|_| c.str()),
     })
 }
@@ -614,6 +746,34 @@ fn find(blob: &'static [u8], key: &str) -> Option<Cursor> {
     None
 }
 
+/// Locate the record whose key is `"<a>/<b>"` and return a cursor at its payload.
+///
+/// The per-calendar tables are keyed by calendar *and* locale, and this module is
+/// alloc-free, so the two halves are compared in place rather than concatenated
+/// into a lookup key.
+#[cfg(feature = "calendars-extra")]
+fn find2(blob: &'static [u8], a: &str, b: &str) -> Option<Cursor> {
+    let count = rd_u16(blob, 0);
+    let mut o = 2;
+    for _ in 0..count {
+        let klen = blob[o] as usize;
+        o += 1;
+        let k = &blob[o..o + klen];
+        o += klen;
+        let plen = rd_u16(blob, o);
+        o += 2;
+        if k.len() == a.len() + 1 + b.len()
+            && &k[..a.len()] == a.as_bytes()
+            && k[a.len()] == b'/'
+            && &k[a.len() + 1..] == b.as_bytes()
+        {
+            return Some(Cursor { b: blob, o });
+        }
+        o += plen;
+    }
+    None
+}
+
 /// Number symbols + patterns for an exact (lowercased) locale key in numbering
 /// system `system`. A locale that ships no `symbols-numberSystem-<system>` block
 /// resolves to its `latn` one, which is ICU's `NumberElements` fallback.
@@ -809,5 +969,6 @@ pub(crate) fn calendar_spec(lang: &str) -> Option<CalendarSpec> {
         day_periods_abbr: core::array::from_fn(|_| c.opt()),
         day_periods_narrow: core::array::from_fn(|_| c.opt()),
         day_period_rules: c.dp_rules(),
+        datetime_at: core::array::from_fn(|_| c.str()),
     })
 }

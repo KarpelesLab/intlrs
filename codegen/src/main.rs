@@ -355,9 +355,8 @@ fn main() {
     emit_collation_zh_rs(&root, &ucd.join("Unihan_kRSUnicode.txt"));
     emit_collation_zh_variant(&root, &cldr.join("collation/zh.xml"), "stroke");
     emit_collation_zh_variant(&root, &cldr.join("collation/zh.xml"), "zhuyin");
-    emit_alt_calendar(&cldr_dir, "islamic", &cldr.join("islamic-raw"));
-    emit_alt_calendar(&cldr_dir, "persian", &cldr.join("persian-raw"));
-    emit_chinese(&cldr_dir, &cldr.join("chinese-raw"));
+    emit_alt_calendars(&cldr_dir, &cldr, &cldr.join("dates"));
+    emit_lunisolar(&cldr_dir, &cldr);
     emit_japanese(&cldr_dir, &cldr.join("japanese-raw"));
     emit_japanese_hist(&cldr_dir, &cldr.join("japanese-raw"));
 
@@ -3424,6 +3423,20 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path, day_periods_path: &Path) {
             p.extend_from_slice(&to.to_le_bytes());
             p.push(idx);
         }
+
+        // appended block: the `atTime` variant of the four date+time combining
+        // patterns (UTS #35 `<dateTimeFormat type="atTime">`), which is the one
+        // ICU uses whenever the `{0}` half is a time of day rather than a bare
+        // duration — `"{1} 'at' {0}"` in `en`, `"{1} klo {0}"` in `fi`. It
+        // differs from the plain slot in 74 of the 101 locales. CLDR nests it one
+        // level deeper, under `standard`.
+        let at = greg
+            .get("dateTimeFormats-atTime")
+            .and_then(|a| a.get("standard"))
+            .expect("dateTimeFormats-atTime.standard");
+        for k in order {
+            enc_str(&mut p, at.get(k).and_then(Json::as_str).unwrap_or(""));
+        }
         cal_records.push((locale.to_ascii_lowercase(), p));
 
         // ---- skeletons.bin payload ----
@@ -4609,76 +4622,253 @@ fn emit_array<T: std::fmt::Display>(out: &mut String, cfg: &str, name: &str, ty:
     out.push_str("];\n");
 }
 
-/// Write `cldr/<name>.bin` for a non-Gregorian calendar: per-locale month names
-/// (wide + abbr), the era names (all three widths × indices 0/1), and date
-/// patterns (full/long/medium/short). Used for the Islamic and Persian calendars
-/// (same record shape).
-fn emit_alt_calendar(cldr_dir: &Path, name: &str, raw_dir: &Path) {
-    let mut locales = locale_files(raw_dir);
-    locales.sort();
-    let mut records = Vec::new();
-    for locale in locales {
-        let path = raw_dir.join(alloc_format(&locale));
-        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
-        let json = json_parse(&text);
-        let (_, loc_obj) = json
-            .get("main")
-            .expect("main")
-            .entries()
-            .first()
-            .expect("locale");
-        let cal = loc_obj
-            .get("dates")
-            .and_then(|d| d.get("calendars"))
-            .and_then(|c| c.get(name))
-            .expect("calendar");
-        let months = cal
-            .get("months")
-            .and_then(|m| m.get("format"))
-            .expect("months");
-        let mut p = Vec::new();
-        for width in ["wide", "abbreviated"] {
-            let w = months.get(width).expect("width");
-            for m in 1..=12u8 {
-                enc_str(
-                    &mut p,
-                    w.get(&m.to_string()).and_then(Json::as_str).unwrap_or(""),
-                );
-            }
-        }
-        // Era names in all three widths, indices 0 (current era: AH / AP) and
-        // 1 (pre-era: BH / BP). Persian defines only index 0, so index 1 is "".
-        let eras = cal.get("eras");
-        for width in ["eraNames", "eraAbbr", "eraNarrow"] {
-            let w = eras.and_then(|e| e.get(width));
-            for idx in ["0", "1"] {
-                enc_str(
-                    &mut p,
-                    w.and_then(|x| x.get(idx))
-                        .and_then(Json::as_str)
-                        .unwrap_or(""),
-                );
-            }
-        }
-        let df = cal.get("dateFormats").expect("dateFormats");
-        for k in ["full", "long", "medium", "short"] {
-            enc_str(&mut p, df.get(k).and_then(Json::as_str).unwrap_or(""));
-        }
-        records.push((locale.to_ascii_lowercase(), p));
-    }
-    write_blob(cldr_dir, name, &records);
+/// The non-lunisolar alternate calendars whose month and era names go into
+/// `alt_calendars.bin`, in BCP-47 `-u-ca-` order. Each name is simultaneously the
+/// CLDR calendar key inside `dates.calendars`, the `<name>-raw/` data directory,
+/// and the blob key prefix. The lunisolar pair (chinese, dangi) has cyclic year
+/// names and leap-month patterns instead and lives in `lunisolar.bin`; the
+/// Japanese calendar's 237 eras live in `japanese{,_hist}.bin`; `gregory` and
+/// `iso8601` are `calendar.bin` itself.
+const ALT_CALENDARS: [&str; 8] = [
+    "buddhist", "coptic", "ethiopic", "hebrew", "indian", "islamic", "persian", "roc",
+];
+
+/// The maximum number of months any calendar in [`ALT_CALENDARS`] names (Coptic,
+/// Ethiopic and Hebrew have 13); must match `cldr::ALT_MAX_MONTHS`.
+const ALT_MAX_MONTHS: usize = 13;
+
+/// Read the 1-based month names of one CLDR width into a `Vec`, `count` long.
+fn month_names(months: &Json, width: &str, count: usize) -> Vec<String> {
+    let w = months.get(width).expect("month width");
+    (1..=count)
+        .map(|m| {
+            String::from(
+                w.get(&m.to_string())
+                    .and_then(Json::as_str)
+                    .unwrap_or_default(),
+            )
+        })
+        .collect()
 }
 
-/// Write `cldr/chinese.bin`: per-locale Chinese-calendar data. Each record holds
-/// the 60 sexagenary (cyclic) year names (the `U` field), the 12 numeric month
-/// names (wide + abbreviated), the leap-month marker pattern (wide + abbreviated,
-/// e.g. `"闰{0}"` / `"{0}bis"`) and the 4 date patterns (full/long/medium/short).
-/// The cyclic-year names are identical across CLDR widths, so only one set is
-/// stored. A `dateFormats` value may be a plain string or an object carrying a
-/// `_value` (e.g. `zh`/`ja`/`yue`, which annotate a per-field numbering system);
-/// the `_value` is used and the numbering annotation dropped (days render with
-/// ASCII digits, as the other alternate calendars do).
-fn emit_chinese(cldr_dir: &Path, raw_dir: &Path) {
+/// Write `cldr/alt_calendars.bin`: the month and era names, the leap-year month
+/// variant and the date patterns of every calendar in [`ALT_CALENDARS`], keyed
+/// `"<ca-key>/<locale>"`.
+///
+/// One table rather than one blob per calendar, because the record shape is the
+/// same for all of them and the field-level accessors (`datetime::era_name`,
+/// `datetime::month_name`) want a single keyed lookup they can reach with a
+/// `Calendar` value.
+///
+/// Record payload (little-endian, strings are `[u8 len][bytes]`):
+/// ```text
+///   u8  month_count          0 = shares the Gregorian month names, else 12 or 13
+///   month_count strings      wide
+///   month_count strings      abbreviated
+///   month_count strings      narrow
+///   u8  leap_month           0 = none, else the 1-based month with a leap-year variant
+///   if leap_month != 0: 3 strings   wide, abbreviated, narrow of that variant
+///   u8  era_base             CLDR index of the first era (1 for Coptic)
+///   u8  era_count            1 or 2
+///   era_count strings ×3     eraNames, eraAbbr, eraNarrow
+///   4 strings                dateFormats full/long/medium/short
+/// ```
+///
+/// `month_count` is 0 exactly when the calendar's month names are byte-identical
+/// to the locale's Gregorian ones — which is the case for `buddhist` and `roc` in
+/// all 101 vendored locales, and is *checked* here rather than assumed, so a
+/// future CLDR that diverges starts storing them. `gregorian_dir` is the
+/// `dates/<locale>/ca-gregorian.json` tree that comparison reads.
+fn emit_alt_calendars(cldr_dir: &Path, cldr: &Path, gregorian_dir: &Path) {
+    let mut records = Vec::new();
+    for name in ALT_CALENDARS {
+        let raw_dir = cldr.join(alloc_concat(name, "-raw"));
+        let mut locales = locale_files(&raw_dir);
+        locales.sort();
+        for locale in locales {
+            let path = raw_dir.join(alloc_format(&locale));
+            let text =
+                fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+            let json = json_parse(&text);
+            let (_, loc_obj) = json
+                .get("main")
+                .expect("main")
+                .entries()
+                .first()
+                .expect("locale");
+            let cal = loc_obj
+                .get("dates")
+                .and_then(|d| d.get("calendars"))
+                .and_then(|c| c.get(name))
+                .expect("calendar");
+            let months = cal
+                .get("months")
+                .and_then(|m| m.get("format"))
+                .expect("months");
+
+            // How many months this calendar names, and whether they are just the
+            // Gregorian ones under another calendar key.
+            let count = months
+                .get("wide")
+                .expect("wide months")
+                .entries()
+                .iter()
+                .filter(|(k, _)| k.parse::<usize>().is_ok())
+                .count();
+            assert!(
+                (12..=ALT_MAX_MONTHS).contains(&count),
+                "{name}/{locale}: unexpected month count {count}"
+            );
+            let widths = ["wide", "abbreviated", "narrow"];
+            let mine: Vec<Vec<String>> = widths
+                .iter()
+                .map(|w| month_names(months, w, count))
+                .collect();
+            let greg_path = gregorian_dir
+                .join(&locale)
+                .join(String::from("ca-gregorian.json"));
+            let greg_text = fs::read_to_string(&greg_path)
+                .unwrap_or_else(|_| panic!("read {}", greg_path.display()));
+            let greg_json = json_parse(&greg_text);
+            let (_, greg_loc) = greg_json
+                .get("main")
+                .expect("main")
+                .entries()
+                .first()
+                .expect("locale");
+            let greg_months = greg_loc
+                .get("dates")
+                .and_then(|d| d.get("calendars"))
+                .and_then(|c| c.get("gregorian"))
+                .and_then(|c| c.get("months"))
+                .and_then(|m| m.get("format"))
+                .expect("gregorian months");
+            let shares_gregorian = count == 12
+                && widths
+                    .iter()
+                    .zip(&mine)
+                    .all(|(w, m)| month_names(greg_months, w, 12) == *m);
+
+            let mut p = Vec::new();
+            p.push(if shares_gregorian { 0 } else { count as u8 });
+            if !shares_gregorian {
+                for w in &mine {
+                    for m in w {
+                        enc_str(&mut p, m);
+                    }
+                }
+            }
+
+            // UTS #35 `yeartype="leap"`: a calendar may name one month
+            // differently in a leap year. Only Hebrew uses it — month 7 is "Adar"
+            // in a common year and "Adar II" in a leap year (month 6, "Adar I",
+            // exists only in leap years and needs no variant).
+            let leap_key = months
+                .get("wide")
+                .expect("wide months")
+                .entries()
+                .iter()
+                .find_map(|(k, _)| k.strip_suffix("-yeartype-leap").map(String::from));
+            match &leap_key {
+                None => p.push(0),
+                Some(m) => {
+                    p.push(m.parse::<u8>().expect("leap month index"));
+                    for w in widths {
+                        let key = alloc_concat(m, "-yeartype-leap");
+                        enc_str(
+                            &mut p,
+                            months
+                                .get(w)
+                                .and_then(|x| x.get(&key))
+                                .and_then(Json::as_str)
+                                .unwrap_or_default(),
+                        );
+                    }
+                }
+            }
+
+            // Eras. The index set is a property of the calendar, not the locale
+            // (Coptic starts at 1, Ethiopic and the Islamic/ROC pairs run 0..=1,
+            // the rest have only era 0), so it is read back out of the data.
+            let eras = cal.get("eras").expect("eras");
+            let names = eras.get("eraNames").expect("eraNames");
+            let mut idx: Vec<u8> = names
+                .entries()
+                .iter()
+                .filter_map(|(k, _)| k.parse::<u8>().ok())
+                .collect();
+            idx.sort_unstable();
+            assert!(!idx.is_empty() && idx.len() <= 2, "{name}: {idx:?} eras");
+            assert!(
+                idx.len() == 1 || idx[1] == idx[0] + 1,
+                "{name}: non-contiguous eras {idx:?}"
+            );
+            p.push(idx[0]);
+            p.push(idx.len() as u8);
+            for width in ["eraNames", "eraAbbr", "eraNarrow"] {
+                let w = eras.get(width).expect("era width");
+                for i in &idx {
+                    enc_str(
+                        &mut p,
+                        w.get(&i.to_string()).and_then(Json::as_str).unwrap_or(""),
+                    );
+                }
+            }
+
+            let df = cal.get("dateFormats").expect("dateFormats");
+            for k in ["full", "long", "medium", "short"] {
+                enc_str(&mut p, df.get(k).and_then(Json::as_str).unwrap_or(""));
+            }
+
+            let mut key = String::from(name);
+            key.push('/');
+            key.push_str(&locale.to_ascii_lowercase());
+            records.push((key, p));
+        }
+    }
+    records.sort_by(|a, b| a.0.cmp(&b.0));
+    report_calendar_sizes("alt_calendars", &records);
+    write_blob(cldr_dir, "alt_calendars", &records);
+}
+
+/// Log the per-calendar share of a `"<ca-key>/<locale>"`-keyed blob, so a data
+/// refresh that grows one calendar is visible in the build log.
+fn report_calendar_sizes(name: &str, records: &[(String, Vec<u8>)]) {
+    let mut by_cal: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
+    for (key, payload) in records {
+        let cal = key.split('/').next().unwrap_or(key);
+        let e = by_cal.entry(cal).or_default();
+        e.0 += 1;
+        e.1 += payload.len() + key.len() + 3;
+    }
+    let parts: Vec<String> = by_cal
+        .iter()
+        .map(|(c, (n, b))| alloc_format_kb(c, *n, *b))
+        .collect();
+    println!("codegen: {name}.bin per calendar: {}", parts.join(", "));
+}
+
+fn alloc_format_kb(cal: &str, locales: usize, bytes: usize) -> String {
+    let mut s = String::from(cal);
+    s.push_str(&format!(" {locales} loc/{} KB", bytes / 1024));
+    s
+}
+
+/// Write `cldr/lunisolar.bin`: per-locale data for the two lunisolar calendars
+/// CLDR names by cycle rather than by era — `chinese` and the Korean `dangi` —
+/// keyed `"<ca-key>/<locale>"`. Each record holds the 60 sexagenary (cyclic) year
+/// names (the `U` field), the 12 numeric month names in all three widths, the
+/// leap-month marker pattern in four widths (wide, abbreviated, narrow, numeric —
+/// e.g. `"闰{0}"` / `"{0}bis"` / `"{0}b"`) and the 4 date patterns
+/// (full/long/medium/short). The cyclic-year names are identical across CLDR
+/// widths, so only one set is stored. A `dateFormats` value may be a plain string
+/// or an object carrying a `_value` (e.g. `zh`/`ja`/`yue`, which annotate a
+/// per-field numbering system); the `_value` is used and the numbering annotation
+/// dropped (days render with ASCII digits, as the other alternate calendars do).
+///
+/// Neither calendar has eras in CLDR — `datetime::era_name` reports `None` for
+/// them, which is what ICU renders too.
+fn emit_lunisolar(cldr_dir: &Path, cldr: &Path) {
     // Extract a pattern that is either a plain string or a `{_value, _numbers}`
     // object.
     fn pat_str(v: &Json) -> &str {
@@ -4687,83 +4877,97 @@ fn emit_chinese(cldr_dir: &Path, raw_dir: &Path) {
             .unwrap_or("")
     }
 
-    let mut locales = locale_files(raw_dir);
-    locales.sort();
     let mut records = Vec::new();
-    for locale in locales {
-        let path = raw_dir.join(alloc_format(&locale));
-        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
-        let json = json_parse(&text);
-        let (_, loc_obj) = json
-            .get("main")
-            .expect("main")
-            .entries()
-            .first()
-            .expect("locale");
-        let cal = loc_obj
-            .get("dates")
-            .and_then(|d| d.get("calendars"))
-            .and_then(|c| c.get("chinese"))
-            .expect("chinese calendar");
+    for name in ["chinese", "dangi"] {
+        let raw_dir = cldr.join(alloc_concat(name, "-raw"));
+        let mut locales = locale_files(&raw_dir);
+        locales.sort();
+        for locale in locales {
+            let path = raw_dir.join(alloc_format(&locale));
+            let text =
+                fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+            let json = json_parse(&text);
+            let (_, loc_obj) = json
+                .get("main")
+                .expect("main")
+                .entries()
+                .first()
+                .expect("locale");
+            let cal = loc_obj
+                .get("dates")
+                .and_then(|d| d.get("calendars"))
+                .and_then(|c| c.get(name))
+                .expect("lunisolar calendar");
 
-        let mut p = Vec::new();
+            let mut p = Vec::new();
 
-        // 60 cyclic (sexagenary) year names, keyed "1"..="60" (wide width).
-        let years = cal
-            .get("cyclicNameSets")
-            .and_then(|c| c.get("years"))
-            .and_then(|y| y.get("format"))
-            .and_then(|f| f.get("wide"))
-            .expect("cyclic years");
-        for i in 1..=60u8 {
-            enc_str(
-                &mut p,
-                years
-                    .get(&i.to_string())
-                    .and_then(Json::as_str)
-                    .unwrap_or(""),
-            );
-        }
-
-        // 12 numeric month names (wide, then abbreviated).
-        let months = cal
-            .get("months")
-            .and_then(|m| m.get("format"))
-            .expect("months");
-        for width in ["wide", "abbreviated"] {
-            let w = months.get(width).expect("month width");
-            for m in 1..=12u8 {
+            // 60 cyclic (sexagenary) year names, keyed "1"..="60" (wide width).
+            let years = cal
+                .get("cyclicNameSets")
+                .and_then(|c| c.get("years"))
+                .and_then(|y| y.get("format"))
+                .and_then(|f| f.get("wide"))
+                .expect("cyclic years");
+            for i in 1..=60u8 {
                 enc_str(
                     &mut p,
-                    w.get(&m.to_string()).and_then(Json::as_str).unwrap_or(""),
+                    years
+                        .get(&i.to_string())
+                        .and_then(Json::as_str)
+                        .unwrap_or(""),
                 );
             }
-        }
 
-        // Leap-month marker pattern (wide, then abbreviated).
-        let leap = cal
-            .get("monthPatterns")
-            .and_then(|m| m.get("format"))
-            .expect("monthPatterns");
-        for width in ["wide", "abbreviated"] {
+            // 12 numeric month names (wide, abbreviated, narrow).
+            let months = cal
+                .get("months")
+                .and_then(|m| m.get("format"))
+                .expect("months");
+            for width in ["wide", "abbreviated", "narrow"] {
+                for m in month_names(months, width, 12) {
+                    enc_str(&mut p, &m);
+                }
+            }
+
+            // Leap-month marker (UTS #35 §"Month Patterns"). The three name
+            // widths live under `format`; the width used with a *numeric* month
+            // is CLDR's separate `numeric/all` entry, which can differ from the
+            // wide one, so it is stored as a fourth slot.
+            let mp = cal.get("monthPatterns").expect("monthPatterns");
+            let leap = mp.get("format").expect("monthPatterns format");
+            for width in ["wide", "abbreviated", "narrow"] {
+                enc_str(
+                    &mut p,
+                    leap.get(width)
+                        .and_then(|w| w.get("leap"))
+                        .and_then(Json::as_str)
+                        .unwrap_or("{0}"),
+                );
+            }
             enc_str(
                 &mut p,
-                leap.get(width)
-                    .and_then(|w| w.get("leap"))
+                mp.get("numeric")
+                    .and_then(|n| n.get("all"))
+                    .and_then(|a| a.get("leap"))
                     .and_then(Json::as_str)
                     .unwrap_or("{0}"),
             );
-        }
 
-        // 4 date patterns.
-        let df = cal.get("dateFormats").expect("dateFormats");
-        for k in ["full", "long", "medium", "short"] {
-            enc_str(&mut p, df.get(k).map(pat_str).unwrap_or(""));
-        }
+            // 4 date patterns.
+            let df = cal.get("dateFormats").expect("dateFormats");
+            for k in ["full", "long", "medium", "short"] {
+                enc_str(&mut p, df.get(k).map(pat_str).unwrap_or(""));
+            }
 
-        records.push((locale.to_ascii_lowercase(), p));
+            let mut key = String::from(name);
+            key.push('/');
+            key.push_str(&locale.to_ascii_lowercase());
+            records.push((key, p));
+        }
     }
-    write_blob(cldr_dir, "chinese", &records);
+    records.sort_by(|a, b| a.0.cmp(&b.0));
+    report_calendar_sizes("lunisolar", &records);
+    write_blob(cldr_dir, "lunisolar", &records);
 }
 
 /// Write `cldr/japanese.bin`: per-locale Japanese-calendar data for the 5 modern
