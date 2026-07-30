@@ -318,7 +318,11 @@ fn main() {
         &cldr.join("currencyData.json"),
     );
     emit_display(&cldr_dir, &cldr.join("localenames-raw"));
-    emit_units(&cldr_dir, &cldr.join("units-raw"));
+    emit_units(
+        &cldr_dir,
+        &cldr.join("units-raw"),
+        &cldr.join("likely.json"),
+    );
     emit_dates(
         &cldr_dir,
         &cldr.join("dates"),
@@ -2390,33 +2394,43 @@ fn script_region_alias_keys(keys: &[String], likely: &Json) -> Vec<(String, Stri
         (s.len() == 2 && s.chars().all(|c| c.is_ascii_alphabetic()))
             || (s.len() == 3 && s.chars().all(|c| c.is_ascii_digit()))
     };
+    let find = |want: &str| {
+        keys.iter()
+            .find(|k| k.eq_ignore_ascii_case(want))
+            .map(String::clone)
+    };
     let map = likely.get("map").expect("likely map");
     let mut out: Vec<(String, String)> = Vec::new();
-    for key in keys {
-        let Some((lang, script)) = key.split_once('-') else {
+    for (from, to) in map.entries() {
+        // `zh-TW` -> `zh-Hant-TW`: a region tag maximizing onto some script.
+        let alias = from.to_ascii_lowercase();
+        let Some((lang, region)) = alias.split_once('-') else {
             continue;
         };
-        if script.len() != 4 || !script.chars().all(|c| c.is_ascii_alphabetic()) {
+        if !is_region(region) || find(&alias).is_some() {
+            continue; // not a region tag, or it has data of its own
+        }
+        let max = to.as_str().unwrap_or("").to_ascii_lowercase();
+        let mut parts = max.split('-');
+        let (Some(l), Some(script)) = (parts.next(), parts.next()) else {
+            continue;
+        };
+        // The alias must name the same language, or leave it undetermined —
+        // `und-HK` maximizes to `zh-Hant-HK`, and inferring the language is
+        // exactly what `und` asks for. Anything else genuinely differs.
+        if l != lang && lang != "und" {
             continue;
         }
-        for (from, to) in map.entries() {
-            // `zh-TW` -> `zh-Hant-TW`: same language, maximizing onto this script.
-            let mut max = to.as_str().unwrap_or("").split('-');
-            let (Some(l), Some(s)) = (max.next(), max.next()) else {
-                continue;
-            };
-            if !l.eq_ignore_ascii_case(lang) || !s.eq_ignore_ascii_case(script) {
-                continue;
-            }
-            let alias = from.to_ascii_lowercase();
-            let Some((_, region)) = alias.split_once('-') else {
-                continue;
-            };
-            if !is_region(region) || keys.contains(&alias) {
-                continue;
-            }
-            out.push((alias, key.clone()));
-        }
+        // Prefer the most specific vendored record. `zh-HK` maximizes to
+        // `zh-Hant-HK`, and CLDR gives that its own unit bundle ("公里每小時",
+        // not `zh-Hant`'s "公里/小時"), so a bare `zh-Hant` source would be
+        // subtly wrong wherever the region file exists.
+        let Some(src) =
+            find(&format!("{l}-{script}-{region}")).or_else(|| find(&format!("{l}-{script}")))
+        else {
+            continue;
+        };
+        out.push((alias, src));
     }
     out.sort_by(|a, b| a.0.cmp(&b.0));
     out.dedup_by(|a, b| a.0 == b.0);
@@ -3309,7 +3323,7 @@ const UNIT_WIDTHS: [(&str, &str, Option<&str>); 3] = [
 /// `unit * 8 + slot`, where slot 0..=5 is the plural category and slot 6 is the
 /// unit's `perUnitPattern`; the locale's `per` `compoundUnitPattern` sits at the
 /// pseudo-unit index `UNITS.len()`, slot 0.
-fn emit_units(cldr_dir: &Path, units_dir: &Path) {
+fn emit_units(cldr_dir: &Path, units_dir: &Path, likely_path: &Path) {
     let counts = [
         "unitPattern-count-zero",
         "unitPattern-count-one",
@@ -3396,6 +3410,18 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path) {
     );
     for (i, locale) in locales.iter().enumerate() {
         let _ = write!(out, "        \"{}\" => {i},\n", locale.to_ascii_lowercase());
+    }
+    // A `lang-REGION` tag that maximizes onto a vendored `lang-Script[-REGION]`
+    // bundle shares its index. The runtime trims `-` subtags and does no script
+    // inference, so `zh-TW` would otherwise reach Simplified `zh`.
+    let likely_text = fs::read_to_string(likely_path).expect("read likely.json");
+    let likely = json_parse(&likely_text);
+    for (alias, src) in script_region_alias_keys(&locales, &likely) {
+        let i = locales
+            .iter()
+            .position(|l| *l == src)
+            .expect("alias source");
+        let _ = write!(out, "        \"{alias}\" => {i},\n");
     }
     let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
 

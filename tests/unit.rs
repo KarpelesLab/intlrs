@@ -271,3 +271,69 @@ fn durations() {
     // Localized: German wording + number.
     assert!(fd("de", 3661, Long).contains("Stunde"));
 }
+
+/// Traditional Chinese has its own unit bundle, and Hong Kong/Macau differ from
+/// Taiwan again. Every `zh*` tag used to serve the Simplified data, because the
+/// runtime trims `-` subtags and does no script inference. Values match V8/ICU.
+#[test]
+fn traditional_chinese_units() {
+    use intl::unit::{Unit::KilometerPerHour, UnitWidth::*, format_unit};
+
+    // Simplified stays Simplified — `zh` short really is the Latin abbreviation.
+    assert_eq!(
+        format_unit("zh", -987.0, KilometerPerHour, Long),
+        "每小时-987公里"
+    );
+    assert_eq!(
+        format_unit("zh", -987.0, KilometerPerHour, Short),
+        "-987 km/h"
+    );
+    assert_eq!(
+        format_unit("zh-CN", -987.0, KilometerPerHour, Short),
+        "-987 km/h"
+    );
+
+    // Traditional: its own wording, and spaces around the number.
+    assert_eq!(
+        format_unit("zh-Hant", -987.0, KilometerPerHour, Long),
+        "每小時 -987 公里"
+    );
+    assert_eq!(
+        format_unit("zh-Hant", -987.0, KilometerPerHour, Short),
+        "-987 公里/小時"
+    );
+    // A region tag CLDR maximizes onto Hant reaches it without script inference.
+    assert_eq!(
+        format_unit("zh-TW", -987.0, KilometerPerHour, Short),
+        "-987 公里/小時"
+    );
+    // ...and Hong Kong/Macau have their *own* bundle, not Taiwan's, so the alias
+    // has to prefer the most specific vendored record.
+    assert_eq!(
+        format_unit("zh-HK", -987.0, KilometerPerHour, Short),
+        "-987 公里每小時"
+    );
+    assert_eq!(
+        format_unit("zh-MO", -987.0, KilometerPerHour, Short),
+        "-987 公里每小時"
+    );
+}
+
+#[cfg(feature = "units-narrow")]
+#[test]
+fn traditional_chinese_units_narrow() {
+    use intl::unit::{Unit::KilometerPerHour, UnitWidth::Narrow, format_unit};
+    assert_eq!(
+        format_unit("zh", -987.0, KilometerPerHour, Narrow),
+        "-987km/h"
+    );
+    assert_eq!(
+        format_unit("zh-Hant", -987.0, KilometerPerHour, Narrow),
+        "-987公里/小時"
+    );
+    // Hong Kong narrows all the way to the Latin "kph".
+    assert_eq!(
+        format_unit("zh-HK", -987.0, KilometerPerHour, Narrow),
+        "-987kph"
+    );
+}
