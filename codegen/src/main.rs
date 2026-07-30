@@ -2398,11 +2398,7 @@ fn script_region_alias_keys(keys: &[String], likely: &Json) -> Vec<(String, Stri
         (s.len() == 2 && s.chars().all(|c| c.is_ascii_alphabetic()))
             || (s.len() == 3 && s.chars().all(|c| c.is_ascii_digit()))
     };
-    let find = |want: &str| {
-        keys.iter()
-            .find(|k| k.eq_ignore_ascii_case(want))
-            .map(String::clone)
-    };
+    let find = |want: &str| keys.iter().find(|k| k.eq_ignore_ascii_case(want)).cloned();
     let map = likely.get("map").expect("likely map");
     let mut out: Vec<(String, String)> = Vec::new();
     for (from, to) in map.entries() {
