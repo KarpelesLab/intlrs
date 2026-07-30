@@ -646,6 +646,8 @@ pub fn intl::list::ListStyle::clone(&self) -> intl::list::ListStyle
 impl core::cmp::Eq for intl::list::ListStyle
 impl core::cmp::PartialEq for intl::list::ListStyle
 pub fn intl::list::ListStyle::eq(&self, &intl::list::ListStyle) -> bool
+impl core::convert::From<intl::list::ListStyle> for intl::list::ListType
+pub fn intl::list::ListType::from(intl::list::ListStyle) -> Self
 impl core::fmt::Debug for intl::list::ListStyle
 pub fn intl::list::ListStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::list::ListStyle
@@ -679,6 +681,147 @@ impl<T> core::clone::CloneToUninit for intl::list::ListStyle where T: core::clon
 pub unsafe fn intl::list::ListStyle::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::list::ListStyle
 pub fn intl::list::ListStyle::from(T) -> T
+pub enum intl::list::ListType
+pub intl::list::ListType::Conjunction
+pub intl::list::ListType::Disjunction
+pub intl::list::ListType::Unit
+impl core::clone::Clone for intl::list::ListType
+pub fn intl::list::ListType::clone(&self) -> intl::list::ListType
+impl core::cmp::Eq for intl::list::ListType
+impl core::cmp::PartialEq for intl::list::ListType
+pub fn intl::list::ListType::eq(&self, &intl::list::ListType) -> bool
+impl core::convert::From<intl::list::ListStyle> for intl::list::ListType
+pub fn intl::list::ListType::from(intl::list::ListStyle) -> Self
+impl core::convert::From<intl::list::ListType> for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::from(intl::list::ListType) -> Self
+impl core::default::Default for intl::list::ListType
+pub fn intl::list::ListType::default() -> intl::list::ListType
+impl core::fmt::Debug for intl::list::ListType
+pub fn intl::list::ListType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::list::ListType
+impl core::marker::StructuralPartialEq for intl::list::ListType
+impl core::marker::Freeze for intl::list::ListType
+impl core::marker::Send for intl::list::ListType
+impl core::marker::Sync for intl::list::ListType
+impl core::marker::Unpin for intl::list::ListType
+impl core::marker::UnsafeUnpin for intl::list::ListType
+impl core::panic::unwind_safe::RefUnwindSafe for intl::list::ListType
+impl core::panic::unwind_safe::UnwindSafe for intl::list::ListType
+impl<T, U> core::convert::Into<U> for intl::list::ListType where U: core::convert::From<T>
+pub fn intl::list::ListType::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::list::ListType where U: core::convert::Into<T>
+pub type intl::list::ListType::Error = core::convert::Infallible
+pub fn intl::list::ListType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::list::ListType where U: core::convert::TryFrom<T>
+pub type intl::list::ListType::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::list::ListType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::list::ListType where T: core::clone::Clone
+pub type intl::list::ListType::Owned = T
+pub fn intl::list::ListType::clone_into(&self, &mut T)
+pub fn intl::list::ListType::to_owned(&self) -> T
+impl<T> core::any::Any for intl::list::ListType where T: 'static + ?core::marker::Sized
+pub fn intl::list::ListType::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::list::ListType where T: ?core::marker::Sized
+pub fn intl::list::ListType::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::list::ListType where T: ?core::marker::Sized
+pub fn intl::list::ListType::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::list::ListType where T: core::clone::Clone
+pub unsafe fn intl::list::ListType::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::list::ListType
+pub fn intl::list::ListType::from(T) -> T
+pub enum intl::list::ListWidth
+pub intl::list::ListWidth::Long
+pub intl::list::ListWidth::Narrow
+pub intl::list::ListWidth::Short
+impl core::clone::Clone for intl::list::ListWidth
+pub fn intl::list::ListWidth::clone(&self) -> intl::list::ListWidth
+impl core::cmp::Eq for intl::list::ListWidth
+impl core::cmp::PartialEq for intl::list::ListWidth
+pub fn intl::list::ListWidth::eq(&self, &intl::list::ListWidth) -> bool
+impl core::convert::From<intl::list::ListWidth> for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::from(intl::list::ListWidth) -> Self
+impl core::default::Default for intl::list::ListWidth
+pub fn intl::list::ListWidth::default() -> intl::list::ListWidth
+impl core::fmt::Debug for intl::list::ListWidth
+pub fn intl::list::ListWidth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::list::ListWidth
+impl core::marker::StructuralPartialEq for intl::list::ListWidth
+impl core::marker::Freeze for intl::list::ListWidth
+impl core::marker::Send for intl::list::ListWidth
+impl core::marker::Sync for intl::list::ListWidth
+impl core::marker::Unpin for intl::list::ListWidth
+impl core::marker::UnsafeUnpin for intl::list::ListWidth
+impl core::panic::unwind_safe::RefUnwindSafe for intl::list::ListWidth
+impl core::panic::unwind_safe::UnwindSafe for intl::list::ListWidth
+impl<T, U> core::convert::Into<U> for intl::list::ListWidth where U: core::convert::From<T>
+pub fn intl::list::ListWidth::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::list::ListWidth where U: core::convert::Into<T>
+pub type intl::list::ListWidth::Error = core::convert::Infallible
+pub fn intl::list::ListWidth::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::list::ListWidth where U: core::convert::TryFrom<T>
+pub type intl::list::ListWidth::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::list::ListWidth::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::list::ListWidth where T: core::clone::Clone
+pub type intl::list::ListWidth::Owned = T
+pub fn intl::list::ListWidth::clone_into(&self, &mut T)
+pub fn intl::list::ListWidth::to_owned(&self) -> T
+impl<T> core::any::Any for intl::list::ListWidth where T: 'static + ?core::marker::Sized
+pub fn intl::list::ListWidth::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::list::ListWidth where T: ?core::marker::Sized
+pub fn intl::list::ListWidth::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::list::ListWidth where T: ?core::marker::Sized
+pub fn intl::list::ListWidth::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::list::ListWidth where T: core::clone::Clone
+pub unsafe fn intl::list::ListWidth::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::list::ListWidth
+pub fn intl::list::ListWidth::from(T) -> T
+#[non_exhaustive] pub struct intl::list::ListFormatOptions
+pub intl::list::ListFormatOptions::list_type: intl::list::ListType
+pub intl::list::ListFormatOptions::width: intl::list::ListWidth
+impl core::clone::Clone for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::clone(&self) -> intl::list::ListFormatOptions
+impl core::cmp::Eq for intl::list::ListFormatOptions
+impl core::cmp::PartialEq for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::eq(&self, &intl::list::ListFormatOptions) -> bool
+impl core::convert::From<intl::list::ListType> for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::from(intl::list::ListType) -> Self
+impl core::convert::From<intl::list::ListWidth> for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::from(intl::list::ListWidth) -> Self
+impl core::default::Default for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::default() -> intl::list::ListFormatOptions
+impl core::fmt::Debug for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::list::ListFormatOptions
+impl core::marker::StructuralPartialEq for intl::list::ListFormatOptions
+impl core::marker::Freeze for intl::list::ListFormatOptions
+impl core::marker::Send for intl::list::ListFormatOptions
+impl core::marker::Sync for intl::list::ListFormatOptions
+impl core::marker::Unpin for intl::list::ListFormatOptions
+impl core::marker::UnsafeUnpin for intl::list::ListFormatOptions
+impl core::panic::unwind_safe::RefUnwindSafe for intl::list::ListFormatOptions
+impl core::panic::unwind_safe::UnwindSafe for intl::list::ListFormatOptions
+impl<T, U> core::convert::Into<U> for intl::list::ListFormatOptions where U: core::convert::From<T>
+pub fn intl::list::ListFormatOptions::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::list::ListFormatOptions where U: core::convert::Into<T>
+pub type intl::list::ListFormatOptions::Error = core::convert::Infallible
+pub fn intl::list::ListFormatOptions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::list::ListFormatOptions where U: core::convert::TryFrom<T>
+pub type intl::list::ListFormatOptions::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::list::ListFormatOptions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::list::ListFormatOptions where T: core::clone::Clone
+pub type intl::list::ListFormatOptions::Owned = T
+pub fn intl::list::ListFormatOptions::clone_into(&self, &mut T)
+pub fn intl::list::ListFormatOptions::to_owned(&self) -> T
+impl<T> core::any::Any for intl::list::ListFormatOptions where T: 'static + ?core::marker::Sized
+pub fn intl::list::ListFormatOptions::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::list::ListFormatOptions where T: ?core::marker::Sized
+pub fn intl::list::ListFormatOptions::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::list::ListFormatOptions where T: ?core::marker::Sized
+pub fn intl::list::ListFormatOptions::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::list::ListFormatOptions where T: core::clone::Clone
+pub unsafe fn intl::list::ListFormatOptions::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::from(T) -> T
 #[non_exhaustive] pub struct intl::list::ListPatterns
 pub intl::list::ListPatterns::end: &'static str
 pub intl::list::ListPatterns::middle: &'static str
@@ -718,44 +861,7 @@ impl<T> core::clone::CloneToUninit for intl::list::ListPatterns where T: core::c
 pub unsafe fn intl::list::ListPatterns::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::list::ListPatterns
 pub fn intl::list::ListPatterns::from(T) -> T
-#[non_exhaustive] pub struct intl::list::ListSpec
-pub intl::list::ListSpec::and: intl::list::ListPatterns
-pub intl::list::ListSpec::or: intl::list::ListPatterns
-impl core::clone::Clone for intl::list::ListSpec
-pub fn intl::list::ListSpec::clone(&self) -> intl::list::ListSpec
-impl core::fmt::Debug for intl::list::ListSpec
-pub fn intl::list::ListSpec::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::marker::Copy for intl::list::ListSpec
-impl core::marker::Freeze for intl::list::ListSpec
-impl core::marker::Send for intl::list::ListSpec
-impl core::marker::Sync for intl::list::ListSpec
-impl core::marker::Unpin for intl::list::ListSpec
-impl core::marker::UnsafeUnpin for intl::list::ListSpec
-impl core::panic::unwind_safe::RefUnwindSafe for intl::list::ListSpec
-impl core::panic::unwind_safe::UnwindSafe for intl::list::ListSpec
-impl<T, U> core::convert::Into<U> for intl::list::ListSpec where U: core::convert::From<T>
-pub fn intl::list::ListSpec::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for intl::list::ListSpec where U: core::convert::Into<T>
-pub type intl::list::ListSpec::Error = core::convert::Infallible
-pub fn intl::list::ListSpec::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for intl::list::ListSpec where U: core::convert::TryFrom<T>
-pub type intl::list::ListSpec::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn intl::list::ListSpec::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> alloc::borrow::ToOwned for intl::list::ListSpec where T: core::clone::Clone
-pub type intl::list::ListSpec::Owned = T
-pub fn intl::list::ListSpec::clone_into(&self, &mut T)
-pub fn intl::list::ListSpec::to_owned(&self) -> T
-impl<T> core::any::Any for intl::list::ListSpec where T: 'static + ?core::marker::Sized
-pub fn intl::list::ListSpec::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for intl::list::ListSpec where T: ?core::marker::Sized
-pub fn intl::list::ListSpec::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for intl::list::ListSpec where T: ?core::marker::Sized
-pub fn intl::list::ListSpec::borrow_mut(&mut self) -> &mut T
-impl<T> core::clone::CloneToUninit for intl::list::ListSpec where T: core::clone::Clone
-pub unsafe fn intl::list::ListSpec::clone_to_uninit(&self, *mut u8)
-impl<T> core::convert::From<T> for intl::list::ListSpec
-pub fn intl::list::ListSpec::from(T) -> T
-pub fn intl::list::format_list(&str, &[&str], intl::list::ListStyle) -> alloc::string::String
+pub fn intl::list::format_list(&str, &[&str], &intl::list::ListFormatOptions) -> alloc::string::String
 pub mod intl::locale
 pub enum intl::locale::ParseError
 pub intl::locale::ParseError::Empty
@@ -1696,14 +1802,63 @@ pub fn intl::plural::PluralOperands::from(T) -> T
 pub fn intl::plural::ordinal_category(&str, &intl::plural::PluralOperands) -> intl::plural::PluralCategory
 pub fn intl::plural::plural_category(&str, &intl::plural::PluralOperands) -> intl::plural::PluralCategory
 pub mod intl::relative
+pub enum intl::relative::RelativeNumeric
+pub intl::relative::RelativeNumeric::Always
+pub intl::relative::RelativeNumeric::Auto
+impl core::clone::Clone for intl::relative::RelativeNumeric
+pub fn intl::relative::RelativeNumeric::clone(&self) -> intl::relative::RelativeNumeric
+impl core::cmp::Eq for intl::relative::RelativeNumeric
+impl core::cmp::PartialEq for intl::relative::RelativeNumeric
+pub fn intl::relative::RelativeNumeric::eq(&self, &intl::relative::RelativeNumeric) -> bool
+impl core::convert::From<intl::relative::RelativeNumeric> for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::from(intl::relative::RelativeNumeric) -> Self
+impl core::default::Default for intl::relative::RelativeNumeric
+pub fn intl::relative::RelativeNumeric::default() -> intl::relative::RelativeNumeric
+impl core::fmt::Debug for intl::relative::RelativeNumeric
+pub fn intl::relative::RelativeNumeric::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::relative::RelativeNumeric
+impl core::marker::StructuralPartialEq for intl::relative::RelativeNumeric
+impl core::marker::Freeze for intl::relative::RelativeNumeric
+impl core::marker::Send for intl::relative::RelativeNumeric
+impl core::marker::Sync for intl::relative::RelativeNumeric
+impl core::marker::Unpin for intl::relative::RelativeNumeric
+impl core::marker::UnsafeUnpin for intl::relative::RelativeNumeric
+impl core::panic::unwind_safe::RefUnwindSafe for intl::relative::RelativeNumeric
+impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeNumeric
+impl<T, U> core::convert::Into<U> for intl::relative::RelativeNumeric where U: core::convert::From<T>
+pub fn intl::relative::RelativeNumeric::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeNumeric where U: core::convert::Into<T>
+pub type intl::relative::RelativeNumeric::Error = core::convert::Infallible
+pub fn intl::relative::RelativeNumeric::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeNumeric where U: core::convert::TryFrom<T>
+pub type intl::relative::RelativeNumeric::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::relative::RelativeNumeric::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::relative::RelativeNumeric where T: core::clone::Clone
+pub type intl::relative::RelativeNumeric::Owned = T
+pub fn intl::relative::RelativeNumeric::clone_into(&self, &mut T)
+pub fn intl::relative::RelativeNumeric::to_owned(&self) -> T
+impl<T> core::any::Any for intl::relative::RelativeNumeric where T: 'static + ?core::marker::Sized
+pub fn intl::relative::RelativeNumeric::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::relative::RelativeNumeric where T: ?core::marker::Sized
+pub fn intl::relative::RelativeNumeric::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::relative::RelativeNumeric where T: ?core::marker::Sized
+pub fn intl::relative::RelativeNumeric::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::relative::RelativeNumeric where T: core::clone::Clone
+pub unsafe fn intl::relative::RelativeNumeric::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::relative::RelativeNumeric
+pub fn intl::relative::RelativeNumeric::from(T) -> T
 pub enum intl::relative::RelativeUnit
 pub intl::relative::RelativeUnit::Day
 pub intl::relative::RelativeUnit::Hour
 pub intl::relative::RelativeUnit::Minute
 pub intl::relative::RelativeUnit::Month
+pub intl::relative::RelativeUnit::Quarter
 pub intl::relative::RelativeUnit::Second
 pub intl::relative::RelativeUnit::Week
 pub intl::relative::RelativeUnit::Year
+impl intl::relative::RelativeUnit
+pub fn intl::relative::RelativeUnit::as_str(&self) -> &'static str
+pub fn intl::relative::RelativeUnit::from_ecma_id(&str) -> core::option::Option<intl::relative::RelativeUnit>
 impl core::clone::Clone for intl::relative::RelativeUnit
 pub fn intl::relative::RelativeUnit::clone(&self) -> intl::relative::RelativeUnit
 impl core::cmp::Eq for intl::relative::RelativeUnit
@@ -1742,12 +1897,58 @@ impl<T> core::clone::CloneToUninit for intl::relative::RelativeUnit where T: cor
 pub unsafe fn intl::relative::RelativeUnit::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::relative::RelativeUnit
 pub fn intl::relative::RelativeUnit::from(T) -> T
+pub enum intl::relative::RelativeWidth
+pub intl::relative::RelativeWidth::Long
+pub intl::relative::RelativeWidth::Narrow
+pub intl::relative::RelativeWidth::Short
+impl core::clone::Clone for intl::relative::RelativeWidth
+pub fn intl::relative::RelativeWidth::clone(&self) -> intl::relative::RelativeWidth
+impl core::cmp::Eq for intl::relative::RelativeWidth
+impl core::cmp::PartialEq for intl::relative::RelativeWidth
+pub fn intl::relative::RelativeWidth::eq(&self, &intl::relative::RelativeWidth) -> bool
+impl core::convert::From<intl::relative::RelativeWidth> for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::from(intl::relative::RelativeWidth) -> Self
+impl core::default::Default for intl::relative::RelativeWidth
+pub fn intl::relative::RelativeWidth::default() -> intl::relative::RelativeWidth
+impl core::fmt::Debug for intl::relative::RelativeWidth
+pub fn intl::relative::RelativeWidth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::relative::RelativeWidth
+impl core::marker::StructuralPartialEq for intl::relative::RelativeWidth
+impl core::marker::Freeze for intl::relative::RelativeWidth
+impl core::marker::Send for intl::relative::RelativeWidth
+impl core::marker::Sync for intl::relative::RelativeWidth
+impl core::marker::Unpin for intl::relative::RelativeWidth
+impl core::marker::UnsafeUnpin for intl::relative::RelativeWidth
+impl core::panic::unwind_safe::RefUnwindSafe for intl::relative::RelativeWidth
+impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeWidth
+impl<T, U> core::convert::Into<U> for intl::relative::RelativeWidth where U: core::convert::From<T>
+pub fn intl::relative::RelativeWidth::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeWidth where U: core::convert::Into<T>
+pub type intl::relative::RelativeWidth::Error = core::convert::Infallible
+pub fn intl::relative::RelativeWidth::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeWidth where U: core::convert::TryFrom<T>
+pub type intl::relative::RelativeWidth::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::relative::RelativeWidth::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::relative::RelativeWidth where T: core::clone::Clone
+pub type intl::relative::RelativeWidth::Owned = T
+pub fn intl::relative::RelativeWidth::clone_into(&self, &mut T)
+pub fn intl::relative::RelativeWidth::to_owned(&self) -> T
+impl<T> core::any::Any for intl::relative::RelativeWidth where T: 'static + ?core::marker::Sized
+pub fn intl::relative::RelativeWidth::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::relative::RelativeWidth where T: ?core::marker::Sized
+pub fn intl::relative::RelativeWidth::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::relative::RelativeWidth where T: ?core::marker::Sized
+pub fn intl::relative::RelativeWidth::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::relative::RelativeWidth where T: core::clone::Clone
+pub unsafe fn intl::relative::RelativeWidth::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::relative::RelativeWidth
+pub fn intl::relative::RelativeWidth::from(T) -> T
 #[non_exhaustive] pub struct intl::relative::RelUnit
-pub intl::relative::RelUnit::cur: core::option::Option<&'static str>
 pub intl::relative::RelUnit::future: [core::option::Option<&'static str>; 6]
-pub intl::relative::RelUnit::next: core::option::Option<&'static str>
+pub intl::relative::RelUnit::literals: [core::option::Option<&'static str>; 6]
 pub intl::relative::RelUnit::past: [core::option::Option<&'static str>; 6]
-pub intl::relative::RelUnit::prev: core::option::Option<&'static str>
+impl intl::relative::RelUnit
+pub fn intl::relative::RelUnit::literal(&self, i64) -> core::option::Option<&'static str>
 impl core::clone::Clone for intl::relative::RelUnit
 pub fn intl::relative::RelUnit::clone(&self) -> intl::relative::RelUnit
 impl core::fmt::Debug for intl::relative::RelUnit
@@ -1782,43 +1983,96 @@ impl<T> core::clone::CloneToUninit for intl::relative::RelUnit where T: core::cl
 pub unsafe fn intl::relative::RelUnit::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::relative::RelUnit
 pub fn intl::relative::RelUnit::from(T) -> T
-#[non_exhaustive] pub struct intl::relative::RelativeSpec
-pub intl::relative::RelativeSpec::units: [intl::relative::RelUnit; 7]
-impl core::clone::Clone for intl::relative::RelativeSpec
-pub fn intl::relative::RelativeSpec::clone(&self) -> intl::relative::RelativeSpec
-impl core::fmt::Debug for intl::relative::RelativeSpec
-pub fn intl::relative::RelativeSpec::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::marker::Copy for intl::relative::RelativeSpec
-impl core::marker::Freeze for intl::relative::RelativeSpec
-impl core::marker::Send for intl::relative::RelativeSpec
-impl core::marker::Sync for intl::relative::RelativeSpec
-impl core::marker::Unpin for intl::relative::RelativeSpec
-impl core::marker::UnsafeUnpin for intl::relative::RelativeSpec
-impl core::panic::unwind_safe::RefUnwindSafe for intl::relative::RelativeSpec
-impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeSpec
-impl<T, U> core::convert::Into<U> for intl::relative::RelativeSpec where U: core::convert::From<T>
-pub fn intl::relative::RelativeSpec::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeSpec where U: core::convert::Into<T>
-pub type intl::relative::RelativeSpec::Error = core::convert::Infallible
-pub fn intl::relative::RelativeSpec::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeSpec where U: core::convert::TryFrom<T>
-pub type intl::relative::RelativeSpec::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn intl::relative::RelativeSpec::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> alloc::borrow::ToOwned for intl::relative::RelativeSpec where T: core::clone::Clone
-pub type intl::relative::RelativeSpec::Owned = T
-pub fn intl::relative::RelativeSpec::clone_into(&self, &mut T)
-pub fn intl::relative::RelativeSpec::to_owned(&self) -> T
-impl<T> core::any::Any for intl::relative::RelativeSpec where T: 'static + ?core::marker::Sized
-pub fn intl::relative::RelativeSpec::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for intl::relative::RelativeSpec where T: ?core::marker::Sized
-pub fn intl::relative::RelativeSpec::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for intl::relative::RelativeSpec where T: ?core::marker::Sized
-pub fn intl::relative::RelativeSpec::borrow_mut(&mut self) -> &mut T
-impl<T> core::clone::CloneToUninit for intl::relative::RelativeSpec where T: core::clone::Clone
-pub unsafe fn intl::relative::RelativeSpec::clone_to_uninit(&self, *mut u8)
-impl<T> core::convert::From<T> for intl::relative::RelativeSpec
-pub fn intl::relative::RelativeSpec::from(T) -> T
-pub fn intl::relative::format_relative(&str, i64, intl::relative::RelativeUnit) -> alloc::string::String
+#[non_exhaustive] pub struct intl::relative::RelativeTimeFormatOptions
+pub intl::relative::RelativeTimeFormatOptions::numeric: intl::relative::RelativeNumeric
+pub intl::relative::RelativeTimeFormatOptions::width: intl::relative::RelativeWidth
+impl core::clone::Clone for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::clone(&self) -> intl::relative::RelativeTimeFormatOptions
+impl core::cmp::Eq for intl::relative::RelativeTimeFormatOptions
+impl core::cmp::PartialEq for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::eq(&self, &intl::relative::RelativeTimeFormatOptions) -> bool
+impl core::convert::From<intl::relative::RelativeNumeric> for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::from(intl::relative::RelativeNumeric) -> Self
+impl core::convert::From<intl::relative::RelativeWidth> for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::from(intl::relative::RelativeWidth) -> Self
+impl core::default::Default for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::default() -> intl::relative::RelativeTimeFormatOptions
+impl core::fmt::Debug for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::relative::RelativeTimeFormatOptions
+impl core::marker::StructuralPartialEq for intl::relative::RelativeTimeFormatOptions
+impl core::marker::Freeze for intl::relative::RelativeTimeFormatOptions
+impl core::marker::Send for intl::relative::RelativeTimeFormatOptions
+impl core::marker::Sync for intl::relative::RelativeTimeFormatOptions
+impl core::marker::Unpin for intl::relative::RelativeTimeFormatOptions
+impl core::marker::UnsafeUnpin for intl::relative::RelativeTimeFormatOptions
+impl core::panic::unwind_safe::RefUnwindSafe for intl::relative::RelativeTimeFormatOptions
+impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeTimeFormatOptions
+impl<T, U> core::convert::Into<U> for intl::relative::RelativeTimeFormatOptions where U: core::convert::From<T>
+pub fn intl::relative::RelativeTimeFormatOptions::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeTimeFormatOptions where U: core::convert::Into<T>
+pub type intl::relative::RelativeTimeFormatOptions::Error = core::convert::Infallible
+pub fn intl::relative::RelativeTimeFormatOptions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeTimeFormatOptions where U: core::convert::TryFrom<T>
+pub type intl::relative::RelativeTimeFormatOptions::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::relative::RelativeTimeFormatOptions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::relative::RelativeTimeFormatOptions where T: core::clone::Clone
+pub type intl::relative::RelativeTimeFormatOptions::Owned = T
+pub fn intl::relative::RelativeTimeFormatOptions::clone_into(&self, &mut T)
+pub fn intl::relative::RelativeTimeFormatOptions::to_owned(&self) -> T
+impl<T> core::any::Any for intl::relative::RelativeTimeFormatOptions where T: 'static + ?core::marker::Sized
+pub fn intl::relative::RelativeTimeFormatOptions::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::relative::RelativeTimeFormatOptions where T: ?core::marker::Sized
+pub fn intl::relative::RelativeTimeFormatOptions::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::relative::RelativeTimeFormatOptions where T: ?core::marker::Sized
+pub fn intl::relative::RelativeTimeFormatOptions::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::relative::RelativeTimeFormatOptions where T: core::clone::Clone
+pub unsafe fn intl::relative::RelativeTimeFormatOptions::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::from(T) -> T
+pub struct intl::relative::RelativeTimePart
+pub intl::relative::RelativeTimePart::kind: intl::number::NumberPartType
+pub intl::relative::RelativeTimePart::unit: core::option::Option<intl::relative::RelativeUnit>
+pub intl::relative::RelativeTimePart::value: alloc::string::String
+impl core::clone::Clone for intl::relative::RelativeTimePart
+pub fn intl::relative::RelativeTimePart::clone(&self) -> intl::relative::RelativeTimePart
+impl core::cmp::Eq for intl::relative::RelativeTimePart
+impl core::cmp::PartialEq for intl::relative::RelativeTimePart
+pub fn intl::relative::RelativeTimePart::eq(&self, &intl::relative::RelativeTimePart) -> bool
+impl core::fmt::Debug for intl::relative::RelativeTimePart
+pub fn intl::relative::RelativeTimePart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for intl::relative::RelativeTimePart
+impl core::marker::Freeze for intl::relative::RelativeTimePart
+impl core::marker::Send for intl::relative::RelativeTimePart
+impl core::marker::Sync for intl::relative::RelativeTimePart
+impl core::marker::Unpin for intl::relative::RelativeTimePart
+impl core::marker::UnsafeUnpin for intl::relative::RelativeTimePart
+impl core::panic::unwind_safe::RefUnwindSafe for intl::relative::RelativeTimePart
+impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeTimePart
+impl<T, U> core::convert::Into<U> for intl::relative::RelativeTimePart where U: core::convert::From<T>
+pub fn intl::relative::RelativeTimePart::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeTimePart where U: core::convert::Into<T>
+pub type intl::relative::RelativeTimePart::Error = core::convert::Infallible
+pub fn intl::relative::RelativeTimePart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeTimePart where U: core::convert::TryFrom<T>
+pub type intl::relative::RelativeTimePart::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::relative::RelativeTimePart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::relative::RelativeTimePart where T: core::clone::Clone
+pub type intl::relative::RelativeTimePart::Owned = T
+pub fn intl::relative::RelativeTimePart::clone_into(&self, &mut T)
+pub fn intl::relative::RelativeTimePart::to_owned(&self) -> T
+impl<T> core::any::Any for intl::relative::RelativeTimePart where T: 'static + ?core::marker::Sized
+pub fn intl::relative::RelativeTimePart::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::relative::RelativeTimePart where T: ?core::marker::Sized
+pub fn intl::relative::RelativeTimePart::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::relative::RelativeTimePart where T: ?core::marker::Sized
+pub fn intl::relative::RelativeTimePart::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::relative::RelativeTimePart where T: core::clone::Clone
+pub unsafe fn intl::relative::RelativeTimePart::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::relative::RelativeTimePart
+pub fn intl::relative::RelativeTimePart::from(T) -> T
+pub fn intl::relative::format_relative(&str, f64, intl::relative::RelativeUnit, &intl::relative::RelativeTimeFormatOptions) -> alloc::string::String
+pub fn intl::relative::format_relative_to_parts(&str, f64, intl::relative::RelativeUnit, &intl::relative::RelativeTimeFormatOptions) -> alloc::vec::Vec<intl::relative::RelativeTimePart>
 pub mod intl::spellout
 pub fn intl::spellout::spell_cardinal(&str, i64) -> core::option::Option<alloc::string::String>
 pub fn intl::spellout::spell_ordinal(&str, i64) -> core::option::Option<alloc::string::String>

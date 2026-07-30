@@ -8,8 +8,12 @@
 // fallback after it unreachable. That is the point of the gating.
 #![allow(unreachable_code)]
 
+#[cfg(feature = "list")]
+pub(crate) mod lists;
 #[cfg(feature = "number")]
 pub(crate) mod numbers;
+#[cfg(feature = "relative")]
+pub(crate) mod relative;
 #[cfg(feature = "datetime")]
 pub(crate) mod tz_names;
 #[cfg(feature = "units")]

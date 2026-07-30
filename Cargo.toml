@@ -104,7 +104,8 @@ confusables = ["normalization", "alloc"]    # UTS #39 confusable/skeleton
 names = ["alloc"]
 
 # --- CLDR formatters (opt out individually for size) ------------------------
-# Each gates its module AND the CLDR `.bin` table(s) it embeds, so a disabled
+# Each gates its module AND the CLDR table(s) it embeds — a `.bin` blob, or a
+# generated Rust module under `src/cldr/generated/` — so a disabled
 # formatter contributes no code or data. All imply `alloc` (except
 # `displaynames`, which is borrow-only). `_cldr` is an internal marker enabling
 # the shared CLDR data layer; do not select it directly. The always-available
@@ -132,8 +133,19 @@ units-narrow = ["units"]
 datetime = ["number"]                       # date/time/skeleton + POSIX-TZ/GMT (+ calendar/skeletons.bin)
 calendars-extra = ["datetime"]              # Islamic + Persian calendars (+ islamic/persian.bin)
 displaynames = ["_cldr"]                    # Intl.DisplayNames (+ ~1.6 MB language/territory names)
-list = ["alloc", "_cldr"]                   # Intl.ListFormat
-relative = ["number"]                       # Intl.RelativeTimeFormat (uses number)
+# Intl.ListFormat, all nine ECMA-402 `type` × `style` combinations (~15 KB).
+# CLDR ships the nine independently — `es` writes a unit list "a, b y c" where
+# `en` writes "a, b, c" — so they cannot be derived from one another and are all
+# carried. Interned into a shared arena, which is why nine sets cost ~1.5× what
+# two used to.
+list = ["alloc", "_cldr"]
+# Intl.RelativeTimeFormat: eight units × three widths, both `numeric` modes
+# (~243 KB, uses number for the count). The widths are independent CLDR blocks
+# (`day` / `day-short` / `day-narrow`), so like `units-narrow` they are real data
+# rather than a derivation — but at this size they are not worth their own
+# feature, and dropping one would leave `style: "narrow"` silently rendering as
+# long, which is a wrong answer rather than a coarser one.
+relative = ["number"]
 message = ["number"]                        # ICU MessageFormat (uses number + plural)
 spellout = ["alloc", "_cldr"]               # RBNF spell-out (+ rbnf.bin)
 transliterate = ["alloc", "normalization"]  # script transliteration

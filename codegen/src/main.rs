@@ -2751,13 +2751,31 @@ fn alloc_concat(a: &str, b: &str) -> String {
     s
 }
 
-/// Write `cldr/lists.bin`: per-locale list connector patterns (and / or).
+/// CLDR `listPattern` types in `intl::list::ListType` discriminant order
+/// (ECMA-402 `conjunction` / `disjunction` / `unit`).
+const LIST_TYPES: [&str; 3] = ["standard", "or", "unit"];
+/// CLDR width suffixes in `intl::list::ListWidth` discriminant order (ECMA-402
+/// `style`: `long` / `short` / `narrow`).
+const LIST_WIDTHS: [&str; 3] = ["", "-short", "-narrow"];
+/// The four connectors of one `listPattern`, in `ListPatterns` field order.
+const LIST_SLOTS: [&str; 4] = ["start", "middle", "end", "2"];
+
+/// Emit `cldr/generated/lists.rs`: every locale's nine `listPatterns` blocks —
+/// ECMA-402 `Intl.ListFormat`'s `type` × `style` matrix (UTS #35 §6.3).
+///
+/// The nine are genuinely independent data: `es` spells unit-long `"{0} y {1}"`
+/// where `en` spells it `"{0}, {1}"`, and `en` conjunction-short is `"{0} & {1}"`.
+/// They do dedup heavily *within* a locale, though, so the patterns go into one
+/// sorted arena and the four-connector rows are shared.
 fn emit_lists(cldr_dir: &Path, lists_dir: &Path) {
     let mut locales = locale_files(lists_dir);
     locales.sort();
-    let mut records = Vec::new();
-    for locale in locales {
-        let path = lists_dir.join(alloc_format(&locale));
+
+    // [locale][type * 3 + width][slot] — read out in full before interning, so
+    // the arena can be built from the whole corpus at once.
+    let mut all: Vec<[[String; 4]; 9]> = Vec::with_capacity(locales.len());
+    for locale in &locales {
+        let path = lists_dir.join(alloc_format(locale));
         let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
         let json = json_parse(&text);
         let (_, loc_obj) = json
@@ -2767,16 +2785,123 @@ fn emit_lists(cldr_dir: &Path, lists_dir: &Path) {
             .first()
             .expect("locale");
         let lp = loc_obj.get("listPatterns").expect("listPatterns");
-        let mut p = Vec::new();
-        for style_key in ["listPattern-type-standard", "listPattern-type-or"] {
-            let st = lp.get(style_key).expect("style");
-            for k in ["start", "middle", "end", "2"] {
-                enc_str(&mut p, st.get(k).and_then(Json::as_str).unwrap_or(""));
+        let mut kinds: Vec<[String; 4]> = Vec::with_capacity(9);
+        for ty in LIST_TYPES {
+            for w in LIST_WIDTHS {
+                let key = format!("listPattern-type-{ty}{w}");
+                let st = lp
+                    .get(&key)
+                    .unwrap_or_else(|| panic!("{locale}: missing {key}"));
+                kinds.push(LIST_SLOTS.map(|k| {
+                    String::from(
+                        st.get(k)
+                            .and_then(Json::as_str)
+                            .unwrap_or_else(|| panic!("{locale}: {key} has no {k}")),
+                    )
+                }));
             }
         }
-        records.push((locale.to_ascii_lowercase(), p));
+        all.push(kinds.try_into().expect("nine list kinds"));
     }
-    write_blob(cldr_dir, "lists", &records);
+
+    // Ids in sorted order, so the arena stays stable and reviews as a list.
+    let mut str_id: BTreeMap<&str, u16> = BTreeMap::new();
+    for kinds in &all {
+        for row in kinds {
+            for s in row {
+                str_id.insert(s, 0);
+            }
+        }
+    }
+    let strings: Vec<&str> = str_id.keys().copied().collect();
+    for (i, id) in str_id.values_mut().enumerate() {
+        *id = i as u16;
+    }
+
+    // One shared row per distinct (start, middle, end, two) quadruple: across the
+    // 101 locales the 909 combinations resolve to a couple of hundred rows.
+    let mut row_id: BTreeMap<[u16; 4], u16> = BTreeMap::new();
+    let mut rows: Vec<u16> = Vec::new();
+    let mut row_idx: Vec<u16> = Vec::with_capacity(all.len() * 9);
+    for kinds in &all {
+        for row in kinds {
+            let ids: [u16; 4] = core::array::from_fn(|i| str_id[row[i].as_str()]);
+            let next = row_id.len() as u16;
+            let id = *row_id.entry(ids).or_insert_with(|| {
+                rows.extend_from_slice(&ids);
+                next
+            });
+            row_idx.push(id);
+        }
+    }
+
+    let mut out = String::new();
+    write_header(&mut out);
+    let _ = write!(
+        out,
+        "//! CLDR list connector patterns (UTS #35 §6.3), the data behind\n\
+         //! ECMA-402 `Intl.ListFormat`.\n\
+         //!\n\
+         //! `ROW_IDX[loc * 9 + kind]` names a row of four `ARENA` string ids —\n\
+         //! the `start` / `middle` / `end` / `2` connectors of one combination.\n\
+         //! `kind` is `type * 3 + width` with `type` in `ListType` order\n\
+         //! (conjunction, disjunction, unit) and `width` in `ListWidth` order\n\
+         //! (long, short, narrow), i.e. ECMA-402's `type` × `style`.\n\
+         //!\n\
+         //! Rows are shared because most locales spell several of the nine\n\
+         //! combinations identically ({rows} of {refs} are distinct), and the\n\
+         //! patterns themselves are interned because `\"{{0}}, {{1}}\"` alone\n\
+         //! accounts for a third of the corpus.\n\n\
+         /// Table index for an exact (lowercased) CLDR locale id.\n\
+         pub(crate) fn locale_index(lang: &str) -> Option<u16> {{\n    \
+         Some(match lang {{\n",
+        rows = row_id.len(),
+        refs = row_idx.len(),
+    );
+    for (i, locale) in locales.iter().enumerate() {
+        let _ = write!(out, "        \"{}\" => {i},\n", locale.to_ascii_lowercase());
+    }
+    let _ = write!(
+        out,
+        "        _ => return None,\n    }})\n}}\n\n\
+         /// The `start` / `middle` / `end` / `2` connectors of `kind`\n\
+         /// (`type * 3 + width`) in locale `loc`.\n\
+         pub(crate) fn patterns(loc: u16, kind: u16) -> [&'static str; 4] {{\n    \
+         let at = ROW_IDX\n        \
+         .get(loc as usize * 9 + kind as usize)\n        \
+         .map_or(0, |r| *r as usize * 4);\n    \
+         core::array::from_fn(|i| str_at(ROWS.get(at + i).copied().unwrap_or(0)))\n\
+         }}\n\n\
+         /// The interned pattern with id `id`. Arena boundaries always fall on\n\
+         /// char boundaries — it is whole strings concatenated — but `get` is\n\
+         /// used anyway so a corrupt table cannot panic.\n\
+         fn str_at(id: u16) -> &'static str {{\n    \
+         let i = id as usize;\n    \
+         match (STRINGS.get(i), STRINGS.get(i + 1)) {{\n        \
+         (Some(a), Some(b)) => ARENA.get(*a as usize..*b as usize).unwrap_or(\"\"),\n        \
+         _ => \"\",\n    \
+         }}\n\
+         }}\n",
+    );
+    emit_arena(&mut out, "", "ARENA", &strings);
+    let offs = offsets(&strings);
+    assert!(
+        *offs.last().expect("arena end") <= u32::from(u16::MAX),
+        "list pattern arena outgrew the u16 offsets"
+    );
+    let offs16: Vec<u16> = offs.iter().map(|o| *o as u16).collect();
+    emit_array(&mut out, "", "STRINGS", "u16", &offs16);
+    emit_array(&mut out, "", "ROWS", "u16", &rows);
+    emit_array(&mut out, "", "ROW_IDX", "u16", &row_idx);
+
+    write_cldr_generated(cldr_dir, "lists", &out);
+    println!(
+        "codegen: wrote lists.rs ({} locales, {} patterns, {} rows, {} KB)",
+        locales.len(),
+        strings.len(),
+        row_id.len(),
+        out.len() / 1024
+    );
 }
 
 /// Sorted base locale names from a directory of `<locale>.json` files.
@@ -2793,9 +2918,30 @@ fn locale_files(dir: &Path) -> Vec<String> {
         .collect()
 }
 
-/// Write `cldr/relative.bin`: per-locale relative-time strings (7 units).
+/// CLDR `<fields>` units in `intl::relative::RelativeUnit` discriminant order —
+/// ECMA-402's eight `SingularRelativeTimeUnit` values.
+const REL_UNITS: [&str; 8] = [
+    "year", "quarter", "month", "week", "day", "hour", "minute", "second",
+];
+/// CLDR field-width suffixes in `intl::relative::RelativeWidth` order (ECMA-402
+/// `style`).
+const REL_WIDTHS: [&str; 3] = ["", "-short", "-narrow"];
+/// Lowest `relative-type-<n>` offset CLDR 48 uses; the literal slots run
+/// `REL_MIN_OFFSET..=REL_MIN_OFFSET + 5` (`-2`..=`3`).
+const REL_MIN_OFFSET: i32 = -2;
+/// Slots per row: six `relative-type-<n>` literals, then the six past plural
+/// forms, then the six future ones.
+const REL_ROW: usize = 18;
+/// Row slot marking "CLDR has no string here".
+const REL_NONE: u16 = u16::MAX;
+
+/// Emit `cldr/generated/relative.rs`: every locale's relative-time `<fields>`
+/// (UTS #35 §8.2) — the data behind ECMA-402 `Intl.RelativeTimeFormat`.
+///
+/// All eight units in all three widths, because ECMA-402's `style` selects
+/// between CLDR's `day` / `day-short` / `day-narrow` blocks and they are
+/// independent data ("in 3 days" / "in 3 days" / "in 3d").
 fn emit_relative(cldr_dir: &Path, datefields_dir: &Path) {
-    let units = ["year", "month", "week", "day", "hour", "minute", "second"];
     let cat_index = |key: &str| match key {
         "relativeTimePattern-count-zero" => 0,
         "relativeTimePattern-count-one" => 1,
@@ -2806,9 +2952,11 @@ fn emit_relative(cldr_dir: &Path, datefields_dir: &Path) {
     };
     let mut locales = locale_files(datefields_dir);
     locales.sort();
-    let mut records = Vec::new();
-    for locale in locales {
-        let path = datefields_dir.join(alloc_format(&locale));
+
+    // [locale][unit * 3 + width][slot], read out in full before interning.
+    let mut all: Vec<Vec<[Option<String>; REL_ROW]>> = Vec::with_capacity(locales.len());
+    for locale in &locales {
+        let path = datefields_dir.join(alloc_format(locale));
         let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
         let json = json_parse(&text);
         let (_, loc_obj) = json
@@ -2821,29 +2969,147 @@ fn emit_relative(cldr_dir: &Path, datefields_dir: &Path) {
             .get("dates")
             .and_then(|d| d.get("fields"))
             .expect("fields");
-        let mut p = Vec::new();
-        for u in units {
-            let f = fields.get(u).expect("unit");
-            enc_opt(&mut p, f.get("relative-type--1").and_then(Json::as_str));
-            enc_opt(&mut p, f.get("relative-type-0").and_then(Json::as_str));
-            enc_opt(&mut p, f.get("relative-type-1").and_then(Json::as_str));
-            for tense in ["relativeTime-type-past", "relativeTime-type-future"] {
-                let mut arr: [Option<&str>; 6] = [None; 6];
-                if let Some(obj) = f.get(tense) {
+        let mut rows = Vec::with_capacity(REL_UNITS.len() * REL_WIDTHS.len());
+        for u in REL_UNITS {
+            for w in REL_WIDTHS {
+                let key = format!("{u}{w}");
+                let f = fields
+                    .get(&key)
+                    .unwrap_or_else(|| panic!("{locale}: missing field {key}"));
+                let mut row: [Option<String>; REL_ROW] = Default::default();
+                for (k, v) in f.entries() {
+                    let Some(off) = k.strip_prefix("relative-type-") else {
+                        continue;
+                    };
+                    let off: i32 = off.parse().unwrap_or_else(|_| panic!("{key}: {k}"));
+                    // Widening the window is a codegen + `RelUnit::literals`
+                    // change, so fail loudly rather than drop a CLDR string.
+                    let slot = usize::try_from(off - REL_MIN_OFFSET)
+                        .ok()
+                        .filter(|s| *s < 6)
+                        .unwrap_or_else(|| panic!("{locale} {key}: offset {off} outside −2..=3"));
+                    row[slot] = v.as_str().map(String::from);
+                }
+                for (base, tense) in [
+                    (6, "relativeTime-type-past"),
+                    (12, "relativeTime-type-future"),
+                ] {
+                    let obj = f
+                        .get(tense)
+                        .unwrap_or_else(|| panic!("{locale}: {key} has no {tense}"));
                     for (count, pat) in obj.entries() {
-                        if let Some(s) = pat.as_str() {
-                            arr[cat_index(count)] = Some(s);
-                        }
+                        row[base + cat_index(count)] = pat.as_str().map(String::from);
                     }
                 }
-                for slot in arr {
-                    enc_opt(&mut p, slot);
-                }
+                rows.push(row);
             }
         }
-        records.push((locale.to_ascii_lowercase(), p));
+        all.push(rows);
     }
-    write_blob(cldr_dir, "relative", &records);
+
+    // Ids in sorted order, so the arena stays stable and reviews as a list.
+    let mut str_id: BTreeMap<&str, u16> = BTreeMap::new();
+    for rows in &all {
+        for row in rows {
+            for s in row.iter().flatten() {
+                str_id.insert(s, 0);
+            }
+        }
+    }
+    let strings: Vec<&str> = str_id.keys().copied().collect();
+    assert!(
+        strings.len() < REL_NONE as usize,
+        "more distinct relative-time strings than the u16 id space"
+    );
+    for (i, id) in str_id.values_mut().enumerate() {
+        *id = i as u16;
+    }
+
+    // One shared row per distinct 18-slot combination: a locale's `day` and
+    // `day-short` blocks are often word-for-word identical.
+    let mut row_id: BTreeMap<[u16; REL_ROW], u16> = BTreeMap::new();
+    let mut rows: Vec<u16> = Vec::new();
+    let mut row_idx: Vec<u16> = Vec::with_capacity(all.len() * REL_UNITS.len() * 3);
+    for locale_rows in &all {
+        for row in locale_rows {
+            let ids: [u16; REL_ROW] =
+                core::array::from_fn(|i| row[i].as_deref().map_or(REL_NONE, |s| str_id[s]));
+            let next = row_id.len() as u16;
+            let id = *row_id.entry(ids).or_insert_with(|| {
+                rows.extend_from_slice(&ids);
+                next
+            });
+            row_idx.push(id);
+        }
+    }
+
+    let mut out = String::new();
+    write_header(&mut out);
+    let _ = write!(
+        out,
+        "//! CLDR relative-time fields (UTS #35 §8.2 `<fields>`), the data behind\n\
+         //! ECMA-402 `Intl.RelativeTimeFormat`.\n\
+         //!\n\
+         //! `ROW_IDX[loc * 24 + unit * 3 + width]` names a row of {row} `ARENA`\n\
+         //! string ids: six `relative-type-<n>` literals for offsets −2..=+3\n\
+         //! (`\"yesterday\"`, `\"today\"`, …), then the six\n\
+         //! `relativeTime-type-past` plural forms, then the six `-future` ones,\n\
+         //! each indexed by `PluralCategory`. `NONE` marks a slot CLDR leaves\n\
+         //! empty. `unit` is in `RelativeUnit` order and `width` in\n\
+         //! `RelativeWidth` order.\n\
+         //!\n\
+         //! Rows are shared because a locale's `day` and `day-short` blocks are\n\
+         //! frequently identical ({rows} of {refs} are distinct), and the strings\n\
+         //! are interned across the whole corpus.\n\n\
+         /// A row slot CLDR has no string for.\n\
+         pub(crate) const NONE: u16 = u16::MAX;\n\n\
+         /// Lowest `relative-type-<n>` offset the literal slots cover.\n\
+         pub(crate) const MIN_OFFSET: i32 = {min};\n\n\
+         /// Table index for an exact (lowercased) CLDR locale id.\n\
+         pub(crate) fn locale_index(lang: &str) -> Option<u16> {{\n    \
+         Some(match lang {{\n",
+        row = REL_ROW,
+        rows = row_id.len(),
+        refs = row_idx.len(),
+        min = REL_MIN_OFFSET,
+    );
+    for (i, locale) in locales.iter().enumerate() {
+        let _ = write!(out, "        \"{}\" => {i},\n", locale.to_ascii_lowercase());
+    }
+    let _ = write!(
+        out,
+        "        _ => return None,\n    }})\n}}\n\n\
+         /// The {row} string ids of `unit` at `width` in locale `loc`.\n\
+         pub(crate) fn row(loc: u16, unit: u16, width: u16) -> [u16; {row}] {{\n    \
+         let at = ROW_IDX\n        \
+         .get(loc as usize * {per} + unit as usize * 3 + width as usize)\n        \
+         .map_or(0, |r| *r as usize * {row});\n    \
+         core::array::from_fn(|i| ROWS.get(at + i).copied().unwrap_or(NONE))\n\
+         }}\n\n\
+         /// The interned string with id `id`, or `None` for [`NONE`]. Arena\n\
+         /// boundaries always fall on char boundaries — it is whole strings\n\
+         /// concatenated — but `get` is used anyway so a corrupt table cannot\n\
+         /// panic.\n\
+         pub(crate) fn str_at(id: u16) -> Option<&'static str> {{\n    \
+         let i = id as usize;\n    \
+         ARENA.get(*STRINGS.get(i)? as usize..*STRINGS.get(i + 1)? as usize)\n\
+         }}\n",
+        row = REL_ROW,
+        per = REL_UNITS.len() * 3,
+    );
+    emit_arena(&mut out, "", "ARENA", &strings);
+    emit_array(&mut out, "", "STRINGS", "u32", &offsets(&strings));
+    emit_array(&mut out, "", "ROWS", "u16", &rows);
+    emit_array(&mut out, "", "ROW_IDX", "u16", &row_idx);
+
+    write_cldr_generated(cldr_dir, "relative", &out);
+    println!(
+        "codegen: wrote relative.rs ({} locales, {} strings, {} rows, {} KB)",
+        locales.len(),
+        strings.len(),
+        row_id.len(),
+        out.len() / 1024
+    );
 }
 
 /// Write `cldr/currency.bin` (per-locale pattern + symbols) and
@@ -3480,8 +3746,10 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path, likely_path: &Path) {
 /// The modules under `src/cldr/generated/`, with the cargo feature each is
 /// gated on, so a disabled formatter drops its table — and the megabytes of
 /// string data in it — from the build entirely.
-const CLDR_GENERATED: [(&str, &str); 3] = [
+const CLDR_GENERATED: [(&str, &str); 5] = [
+    ("lists", "list"),
     ("numbers", "number"),
+    ("relative", "relative"),
     ("tz_names", "datetime"),
     ("units", "units"),
 ];

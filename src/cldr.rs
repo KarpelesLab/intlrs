@@ -12,8 +12,9 @@
 //! `[u8 key_len][key][u16 payload_len][payload]`. Within a payload a string is
 //! `[u8 len][bytes]` and an optional string uses a leading `0xFF` for `None`.
 //!
-//! Tables whose contents need finer feature gating than "one blob, one feature"
-//! are emitted as Rust instead — see [`generated`].
+//! Tables that need finer feature gating than "one blob, one feature", or that
+//! repeat enough strings for a per-record blob to be the wrong shape, are
+//! emitted as Rust instead — see [`generated`].
 //!
 //! The whole module is `no_std`/no-`alloc` and always compiled; its accessors
 //! are unused when the (alloc-gated) formatters are not built.
@@ -23,10 +24,15 @@
 /// like `crate::unicode::generated`. A blob is all-or-nothing, so data that only
 /// some builds want (the narrow unit width, the non-`latn` numbering-system
 /// symbols, the range patterns) lives here, where `#[cfg]` can drop individual
-/// match arms. The one exception is the time-zone name tables, which are wide
-/// enough that `match` arms cost several times the strings they hold and so are
-/// emitted as `#[cfg]`-gated arena + index statics instead; see
-/// `generated::tz_names`.
+/// match arms.
+///
+/// Three tables are here for the other reason: `tz_names`, `lists` and
+/// `relative` are wide enough that a `match` costs several times the strings it
+/// holds, and their strings repeat heavily across locales, so they are
+/// deduplicated string arenas plus index arrays. The blob format keys one opaque
+/// payload per locale and cannot share a string between two of them; interning
+/// is what keeps `relative`'s eight units × three widths to 2.5× the bytes its
+/// seven units × one width used to cost.
 pub(crate) mod generated;
 
 // ---- Shared formatter record types (plain data, borrowing from the blobs). ----
@@ -88,7 +94,8 @@ pub struct NumberSpec {
     pub pct: Pattern,
 }
 
-/// The four CLDR list connector patterns (each contains `{0}` and `{1}`).
+/// The four CLDR list connector patterns of one `type` × `style` combination
+/// (each contains `{0}` and `{1}`).
 ///
 /// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
 /// tables, which gain fields as the data does, so it is obtained from the
@@ -106,22 +113,8 @@ pub struct ListPatterns {
     pub two: &'static str,
 }
 
-/// The list patterns for one locale (both styles).
-///
-/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
-/// tables, which gain fields as the data does, so it is obtained from the
-/// crate rather than constructed.
-#[derive(Debug, Clone, Copy)]
-#[non_exhaustive]
-pub struct ListSpec {
-    /// Conjunction ("and") patterns.
-    pub and: ListPatterns,
-    /// Disjunction ("or") patterns.
-    pub or: ListPatterns,
-}
-
-/// CLDR relative-time strings for one unit. `past`/`future` are indexed by the
-/// `PluralCategory` discriminant.
+/// CLDR relative-time strings for one unit at one width — the `day-short`
+/// block, say. `past`/`future` are indexed by the `PluralCategory` discriminant.
 ///
 /// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
 /// tables, which gain fields as the data does, so it is obtained from the
@@ -129,16 +122,28 @@ pub struct ListSpec {
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub struct RelUnit {
-    /// Literal for offset −1 ("yesterday"), if any.
-    pub prev: Option<&'static str>,
-    /// Literal for offset 0 ("today"), if any.
-    pub cur: Option<&'static str>,
-    /// Literal for offset +1 ("tomorrow"), if any.
-    pub next: Option<&'static str>,
+    /// CLDR's `relative-type-<n>` literals — what ECMA-402 `numeric: "auto"`
+    /// substitutes for a small offset — for offsets −2..=+3, indexed
+    /// `offset + 2`: `"the day before yesterday"`, `"yesterday"`, `"today"`,
+    /// `"tomorrow"`, … Most units define only −1/0/+1, and some only 0. Read it
+    /// through [`RelUnit::literal`] rather than indexing by hand.
+    pub literals: [Option<&'static str>; 6],
     /// Past patterns ("{0} days ago") by plural category.
     pub past: [Option<&'static str>; 6],
     /// Future patterns ("in {0} days") by plural category.
     pub future: [Option<&'static str>; 6],
+}
+
+#[cfg(feature = "relative")]
+impl RelUnit {
+    /// The `numeric: "auto"` literal for a signed `offset` — `−1` is
+    /// `"yesterday"` for `day` in `en` — or `None` where the locale defines
+    /// none and the numeric pattern must be used instead.
+    #[must_use]
+    pub fn literal(&self, offset: i64) -> Option<&'static str> {
+        let slot = offset.checked_sub(i64::from(generated::relative::MIN_OFFSET))?;
+        self.literals.get(usize::try_from(slot).ok()?).copied()?
+    }
 }
 
 /// Gregorian calendar names and patterns for one locale (full/long/medium/short
@@ -209,25 +214,8 @@ impl CalendarSpec {
     }
 }
 
-/// CLDR relative-time strings for all units of one locale.
-///
-/// The struct is `#[non_exhaustive]`: it is a view onto the embedded CLDR
-/// tables, which gain fields as the data does, so it is obtained from the
-/// crate rather than constructed.
-#[derive(Debug, Clone, Copy)]
-#[non_exhaustive]
-pub struct RelativeSpec {
-    /// One [`RelUnit`] per relative unit (year, month, week, day, hour, minute,
-    /// second).
-    pub units: [RelUnit; 7],
-}
-
 // ---- Embedded blobs. ----
 
-#[cfg(feature = "list")]
-const LISTS: &[u8] = include_bytes!("cldr/lists.bin");
-#[cfg(feature = "relative")]
-const RELATIVE: &[u8] = include_bytes!("cldr/relative.bin");
 #[cfg(feature = "currency")]
 const CURRENCY: &[u8] = include_bytes!("cldr/currency.bin");
 #[cfg(feature = "currency")]
@@ -648,37 +636,41 @@ pub(crate) fn misc_patterns(lang: &str) -> Option<(&'static str, &'static str)> 
     generated::numbers::misc_patterns(lang)
 }
 
-fn list_patterns(c: &mut Cursor) -> ListPatterns {
+/// Table row for an exact (lowercased) locale key in the list-pattern tables.
+#[cfg(feature = "list")]
+pub(crate) fn list_locale(lang: &str) -> Option<u16> {
+    generated::lists::locale_index(lang)
+}
+
+/// The list connectors of one ECMA-402 `type` × `style` combination, `kind`
+/// being `type * 3 + width` (see `generated::lists`).
+#[cfg(feature = "list")]
+pub(crate) fn list_patterns(loc: u16, kind: usize) -> ListPatterns {
+    let [start, middle, end, two] = generated::lists::patterns(loc, kind as u16);
     ListPatterns {
-        start: c.str(),
-        middle: c.str(),
-        end: c.str(),
-        two: c.str(),
+        start,
+        middle,
+        end,
+        two,
     }
 }
 
-/// List connector patterns for an exact (lowercased) locale key.
-#[cfg(feature = "list")]
-pub(crate) fn list_spec(lang: &str) -> Option<ListSpec> {
-    let mut c = find(LISTS, lang)?;
-    Some(ListSpec {
-        and: list_patterns(&mut c),
-        or: list_patterns(&mut c),
-    })
+/// Table row for an exact (lowercased) locale key in the relative-time tables.
+#[cfg(feature = "relative")]
+pub(crate) fn relative_locale(lang: &str) -> Option<u16> {
+    generated::relative::locale_index(lang)
 }
 
-/// Relative-time strings for an exact (lowercased) locale key.
+/// The relative-time strings of one unit at one width.
 #[cfg(feature = "relative")]
-pub(crate) fn relative_spec(lang: &str) -> Option<RelativeSpec> {
-    let mut c = find(RELATIVE, lang)?;
-    let units = core::array::from_fn(|_| RelUnit {
-        prev: c.opt(),
-        cur: c.opt(),
-        next: c.opt(),
-        past: core::array::from_fn(|_| c.opt()),
-        future: core::array::from_fn(|_| c.opt()),
-    });
-    Some(RelativeSpec { units })
+pub(crate) fn relative_unit(loc: u16, unit: usize, width: usize) -> RelUnit {
+    let row = generated::relative::row(loc, unit as u16, width as u16);
+    let at = |i: usize| generated::relative::str_at(row[i]);
+    RelUnit {
+        literals: core::array::from_fn(at),
+        past: core::array::from_fn(|i| at(6 + i)),
+        future: core::array::from_fn(|i| at(12 + i)),
+    }
 }
 
 /// Standard currency pattern for an exact (lowercased) locale key.

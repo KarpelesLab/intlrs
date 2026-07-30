@@ -87,12 +87,17 @@ Beyond the `unicode` module:
   `to_numbering_system("2024", "arab")` → `"٢٠٢٤"`) and ordinals
   (`format_ordinal("en", 21)` → `"21st"`).
 
-- `intl::list` (alloc) joins items with locale connectors —
-  `format_list("en", &["a","b","c"], ListStyle::And)` → `"a, b, and c"`.
-- `intl::relative` (alloc) formats relative times —
-  `format_relative("en", -2, RelativeUnit::Hour)` → `"2 hours ago"`,
-  `format_relative("en", -1, RelativeUnit::Day)` → `"yesterday"` (plural- and
-  number-aware).
+- `intl::list` (alloc) joins items with locale connectors, over all nine
+  ECMA-402 `type` × `style` combinations —
+  `format_list("en", &["a","b","c"], &Default::default())` → `"a, b, and c"`,
+  and with `list_type: Disjunction` → `"a, b, or c"`, with `width: Short` →
+  `"a, b, & c"`, with `list_type: Unit, width: Narrow` → `"a b c"`.
+- `intl::relative` (alloc) formats relative times over all eight units in
+  `numeric` × `style` — `format_relative("en", -2.0, RelativeUnit::Hour,
+  &Default::default())` → `"2 hours ago"`, `(1.0, Day)` → `"in 1 day"`, and
+  with `numeric: Auto` → `"tomorrow"`; `format_relative_to_parts` gives the
+  `formatToParts` split. Plural- and number-aware, and the sign of zero picks
+  the direction (`-0.0` → `"0 days ago"`).
 - `intl::display` (`no_std`, no alloc) gives locale display names —
   `language_name("fr", "de")` → `Some("allemand")`, `region_name("en", "JP")`
   → `Some("Japan")`.
@@ -201,12 +206,15 @@ the CLDR table(s) it embeds, so a disabled formatter adds no code or data. All
 imply `alloc` (except `displaynames`, which is borrow-only). The always-on
 `plural` (rules) and `calendar` (arithmetic) modules need no feature and no data.
 
-Most tables are `.bin` blobs; `number`, `units` and `tz-names` are generated
-Rust — `const fn` + `match` lookups, except the `tz-names` name tables, which are
-deduplicated string arenas plus sorted index arrays (a `match` that wide compiles
-to jump tables and one code block per arm, which costs more than the strings it
-holds) — so their figures below are *compiled* footprint (`.text` + `.rodata` +
-`.data.rel.ro`) rather than blob bytes.
+Most tables are `.bin` blobs; `number`, `units`, `list`, `relative` and
+`tz-names` are generated Rust — `const fn` + `match` lookups, except the
+`tz-names`, `list` and `relative` string tables, which are deduplicated string
+arenas plus index arrays (a `match` that wide compiles to jump tables and one
+code block per arm, which costs more than the strings it holds) — so their
+figures below are *compiled* footprint (`.text` + `.rodata` + `.data.rel.ro`)
+rather than blob bytes. `relative` grew from a 95 KB blob covering seven units in
+one width to 243 KB covering eight units in three; interning the strings across
+the corpus is what kept 3.4× the data to 2.5× the bytes.
 
 | feature           | what it provides                                  | gated data |
 |-------------------|---------------------------------------------------|------------|
@@ -219,8 +227,8 @@ holds) — so their figures below are *compiled* footprint (`.text` + `.rodata` 
 | `datetime`        | date/time/skeleton + POSIX-TZ/GMT (→ number)      | 219 KB |
 | `calendars-extra` | Islamic + Persian calendars (→ datetime)          | 60 KB |
 | `displaynames`    | `Intl.DisplayNames` (languages/regions)           | **~1.6 MB** |
-| `list`            | `Intl.ListFormat`                                 | 10 KB |
-| `relative`        | `Intl.RelativeTimeFormat` (→ number)              | 95 KB |
+| `list`            | `Intl.ListFormat`, all 9 `type` × `style`         | 15 KB |
+| `relative`        | `Intl.RelativeTimeFormat`, 8 units × 3 styles (→ number) | 243 KB |
 | `message`         | ICU MessageFormat subset (→ number)               | — |
 | `spellout`        | RBNF spell-out                                     | 25 KB |
 | `transliterate`   | script transliteration (→ normalization)          | — |

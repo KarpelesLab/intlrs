@@ -1,25 +1,124 @@
-//! Locale-aware list formatting (CLDR / UTS #35): joining items with the right
-//! connectors, e.g. `"a, b, and c"` (English "and") or `"a, b o c"` (Spanish
-//! "or"). Requires the `alloc` feature.
+//! Locale-aware list formatting (CLDR / UTS #35 §6.3, ECMA-402
+//! `Intl.ListFormat`): joining items with the right connectors, e.g.
+//! `"a, b, and c"` (English conjunction) or `"a, b o c"` (Spanish disjunction).
+//! Requires the `alloc` feature.
+//!
+//! CLDR ships nine independent connector sets per locale — three
+//! [`ListType`]s × three [`ListWidth`]s — and they cannot be derived from one
+//! another: `es` writes a unit list `"a, b y c"` where `en` writes `"a, b, c"`,
+//! and `en`'s short conjunction is `&` rather than `and`. [`format_list`] takes
+//! both axes through [`ListFormatOptions`], whose [`Default`] is ECMA-402's
+//! (conjunction, long).
 //!
 //! ```
-//! use intl::list::{format_list, ListStyle};
-//! assert_eq!(format_list("en", &["a", "b", "c"], ListStyle::And), "a, b, and c");
-//! assert_eq!(format_list("en", &["a", "b"], ListStyle::Or), "a or b");
-//! assert_eq!(format_list("de", &["a", "b", "c"], ListStyle::And), "a, b und c");
+//! use intl::list::{ListFormatOptions, ListType, ListWidth, format_list};
+//! let long = ListFormatOptions::default();
+//! assert_eq!(format_list("en", &["a", "b", "c"], &long), "a, b, and c");
+//! assert_eq!(format_list("de", &["a", "b", "c"], &long), "a, b und c");
+//!
+//! let or: ListFormatOptions = ListType::Disjunction.into();
+//! assert_eq!(format_list("en", &["a", "b"], &or), "a or b");
+//!
+//! let mut short = ListFormatOptions::default();
+//! short.width = ListWidth::Short;
+//! assert_eq!(format_list("en", &["a", "b"], &short), "a & b");
 //! ```
 
 use alloc::string::{String, ToString};
 
-pub use crate::cldr::{ListPatterns, ListSpec};
+pub use crate::cldr::ListPatterns;
+
+/// What a list means — ECMA-402 `Intl.ListFormat`'s `type` option, CLDR's
+/// `listPattern[@type]`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ListType {
+    /// Conjunction, CLDR `standard` — "a, b, and c".
+    #[default]
+    Conjunction,
+    /// Disjunction, CLDR `or` — "a, b, or c".
+    Disjunction,
+    /// A list of measurements or values with no connective word, CLDR `unit` —
+    /// "5 ft, 3 in". Not the same as conjunction: `en` drops the "and" here,
+    /// `es` keeps its "y".
+    Unit,
+}
+
+/// How wide the connectors are — ECMA-402 `Intl.ListFormat`'s `style` option
+/// (`"long"` / `"short"` / `"narrow"`), which selects CLDR's `-short` /
+/// `-narrow` `listPattern` variants.
+///
+/// Named for the axis rather than for `style`, because [`ListStyle`] already
+/// (mis)named the [`ListType`] axis, and because `unit::UnitWidth` calls the
+/// same long/short/narrow axis a width.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ListWidth {
+    /// The full connector — `en` conjunction "a, b, and c".
+    #[default]
+    Long,
+    /// Abbreviated — `en` conjunction "a, b, & c".
+    Short,
+    /// Narrowest — `en` conjunction "a, b, c", `en` unit "a b c".
+    Narrow,
+}
+
+/// `Intl.ListFormat` options. [`Default`] is ECMA-402's default formatter:
+/// a long conjunction.
+///
+/// The struct is `#[non_exhaustive]` (so new options can be added without a
+/// breaking change): construct it from [`Default`] and set the fields you need,
+/// e.g. `let mut o = ListFormatOptions::default(); o.width = ListWidth::Short;`,
+/// or from either axis alone via [`From`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub struct ListFormatOptions {
+    /// ECMA-402 `type`.
+    pub list_type: ListType,
+    /// ECMA-402 `style`.
+    pub width: ListWidth,
+}
+
+impl From<ListType> for ListFormatOptions {
+    fn from(list_type: ListType) -> Self {
+        ListFormatOptions {
+            list_type,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<ListWidth> for ListFormatOptions {
+    fn from(width: ListWidth) -> Self {
+        ListFormatOptions {
+            width,
+            ..Default::default()
+        }
+    }
+}
 
 /// Whether a list is conjunctive ("and") or disjunctive ("or").
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[deprecated(
+    since = "0.6.0",
+    note = "misnamed: ECMA-402 calls this axis `type`, and `style` is the \
+            long/short/narrow axis this crate now exposes as `ListWidth`. Use \
+            `ListType` — `And` is `Conjunction`, `Or` is `Disjunction` — which \
+            also has the third variant, `Unit`."
+)]
 pub enum ListStyle {
     /// Conjunction — "a, b, and c".
     And,
     /// Disjunction — "a, b, or c".
     Or,
+}
+
+#[allow(deprecated)]
+impl From<ListStyle> for ListType {
+    fn from(style: ListStyle) -> Self {
+        match style {
+            ListStyle::And => ListType::Conjunction,
+            ListStyle::Or => ListType::Disjunction,
+        }
+    }
 }
 
 /// Substitute `{0}`→`a` and `{1}`→`b` in a connector pattern (single pass).
@@ -63,8 +162,14 @@ fn split2(pat: &str) -> (&str, &str, &str) {
     (pre, mid, post)
 }
 
-fn spec(lang: &str) -> ListSpec {
-    use crate::cldr::list_spec;
+/// The connectors for `opts` in `lang`, walking the tag's subtags off one at a
+/// time (`en-GB` → `en`) and ending at `en`, whose patterns stand in for CLDR
+/// root.
+fn patterns(lang: &str, opts: &ListFormatOptions) -> ListPatterns {
+    use crate::cldr::{list_locale, list_patterns};
+    // ECMA-402's two axes are one key into the CLDR table: three types × three
+    // widths, type-major (see `cldr::generated::lists`).
+    let kind = opts.list_type as usize * 3 + opts.width as usize;
     let norm: String = lang
         .chars()
         .map(|c| {
@@ -77,24 +182,31 @@ fn spec(lang: &str) -> ListSpec {
         .collect();
     let mut end = norm.len();
     loop {
-        if let Some(s) = list_spec(&norm[..end]) {
-            return s;
+        if let Some(loc) = list_locale(&norm[..end]) {
+            return list_patterns(loc, kind);
         }
         match norm[..end].rfind('-') {
             Some(i) => end = i,
-            None => return list_spec("en").expect("root list spec present"),
+            None => {
+                let en = list_locale("en").expect("root list patterns present");
+                return list_patterns(en, kind);
+            }
         }
     }
 }
 
 /// Join `items` into a single string using the list conventions of `lang`.
+///
+/// ```
+/// use intl::list::{ListFormatOptions, ListType, format_list};
+/// let mut unit = ListFormatOptions::default();
+/// unit.list_type = ListType::Unit;
+/// assert_eq!(format_list("en", &["5 ft", "3 in"], &unit), "5 ft, 3 in");
+/// assert_eq!(format_list("es", &["5 ft", "3 in"], &unit), "5 ft y 3 in");
+/// ```
 #[must_use]
-pub fn format_list(lang: &str, items: &[&str], style: ListStyle) -> String {
-    let s = spec(lang);
-    let p = match style {
-        ListStyle::And => s.and,
-        ListStyle::Or => s.or,
-    };
+pub fn format_list(lang: &str, items: &[&str], opts: &ListFormatOptions) -> String {
+    let p = patterns(lang, opts);
     match items.len() {
         0 => String::new(),
         1 => items[0].to_string(),
