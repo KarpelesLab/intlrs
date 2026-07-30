@@ -142,8 +142,13 @@ fn numbering_system_resolution() {
     // A `-u-nu-` keyword switches the digits regardless of `number-numsys`.
     assert_eq!(f("hi-u-nu-native", 1234567.0), "१२,३४,५६७");
     assert_eq!(f("zh-u-nu-native", 1234.5), "一,二三四.五");
-    // A locale with no block for the requested system keeps its own `latn`
-    // symbols — `Intl.NumberFormat('en-u-nu-arab').format(1234.5)` is the same.
+    // A locale with no block for the requested system inherits *root's* for that
+    // system before its own `latn` (UTS #35 resource inheritance): root's `arab`
+    // group is U+066C and decimal U+066B, as `Intl.NumberFormat('en-u-nu-arab')`.
+    // Root's blocks follow `number-numsys` with the per-locale ones.
+    #[cfg(feature = "number-numsys")]
+    assert_eq!(f("en-u-nu-arab", 1234.5), "١\u{66c}٢٣٤\u{66b}٥");
+    #[cfg(not(feature = "number-numsys"))]
     assert_eq!(f("en-u-nu-arab", 1234.5), "١,٢٣٤.٥");
     // An unknown or non-positional system falls back to Latin digits.
     assert_eq!(f("en-u-nu-zzzz", 1234.5), "1,234.5");
@@ -164,6 +169,79 @@ fn numbering_system_resolution() {
         assert_eq!(f("te", 1234567.0), "12,34,567");
         assert_eq!(f("te-u-nu-telu", 1234567.0), "౧,౨౩౪,౫౬౭");
     }
+}
+
+/// UTS #35 `NumberElements` inheritance for a system the locale does not ship:
+/// root's block, then the locale's `latn` — never the locale's `latn` alone.
+#[cfg(feature = "number-numsys")]
+#[test]
+fn numbering_system_root_inheritance() {
+    use intl::number::{
+        NumberFormatOptions, NumberStyle, format, format_decimal as f, format_percent as p,
+    };
+    // Root defines real symbols for `arab` and `arabext` only. Every locale
+    // without a block of its own gets them, whatever its own `latn` looks like.
+    assert_eq!(f("en-US-u-nu-arab", 1234.5), "١\u{66c}٢٣٤\u{66b}٥");
+    assert_eq!(f("de-u-nu-arab", 1234.5), "١\u{66c}٢٣٤\u{66b}٥");
+    assert_eq!(f("ja-u-nu-arabext", 1234.5), "۱\u{66c}۲۳۴\u{66b}۵");
+    // Root's blocks alias the *decimal* pattern back to the requesting locale's
+    // `latn` (`alias source="locale"`), so Indian grouping survives.
+    assert_eq!(f("en-IN-u-nu-arab", 1234567.0), "١٢\u{66c}٣٤\u{66c}٥٦٧");
+    // Every other system aliases to `latn` outright: no root symbols to inherit.
+    assert_eq!(f("de-u-nu-thai", 1234.5), "๑.๒๓๔,๕");
+    assert_eq!(f("en-u-nu-thai", 1234.5), "๑,๒๓๔.๕");
+    // Root's `arab` percent pattern is its own (suffixed, root's percent sign),
+    // so it overrides even a locale that prefixes or spaces its own.
+    assert_eq!(p("tr-u-nu-arab", 0.5), "٥٠٪\u{61c}");
+    assert_eq!(p("de-u-nu-arab", 0.5), "٥٠٪\u{61c}");
+    // `arabext`'s is an alias, so the locale's own pattern shape survives — with
+    // root's percent sign substituted into it.
+    assert_eq!(p("tr-u-nu-arabext", 0.5), "٪۵۰");
+    assert_eq!(p("de-u-nu-arabext", 0.5), "۵۰\u{a0}٪");
+    // A locale's own block still wins: `sd`'s `arab` keeps an ASCII decimal.
+    assert_eq!(f("sd-u-nu-arab", 1234.5), "١\u{66c}٢٣٤.٥");
+    // ICU merges field by field, not block by block: `fa` ships no `arab` block
+    // in cldr-json but LDML overrides its percent sign and NaN, so those two
+    // come from `fa` and the separators from root.
+    assert_eq!(p("fa-u-nu-arab", 0.5), "٥٠٪");
+    let mut o = NumberFormatOptions::default();
+    o.numbering_system = Some("arab");
+    o.style = NumberStyle::Decimal;
+    assert_eq!(format("fa", f64::NAN, &o), "ناعدد");
+    assert_eq!(format("en", f64::NAN, &o), "NaN"); // root's arab NaN
+    // `ur` overrides `arab`'s separators but not its minus sign.
+    assert_eq!(f("ur-u-nu-arab", 1234.5), "١,٢٣٤\u{60c}٥");
+    assert_eq!(format("ur", -1.0, &o), "\u{61c}-١");
+}
+
+/// CLDR gives some region locales a `defaultNumberingSystem` their base language
+/// does not have (UTS #35 §3.4); they inherit everything else from it.
+#[test]
+fn region_default_numbering_system() {
+    use intl::number::{
+        default_numbering_system as d, format_decimal as f, format_decimal_default_numbering as fdn,
+    };
+    assert_eq!(d("ar"), "latn");
+    assert_eq!(d("ar-EG"), "arab");
+    assert_eq!(d("ar-SA"), "arab");
+    assert_eq!(d("ar-YE"), "arab");
+    assert_eq!(d("ur"), "latn");
+    assert_eq!(d("ur-IN"), "arabext");
+    // Regions CLDR leaves alone keep the base language's.
+    assert_eq!(d("ar-MA"), "latn");
+    assert_eq!(d("en-GB"), "latn");
+
+    // `Intl.NumberFormat('ar-EG').format(1.5)` is "١٫٥"; plain `ar` is "1.5".
+    #[cfg(feature = "number-numsys")]
+    {
+        assert_eq!(fdn("ar-EG", 1.5), "١\u{66b}٥");
+        assert_eq!(fdn("ar-SA", 1.5), "١\u{66b}٥");
+        assert_eq!(fdn("ur-IN", 1.5), "۱\u{66b}۵");
+    }
+    assert_eq!(fdn("ar", 1.5), "1.5");
+    // The region tag inherits the base language's symbols, so an explicit
+    // request resolves identically for both.
+    assert_eq!(f("ar-EG", 1234.5), f("ar", 1234.5));
 }
 
 #[test]
@@ -259,10 +337,9 @@ fn format_range_currency_and_parts() {
     let mut cur = NumberFormatOptions::default();
     cur.style = NumberStyle::Currency;
     cur.currency = Some("USD");
-    // The CLDR `range` pattern is applied verbatim, so the affixes repeat and no
-    // spacing is inserted around the separator. (ICU's NumberRangeFormatter has
-    // extra collapse/padding heuristics for affixed forms that we do not model.)
-    assert_eq!(format_range("en", 2.9, 3.1, &cur), "$2.90\u{2013}$3.10");
+    // A lone `$` is one code point, below ICU's AUTO collapse threshold, so it
+    // repeats — and the repetition is what makes the separator take spaces.
+    assert_eq!(format_range("en", 2.9, 3.1, &cur), "$2.90 \u{2013} $3.10");
     assert_eq!(format_range("en", 2.999, 3.001, &cur), "~$3.00");
 
     let parts = format_range_to_parts("en", 2.9, 3.1, &cur);
@@ -277,7 +354,7 @@ fn format_range_currency_and_parts() {
             ("integer", "startRange", "2"),
             ("decimal", "startRange", "."),
             ("fraction", "startRange", "90"),
-            ("literal", "shared", "\u{2013}"),
+            ("literal", "shared", " \u{2013} "),
             ("currency", "endRange", "$"),
             ("integer", "endRange", "3"),
             ("decimal", "endRange", "."),
@@ -303,6 +380,231 @@ fn format_range_currency_and_parts() {
             ("integer", "3"),
         ]
     );
+}
+
+/// ICU `NumberRangeFormatterImpl::formatRange` at the AUTO collapse level, which
+/// is the one `Intl.NumberFormat.prototype.formatRange` uses. Every expectation
+/// here is `node --version` v22 / ICU 77.
+#[cfg(all(feature = "number-range", feature = "currency"))]
+#[test]
+fn format_range_collapses_shared_affixes() {
+    use intl::number::{
+        NumberFormatOptions, NumberStyle, SignDisplay, format_range as r, format_range_to_parts,
+    };
+    let cur = |code| {
+        let mut o = NumberFormatOptions::default();
+        o.style = NumberStyle::Currency;
+        o.currency = Some(code);
+        o
+    };
+
+    // The middle modifier (the pattern's affixes plus the sign) is factored out
+    // only when both ends render it alike *and* it is longer than one code
+    // point. `+$` and `-$` clear that bar; a bare `$`, `%` or `-` does not.
+    let mut plus = cur("USD");
+    plus.sign_display = SignDisplay::Always;
+    assert_eq!(r("en", 2.9, 3.1, &plus), "+$2.90\u{2013}3.10");
+    assert_eq!(r("en", -3.0, -1.0, &cur("USD")), "-$3.00\u{2013}1.00");
+    assert_eq!(r("en", 3.0, 5.0, &cur("USD")), "$3.00 \u{2013} $5.00");
+    let mut always = NumberFormatOptions::default();
+    always.sign_display = SignDisplay::Always;
+    assert_eq!(r("en", 3.0, 5.0, &always), "+3 \u{2013} +5");
+    assert_eq!(r("en", -3.0, -1.0, &Default::default()), "-3 \u{2013} -1");
+
+    // Four locales, four affix positions. de/fr suffix, nl prefix, ja prefix,
+    // he both — all two code points or more, so all collapse and the separator
+    // stays tight.
+    assert_eq!(
+        r("de", 3.0, 5.0, &cur("EUR")),
+        "3,00\u{2013}5,00\u{a0}\u{20ac}"
+    );
+    assert_eq!(
+        r("fr", 3.0, 5.0, &cur("EUR")),
+        "3,00\u{2013}5,00\u{a0}\u{20ac}"
+    );
+    assert_eq!(r("nl", 3.0, 5.0, &cur("EUR")), "\u{20ac}\u{a0}3,00-5,00");
+    assert_eq!(
+        r("ja", 3.0, 5.0, &cur("JPY")),
+        "\u{ffe5}3 \u{ff5e} \u{ffe5}5"
+    ); // ￥ is one code point
+    assert_eq!(
+        r("he", 3.0, 5.0, &cur("ILS")),
+        "\u{200f}3.00\u{2013}5.00\u{a0}\u{200f}\u{20aa}"
+    );
+
+    // Prefix *and* suffix count as one modifier, so a percent sign next to a
+    // plus sign is over the threshold even though either alone is not.
+    let mut pct = NumberFormatOptions::default();
+    pct.style = NumberStyle::Percent;
+    assert_eq!(r("en", 0.03, 0.05, &pct), "3% \u{2013} 5%");
+    assert_eq!(r("tr", 0.03, 0.05, &pct), "%3 \u{2013} %5");
+    pct.sign_display = SignDisplay::Always;
+    assert_eq!(r("en", 0.03, 0.05, &pct), "+3\u{2013}5%");
+
+    // Modifiers that differ between the ends never collapse, and the spacing
+    // heuristic looks at the *first* end only — so a range starting at an
+    // unsigned zero stays tight even though the other end gains a plus.
+    let mut xz = NumberFormatOptions::default();
+    xz.sign_display = SignDisplay::ExceptZero;
+    assert_eq!(r("en", 0.0, 5.0, &xz), "0\u{2013}+5");
+    assert_eq!(r("en", -5.0, 0.0, &xz), "-5 \u{2013} 0");
+    assert_eq!(r("en", -3.0, 5.0, &cur("USD")), "-$3.00 \u{2013} $5.00");
+
+    // The inner modifier — the notation — is never collapsed at this level, and
+    // it forces the spacing on its own.
+    let mut compact = NumberFormatOptions::default();
+    compact.notation = intl::number::Notation::Compact;
+    assert_eq!(r("en", 1200.0, 5000.0, &compact), "1.2K \u{2013} 5K");
+    let mut sci = NumberFormatOptions::default();
+    sci.notation = intl::number::Notation::Scientific;
+    assert_eq!(r("en", 1200.0, 5000.0, &sci), "1.2E3 \u{2013} 5E3");
+
+    // maximumFractionDigits reaches the range because it reaches the number:
+    // ECMA-402 `SetNumberFormatDigitOptions` pulls the *minimum* down with it.
+    let mut whole = cur("USD");
+    whole.maximum_fraction_digits = Some(0);
+    assert_eq!(r("en", 3.0, 5.0, &whole), "$3 \u{2013} $5");
+
+    // A collapsed affix is `shared`; the parts either side keep their end.
+    let parts = format_range_to_parts("de", 3.0, 5.0, &cur("EUR"));
+    let tagged: Vec<_> = parts
+        .iter()
+        .map(|p| (p.kind.as_str(), p.source.as_str(), p.value.as_str()))
+        .collect();
+    assert_eq!(
+        tagged,
+        vec![
+            ("integer", "startRange", "3"),
+            ("decimal", "startRange", ","),
+            ("fraction", "startRange", "00"),
+            ("literal", "shared", "\u{2013}"),
+            ("integer", "endRange", "5"),
+            ("decimal", "endRange", ","),
+            ("fraction", "endRange", "00"),
+            ("literal", "shared", "\u{a0}"),
+            ("currency", "shared", "\u{20ac}"),
+        ]
+    );
+}
+
+/// The outer modifier — a unit phrase — always factors out, and is re-worded for
+/// the range's own plural category (CLDR `pluralRanges`).
+#[cfg(all(feature = "number-range", feature = "units"))]
+#[test]
+fn format_range_collapses_units() {
+    use intl::number::{
+        NumberFormatOptions, NumberStyle, SignDisplay, UnitDisplay, format_range as r,
+        format_range_to_parts,
+    };
+    let km = |display| {
+        let mut o = NumberFormatOptions::default();
+        o.style = NumberStyle::Unit;
+        o.unit = Some("kilometer");
+        o.unit_display = display;
+        o
+    };
+    assert_eq!(r("en", 3.0, 5.0, &km(UnitDisplay::Short)), "3\u{2013}5 km");
+    assert_eq!(r("en", 3.0, 5.0, &km(UnitDisplay::Narrow)), "3\u{2013}5km");
+    // `one` + `other` is `other` in en, `one` + `few` is `few` in ru: the shared
+    // wording is the range's, not either end's.
+    assert_eq!(
+        r("en", 1.0, 2.0, &km(UnitDisplay::Long)),
+        "1\u{2013}2 kilometers"
+    );
+    assert_eq!(
+        r("ru", 1.0, 2.0, &km(UnitDisplay::Long)),
+        "1\u{2013}2 километра"
+    );
+    assert_eq!(
+        r("ru", 2.0, 5.0, &km(UnitDisplay::Long)),
+        "2\u{2013}5 километров"
+    );
+    assert_eq!(
+        r("fr", 1.0, 2.0, &km(UnitDisplay::Long)),
+        "1\u{2013}2\u{a0}kilomètres"
+    );
+    // The unit collapses across a sign change (it is parameterized by plural,
+    // not by sign), but the sign itself is a repeated one-code-point modifier.
+    assert_eq!(
+        r("en", -3.0, 5.0, &km(UnitDisplay::Short)),
+        "-3 \u{2013} 5 km"
+    );
+    let mut signed = km(UnitDisplay::Short);
+    signed.sign_display = SignDisplay::Always;
+    assert_eq!(r("en", 3.0, 5.0, &signed), "+3 \u{2013} +5 km");
+    // Equal ends: the approximately sign goes inside the unit, not around it.
+    assert_eq!(r("en", 3.0, 3.0, &km(UnitDisplay::Short)), "~3 km");
+
+    let parts = format_range_to_parts("en", 3.0, 5.0, &km(UnitDisplay::Short));
+    let tagged: Vec<_> = parts
+        .iter()
+        .map(|p| (p.kind.as_str(), p.source.as_str(), p.value.as_str()))
+        .collect();
+    assert_eq!(
+        tagged,
+        vec![
+            ("integer", "startRange", "3"),
+            ("literal", "shared", "\u{2013}"),
+            ("integer", "endRange", "5"),
+            ("literal", "shared", " "),
+            ("unit", "shared", "km"),
+        ]
+    );
+}
+
+/// The unit wrapper is ICU's outermost modifier, so it applies to every notation
+/// and to the non-finite forms, not only to standard positional notation.
+#[cfg(feature = "units")]
+#[test]
+fn unit_style_outside_standard_notation() {
+    use intl::number::{Notation, NumberFormatOptions, NumberStyle, format};
+    let mut o = NumberFormatOptions::default();
+    o.style = NumberStyle::Unit;
+    o.unit = Some("kilometer");
+    assert_eq!(format("en", 3.0, &o), "3 km");
+    o.notation = Notation::Compact;
+    assert!(format("en", 12345.0, &o).ends_with("K km"));
+    o.notation = Notation::Scientific;
+    assert!(format("en", 12345.0, &o).ends_with("E4 km"));
+    o.notation = Notation::Engineering;
+    assert!(format("en", 12345.0, &o).ends_with("E3 km"));
+    o.notation = Notation::Standard;
+    assert_eq!(format("en", f64::NAN, &o), "NaN km");
+    assert_eq!(format("en", f64::INFINITY, &o), "∞ km");
+    assert_eq!(format("en", f64::NEG_INFINITY, &o), "-∞ km");
+    // An unknown unit still degrades to the bare number, in every notation.
+    o.unit = Some("zzzz");
+    o.notation = Notation::Compact;
+    assert_eq!(format("en", 12000.0, &o), "12K");
+}
+
+/// ECMA-402 `SetNumberFormatDigitOptions` step 16.a: one of the fraction-digit
+/// bounds moves the other rather than being clamped by it.
+#[test]
+fn fraction_digit_defaults_interact() {
+    use intl::number::{NumberFormatOptions, format};
+    let mut o = NumberFormatOptions::default();
+    o.maximum_fraction_digits = Some(0);
+    assert_eq!(format("en", 3.4, &o), "3");
+    #[cfg(feature = "currency")]
+    {
+        use intl::number::{CurrencyDisplay, NumberStyle};
+        // The currency's two digits are the *default* minimum, so an explicit
+        // maximum of 0 pulls it to 0: `$3`, not `$3.00`.
+        let mut c = NumberFormatOptions::default();
+        c.style = NumberStyle::Currency;
+        c.currency = Some("USD");
+        c.maximum_fraction_digits = Some(0);
+        assert_eq!(format("en", 3.0, &c), "$3");
+        c.currency_display = CurrencyDisplay::Code;
+        assert_eq!(format("en", 3.0, &c), "3 USD");
+        // An explicit minimum above the default raises the maximum instead.
+        let mut m = NumberFormatOptions::default();
+        m.style = NumberStyle::Currency;
+        m.currency = Some("JPY"); // zero-digit currency
+        m.minimum_fraction_digits = Some(2);
+        assert_eq!(format("en", 3.0, &m), "¥3.00");
+    }
 }
 
 #[test]

@@ -775,15 +775,26 @@ fn find2(blob: &'static [u8], a: &str, b: &str) -> Option<Cursor> {
 }
 
 /// Number symbols + patterns for an exact (lowercased) locale key in numbering
-/// system `system`. A locale that ships no `symbols-numberSystem-<system>` block
-/// resolves to its `latn` one, which is ICU's `NumberElements` fallback.
+/// system `system`, through UTS #35 resource inheritance: the locale's own
+/// `symbols-numberSystem-<system>` block, else **root's** for that system, else
+/// the locale's `latn` block. Root only defines `arab` and `arabext`; every other
+/// system aliases to `latn` with `source="locale"`, i.e. to this locale's.
 #[cfg(feature = "number")]
 pub(crate) fn number_spec(lang: &str, system: &str) -> Option<NumberSpec> {
     generated::numbers::spec(lang, system)
 }
 
+/// The plural category a range takes from its two ends' categories (CLDR
+/// `pluralRanges.xml`), as `PluralCategory` discriminants. `en` `one`+`other` is
+/// `other`, so a collapsed range reads "1–2 kilometers".
+#[cfg(feature = "number-range")]
+pub(crate) fn plural_range(lang: &str, start: usize, end: usize) -> usize {
+    generated::numbers::plural_range(lang, start, end)
+}
+
 /// `(defaultNumberingSystem, otherNumberingSystems.native)` for an exact
-/// (lowercased) locale key.
+/// (lowercased) locale key. Keyed by locale rather than by language: CLDR's
+/// region files override the default alone (`ar-EG` is `arab`, `ar` is `latn`).
 #[cfg(feature = "number")]
 pub(crate) fn numbering_systems(lang: &str) -> Option<(&'static str, &'static str)> {
     generated::numbers::numbering_systems(lang)

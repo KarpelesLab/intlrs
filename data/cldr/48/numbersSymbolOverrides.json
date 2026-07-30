@@ -1,0 +1,186 @@
+{
+ "_comment": "Per-numbering-system number symbols that CLDR LDML defines but cldr-json omits; see README-numbersSymbolOverrides.txt. Derived from CLDR 48 common/main/<locale>.xml, same keys as numbers.json.",
+ "locales": {
+  "ar": {
+   "symbols-numberSystem-arabext": {
+    "nan": "ليس رقمًا"
+   }
+  },
+  "az": {
+   "symbols-numberSystem-arab": {
+    "group": ",",
+    "percentSign": "٪",
+    "plusSign": "+",
+    "minusSign": "-"
+   },
+   "decimalFormats-numberSystem-arab": {
+    "standard": "standart onluq kəsr0.###"
+   },
+   "symbols-numberSystem-arabext": {
+    "decimal": ",",
+    "percentSign": "~",
+    "plusSign": "+",
+    "minusSign": "-"
+   },
+   "decimalFormats-numberSystem-arabext": {
+    "standard": "standart onluq kəsr0.###"
+   }
+  },
+  "bs": {
+   "percentFormats-numberSystem-arabext": {
+    "standard": "#,##0 %"
+   }
+  },
+  "cv": {
+   "symbols-numberSystem-arab": {
+    "nan": "хисеп мар"
+   },
+   "percentFormats-numberSystem-arab": {
+    "standard": "#,##0 %"
+   },
+   "symbols-numberSystem-arabext": {
+    "nan": "хисеп мар"
+   }
+  },
+  "eu": {
+   "symbols-numberSystem-arab": {
+    "plusSign": "+",
+    "minusSign": "-"
+   }
+  },
+  "fa": {
+   "symbols-numberSystem-arab": {
+    "percentSign": "٪",
+    "nan": "ناعدد"
+   }
+  },
+  "fr": {
+   "symbols-numberSystem-arab": {
+    "plusSign": "‏+"
+   }
+  },
+  "gd": {
+   "symbols-numberSystem-arab": {
+    "percentSign": "٪"
+   },
+   "symbols-numberSystem-arabext": {
+    "minusSign": "-"
+   }
+  },
+  "ha": {
+   "symbols-numberSystem-arab": {
+    "decimal": ".",
+    "group": ",",
+    "percentSign": "%",
+    "plusSign": "+",
+    "minusSign": "-"
+   },
+   "symbols-numberSystem-arabext": {
+    "decimal": ".",
+    "percentSign": "%",
+    "plusSign": "+",
+    "minusSign": "-"
+   }
+  },
+  "ig": {
+   "symbols-numberSystem-arab": {
+    "percentSign": "٪‏",
+    "plusSign": "‏+",
+    "minusSign": "‏-"
+   },
+   "percentFormats-numberSystem-arab": {
+    "standard": "#,##0 %"
+   }
+  },
+  "ko": {
+   "symbols-numberSystem-arab": {
+    "plusSign": "‏+",
+    "minusSign": "‏-"
+   }
+  },
+  "ms": {
+   "symbols-numberSystem-arabext": {
+    "decimal": "."
+   }
+  },
+  "nl": {
+   "percentFormats-numberSystem-arab": {
+    "standard": "#,##0 %"
+   }
+  },
+  "no": {
+   "symbols-numberSystem-arab": {
+    "group": " ",
+    "minusSign": "؜−"
+   },
+   "percentFormats-numberSystem-arab": {
+    "standard": "#,##0 %"
+   },
+   "symbols-numberSystem-arabext": {
+    "decimal": ",",
+    "group": " ",
+    "minusSign": "‎−‎"
+   }
+  },
+  "pa": {
+   "symbols-numberSystem-arab": {
+    "decimal": ".",
+    "group": ",",
+    "percentSign": "%",
+    "plusSign": "+",
+    "minusSign": "-"
+   },
+   "symbols-numberSystem-arabext": {
+    "group": ",",
+    "plusSign": "+",
+    "minusSign": "-"
+   }
+  },
+  "sd": {
+   "symbols-numberSystem-arabext": {
+    "decimal": ".",
+    "group": "،"
+   }
+  },
+  "sv": {
+   "symbols-numberSystem-arab": {
+    "group": " ",
+    "minusSign": "؜−"
+   },
+   "symbols-numberSystem-arabext": {
+    "decimal": ",",
+    "group": " ",
+    "minusSign": "‎−‎"
+   }
+  },
+  "tk": {
+   "symbols-numberSystem-arabext": {
+    "nan": "San däl"
+   }
+  },
+  "ur": {
+   "symbols-numberSystem-arab": {
+    "decimal": "،",
+    "group": ",",
+    "plusSign": "+"
+   }
+  },
+  "uz": {
+   "symbols-numberSystem-arabext": {
+    "plusSign": "+",
+    "minusSign": "-",
+    "nan": "son emas"
+   }
+  },
+  "zh-Hant": {
+   "symbols-numberSystem-arab": {
+    "minusSign": "-",
+    "nan": "非數值"
+   },
+   "symbols-numberSystem-arabext": {
+    "plusSign": "+‎",
+    "nan": "非數值"
+   }
+  }
+ }
+}

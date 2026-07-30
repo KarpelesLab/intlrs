@@ -234,8 +234,8 @@ the corpus is what kept 3.4× the data to 2.5× the bytes.
 | feature           | what it provides                                  | gated data |
 |-------------------|---------------------------------------------------|------------|
 | `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~50 KB |
-| `number-numsys`   | + non-`latn` numbering-system symbols (→ number)  | ~4 KB |
-| `number-range`    | + `formatRange`/`formatRangeToParts` (→ number)   | ~16 KB |
+| `number-numsys`   | + non-`latn` numbering-system symbols (→ number)  | ~8 KB |
+| `number-range`    | + `formatRange`/`formatRangeToParts` (→ number)   | ~20 KB |
 | `currency`        | currency formatting (→ number)                    | **~0.9 MB** |
 | `units`           | measurement units, long + short (→ number)        | ~905 KB |
 | `units-narrow`    | + the narrow unit width (→ units)                 | ~315 KB |

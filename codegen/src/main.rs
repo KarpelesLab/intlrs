@@ -310,6 +310,8 @@ fn main() {
         &cldr_dir,
         &cldr.join("numbers-raw"),
         &cldr.join("likely.json"),
+        &cldr.join("pluralRanges.json"),
+        &cldr.join("numbersSymbolOverrides.json"),
     );
     emit_lists(&cldr_dir, &cldr.join("lists-raw"));
     emit_relative(&cldr_dir, &cldr.join("datefields-raw"));
@@ -2443,6 +2445,7 @@ fn script_region_alias_keys(keys: &[String], likely: &Json) -> Vec<(String, Stri
 /// `symbols-numberSystem-<ns>` block plus the decimal/percent patterns of
 /// `decimalFormats-/percentFormats-numberSystem-<ns>` (which genuinely differ
 /// per system — `te` groups Indian-style in `latn` but not in `telu`).
+#[derive(PartialEq, Eq)]
 struct NsSpec {
     ns: String,
     decimal: String,
@@ -2466,11 +2469,155 @@ struct NumbersRecord {
     /// The `miscPatterns` `approximately` and `range` forms.
     approximately: String,
     range: String,
+    /// The raw `latn` percent pattern (`"#,##0%"`, `"%#,##0"`, …). Kept because
+    /// this crate bakes the percent *sign* into the parsed pattern's affixes, so
+    /// re-deriving them for another numbering system's sign needs the source.
+    pct_raw: String,
 }
 
-fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
+impl NumbersRecord {
+    /// Whether two locales can share one table index. Everything the index
+    /// addresses — symbols, patterns, `miscPatterns` — must match; the numbering
+    /// system pair is deliberately excluded because that is the *only* thing the
+    /// 22 vendored `lang-REGION` files change (see `numbers-raw/README.txt`), and
+    /// it is emitted as a per-locale override instead.
+    fn shares_index_with(&self, other: &NumbersRecord) -> bool {
+        self.specs == other.specs
+            && self.approximately == other.approximately
+            && self.range == other.range
+    }
+}
+
+/// Root's `symbols-numberSystem-<ns>` block for one numbering system, with the
+/// pattern sources kept raw: a locale merging its own fields over this block can
+/// change the percent *sign*, which the parsed pattern bakes into its affixes.
+///
+/// UTS #35 resource inheritance: a locale that ships no block for the requested
+/// system inherits root's before falling back to its own `latn`. Root defines
+/// real symbols for `arab` and `arabext` only; every other system is an
+/// `<alias source="locale" …>` to `latn`, which resolves in the *requesting*
+/// locale and so needs no arm of its own.
+struct RootNs {
+    ns: String,
+    decimal: String,
+    group: String,
+    minus: String,
+    plus: String,
+    percent: String,
+    nan: String,
+    infinity: String,
+    /// The pattern root defines for this system, or `None` where root aliases it
+    /// back to the requesting locale's `latn` block (which is the common case:
+    /// only `arab`'s percent pattern is root's own, which is why `en-IN-u-nu-arab`
+    /// still groups Indian-style but `de-u-nu-arab` loses de's `"#,##0 %"`).
+    dec: Option<String>,
+    pct: Option<String>,
+}
+
+/// Parse root's non-`latn` symbol blocks out of the vendored `common/main/root.xml`.
+fn parse_root_numbers(path: &Path) -> Vec<RootNs> {
+    let raw = fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
+    let text = strip_xml_comments(&raw);
+    let (_, numbers) = *xml_blocks(&text, "numbers")
+        .first()
+        .expect("root <numbers>");
+    // The standard pattern of a `<…Formats numberSystem=…>` block, or `None`
+    // when the block is an alias. The standard length is the `type`-less one;
+    // `type="long"`/`"short"` are the compact forms.
+    let pattern = |kind: &str, ns: &str| -> Option<String> {
+        let (_, body) = xml_blocks(numbers, kind)
+            .into_iter()
+            .find(|(a, _)| xml_attr(a, "numberSystem") == Some(ns))?;
+        if body.contains("<alias") {
+            return None;
+        }
+        // CLDR singularises the length element: decimalFormats/decimalFormatLength.
+        // `type="long"`/`"short"` are the compact forms, not the standard one.
+        let length_tag = format!("{}Length", kind.trim_end_matches('s'));
+        let (_, length) = xml_blocks(body, &length_tag)
+            .into_iter()
+            .find(|(a, _)| xml_attr(a, "type").is_none())?;
+        let (_, pat) = *xml_blocks(length, "pattern").first()?;
+        Some(String::from(pat))
+    };
+    let mut out = Vec::new();
+    for (attrs, body) in xml_blocks(numbers, "symbols") {
+        let Some(ns) = xml_attr(attrs, "numberSystem") else {
+            continue;
+        };
+        if ns == "latn" || body.contains("<alias") {
+            continue;
+        }
+        let text_of = |tag: &str| {
+            xml_blocks(body, tag)
+                .first()
+                .map_or(String::new(), |(_, t)| String::from(*t))
+        };
+        out.push(RootNs {
+            decimal: text_of("decimal"),
+            group: text_of("group"),
+            minus: text_of("minusSign"),
+            plus: text_of("plusSign"),
+            nan: text_of("nan"),
+            infinity: text_of("infinity"),
+            percent: text_of("percentSign"),
+            dec: pattern("decimalFormats", ns),
+            pct: pattern("percentFormats", ns),
+            ns: String::from(ns),
+        });
+    }
+    out.sort_by(|a, b| a.ns.cmp(&b.ns));
+    out
+}
+
+/// CLDR `pluralRanges.json`: `[start][end] -> category`, indexed by the
+/// `PluralCategory` discriminant (zero, one, two, few, many, other).
+fn parse_plural_ranges(path: &Path) -> Vec<(String, [u8; 36])> {
+    const CATS: [&str; 6] = ["zero", "one", "two", "few", "many", "other"];
+    let text = fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
+    let json = json_parse(&text);
+    let plurals = json
+        .get("supplemental")
+        .and_then(|s| s.get("plurals"))
+        .expect("pluralRanges plurals");
+    let mut out = Vec::new();
+    for (locale, table) in plurals.entries() {
+        // Unlisted pairs resolve to `other`, as ICU's StandardPluralRanges does.
+        let mut cells = [5u8; 36];
+        for (key, value) in table.entries() {
+            let Some(pair) = key.strip_prefix("pluralRange-start-") else {
+                continue;
+            };
+            let Some((start, end)) = pair.split_once("-end-") else {
+                continue;
+            };
+            let idx = |c: &str| CATS.iter().position(|x| *x == c);
+            let (Some(s), Some(e), Some(r)) = (idx(start), idx(end), value.as_str().and_then(idx))
+            else {
+                continue;
+            };
+            cells[s * 6 + e] = r as u8;
+        }
+        out.push((locale.to_ascii_lowercase(), cells));
+    }
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    out
+}
+
+fn emit_numbers(
+    cldr_dir: &Path,
+    numbers_dir: &Path,
+    likely_path: &Path,
+    plural_ranges_path: &Path,
+    overrides_path: &Path,
+) {
     let mut files = locale_files(numbers_dir);
     files.sort();
+
+    let root = parse_root_numbers(&numbers_dir.join("root.xml"));
+    let ov_text = fs::read_to_string(overrides_path).expect("read numbersSymbolOverrides.json");
+    let ov_json = json_parse(&ov_text);
+    let overrides = ov_json.get("locales").expect("overrides locales");
 
     let mut locales: Vec<String> = Vec::new();
     let mut records: Vec<NumbersRecord> = Vec::new();
@@ -2497,6 +2644,7 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
         systems.sort_by_key(|s| s != "latn");
 
         let mut specs: Vec<NsSpec> = Vec::new();
+        let (mut dec_raw, mut pct_raw) = (String::new(), String::new());
         for ns in systems {
             let sym = n
                 .get(&alloc_concat("symbols-numberSystem-", &ns))
@@ -2512,9 +2660,15 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
                     .unwrap_or("")
                     .to_string()
             };
+            let dec_pattern = pat("decimalFormats");
+            let pct_pattern = pat("percentFormats");
+            if ns == "latn" {
+                dec_raw = dec_pattern.clone();
+                pct_raw = pct_pattern.clone();
+            }
             specs.push(NsSpec {
-                dec: parse_number_pattern(&pat("decimalFormats"), &percent),
-                pct: parse_number_pattern(&pat("percentFormats"), &percent),
+                dec: parse_number_pattern(&dec_pattern, &percent),
+                pct: parse_number_pattern(&pct_pattern, &percent),
                 decimal: g(sym, "decimal"),
                 group: g(sym, "group"),
                 minus: g(sym, "minusSign"),
@@ -2526,6 +2680,52 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
             });
         }
         assert_eq!(specs[0].ns, "latn", "{locale}: no latn symbols");
+
+        // The blocks cldr-json drops: fields this locale overrides for a system
+        // root defines symbols for but the locale does not declare. ICU resolves
+        // `NumberElements/<ns>/symbols` field by field up to root, so each is the
+        // locale's value over root's — see README-numbersSymbolOverrides.txt.
+        if let Some(ov) = overrides.get(&locale) {
+            for r in &root {
+                let Some(sym) = ov.get(&alloc_concat("symbols-numberSystem-", &r.ns)) else {
+                    continue;
+                };
+                let field = |k: &str, root_value: &str| match sym.get(k).and_then(Json::as_str) {
+                    Some(v) => String::from(v),
+                    None => String::from(root_value),
+                };
+                // Pattern: the locale's override, else root's own, else — where
+                // root aliases with `source="locale"` — the locale's `latn` one.
+                let over_pat = |kind: &str, root_pat: &Option<String>, latn: &str| {
+                    ov.get(&alloc_concat(kind, &alloc_concat("-numberSystem-", &r.ns)))
+                        .and_then(|x| x.get("standard"))
+                        .and_then(Json::as_str)
+                        .map(String::from)
+                        .or_else(|| root_pat.clone())
+                        .unwrap_or_else(|| String::from(latn))
+                };
+                let percent = field("percentSign", &r.percent);
+                specs.push(NsSpec {
+                    dec: parse_number_pattern(
+                        &over_pat("decimalFormats", &r.dec, &dec_raw),
+                        &percent,
+                    ),
+                    pct: parse_number_pattern(
+                        &over_pat("percentFormats", &r.pct, &pct_raw),
+                        &percent,
+                    ),
+                    decimal: field("decimal", &r.decimal),
+                    group: field("group", &r.group),
+                    minus: field("minusSign", &r.minus),
+                    plus: field("plusSign", &r.plus),
+                    nan: field("nan", &r.nan),
+                    infinity: field("infinity", &r.infinity),
+                    percent,
+                    ns: r.ns.clone(),
+                });
+            }
+            specs[1..].sort_by(|a, b| a.ns.cmp(&b.ns));
+        }
 
         // `miscPatterns` are per numbering system in CLDR but identical across
         // systems in all 103 vendored locales, so one per locale is enough.
@@ -2544,6 +2744,7 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
             default_ns,
             approximately: g(misc, "approximately"),
             range: g(misc, "range"),
+            pct_raw,
         });
 
         // Compact short then long, `count-other` per magnitude.
@@ -2569,7 +2770,22 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
     let likely_text = fs::read_to_string(likely_path).expect("read likely.json");
     let likely = json_parse(&likely_text);
     compact_records.extend(script_region_aliases(&compact_records, &likely));
+    compact_records = prune_inherited(&compact_records);
     write_blob(cldr_dir, "compact", &compact_records);
+
+    // Locales that address the same symbols/patterns/miscPatterns share one table
+    // index; only the numbering system pair stays per locale.
+    let mut reps: Vec<usize> = Vec::new();
+    let mut index_of: Vec<usize> = Vec::with_capacity(records.len());
+    for (i, r) in records.iter().enumerate() {
+        match reps.iter().position(|&j| records[j].shares_index_with(r)) {
+            Some(p) => index_of.push(p),
+            None => {
+                reps.push(i);
+                index_of.push(reps.len() - 1);
+            }
+        }
+    }
 
     // `lang-REGION` tags that maximize onto a vendored `lang-Script` record share
     // that record's table index rather than duplicating its arms.
@@ -2580,11 +2796,42 @@ fn emit_numbers(cldr_dir: &Path, numbers_dir: &Path, likely_path: &Path) {
                 .iter()
                 .position(|l| *l == src)
                 .expect("alias source");
-            (alias, i)
+            (alias, index_of[i])
         })
         .collect();
 
-    write_numbers_rs(cldr_dir, &locales, &records, &aliases);
+    write_numbers_rs(
+        cldr_dir,
+        &locales,
+        &records,
+        &index_of,
+        &reps,
+        &aliases,
+        &root,
+        &parse_plural_ranges(plural_ranges_path),
+    );
+}
+
+/// Drop blob records that repeat, byte for byte, the record the runtime's own
+/// truncating fallback would reach without them (`ar-EG`'s compact patterns are
+/// `ar`'s). Keys with no vendored ancestor are always kept — the runtime would
+/// otherwise drop all the way to `en`.
+fn prune_inherited(records: &[(String, Vec<u8>)]) -> Vec<(String, Vec<u8>)> {
+    let inherited = |key: &str| -> Option<&Vec<u8>> {
+        let mut end = key.len();
+        while let Some(i) = key[..end].rfind('-') {
+            end = i;
+            if let Some((_, p)) = records.iter().find(|(k, _)| k == &key[..end]) {
+                return Some(p);
+            }
+        }
+        None
+    };
+    records
+        .iter()
+        .filter(|(k, p)| inherited(k) != Some(p))
+        .cloned()
+        .collect()
 }
 
 /// Render a parsed CLDR number pattern as a `crate::cldr::Pattern` literal.
@@ -2620,11 +2867,16 @@ fn rust_spec(s: &NsSpec) -> String {
 /// Emit `cldr/generated/numbers.rs`: per-locale number symbols and patterns as
 /// `match` lookups. Unlike a blob this can be gated arm by arm, which is why the
 /// non-`latn` numbering-system blocks and the `miscPatterns` live here.
+#[allow(clippy::too_many_arguments)]
 fn write_numbers_rs(
     cldr_dir: &Path,
     locales: &[String],
     records: &[NumbersRecord],
+    index_of: &[usize],
+    reps: &[usize],
     aliases: &[(String, usize)],
+    root: &[RootNs],
+    plural_ranges: &[(String, [u8; 36])],
 ) {
     let mut out = String::new();
     write_header(&mut out);
@@ -2640,16 +2892,18 @@ fn write_numbers_rs(
          //! returns `None` for anything else; walking the fallback chain (and the\n\
          //! final drop to `en`) is the caller's job, as for the `.bin` tables.\n\n\
          use crate::cldr::{{NumberSpec, Pattern}};\n\n\
-         /// Table index for an exact (lowercased) CLDR locale id. `lang-REGION`\n\
-         /// tags that CLDR maximizes onto a vendored `lang-Script` record share\n\
-         /// its index (`zh-tw` -> `zh-hant`).\n\
+         /// Table index for an exact (lowercased) CLDR locale id. Locales whose\n\
+         /// symbols, patterns and `miscPatterns` are identical share one index:\n\
+         /// `lang-REGION` tags that CLDR maximizes onto a vendored `lang-Script`\n\
+         /// record (`zh-tw` -> `zh-hant`), and the region files vendored purely\n\
+         /// for their numbering system (`ar-eg` -> `ar`).\n\
          fn locale_index(lang: &str) -> Option<u16> {{\n    \
          Some(match lang {{\n"
     );
     let mut keys: Vec<(&str, usize)> = locales
         .iter()
         .enumerate()
-        .map(|(i, l)| (l.as_str(), i))
+        .map(|(i, l)| (l.as_str(), index_of[i]))
         .chain(aliases.iter().map(|(a, i)| (a.as_str(), *i)))
         .collect();
     keys.sort();
@@ -2660,22 +2914,26 @@ fn write_numbers_rs(
 
     let _ = write!(
         out,
-        "/// The number spec for `lang` in numbering system `ns`. CLDR only ships\n\
-         /// symbols for a handful of systems per locale; anything else resolves to\n\
-         /// the locale's `latn` block, which is ICU's `NumberElements` fallback.\n\
+        "/// The number spec for `lang` in numbering system `ns`, following UTS #35\n\
+         /// resource inheritance: the locale's own `symbols-numberSystem-<ns>`\n\
+         /// block, else root's for that system, else the locale's `latn` block.\n\
+         /// Missing the middle step is what would make `en-u-nu-arab` group with a\n\
+         /// comma instead of U+066C.\n\
          pub(crate) fn spec(lang: &str, ns: &str) -> Option<NumberSpec> {{\n    \
          let i = locale_index(lang)?;\n    \
          if let Some(s) = other(i, ns) {{\n        return Some(s);\n    }}\n    \
-         latn(i)\n}}\n\n\
+         let l = latn(i)?;\n    \
+         if let Some(s) = root(i, ns, l) {{\n        return Some(s);\n    }}\n    \
+         Some(l)\n}}\n\n\
          /// The `latn` spec for a table index (every locale has one).\n\
          const fn latn(i: u16) -> Option<NumberSpec> {{\n    Some(match i {{\n"
     );
-    for (i, r) in records.iter().enumerate() {
-        let _ = write!(out, "        {i} => {},\n", rust_spec(&r.specs[0]));
+    for (n, &i) in reps.iter().enumerate() {
+        let _ = write!(out, "        {n} => {},\n", rust_spec(&records[i].specs[0]));
     }
     let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
 
-    // The non-`latn` blocks: 26 of the 103 locales carry one, always for the
+    // The non-`latn` blocks: 26 of the 103 base locales carry one, always for the
     // system named by `otherNumberingSystems.native`. Gated per arm so a build
     // that never asks for a non-Latin numbering system does not compile them.
     let _ = write!(
@@ -2686,11 +2944,11 @@ fn write_numbers_rs(
          /// still transliterated).\n\
          fn other(i: u16, ns: &str) -> Option<NumberSpec> {{\n    match (i, ns) {{\n"
     );
-    for (i, r) in records.iter().enumerate() {
-        for s in &r.specs[1..] {
+    for (n, &i) in reps.iter().enumerate() {
+        for s in &records[i].specs[1..] {
             let _ = write!(
                 out,
-                "        #[cfg(feature = \"number-numsys\")]\n        ({i}, \"{}\") => Some({}),\n",
+                "        #[cfg(feature = \"number-numsys\")]\n        ({n}, \"{}\") => Some({}),\n",
                 s.ns,
                 rust_spec(s)
             );
@@ -2698,20 +2956,154 @@ fn write_numbers_rs(
     }
     let _ = write!(out, "        _ => None,\n    }}\n}}\n\n");
 
+    // Root's own blocks, for a locale that ships none. CLDR root defines real
+    // symbols for `arab` and `arabext` only; the rest alias to `latn` with
+    // `source="locale"`, which resolves in the requesting locale and so is
+    // already covered by returning `None` here. Root's formats alias the same
+    // way, so the patterns come from `latn` except where root spells one out.
+    let _ = write!(
+        out,
+        "/// Root's `symbols-numberSystem-<ns>` block, for a locale that ships none\n\
+         /// of its own; `i`/`latn` are the requesting locale's table index and\n\
+         /// `latn` spec, which root's format aliases (`alias source=locale`)\n\
+         /// resolve against. Follows `number-numsys` with the per-locale blocks:\n\
+         /// without it a `-u-nu-` request keeps the requesting locale's\n\
+         /// separators throughout.\n\
+         fn root(i: u16, ns: &str, latn: NumberSpec) -> Option<NumberSpec> {{\n    \
+         let _ = (i, &latn);\n    Some(match ns {{\n"
+    );
+    for r in root {
+        // Root's decimal pattern for these systems is an alias to the requesting
+        // locale's `latn` one, whose affixes carry no symbol — unlike the percent
+        // pattern, where the sign this crate bakes into the affixes is root's.
+        assert!(
+            r.dec.is_none() || r.ns == "latn",
+            "root {}: unexpected own decimal pattern",
+            r.ns
+        );
+        let pct = r.pct.as_ref().map_or_else(
+            || format!("root_pct(i, \"{}\").unwrap_or(latn.pct)", r.ns),
+            |raw| rust_pattern(&parse_number_pattern(raw, &r.percent)),
+        );
+        let _ = write!(
+            out,
+            "        #[cfg(feature = \"number-numsys\")]\n        \
+             \"{}\" => NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, dec: latn.dec, pct: {} }},\n",
+            r.ns,
+            rust_str(&r.decimal),
+            rust_str(&r.group),
+            rust_str(&r.minus),
+            rust_str(&r.plus),
+            rust_str(&r.percent),
+            rust_str(&r.nan),
+            rust_str(&r.infinity),
+            pct,
+        );
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    // Where root aliases a system's percent *pattern* back to the locale's
+    // `latn` one it still supplies the percent *sign*, and this crate bakes the
+    // sign into the parsed pattern's affixes — so the two have to be recombined
+    // per locale. Arms are grouped by the resulting pattern.
+    let _ = write!(
+        out,
+        "/// The percent pattern for table index `i` in a root-inherited system\n\
+         /// whose percent format root aliases back to `latn`: the locale's own\n\
+         /// pattern with root's percent sign in place of the locale's.\n\
+         fn root_pct(i: u16, ns: &str) -> Option<Pattern> {{\n    \
+         Some(match (i, ns) {{\n"
+    );
+    for r in root {
+        if r.pct.is_some() {
+            continue;
+        }
+        let mut groups: Vec<(String, Vec<usize>)> = Vec::new();
+        for (n, &idx) in reps.iter().enumerate() {
+            let pat = rust_pattern(&parse_number_pattern(&records[idx].pct_raw, &r.percent));
+            match groups.iter_mut().find(|(p, _)| *p == pat) {
+                Some((_, ids)) => ids.push(n),
+                None => groups.push((pat, vec![n])),
+            }
+        }
+        for (pat, ids) in groups {
+            let keys: Vec<String> = ids.iter().map(|n| format!("({n}, \"{}\")", r.ns)).collect();
+            let _ = write!(
+                out,
+                "        #[cfg(feature = \"number-numsys\")]\n        {} => {pat},\n",
+                keys.join("\n        | ")
+            );
+        }
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
     let _ = write!(
         out,
         "/// `(defaultNumberingSystem, otherNumberingSystems.native)` for an exact\n\
          /// (lowercased) locale id. The two differ for e.g. `ar` (`latn` / `arab`).\n\
          pub(crate) fn numbering_systems(lang: &str) -> Option<(&'static str, &'static str)> {{\n    \
+         if let Some(p) = region_numbering_systems(lang) {{\n        return Some(p);\n    }}\n    \
          Some(match locale_index(lang)? {{\n"
     );
-    for (i, r) in records.iter().enumerate() {
+    for (n, &i) in reps.iter().enumerate() {
         let _ = write!(
             out,
-            "        {i} => ({}, {}),\n",
-            rust_str(&r.default_ns),
-            rust_str(&r.native_ns)
+            "        {n} => ({}, {}),\n",
+            rust_str(&records[i].default_ns),
+            rust_str(&records[i].native_ns)
         );
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    // The locales that share a table index but not its numbering systems: CLDR
+    // gives `ar-EG` a `defaultNumberingSystem` of `arab` while plain `ar` is
+    // `latn`, and nothing else in the file differs (UTS #35 §3.4). Grouped by
+    // pair so the 21 Arabic regions cost one arm.
+    let mut overrides: Vec<(String, String, &str)> = locales
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| {
+            let rep = &records[reps[index_of[*i]]];
+            records[*i].default_ns != rep.default_ns || records[*i].native_ns != rep.native_ns
+        })
+        .map(|(i, l)| {
+            (
+                records[i].default_ns.clone(),
+                records[i].native_ns.clone(),
+                l.as_str(),
+            )
+        })
+        .collect();
+    overrides.sort();
+    let _ = write!(
+        out,
+        "/// Locales that inherit another's symbols but not its numbering systems:\n\
+         /// CLDR's region files override `defaultNumberingSystem` alone, so the\n\
+         /// override cannot be keyed by the shared table index.\n\
+         fn region_numbering_systems(lang: &str) -> Option<(&'static str, &'static str)> {{\n    \
+         Some(match lang {{\n"
+    );
+    let mut i = 0;
+    while i < overrides.len() {
+        let mut j = i;
+        while j < overrides.len()
+            && overrides[j].0 == overrides[i].0
+            && overrides[j].1 == overrides[i].1
+        {
+            j += 1;
+        }
+        let pats: Vec<String> = overrides[i..j]
+            .iter()
+            .map(|(_, _, l)| format!("\"{l}\""))
+            .collect();
+        let _ = write!(
+            out,
+            "        {} => ({}, {}),\n",
+            pats.join(" | "),
+            rust_str(&overrides[i].0),
+            rust_str(&overrides[i].1),
+        );
+        i = j;
     }
     let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
 
@@ -2725,15 +3117,45 @@ fn write_numbers_rs(
          pub(crate) fn misc_patterns(lang: &str) -> Option<(&'static str, &'static str)> {{\n    \
          Some(match locale_index(lang)? {{\n"
     );
-    for (i, r) in records.iter().enumerate() {
+    for (n, &i) in reps.iter().enumerate() {
         let _ = write!(
             out,
-            "        {i} => ({}, {}),\n",
-            rust_str(&r.approximately),
-            rust_str(&r.range)
+            "        {n} => ({}, {}),\n",
+            rust_str(&records[i].approximately),
+            rust_str(&records[i].range)
         );
     }
-    let _ = write!(out, "        _ => return None,\n    }})\n}}\n");
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
+
+    // CLDR pluralRanges: needed to word a range whose two ends want different
+    // plural forms of the same unit ("1 kilometer" + "2 kilometers" collapses to
+    // "1–2 kilometers", one + other -> other). One 36-byte row per locale.
+    let _ = write!(
+        out,
+        "/// The plural category of a range, from its two ends' categories, as\n\
+         /// `PluralCategory` discriminants (CLDR `pluralRanges.xml`). Only\n\
+         /// `format_range` needs it — to pick the wording of a unit or currency\n\
+         /// name it factors out of both ends — so it follows `number-range`.\n\
+         /// Unlisted locales and unlisted pairs resolve to `other`, as ICU's\n\
+         /// `StandardPluralRanges` does.\n\
+         #[cfg(feature = \"number-range\")]\n\
+         pub(crate) fn plural_range(lang: &str, start: usize, end: usize) -> usize {{\n    \
+         const OTHER: usize = 5;\n    \
+         let row: &[u8; 36] = match lang {{\n"
+    );
+    for (locale, cells) in plural_ranges {
+        // An all-`other` row is what the fallthrough already gives.
+        if cells.iter().all(|&c| c == 5) {
+            continue;
+        }
+        let cs: Vec<String> = cells.iter().map(u8::to_string).collect();
+        let _ = write!(out, "        \"{locale}\" => &[{}],\n", cs.join(", "));
+    }
+    let _ = write!(
+        out,
+        "        _ => return OTHER,\n    }};\n    \
+         row.get(start * 6 + end).map_or(OTHER, |&c| c as usize)\n}}\n"
+    );
 
     write_cldr_generated(cldr_dir, "numbers", &out);
 }
@@ -6426,6 +6848,7 @@ fn emit_display(cldr_dir: &Path, localenames_dir: &Path) {
 /// Parse a CLDR number pattern (e.g. `#,##0.###`, `#,##0 %`) into a Rust
 /// `Pattern { ... }` literal. `%` in the affixes is replaced by `percent_sym`.
 /// The parsed fields of a CLDR number pattern.
+#[derive(PartialEq, Eq)]
 struct PatFields {
     prefix: String,
     suffix: String,

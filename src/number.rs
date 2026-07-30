@@ -417,10 +417,15 @@ fn map_digits(value: &str, digits: Option<&'static str>) -> String {
 /// numbers with by default, which for most locales — including `ar` and `hi` in
 /// CLDR 48 — is `"latn"`.
 ///
+/// It is a per-*locale* setting, not a per-language one: CLDR gives 22 region
+/// locales a default their base language does not have, and they are read here
+/// even though everything else about them is inherited.
+///
 /// ```
 /// use intl::number::default_numbering_system as d;
 /// assert_eq!(d("en"), "latn");
 /// assert_eq!(d("ar"), "latn"); // matches `Intl.NumberFormat('ar')`
+/// assert_eq!(d("ar-EG"), "arab"); // …and so does the Egyptian default
 /// assert_eq!(d("fa"), "arabext");
 /// ```
 #[must_use]
@@ -634,15 +639,20 @@ pub fn to_numbering_system(s: &str, system: &str) -> String {
 /// This is the ECMA-402 default: `Intl.NumberFormat('ar')` also formats with
 /// Latin digits, because `ar`'s CLDR default is `latn`. For the locale's
 /// *native* system (`arab` for `ar`), ask for it: `format_decimal("ar-u-nu-native", …)`.
+/// The default is per locale, not per language — `ar-EG`'s is `arab`.
 ///
 /// ```
 /// use intl::number::format_decimal_default_numbering as f;
 /// assert_eq!(f("en", 1234.5), "1,234.5");
 /// assert_eq!(f("ar", 1234.5), "1,234.5");   // ar defaults to latn in CLDR 48
-// The arabext separators need the per-system blocks (`number-numsys`).
+// The arabext/arab separators need the per-system blocks (`number-numsys`).
 #[cfg_attr(
     feature = "number-numsys",
     doc = r#"assert_eq!(f("fa", 1234.5), "۱٬۲۳۴٫۵");   // fa defaults to arabext"#
+)]
+#[cfg_attr(
+    feature = "number-numsys",
+    doc = r#"assert_eq!(f("ar-EG", 1234.5), "١٬٢٣٤٫٥"); // but ar-EG defaults to arab"#
 )]
 /// ```
 #[must_use]
@@ -1258,6 +1268,98 @@ fn affix_parts(text: &str, style: NumberStyle, s: &NumberSpec, currency: &str) -
     parts
 }
 
+/// ECMA-402 `SetNumberFormatDigitOptions` step 16.a: the resolved
+/// `(minimum, maximum)` fraction digits, given the style's defaults.
+///
+/// Supplying one of the pair moves the other rather than being clamped by it:
+/// `{maximumFractionDigits: 0}` on a currency sets the *minimum* to
+/// `min(mnfdDefault, mxfd)` — so `$3`, not the `$3.00` a plain clamp would keep.
+fn fraction_digits(
+    opts: &NumberFormatOptions,
+    min_default: usize,
+    max_default: usize,
+) -> (usize, usize) {
+    match (opts.minimum_fraction_digits, opts.maximum_fraction_digits) {
+        (None, None) => (min_default, max_default),
+        (None, Some(mx)) => (min_default.min(usize::from(mx)), usize::from(mx)),
+        (Some(mn), None) => (usize::from(mn), max_default.max(usize::from(mn))),
+        // The spec throws when mnfd > mxfd; with no error channel here, widen.
+        (Some(mn), Some(mx)) => (usize::from(mn), usize::from(mx).max(usize::from(mn))),
+    }
+}
+
+/// The plural category of `value` in `lang`, as a [`crate::plural::PluralCategory`]
+/// discriminant: what a unit phrase's wording agrees with. Without the unit
+/// tables there is no such wording, and nothing reads the result.
+fn plural_of(lang: &str, value: f64) -> usize {
+    #[cfg(feature = "units")]
+    {
+        crate::unit::category(lang, value)
+    }
+    #[cfg(not(feature = "units"))]
+    {
+        let _ = (lang, value);
+        crate::plural::PluralCategory::Other as usize
+    }
+}
+
+/// A formatted number, plus the boundaries of the two modifier layers that sit
+/// *inside* the unit wrapper. They are ICU's `modInner` (the notation — a
+/// compact suffix, a scientific exponent) and `modMiddle` (the style affixes —
+/// currency symbol, percent sign, sign), and `parts` is laid out
+///
+/// ```text
+/// middle.0 | inner.0 | digits | inner.1 | middle.1
+/// ```
+///
+/// with each field a count of *parts*, not characters. Only
+/// [`format_range_to_parts`] reads the split: `NumberRangeFormatterImpl::
+/// formatRange` decides layer by layer what may be factored out of both ends.
+#[cfg_attr(not(feature = "number-range"), allow(dead_code))]
+struct Formatted {
+    parts: Vec<NumberPart>,
+    middle: (usize, usize),
+    inner: (usize, usize),
+}
+
+#[cfg(feature = "number-range")]
+impl Formatted {
+    /// The `modMiddle` prefix and suffix.
+    fn middle_mod(&self) -> (&[NumberPart], &[NumberPart]) {
+        (
+            &self.parts[..self.middle.0],
+            &self.parts[self.parts.len() - self.middle.1..],
+        )
+    }
+
+    /// Everything inside `modMiddle`: the digits with the notation modifier
+    /// still attached, which is what a collapsed range repeats per end.
+    fn middle_body(&self) -> &[NumberPart] {
+        &self.parts[self.middle.0..self.parts.len() - self.middle.1]
+    }
+
+    /// Code points in `modMiddle`. ICU's AUTO collapse heuristic factors out
+    /// only modifiers longer than one code point, which is why `+$` collapses
+    /// but a lone `$` or `+` does not.
+    fn middle_len(&self) -> usize {
+        let (pre, post) = self.middle_mod();
+        pre.iter()
+            .chain(post)
+            .map(|p| p.value.chars().count())
+            .sum()
+    }
+
+    /// Code points in `modInner`.
+    fn inner_len(&self) -> usize {
+        let end = self.parts.len() - self.middle.1;
+        self.parts[self.middle.0..self.middle.0 + self.inner.0]
+            .iter()
+            .chain(&self.parts[end - self.inner.1..end])
+            .map(|p| p.value.chars().count())
+            .sum()
+    }
+}
+
 /// Split a unit-pattern affix into the whitespace `Literal` that separates it
 /// from the number and the `Unit` remainder. ICU tags the whole unit phrase —
 /// interior spaces included — as one `unit` field, so `"1.5 m"` is
@@ -1290,47 +1392,78 @@ fn unit_affix(text: &str, prefix: bool) -> Vec<NumberPart> {
 }
 
 /// Wrap the numeric `core` parts with the locale's CLDR unit pattern (e.g.
-/// `"{0} km"`, `"{0} meters per second"`), choosing the plural-correct wording.
+/// `"{0} km"`, `"{0} meters per second"`), worded for plural category `plural`.
 /// Resolution — locale fallback, width, compound assembly — is shared with
 /// [`crate::unit`]. An unknown/missing unit degrades to the bare number.
+/// Returns the wrapped parts and how many of them are the wrapper itself.
 #[cfg(feature = "units")]
 fn unit_wrap(
     lang: &str,
-    value: f64,
-    core: Vec<NumberPart>,
     opts: &NumberFormatOptions,
-) -> Vec<NumberPart> {
+    plural: usize,
+    core: Vec<NumberPart>,
+) -> (Vec<NumberPart>, (usize, usize)) {
     let width = match opts.unit_display {
         UnitDisplay::Short => crate::unit::UnitWidth::Short,
         UnitDisplay::Narrow => crate::unit::UnitWidth::Narrow,
         UnitDisplay::Long => crate::unit::UnitWidth::Long,
     };
-    let cat = crate::unit::category(lang, value);
     let Some(pattern) = opts
         .unit
-        .and_then(|id| crate::unit::pattern_for_id(lang, id, width, cat))
+        .and_then(|id| crate::unit::pattern_for_id(lang, id, width, plural))
     else {
-        return core;
+        return (core, (0, 0));
     };
 
     let (pre, post) = pattern.split_once("{0}").unwrap_or(("", &pattern));
-    let mut parts = unit_affix(pre, true);
+    let head = unit_affix(pre, true);
+    let tail = unit_affix(post, false);
+    let counts = (head.len(), tail.len());
+    let mut parts = head;
     parts.extend(core);
-    parts.extend(unit_affix(post, false));
-    parts
+    parts.extend(tail);
+    (parts, counts)
+}
+
+/// ICU's `modOuter`: the phrase wrapped around a formatted number that is not
+/// part of the number pattern — a measurement unit, or the currency code/name
+/// spliced into the locale's currency unit pattern. Applied last, and (unlike
+/// `modMiddle`) parameterized by plural category rather than by sign, which is
+/// what lets a range factor it out and re-word it once.
+fn outer_wrap(
+    lang: &str,
+    opts: &NumberFormatOptions,
+    plural: usize,
+    parts: Vec<NumberPart>,
+) -> (Vec<NumberPart>, (usize, usize)) {
+    #[cfg(feature = "units")]
+    if opts.style == NumberStyle::Unit {
+        return unit_wrap(lang, opts, plural, parts);
+    }
+    #[cfg(feature = "currency")]
+    if opts.style == NumberStyle::Currency
+        && matches!(
+            opts.currency_display,
+            CurrencyDisplay::Code | CurrencyDisplay::Name
+        )
+    {
+        return currency_unit_wrap(lang, opts, parts);
+    }
+    let _ = (lang, opts, plural);
+    (parts, (0, 0))
 }
 
 /// Render a currency amount with `currencyDisplay: code`/`name`: the numeric
-/// core spliced into the locale's currency unit pattern (`"{0} {1}"`) with the
+/// `core` spliced into the locale's currency unit pattern (`"{0} {1}"`) with the
 /// code or display name tagged `Currency`. (The base display name is used; plural
-/// name forms and currency spacing are not applied.)
+/// name forms and currency spacing are not applied.) Returns the wrapped parts
+/// and how many of them are the wrapper itself.
 #[cfg(feature = "currency")]
 fn currency_unit_wrap(
     lang: &str,
-    value: f64,
     opts: &NumberFormatOptions,
-    r: &Resolved,
-) -> Vec<NumberPart> {
+    core: Vec<NumberPart>,
+) -> (Vec<NumberPart>, (usize, usize)) {
     let code = opts.currency.unwrap_or("XXX");
     let norm = normalize(lang);
     let norm = String::from(split_nu(&norm).0);
@@ -1362,32 +1495,10 @@ fn currency_unit_wrap(
         code
     };
 
-    // Number core with the currency's fraction digits (overridable).
-    let digits = crate::cldr::currency_digits(code) as usize;
-    let min_frac = opts.minimum_fraction_digits.map_or(digits, usize::from);
-    let max_frac = opts
-        .maximum_fraction_digits
-        .map_or(digits, usize::from)
-        .max(min_frac);
-    let min_int = (opts.minimum_integer_digits.max(1)) as usize;
-    let neg = value.is_sign_negative() && value != 0.0;
-    let abs = if value < 0.0 { -value } else { value };
-    let (int_d, frac_d) = round_digits(
-        abs,
-        min_int,
-        min_frac,
-        max_frac,
-        opts.minimum_significant_digits.map(usize::from),
-        opts.maximum_significant_digits.map(usize::from),
-        opts.rounding_mode,
-        neg,
-    );
-    let is_zero = int_d.bytes().all(|b| b == b'0') && frac_d.bytes().all(|b| b == b'0');
-    let (pri, sec) = effective_grouping(opts, &r.spec.dec, int_d.len());
-    let core = core_parts(&int_d, &frac_d, neg, is_zero, pri, sec, opts, r);
-
     // Splice into the two-placeholder unit pattern ({0} number, {1} currency).
     let mut parts = Vec::new();
+    let mut before = 0usize;
+    let mut seen_core = false;
     let mut rest = unit;
     while !rest.is_empty() {
         if let Some(i) = rest.find('{') {
@@ -1395,6 +1506,8 @@ fn currency_unit_wrap(
                 parts.push(NumberPart::new(NumberPartType::Literal, &rest[..i]));
             }
             if rest[i..].starts_with("{0}") {
+                before = parts.len();
+                seen_core = true;
                 parts.extend(core.iter().cloned());
                 rest = &rest[i + 3..];
             } else if rest[i..].starts_with("{1}") {
@@ -1409,7 +1522,13 @@ fn currency_unit_wrap(
             break;
         }
     }
-    parts
+    // A pattern with no `{0}` swallows the number; treat all of it as wrapper.
+    let after = if seen_core {
+        parts.len() - before - core.len()
+    } else {
+        parts.len()
+    };
+    (parts, (before, after))
 }
 
 /// Resolve the base pattern, scaled value, and currency symbol for `style`.
@@ -1469,15 +1588,16 @@ fn resolve_style(
     }
 }
 
-/// Standard (positional) notation.
-fn standard_parts(
-    lang: &str,
-    value: f64,
-    r: &Resolved,
-    opts: &NumberFormatOptions,
-) -> Vec<NumberPart> {
+/// Standard (positional) notation: the digits wrapped in the style's affixes
+/// (ICU's `modMiddle`). The unit phrase and the currency code/name go *outside*
+/// this, through [`outer_wrap`].
+fn standard_parts(lang: &str, value: f64, r: &Resolved, opts: &NumberFormatOptions) -> Formatted {
     let s = &r.spec;
-    // Currency code/name use the unit pattern ("{0} {1}"), not the ¤ pattern.
+    #[allow(unused_mut)]
+    let (mut pattern, scaled, currency) = resolve_style(lang, value, s, opts);
+    // `currencyDisplay: code`/`name` keep the currency pattern's digits and
+    // grouping but drop its ¤ affixes: the code or name is applied outside,
+    // through the locale's currency unit pattern ("{0} {1}").
     #[cfg(feature = "currency")]
     if opts.style == NumberStyle::Currency
         && matches!(
@@ -1485,16 +1605,11 @@ fn standard_parts(
             CurrencyDisplay::Code | CurrencyDisplay::Name
         )
     {
-        return currency_unit_wrap(lang, value, opts, r);
+        pattern.prefix = "";
+        pattern.suffix = "";
     }
-    let (pattern, scaled, currency) = resolve_style(lang, value, s, opts);
-    let min_frac = opts
-        .minimum_fraction_digits
-        .map_or(pattern.min_frac as usize, usize::from);
-    let max_frac = opts
-        .maximum_fraction_digits
-        .map_or(pattern.max_frac as usize, usize::from)
-        .max(min_frac);
+    let (min_frac, max_frac) =
+        fraction_digits(opts, pattern.min_frac as usize, pattern.max_frac as usize);
     let min_int = (opts.minimum_integer_digits.max(1)) as usize;
     let min_sig = opts.minimum_significant_digits.map(usize::from);
     let max_sig = opts.maximum_significant_digits.map(usize::from);
@@ -1516,12 +1631,8 @@ fn standard_parts(
 
     let mut parts = Vec::new();
     let core = core_parts(&int_d, &frac_d, negative, is_zero, pri, sec, opts, r);
-    // Unit style wraps the numeric core in the locale's unit pattern.
-    #[cfg(feature = "units")]
-    if opts.style == NumberStyle::Unit {
-        return unit_wrap(lang, scaled, core, opts);
-    }
-    // The sign (first core part, if any) precedes the prefix affix.
+    // The sign (first core part, if any) precedes the prefix affix, and belongs
+    // to the same modifier as it: `+$` is one two-code-point `modMiddle`.
     let mut core_iter = core.into_iter().peekable();
     if let Some(first) = core_iter.peek()
         && matches!(
@@ -1531,19 +1642,23 @@ fn standard_parts(
     {
         parts.push(core_iter.next().unwrap());
     }
-    parts.extend(affix_parts(pattern.prefix, opts.style, s, &currency));
+    let prefix = affix_parts(pattern.prefix, opts.style, s, &currency);
+    let suffix = affix_parts(pattern.suffix, opts.style, s, &currency);
+    let middle = (parts.len() + prefix.len(), suffix.len());
+    parts.extend(prefix);
     parts.extend(core_iter);
-    parts.extend(affix_parts(pattern.suffix, opts.style, s, &currency));
-    parts
+    parts.extend(suffix);
+    Formatted {
+        parts,
+        middle,
+        inner: (0, 0),
+    }
 }
 
-/// Scientific (`base = 1`) or engineering (`base = 3`) notation.
-fn exponent_parts(
-    value: f64,
-    r: &Resolved,
-    opts: &NumberFormatOptions,
-    base: i32,
-) -> Vec<NumberPart> {
+/// Scientific (`base = 1`) or engineering (`base = 3`) notation. The exponent is
+/// ICU's `modInner` — the innermost modifier, which the AUTO collapse level
+/// never factors out of a range.
+fn exponent_parts(value: f64, r: &Resolved, opts: &NumberFormatOptions, base: i32) -> Formatted {
     let s = &r.spec;
     let negative = value.is_sign_negative() && value != 0.0;
     let abs = if value < 0.0 { -value } else { value };
@@ -1567,11 +1682,7 @@ fn exponent_parts(
         exp -= rem;
     }
 
-    let min_frac = opts.minimum_fraction_digits.map_or(0usize, usize::from);
-    let max_frac = opts
-        .maximum_fraction_digits
-        .map_or(6usize, usize::from)
-        .max(min_frac);
+    let (min_frac, max_frac) = fraction_digits(opts, 0, 6);
     let min_sig = opts.minimum_significant_digits.map(usize::from);
     let max_sig = opts.maximum_significant_digits.map(usize::from);
     let (mut int_d, mut frac_d) = round_digits(
@@ -1601,6 +1712,7 @@ fn exponent_parts(
     if let Some(sign) = sign_part(negative, is_zero, opts, s) {
         parts.push(sign);
     }
+    let sign_len = parts.len();
     parts.push(NumberPart::new(
         NumberPartType::Integer,
         map_digits(&int_d, r.digits),
@@ -1612,6 +1724,7 @@ fn exponent_parts(
             map_digits(&frac_d, r.digits),
         ));
     }
+    let digits_end = parts.len();
     parts.push(NumberPart::new(NumberPartType::ExponentSeparator, "E"));
     if exp < 0 {
         parts.push(NumberPart::new(NumberPartType::ExponentMinusSign, s.minus));
@@ -1620,16 +1733,16 @@ fn exponent_parts(
         NumberPartType::ExponentInteger,
         map_digits(&alloc::format!("{}", exp.unsigned_abs()), r.digits),
     ));
-    parts
+    let inner = (0, parts.len() - digits_end);
+    Formatted {
+        parts,
+        middle: (sign_len, 0),
+        inner,
+    }
 }
 
 /// Compact notation (short suffixes), for the decimal style.
-fn compact_parts(
-    lang: &str,
-    value: f64,
-    r: &Resolved,
-    opts: &NumberFormatOptions,
-) -> Vec<NumberPart> {
+fn compact_parts(lang: &str, value: f64, r: &Resolved, opts: &NumberFormatOptions) -> Formatted {
     let s = &r.spec;
     let abs = if value < 0.0 { -value } else { value };
     if !abs.is_finite() || abs < 1000.0 {
@@ -1663,11 +1776,7 @@ fn compact_parts(
     let mantissa = value / divisor;
     let negative = mantissa.is_sign_negative() && mantissa != 0.0;
     let mabs = if mantissa < 0.0 { -mantissa } else { mantissa };
-    let min_frac = opts.minimum_fraction_digits.map_or(0usize, usize::from);
-    let max_frac = opts
-        .maximum_fraction_digits
-        .map_or(1usize, usize::from)
-        .max(min_frac);
+    let (min_frac, max_frac) = fraction_digits(opts, 0, 1);
     let (int_d, frac_d) = round_digits(
         mabs,
         1,
@@ -1681,11 +1790,14 @@ fn compact_parts(
     let is_zero = false;
 
     // Render the pattern, substituting the numeric core for the `0`-run and
-    // tagging the literal magnitude suffix as `compact`.
+    // tagging the literal magnitude suffix as `compact`. The magnitude literals
+    // are ICU's `modInner`, so they sit between the sign and the digits.
     let mut parts = Vec::new();
     if let Some(sign) = sign_part(negative, is_zero, opts, s) {
         parts.push(sign);
     }
+    let sign_len = parts.len();
+    let (mut digits_start, mut digits_end) = (sign_len, sign_len);
     let mut wrote = false;
     let mut chars = pattern.chars().peekable();
     let mut lit = String::new();
@@ -1705,6 +1817,7 @@ fn compact_parts(
                 }
                 if !wrote {
                     flush_lit(&mut lit, &mut parts);
+                    digits_start = parts.len();
                     parts.push(NumberPart::new(
                         NumberPartType::Integer,
                         map_digits(&int_d, r.digits),
@@ -1716,6 +1829,7 @@ fn compact_parts(
                             map_digits(&frac_d, r.digits),
                         ));
                     }
+                    digits_end = parts.len();
                     wrote = true;
                 }
             }
@@ -1731,7 +1845,45 @@ fn compact_parts(
         }
     }
     flush_lit(&mut lit, &mut parts);
-    parts
+    Formatted {
+        inner: (digits_start - sign_len, parts.len() - digits_end),
+        middle: (sign_len, 0),
+        parts,
+    }
+}
+
+/// The number itself — everything except the outer unit/currency-name wrapper,
+/// which ICU applies last and which a range factors out of both ends.
+///
+/// The non-finite forms are modifiers around a placeholder like any other value,
+/// which is why `{style: "unit"}` renders `"NaN km"` rather than a bare `"NaN"`.
+fn format_number(lang: &str, value: f64, r: &Resolved, opts: &NumberFormatOptions) -> Formatted {
+    if value.is_nan() {
+        return Formatted {
+            parts: alloc::vec![NumberPart::new(NumberPartType::Nan, r.spec.nan)],
+            middle: (0, 0),
+            inner: (0, 0),
+        };
+    }
+    if value.is_infinite() {
+        let mut parts = Vec::new();
+        if let Some(sign) = sign_part(value < 0.0, false, opts, &r.spec) {
+            parts.push(sign);
+        }
+        let sign_len = parts.len();
+        parts.push(NumberPart::new(NumberPartType::Infinity, r.spec.infinity));
+        return Formatted {
+            parts,
+            middle: (sign_len, 0),
+            inner: (0, 0),
+        };
+    }
+    match opts.notation {
+        Notation::Standard => standard_parts(lang, value, r, opts),
+        Notation::Scientific => exponent_parts(value, r, opts, 1),
+        Notation::Engineering => exponent_parts(value, r, opts, 3),
+        Notation::Compact => compact_parts(lang, value, r, opts),
+    }
 }
 
 /// Format `value` in `lang` per ECMA-402-style `opts`, returning the tagged
@@ -1748,23 +1900,8 @@ fn compact_parts(
 #[must_use]
 pub fn format_to_parts(lang: &str, value: f64, opts: &NumberFormatOptions) -> Vec<NumberPart> {
     let r = resolve(lang, opts.numbering_system);
-    if value.is_nan() {
-        return alloc::vec![NumberPart::new(NumberPartType::Nan, r.spec.nan)];
-    }
-    if value.is_infinite() {
-        let mut parts = Vec::new();
-        if let Some(sign) = sign_part(value < 0.0, false, opts, &r.spec) {
-            parts.push(sign);
-        }
-        parts.push(NumberPart::new(NumberPartType::Infinity, r.spec.infinity));
-        return parts;
-    }
-    match opts.notation {
-        Notation::Standard => standard_parts(lang, value, &r, opts),
-        Notation::Scientific => exponent_parts(value, &r, opts, 1),
-        Notation::Engineering => exponent_parts(value, &r, opts, 3),
-        Notation::Compact => compact_parts(lang, value, &r, opts),
-    }
+    let f = format_number(lang, value, &r, opts);
+    outer_wrap(lang, opts, plural_of(lang, value), f.parts).0
 }
 
 /// Format `value` in `lang` per ECMA-402-style `opts` (`Intl.NumberFormat`).
@@ -1869,14 +2006,59 @@ fn approx_literal(text: &str, before: bool, out: &mut Vec<NumberRangePart>) {
     }
 }
 
+/// The `range` pattern split at its two placeholders: `(prefix, infix, suffix)`
+/// and whether `{1}` comes first (so the *end* is written on the left).
+#[cfg(feature = "number-range")]
+fn split_range_pattern(pattern: &str) -> (&str, &str, &str, bool) {
+    let (Some(a), Some(b)) = (pattern.find("{0}"), pattern.find("{1}")) else {
+        return ("", pattern, "", false);
+    };
+    let (first, second) = if a < b { (a, b) } else { (b, a) };
+    (
+        &pattern[..first],
+        &pattern[first + 3..second],
+        &pattern[second + 3..],
+        b < a,
+    )
+}
+
+/// The plural category a range's shared unit wording agrees with: CLDR's
+/// `pluralRanges` combination of the two ends' categories (`en` `one` + `other`
+/// is `other`, so 1–2 kilometres reads "1–2 kilometers"). CLDR keys the table by
+/// language alone.
+#[cfg(feature = "number-range")]
+fn range_plural(lang: &str, start: f64, end: f64) -> usize {
+    let norm = normalize(lang);
+    let (base, _) = split_nu(&norm);
+    let language = base.split('-').next().unwrap_or(base);
+    crate::cldr::plural_range(language, plural_of(lang, start), plural_of(lang, end))
+}
+
 /// Format the range `start`–`end` in `lang` per `opts`, returning the tagged
 /// parts (`Intl.NumberFormat.prototype.formatRangeToParts`).
 ///
-/// Both ends are formatted with [`format_to_parts`] and spliced into the CLDR
-/// `miscPatterns` `range` form (`en` `"{0}–{1}"`, `zh` an ASCII hyphen). Per
-/// ECMA-402 `PartitionNumberRangePattern` step 5, when the two ends format
-/// *identically* the result is not a range but the `approximately` form
-/// (`en` `"~{0}"`, `de`/`fr` `"≈{0}"`), with every part marked `Shared`.
+/// Both ends are formatted and spliced into the CLDR `miscPatterns` `range` form
+/// (`en` `"{0}–{1}"`, `zh` an ASCII hyphen). Per ECMA-402
+/// `PartitionNumberRangePattern` step 5, when the two ends format *identically*
+/// the result is not a range but the `approximately` form (`en` `"~{0}"`,
+/// `de`/`fr` `"≈{0}"`), with every part marked `Shared`.
+///
+/// ECMA-402 leaves what `CollapseNumberRange` removes to the implementation.
+/// This follows ICU's `NumberRangeFormatter` at its default `AUTO` collapse
+/// level, which the `Intl` API always uses:
+///
+/// * The **outer** modifier — a unit phrase, a currency display name — is the
+///   same for both ends by construction, so it is always factored out, and
+///   re-worded for the range's own plural category: `"1–2 kilometers"`.
+/// * The **middle** modifier — the currency symbol, percent sign and sign — is
+///   factored out when both ends render it alike *and* it is longer than one
+///   code point. That heuristic is why `"+$2.90–3.10"` shares its `+$` but
+///   `"$3.00 – $5.00"` repeats its `$`.
+/// * The **inner** modifier — a compact suffix, a scientific exponent — is never
+///   factored out at this level (`"1.2K – 5K"`).
+///
+/// A space is then added on each side of the separator unless every modifier was
+/// factored out, matching ICU's spacing heuristic.
 ///
 /// Unlike ECMA-402 this cannot throw on a NaN endpoint; a NaN simply formats as
 /// the locale's `nan` string and flows through the same rules.
@@ -1896,8 +2078,9 @@ pub fn format_range_to_parts(
     end: f64,
     opts: &NumberFormatOptions,
 ) -> Vec<NumberRangePart> {
-    let sp = format_to_parts(lang, start, opts);
-    let ep = format_to_parts(lang, end, opts);
+    let r = resolve(lang, opts.numbering_system);
+    let sf = format_number(lang, start, &r, opts);
+    let ef = format_number(lang, end, &r, opts);
     let (approx, range) = misc_patterns(lang);
     let tag = |parts: &[NumberPart], source| -> Vec<NumberRangePart> {
         parts
@@ -1909,51 +2092,97 @@ pub fn format_range_to_parts(
             })
             .collect()
     };
+    let literal = |text: &str, out: &mut Vec<NumberRangePart>| {
+        if !text.is_empty() {
+            out.push(NumberRangePart {
+                kind: NumberPartType::Literal,
+                source: NumberRangeSource::Shared,
+                value: String::from(text),
+            });
+        }
+    };
 
-    if join_parts(&sp) == join_parts(&ep) {
+    // The two ends are identical: the `approximately` sign replaces the range,
+    // inside the outer modifier (`"~3 km"`, not `"~3" + " km"`), and everything
+    // is worded for the single value.
+    if join_parts(&sf.parts) == join_parts(&ef.parts) {
         let mut out = Vec::new();
         let (pre, post) = approx.split_once("{0}").unwrap_or(("", approx));
         approx_literal(pre, true, &mut out);
-        out.extend(tag(&sp, NumberRangeSource::Shared));
+        out.extend(tag(&sf.parts, NumberRangeSource::Shared));
         approx_literal(post, false, &mut out);
-        return out;
+        return wrap_range(lang, opts, plural_of(lang, start), out);
     }
 
-    // Walk the `range` pattern, substituting each end at its placeholder. Text
-    // between/around them (the separator) is shared literal glue.
-    let mut out = Vec::new();
-    let mut rest = range;
-    while !rest.is_empty() {
-        let Some(i) = rest.find('{') else {
-            out.push(NumberRangePart {
-                kind: NumberPartType::Literal,
-                source: NumberRangeSource::Shared,
-                value: String::from(rest),
-            });
-            break;
-        };
-        if i > 0 {
-            out.push(NumberRangePart {
-                kind: NumberPartType::Literal,
-                source: NumberRangeSource::Shared,
-                value: String::from(&rest[..i]),
-            });
+    // ICU `NumberRangeFormatterImpl::formatRange` at collapse level AUTO.
+    let (pre, infix, post, reversed) = split_range_pattern(range);
+    let (first, second) = if reversed { (&ef, &sf) } else { (&sf, &ef) };
+    let (first_src, second_src) = if reversed {
+        (NumberRangeSource::EndRange, NumberRangeSource::StartRange)
+    } else {
+        (NumberRangeSource::StartRange, NumberRangeSource::EndRange)
+    };
+    let collapse_middle = sf.middle_mod() == ef.middle_mod() && sf.middle_len() > 1;
+
+    // Spacing heuristic: pad the separator unless every modifier collapsed.
+    // ICU tests only the *first* end's modifiers, which is why an `exceptZero`
+    // range from 0 (no sign at the low end) stays tight: "0–+5".
+    let mut sep = String::from(infix);
+    if sf.inner_len() > 0 || (!collapse_middle && sf.middle_len() > 0) {
+        if !sep.starts_with(char::is_whitespace) {
+            sep.insert(0, ' ');
         }
-        if let Some(r) = rest[i..].strip_prefix("{0}") {
-            out.extend(tag(&sp, NumberRangeSource::StartRange));
-            rest = r;
-        } else if let Some(r) = rest[i..].strip_prefix("{1}") {
-            out.extend(tag(&ep, NumberRangeSource::EndRange));
-            rest = r;
-        } else {
-            out.push(NumberRangePart {
-                kind: NumberPartType::Literal,
-                source: NumberRangeSource::Shared,
-                value: String::from("{"),
-            });
-            rest = &rest[i + 1..];
+        if !sep.ends_with(char::is_whitespace) {
+            sep.push(' ');
         }
     }
+
+    let mut out = Vec::new();
+    literal(pre, &mut out);
+    if collapse_middle {
+        // The two modifiers are equal by now, so either end's text will do;
+        // ICU takes the start's (`resolveModifierPlurals` returns `first`).
+        out.extend(tag(sf.middle_mod().0, NumberRangeSource::Shared));
+        out.extend(tag(first.middle_body(), first_src));
+        literal(&sep, &mut out);
+        out.extend(tag(second.middle_body(), second_src));
+        out.extend(tag(sf.middle_mod().1, NumberRangeSource::Shared));
+    } else {
+        out.extend(tag(&first.parts, first_src));
+        literal(&sep, &mut out);
+        out.extend(tag(&second.parts, second_src));
+    }
+    literal(post, &mut out);
+    wrap_range(lang, opts, range_plural(lang, start, end), out)
+}
+
+/// Wrap a formatted range in the outer modifier both ends share — the unit
+/// phrase or currency display name — tagged `Shared`.
+#[cfg(feature = "number-range")]
+fn wrap_range(
+    lang: &str,
+    opts: &NumberFormatOptions,
+    plural: usize,
+    body: Vec<NumberRangePart>,
+) -> Vec<NumberRangePart> {
+    // Applying the wrapper to an empty number yields the modifier alone.
+    let (affixes, (head, _)) = outer_wrap(lang, opts, plural, Vec::new());
+    if affixes.is_empty() {
+        return body;
+    }
+    let shared = |parts: &[NumberPart]| -> Vec<NumberRangePart> {
+        parts
+            .iter()
+            .map(|p| NumberRangePart {
+                kind: p.kind,
+                source: NumberRangeSource::Shared,
+                value: p.value.clone(),
+            })
+            .collect()
+    };
+    let mut out = shared(&affixes[..head]);
+    out.extend(body);
+    out.extend(shared(&affixes[head..]));
     out
 }
 

@@ -112,16 +112,21 @@ names = ["alloc"]
 # `plural` and `calendar` (arithmetic) modules need no feature and no data.
 _cldr = []                                  # internal: shared CLDR reader + structs
 number = ["alloc", "_cldr"]                 # decimal/percent/scientific/compact/ordinal/parse + NumberFormat
-# The per-locale, non-`latn` numbering-system symbols and patterns (`ar`/`arab`,
-# `fa`/`arabext`, `hi`/`deva`, …): ~4 KB of `#[cfg]`-ed match arms covering the 26
-# locales CLDR ships a second block for. In `default` because without it a
-# `-u-nu-…` request still transliterates the digits but silently keeps the
-# locale's `latn` separators.
+# The non-`latn` numbering-system symbols and patterns: ~8 KB of `#[cfg]`-ed
+# match arms. Three tiers of UTS #35 `NumberElements` inheritance — the blocks
+# CLDR ships per locale (`ar`/`arab`, `fa`/`arabext`, `hi`/`deva`, …), the fields
+# a locale overrides for a system it does not otherwise declare, and **root's**
+# `arab`/`arabext` blocks, which any locale with no block of its own inherits
+# before dropping to its own `latn`. In `default` because without it a `-u-nu-…`
+# request still transliterates the digits but silently keeps the locale's `latn`
+# separators.
 number-numsys = ["number"]
-# ECMA-402 v3 `formatRange`/`formatRangeToParts` plus the CLDR `miscPatterns`
-# (`approximately`, `range`) they need: ~16 KB of code + data. Gates the API as
-# well as the data, so opting out is an explicit "I don't format ranges" rather
-# than a silent downgrade; in `default` because the spec surface belongs there.
+# ECMA-402 v3 `formatRange`/`formatRangeToParts` plus the CLDR data they need —
+# `miscPatterns` (`approximately`, `range`) and `pluralRanges` (to word a unit
+# shared by both ends: "1–2 kilometers", not "kilometer"): ~20 KB of code + data.
+# Gates the API as well as the data, so opting out is an explicit "I don't format
+# ranges" rather than a silent downgrade; in `default` because the spec surface
+# belongs there.
 number-range = ["number"]
 currency = ["number"]                       # currency formatting (+ ~0.9 MB currency.bin)
 units = ["number"]                          # measurement units, long + short (+ ~857 KB generated)
