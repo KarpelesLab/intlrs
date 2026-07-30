@@ -23,7 +23,10 @@
 /// like `crate::unicode::generated`. A blob is all-or-nothing, so data that only
 /// some builds want (the narrow unit width, the non-`latn` numbering-system
 /// symbols, the range patterns) lives here, where `#[cfg]` can drop individual
-/// match arms.
+/// match arms. The one exception is the time-zone name tables, which are wide
+/// enough that `match` arms cost several times the strings they hold and so are
+/// emitted as `#[cfg]`-gated arena + index statics instead; see
+/// `generated::tz_names`.
 pub(crate) mod generated;
 
 // ---- Shared formatter record types (plain data, borrowing from the blobs). ----

@@ -142,22 +142,27 @@ locale = ["alloc", "_cldr"]                 # BCP-47 + likely-subtags (+ likely.
 # --- Localized time-zone names (UTS #35 §4.8) -------------------------------
 # `timeZoneName: "long"` → "Pacific Standard Time" rather than "GMT-08:00":
 # CLDR's metazone names, exemplar cities and region formats for all 101 locales.
-# Split one feature per tzdb area because the tables are large (~3.6 MB of
-# generated source, +4.4 MB of compiled text+rodata for all eleven) and most
+# Split one feature per tzdb area because the tables are large (~2.9 MB of
+# generated source, +2.1 MB of compiled text+rodata for all eleven) and most
 # applications need one or two areas; an area that is not compiled in falls back
 # to the localized GMT offset, which is UTS #35's own last resort, so the result
 # stays correct, just less specific. Measured `text+data` added per area:
-# America +1.29 MB, Asia +1.28 MB, Pacific +605 KB, Europe +397 KB,
-# Africa +302 KB, Antarctica +198 KB, Atlantic +189 KB, Australia +151 KB,
-# Indian +126 KB, Arctic +27 KB, Etc +22 KB.
+# America +569 KB, Asia +561 KB, Pacific +270 KB, Europe +176 KB,
+# Africa +131 KB, Antarctica +110 KB, Atlantic +98 KB, Australia +98 KB,
+# Indian +65 KB, Arctic +20 KB, Etc +16 KB.
 # NOT in `default`, unlike `units-narrow`. That a fallback is spec-sanctioned
 # decides whether opting out is *safe*, not whether a table belongs in the
-# default build, and 4.4 MB is roughly what the rest of `default` costs put
-# together — fourteen times `units-narrow`. Since the fallback here is a correct
-# answer rather than a wrong one (a localized GMT offset, not a bad name), the
-# size decides: enable `tz-names` for all eleven areas, or just the areas you
-# serve. A consumer shipping over a network especially wants the latter — the
-# full set measures ~1 MB gzipped in a WebAssembly build.
+# default build, and 2.1 MB is still the largest single table in the crate —
+# seven times `units-narrow`. Since the fallback here is a correct answer rather
+# than a wrong one (a localized GMT offset, not a bad name), the size decides:
+# enable `tz-names` for all eleven areas, or just the areas you serve. A consumer
+# shipping over a network especially wants the latter — the full set measures
+# ~0.55 MB gzipped in a WebAssembly build.
+# The names themselves are stored as one deduplicated string arena per area plus
+# sorted (key -> string) index arrays, not as `match` arms: at this width a match
+# compiles to jump tables plus per-arm code to build each `&'static str`, which
+# measured 4.4 MB for 1.5 MB of distinct strings. See `name_lookup` in
+# `src/cldr/generated/tz_names.rs`.
 tz-names = [
     "tz-names-africa",
     "tz-names-america",

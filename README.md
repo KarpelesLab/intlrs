@@ -202,8 +202,11 @@ imply `alloc` (except `displaynames`, which is borrow-only). The always-on
 `plural` (rules) and `calendar` (arithmetic) modules need no feature and no data.
 
 Most tables are `.bin` blobs; `number`, `units` and `tz-names` are generated
-Rust (`const fn` + `match` lookups), so their figures below are *compiled*
-footprint (`.text` + `.rodata` + `.data.rel.ro`) rather than blob bytes.
+Rust — `const fn` + `match` lookups, except the `tz-names` name tables, which are
+deduplicated string arenas plus sorted index arrays (a `match` that wide compiles
+to jump tables and one code block per arm, which costs more than the strings it
+holds) — so their figures below are *compiled* footprint (`.text` + `.rodata` +
+`.data.rel.ro`) rather than blob bytes.
 
 | feature           | what it provides                                  | gated data |
 |-------------------|---------------------------------------------------|------------|
@@ -223,24 +226,25 @@ footprint (`.text` + `.rodata` + `.data.rel.ro`) rather than blob bytes.
 | `transliterate`   | script transliteration (→ normalization)          | — |
 | `locale`          | BCP-47 + likely-subtags                           | 139 KB |
 | `iana-tz`         | full IANA tz database for named zones (→ datetime) | dep |
-| `tz-names`        | localized time-zone names, all areas (→ datetime)  | **~4.4 MB** |
+| `tz-names`        | localized time-zone names, all areas (→ datetime)  | **~2.1 MB** |
 
-`tz-names` is the one formatter feature **not** in `default`: at ~4.4 MB it costs
-about as much as the rest of `default` together (~1 MB gzipped in a WebAssembly
-build). It is an umbrella over one feature per tzdb area, so a build carries only
-the areas it names zones in. An area that is not compiled in falls back to the
-localized GMT offset — UTS #35's own last resort — so the answer stays correct,
-just less specific, which is what makes opting out safe.
+`tz-names` is the one formatter feature **not** in `default`: at ~2.1 MB it is the
+largest single table in the crate — more than `currency` and `units` together, and
+~0.55 MB gzipped in a WebAssembly build. It is an umbrella over one feature per
+tzdb area, so a build carries only the areas it names zones in. An area that is
+not compiled in falls back to the localized GMT offset — UTS #35's own last resort
+— so the answer stays correct, just less specific, which is what makes opting out
+safe.
 
 | area feature          | compiled |     | area feature          | compiled |
 |-----------------------|----------|-----|-----------------------|----------|
-| `tz-names-america`    | 1.29 MB  |     | `tz-names-australia`  | 151 KB   |
-| `tz-names-asia`       | 1.28 MB  |     | `tz-names-indian`     | 126 KB   |
-| `tz-names-pacific`    | 605 KB   |     | `tz-names-arctic`     | 27 KB    |
-| `tz-names-europe`     | 397 KB   |     | `tz-names-etc`        | 22 KB    |
-| `tz-names-africa`     | 302 KB   |     |                       |          |
-| `tz-names-antarctica` | 198 KB   |     |                       |          |
-| `tz-names-atlantic`   | 189 KB   |     |                       |          |
+| `tz-names-america`    | 569 KB   |     | `tz-names-australia`  | 98 KB    |
+| `tz-names-asia`       | 561 KB   |     | `tz-names-indian`     | 65 KB    |
+| `tz-names-pacific`    | 270 KB   |     | `tz-names-arctic`     | 20 KB    |
+| `tz-names-europe`     | 176 KB   |     | `tz-names-etc`        | 16 KB    |
+| `tz-names-africa`     | 131 KB   |     |                       |          |
+| `tz-names-antarctica` | 110 KB   |     |                       |          |
+| `tz-names-atlantic`   | 98 KB    |     |                       |          |
 
 ```toml
 # Date/time with localized zone names for the Americas and Europe only:

@@ -3852,10 +3852,14 @@ fn emit_tz_names(
         "#![allow(unused_variables)]\n\n\
          //! CLDR localized time-zone names (UTS #35 §4.8).\n\
          //!\n\
-         //! Two key spaces share one `match` per (area, locale):\n\
+         //! Two key spaces share one index per (area, locale):\n\
          //! * `zone * 8 + slot` — zone-level names, `slot` 0..=5 being (long,\n\
          //!   short) × (generic, standard, daylight), and slot 6 the exemplar city.\n\
          //! * `MZ_BASE + metazone * 6 + slot` — metazone names, same slot order.\n\
+         //!\n\
+         //! The names themselves live in one deduplicated `&str` arena per area,\n\
+         //! reached through parallel `keys`/`ids` arrays — see `name_lookup` for\n\
+         //! why this is data and not a `match`.\n\
          //!\n\
          //! Zones are grouped by tzdb area and gated on `tz-names-<area>`; an area\n\
          //! that is not compiled in resolves to `None` throughout, and the caller\n\
@@ -3904,10 +3908,94 @@ fn emit_tz_names(
 
     // ---- area dispatchers ----
     let sfx: Vec<String> = TZ_AREAS.iter().map(|a| a.to_ascii_lowercase()).collect();
+    let up: Vec<String> = TZ_AREAS.iter().map(|a| a.to_ascii_uppercase()).collect();
     let cfg: Vec<String> = sfx
         .iter()
         .map(|s| format!("        #[cfg(feature = \"tz-names-{s}\")]\n"))
         .collect();
+    // Gate the two shared readers on "at least one area", so a build with no
+    // area selected compiles neither them nor any table.
+    let any_area = format!(
+        "#[cfg(any(\n{}))]\n",
+        sfx.iter()
+            .map(|s| format!("    feature = \"tz-names-{s}\",\n"))
+            .collect::<String>()
+    );
+
+    // The two readers every area's tables share. Their doc comments carry the
+    // measurements behind this representation, because the obvious "cleanup" is
+    // to fold the tables back into `match` arms like the rest of the generated
+    // code — which is what cost 4.3 MB of compiled output for 1.5 MB of strings.
+    let _ = write!(
+        out,
+        "/// Binary search of an area's zone-id table: `zones` is the area's zone ids\n\
+         /// minus their `Area/` prefix (`\"Abidjan\"`, `\"Accra\"`, …) concatenated in\n\
+         /// ascending order and `starts` their `N + 1` byte boundaries, so a hit's\n\
+         /// position *is* the area's zone index.\n\
+         ///\n\
+         /// Same reason as `name_lookup` below: as a `match` on `&str` the eleven\n\
+         /// areas' zone tables inlined into 16 KB of compare chains; as data they\n\
+         /// are ~5 KB of arena plus offsets and ~1.5 KB of code, with nothing per\n\
+         /// zone.\n\
+         {any_area}\
+         fn zone_lookup(zones: &str, starts: &[u16], rest: &str) -> Option<u16> {{\n    \
+         let mut lo = 0usize;\n    \
+         let mut hi = starts.len().checked_sub(1)?;\n    \
+         while lo < hi {{\n        \
+         let mid = (lo + hi) / 2;\n        \
+         let at = zones.get(*starts.get(mid)? as usize..*starts.get(mid + 1)? as usize)?;\n        \
+         if at < rest {{\n            \
+         lo = mid + 1;\n        \
+         }} else {{\n            \
+         hi = mid;\n        \
+         }}\n    \
+         }}\n    \
+         let at = zones.get(*starts.get(lo)? as usize..*starts.get(lo + 1)? as usize)?;\n    \
+         if at == rest {{ Some(lo as u16) }} else {{ None }}\n\
+         }}\n\n"
+    );
+    let _ = write!(
+        out,
+        "/// Resolve `key` in one (area, locale) name table.\n\
+         ///\n\
+         /// `runs` bounds locale `loc`'s slice of the parallel `keys`/`ids` arrays;\n\
+         /// `keys` ascends within a run, so the lookup is a single binary search.\n\
+         /// `ids[i]` names a string by its index into `strings`, the `D + 1` byte\n\
+         /// boundaries of the area's deduplicated `arena`. Boundaries always fall on\n\
+         /// char boundaries — the arena is whole strings concatenated — so the slice\n\
+         /// never splits a codepoint; `get` is used anyway so a corrupt table would\n\
+         /// return `None` rather than panic.\n\
+         ///\n\
+         /// These tables are deliberately *data*, not the `match` shape the rest of\n\
+         /// the generated code uses. They hold 67 060 name references over 1 111\n\
+         /// (area, locale) pairs, and LLVM compiles a `match` that wide into a jump\n\
+         /// table plus one code block per arm to materialize the `&'static str` fat\n\
+         /// pointer. Measured on a release probe (`datetime,alloc` vs the same plus\n\
+         /// `tz-names`), that shape added 1 098 KB of `.text` and 3 182 KB of\n\
+         /// `.rodata` — 4 254 KB — to hold 1 523 KB of distinct strings, and left\n\
+         /// 2 954 indirect jumps in the binary. As arrays the same tables add\n\
+         /// 2 024 KB, of which 12 KB is code, with 247 indirect jumps and no\n\
+         /// relocations. The `match` shape is the right one for the Unicode property\n\
+         /// tables (dense integer -> small enum, which LLVM turns into a byte\n\
+         /// lookup); it does not transfer to a wide string table. Please do not\n\
+         /// \"simplify\" it back.\n\
+         {any_area}\
+         fn name_lookup(\n    \
+         arena: &'static str,\n    \
+         strings: &[u32],\n    \
+         runs: &[u32],\n    \
+         keys: &[u16],\n    \
+         ids: &[u16],\n    \
+         loc: u16,\n    \
+         key: u16,\n\
+         ) -> Option<&'static str> {{\n    \
+         let lo = *runs.get(loc as usize)? as usize;\n    \
+         let hi = *runs.get(loc as usize + 1)? as usize;\n    \
+         let at = lo + keys.get(lo..hi)?.binary_search(&key).ok()?;\n    \
+         let id = *ids.get(at)? as usize;\n    \
+         arena.get(*strings.get(id)? as usize..*strings.get(id + 1)? as usize)\n\
+         }}\n\n"
+    );
 
     let _ = write!(
         out,
@@ -3920,8 +4008,8 @@ fn emit_tz_names(
     for (ai, area) in TZ_AREAS.iter().enumerate() {
         let _ = write!(
             out,
-            "{}        \"{area}\" => ({ai}, zi_{}(rest)?),\n",
-            cfg[ai], sfx[ai]
+            "{}        \"{area}\" => ({ai}, zone_lookup(ZONES_{}, &ZONE_STARTS_{}, rest)?),\n",
+            cfg[ai], up[ai], up[ai]
         );
     }
     let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
@@ -3962,7 +4050,20 @@ fn emit_tz_names(
          match area {{\n"
     );
     for ai in 0..TZ_AREAS.len() {
-        let _ = write!(out, "{}        {ai} => n_{}(loc, key),\n", cfg[ai], sfx[ai]);
+        let _ = write!(
+            out,
+            "{}        {ai} => name_lookup(\n            \
+             ARENA_{a},\n            \
+             &STRINGS_{a},\n            \
+             &RUNS_{a},\n            \
+             &KEYS_{a},\n            \
+             &IDS_{a},\n            \
+             loc,\n            \
+             key,\n        \
+             ),\n",
+            cfg[ai],
+            a = up[ai]
+        );
     }
     let _ = write!(out, "        _ => None,\n    }}\n}}\n");
 
@@ -3972,16 +4073,34 @@ fn emit_tz_names(
         let start = out.len();
         let acfg = format!("#[cfg(feature = \"tz-names-{}\")]\n", sfx[ai]);
         let s = &sfx[ai];
+        let a = &up[ai];
+        let _ = write!(out, "\n// ---- {area} ----\n");
 
-        let _ = write!(
-            out,
-            "\n{acfg}fn zi_{s}(rest: &str) -> Option<u16> {{\n    Some(match rest {{\n"
+        // Zone ids, `Area/` prefix stripped. `all_zones` is a sorted set and the
+        // prefix is shared inside an area, so the ids are already in ascending
+        // order — which is what `zone_lookup` binary-searches, and what makes a
+        // hit's position the zone index.
+        let zones: Vec<&str> = area_zones[ai]
+            .iter()
+            .map(|z| z.split_once('/').expect("area prefix").1)
+            .collect();
+        assert!(
+            zones.windows(2).all(|w| w[0] < w[1]),
+            "{area}: zone ids must be sorted and unique for zone_lookup"
         );
-        for (zi, zid) in area_zones[ai].iter().enumerate() {
-            let rest = zid.split_once('/').expect("area prefix").1;
-            let _ = write!(out, "        {} => {zi},\n", rust_str(rest));
-        }
-        let _ = write!(out, "        _ => return None,\n    }})\n}}\n");
+        let zone_starts = offsets(&zones);
+        assert!(
+            *zone_starts.last().expect("sentinel") <= u32::from(u16::MAX),
+            "{area}: zone-id arena outgrew the u16 offsets"
+        );
+        emit_arena(&mut out, &acfg, &format!("ZONES_{a}"), &zones);
+        emit_array(
+            &mut out,
+            &acfg,
+            &format!("ZONE_STARTS_{a}"),
+            "u16",
+            &zone_starts,
+        );
 
         let _ = write!(
             out,
@@ -4013,7 +4132,8 @@ fn emit_tz_names(
         }
         let _ = write!(out, "        _ => None,\n    }}\n}}\n");
 
-        // (area, locale) name tables.
+        // (area, locale) name tables: for each locale, its (key, string) pairs in
+        // ascending key order.
         let mut slots: Vec<Vec<(u16, &str)>> = Vec::with_capacity(locdata.len());
         for l in &locdata {
             let mut v: Vec<(u16, &str)> = Vec::new();
@@ -4039,31 +4159,54 @@ fn emit_tz_names(
             slots.push(v);
         }
 
-        let _ = write!(
-            out,
-            "\n{acfg}fn n_{s}(loc: u16, key: u16) -> Option<&'static str> {{\n    match loc {{\n"
+        // One arena per area holding each distinct string once — a locale reuses
+        // "GMT", a zone's name often repeats its metazone's, and so on: 67 060
+        // references resolve to 55 339 strings. Per area rather than one global
+        // arena, because an area that is `#[cfg]`-ed out has to cost nothing, and
+        // cross-area sharing would drag every area's strings into a one-area build
+        // for the ~150 KB it would save on the full set. Ids are assigned in sorted
+        // order, so the arena is stable and reviewable as a list.
+        let mut str_id: BTreeMap<&str, u16> = BTreeMap::new();
+        for v in &slots {
+            for (_, val) in v {
+                str_id.insert(val, 0);
+            }
+        }
+        let strings: Vec<&str> = str_id.keys().copied().collect();
+        assert!(
+            strings.len() <= u16::MAX as usize + 1,
+            "{area}: more distinct names than the u16 id space"
         );
-        for (li, locale) in locales.iter().enumerate() {
-            if !slots[li].is_empty() {
-                let _ = write!(out, "        {li} => n_{s}_{}(key),\n", ident(locale));
-            }
+        for (i, id) in str_id.values_mut().enumerate() {
+            *id = i as u16;
         }
-        let _ = write!(out, "        _ => None,\n    }}\n}}\n");
 
-        for (li, locale) in locales.iter().enumerate() {
-            if slots[li].is_empty() {
-                continue;
+        // `runs[loc]..runs[loc + 1]` is locale `loc`'s slice of `keys`/`ids`; a
+        // locale CLDR has no names for at all gets an empty run, which is how the
+        // reader returns `None` for it.
+        let mut runs: Vec<u32> = Vec::with_capacity(slots.len() + 1);
+        let mut keys: Vec<u16> = Vec::new();
+        let mut ids: Vec<u16> = Vec::new();
+        for v in &slots {
+            runs.push(keys.len() as u32);
+            for (key, val) in v {
+                keys.push(*key);
+                ids.push(str_id[val]);
             }
-            let _ = write!(
-                out,
-                "\n{acfg}const fn n_{s}_{}(key: u16) -> Option<&'static str> {{\n    match key {{\n",
-                ident(locale)
-            );
-            for (key, val) in &slots[li] {
-                let _ = write!(out, "        {key} => Some({}),\n", rust_str(val));
-            }
-            let _ = write!(out, "        _ => None,\n    }}\n}}\n");
         }
+        runs.push(keys.len() as u32);
+
+        emit_arena(&mut out, &acfg, &format!("ARENA_{a}"), &strings);
+        emit_array(
+            &mut out,
+            &acfg,
+            &format!("STRINGS_{a}"),
+            "u32",
+            &offsets(&strings),
+        );
+        emit_array(&mut out, &acfg, &format!("RUNS_{a}"), "u32", &runs);
+        emit_array(&mut out, &acfg, &format!("KEYS_{a}"), "u16", &keys);
+        emit_array(&mut out, &acfg, &format!("IDS_{a}"), "u16", &ids);
         area_bytes.push((*area, out.len() - start));
     }
 
@@ -4117,6 +4260,56 @@ fn rust_str(s: &str) -> String {
     }
     out.push('"');
     out
+}
+
+/// The `N + 1` byte boundaries of `parts` concatenated: entry `i` occupies
+/// `[out[i], out[i + 1])`. The trailing sentinel is what lets a reader recover a
+/// length without storing one.
+fn offsets(parts: &[&str]) -> Vec<u32> {
+    let mut out = Vec::with_capacity(parts.len() + 1);
+    let mut off = 0u32;
+    for p in parts {
+        out.push(off);
+        off += p.len() as u32;
+    }
+    out.push(off);
+    out
+}
+
+/// Emit `parts` concatenated into one `&str` static, as a `\`-continued literal
+/// with one entry per source line so a multi-hundred-KB arena still reviews and
+/// diffs like a list. The continuation escape eats the newline *and* the next
+/// line's leading whitespace, so an entry that begins with a space has to escape
+/// that space or it would be silently dropped.
+fn emit_arena(out: &mut String, cfg: &str, name: &str, parts: &[&str]) {
+    let _ = write!(out, "\n{cfg}static {name}: &str = \"\\\n");
+    for p in parts {
+        let lit = rust_str(p);
+        // Strip `rust_str`'s quotes; escaping the first space is enough, since a
+        // second one no longer sits at the start of the line.
+        match lit[1..lit.len() - 1].strip_prefix(' ') {
+            Some(rest) => {
+                let _ = write!(out, "\\u{{20}}{rest}\\\n");
+            }
+            None => {
+                let _ = write!(out, "{}\\\n", &lit[1..lit.len() - 1]);
+            }
+        }
+    }
+    out.push_str("\";\n");
+}
+
+/// Emit a plain array static, which costs exactly `len * size_of::<T>()` bytes of
+/// `.rodata` and no relocations. rustfmt wraps the elements.
+fn emit_array<T: std::fmt::Display>(out: &mut String, cfg: &str, name: &str, ty: &str, vals: &[T]) {
+    let _ = write!(out, "\n{cfg}static {name}: [{ty}; {}] = [", vals.len());
+    for (i, v) in vals.iter().enumerate() {
+        if i > 0 {
+            out.push_str(", ");
+        }
+        let _ = write!(out, "{v}");
+    }
+    out.push_str("];\n");
 }
 
 /// Write `cldr/<name>.bin` for a non-Gregorian calendar: per-locale month names
