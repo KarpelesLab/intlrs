@@ -676,10 +676,14 @@ fn lone_time_fields() {
         f(&dtf(|o| o.day_period = Some(NameStyle::Long))),
         "in the morning"
     );
+    // Both widths render unpadded: UTS #35 matches the requested field length
+    // only for the hour, so a minute or second takes the width of the pattern it
+    // landed in — here the synthesized `m`/`s`. ECMA-402 reports that back, which
+    // is why V8's `resolvedOptions()` answers `numeric` to a `2-digit` request.
     assert_eq!(f(&dtf(|o| o.minute = Some(Numeric2Digit::Numeric))), "5");
-    assert_eq!(f(&dtf(|o| o.minute = Some(Numeric2Digit::TwoDigit))), "05");
+    assert_eq!(f(&dtf(|o| o.minute = Some(Numeric2Digit::TwoDigit))), "5");
     assert_eq!(f(&dtf(|o| o.second = Some(Numeric2Digit::Numeric))), "7");
-    assert_eq!(f(&dtf(|o| o.second = Some(Numeric2Digit::TwoDigit))), "07");
+    assert_eq!(f(&dtf(|o| o.second = Some(Numeric2Digit::TwoDigit))), "7");
     assert_eq!(f(&dtf(|o| o.fractional_second_digits = Some(3))), "040");
     assert_eq!(f(&dtf(|o| o.fractional_second_digits = Some(2))), "04");
 
@@ -734,9 +738,9 @@ fn lone_time_fields() {
         o.second = Some(Numeric2Digit::TwoDigit);
         o.fractional_second_digits = Some(3);
     });
-    assert_eq!(f(&sf), "07.040");
+    assert_eq!(f(&sf), "7.040");
     assert_eq!(
         intl::datetime::format_options("de", &T, &sf).unwrap(),
-        "07,040"
+        "7,040"
     );
 }

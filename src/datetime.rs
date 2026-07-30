@@ -1833,22 +1833,13 @@ fn patch_widths(pattern: &str, o: &DateTimeFormatOptions, loc: char) -> String {
         let c = if h == Numeric2Digit::TwoDigit { 2 } else { 1 };
         p = set_field(&p, &['h', 'H', 'k', 'K'], letter, c);
     }
-    if let Some(mi) = o.minute {
-        p = set_field(
-            &p,
-            &['m'],
-            'm',
-            if mi == Numeric2Digit::TwoDigit { 2 } else { 1 },
-        );
-    }
-    if let Some(se) = o.second {
-        p = set_field(
-            &p,
-            &['s'],
-            's',
-            if se == Numeric2Digit::TwoDigit { 2 } else { 1 },
-        );
-    }
+    // Minute and second widths are deliberately NOT patched. UTS #35 matches the
+    // requested field length only for the hour (ICU's `MATCH_HOUR_FIELD_LENGTH`);
+    // for minute and second the chosen pattern's own width wins, and ECMA-402
+    // reports that back — `{hour, minute: 'numeric'}` resolves minute to
+    // `2-digit` because `h:mm` says so, and a lone `second: '2-digit'` resolves to
+    // `numeric` because the synthesized pattern is `s`. Patching them produced
+    // "9:5 AM" and "5:6", which no implementation renders.
     if let Some(dp) = o.day_period {
         // Promote the pattern's am/pm field to the flexible day period `B` at the
         // requested width (only effective when the pattern carries an a/b/B field).
