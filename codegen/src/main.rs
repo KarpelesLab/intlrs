@@ -5520,6 +5520,10 @@ fn emit_likely(cldr_dir: &Path, path: &Path) {
 /// `SU`→`RU AM AZ …`) keeps CLDR's candidate order. Keys are sorted for
 /// determinism. The `_reason`/`_replacement` metadata attributes are ignored
 /// except for `_replacement`.
+///
+/// One extra key kind, `'*'`, is an index rather than an alias: `*v<variant>`
+/// lists (space-separated) the language-alias keys whose *type* names that
+/// variant. See [`variant_alias_rule`].
 fn emit_aliases(cldr_dir: &Path, path: &Path) {
     let text = fs::read_to_string(path).expect("read aliases.json");
     let json = json_parse(&text);
@@ -5532,9 +5536,21 @@ fn emit_aliases(cldr_dir: &Path, path: &Path) {
     let mut records: Vec<(String, Vec<u8>)> = Vec::new();
     // languageAlias: keys lowercased with `-`→`_` (covers grandfathered tags).
     if let Some(la) = alias.get("languageAlias") {
+        // variant -> the rule keys naming it, so the runtime can find the
+        // variant-carrying rules from the variants a tag actually has.
+        let mut by_variant: BTreeMap<String, Vec<String>> = BTreeMap::new();
         for (key, entry) in la.entries() {
-            let k = key.to_ascii_lowercase().replace('-', "_");
+            let lower = key.to_ascii_lowercase();
+            let k = lower.replace('-', "_");
             push_alias(&mut records, 'l', &k, entry);
+            for v in variant_alias_rule(&lower).unwrap_or_default() {
+                by_variant.entry(v.to_string()).or_default().push(k.clone());
+            }
+        }
+        for (v, keys) in &by_variant {
+            let mut p = Vec::new();
+            enc_str(&mut p, &keys.join(" "));
+            records.push((format!("*v{v}"), p));
         }
     }
     // scriptAlias: keys kept as-is (Titlecase).
@@ -5557,6 +5573,28 @@ fn emit_aliases(cldr_dir: &Path, path: &Path) {
     }
     records.sort();
     write_blob(cldr_dir, "aliases", &records);
+}
+
+/// The variant subtags of a `languageAlias` type, if the type is a *rule* that
+/// carries variants (`und-arevela`, `zh-guoyu`, `und-hepburn-heploc`) rather than
+/// a legacy whole tag (`i-klingon`, `sgn-BE-FR`, `zh-min-nan`, `en-GB-oed`). The
+/// distinction matters because UTS #35 §3.10 matches a rule's fields *inside* any
+/// larger tag — `hy-arevela` and `ja-Latn-hepburn-heploc-fonipa` both match —
+/// whereas a legacy tag only ever matches in its entirety. A type qualifies when
+/// every subtag after the language is a well-formed BCP-47 variant (5-8 alnum, or
+/// 4 chars starting with a digit); `key` must already be lowercased.
+fn variant_alias_rule(key: &str) -> Option<Vec<&str>> {
+    let mut parts = key.split('-');
+    let lang = parts.next()?;
+    if !(2..=8).contains(&lang.len()) || !lang.bytes().all(|b| b.is_ascii_alphabetic()) {
+        return None;
+    }
+    let variants: Vec<&str> = parts.collect();
+    let well_formed = |v: &&str| {
+        v.bytes().all(|b| b.is_ascii_alphanumeric())
+            && ((5..=8).contains(&v.len()) || (v.len() == 4 && v.as_bytes()[0].is_ascii_digit()))
+    };
+    (!variants.is_empty() && variants.iter().all(well_formed)).then_some(variants)
 }
 
 /// Push one alias record: `prefix + key` → the entry's `_replacement`, with the

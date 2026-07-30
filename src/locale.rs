@@ -175,30 +175,43 @@ impl Locale {
 
     /// Remove the script and region subtags that are implied by
     /// [`maximize`](Self::maximize), producing the shortest equivalent locale.
-    /// For example `en-Latn-US` → `en`, `zh-Hans-CN` → `zh`.
+    /// For example `en-Latn-US` → `en`, `zh-Hans-CN` → `zh`. Variants and
+    /// extensions are carried through untouched (`sr-Latn-RS-fonipa` →
+    /// `sr-Latn-fonipa`).
     #[must_use]
     pub fn minimize(&self) -> Locale {
-        let max = self.maximize();
+        // UTS #35 "Remove Likely Subtags": maximize first, set the variants
+        // aside, and try language / language+region / language+script against the
+        // maximized form. The trials are built from `max`, not from `self`, for
+        // two reasons: an under-specified input still minimizes to a real
+        // language (`und-Latn-US` → `en`), and only the language/script/region
+        // triple takes part in the comparison, so a variant or extension can no
+        // longer make every trial mismatch and defeat minimization entirely.
+        let mut max = self.maximize();
+        let variants = core::mem::take(&mut max.variants);
+        let extensions = core::mem::take(&mut max.extensions);
         let lang_only = Locale {
-            language: self.language.clone(),
+            language: max.language.clone(),
             ..Locale::default()
         };
         let lang_region = Locale {
-            language: self.language.clone(),
-            region: self.region.clone(),
-            ..Locale::default()
+            region: max.region.clone(),
+            ..lang_only.clone()
         };
         let lang_script = Locale {
-            language: self.language.clone(),
-            script: self.script.clone(),
-            ..Locale::default()
+            script: max.script.clone(),
+            ..lang_only.clone()
         };
+        let mut out = max.clone();
         for trial in [lang_only, lang_region, lang_script] {
             if trial.maximize() == max {
-                return trial;
+                out = trial;
+                break;
             }
         }
-        max
+        out.variants = variants;
+        out.extensions = extensions;
+        out
     }
 }
 
@@ -273,7 +286,9 @@ pub fn negotiate(requested: &[&str], available: &[Locale]) -> Option<usize> {
 /// `sh`→`sr-Latn`), grandfathered/redundant whole tags (`i-klingon`→`tlh`,
 /// `zh-min-nan`→`nan`), script aliases (`Qaai`→`Zinh`), territory aliases
 /// (`BU`→`MM`, one→many like `SU`), and variant aliases (`heploc`→`alalc97`).
-/// The result is also structurally canonicalized (case, subtag order).
+/// Language aliases whose CLDR type carries a variant match inside a larger tag
+/// (`hy-arevela`→`hy`, `ja-Latn-hepburn-heploc`→`ja-Latn-alalc97`). The result is
+/// also structurally canonicalized (case, subtag order, variants alphabetical).
 ///
 /// Unicode (`-u-`) and Transform (`-t-`) extension keywords are also
 /// canonicalized (UTS #35 §3.6.5 / ECMA-402 `CanonicalizeUnicodeLocaleId`):
@@ -299,7 +314,13 @@ pub fn canonicalize(tag: &str) -> Option<String> {
 
     let mut loc = Locale::parse(&working).ok()?;
 
-    // 2. Language alias. Try the most specific key first: `lang_region` (which,
+    // 2. Language aliases whose type carries a variant (`und_arevela` → `und`,
+    //    `und_hepburn_heploc` → `und_alalc97`, `aa_saaho` → `ssy`). These match
+    //    inside a larger tag, so they run before the whole-language aliases: with
+    //    the variant gone, `in-lojban` still reaches `in` → `id`.
+    apply_variant_language_aliases(&mut loc);
+
+    // 3. Language alias. Try the most specific key first: `lang_region` (which,
     //    when it matches, consumes the region), then `lang`. A multi-subtag
     //    replacement (e.g. `sh`→`sr-Latn`) fills the script/region only where the
     //    source left them empty (UTS #35).
@@ -334,7 +355,7 @@ pub fn canonicalize(tag: &str) -> Option<String> {
         }
     }
 
-    // 3. Script alias.
+    // 4. Script alias.
     if let Some(script) = &loc.script {
         let key = alloc::format!("s{script}");
         if let Some(r) = crate::cldr::alias_lookup(&key) {
@@ -342,7 +363,7 @@ pub fn canonicalize(tag: &str) -> Option<String> {
         }
     }
 
-    // 4. Variant aliases (each variant substituted independently).
+    // 5. Variant aliases (each variant substituted independently).
     for v in &mut loc.variants {
         let key = alloc::format!("v{v}");
         if let Some(r) = crate::cldr::alias_lookup(&key) {
@@ -350,7 +371,7 @@ pub fn canonicalize(tag: &str) -> Option<String> {
         }
     }
 
-    // 5. Territory (region) alias, with the UTS #35 one→many disambiguation rule:
+    // 6. Territory (region) alias, with the UTS #35 one→many disambiguation rule:
     //    when a region maps to several candidate replacements, prefer the one that
     //    matches the likely region of the (already-substituted) language/script;
     //    otherwise fall back to the first candidate in CLDR order.
@@ -361,7 +382,7 @@ pub fn canonicalize(tag: &str) -> Option<String> {
         }
     }
 
-    // 6. Canonicalize each Unicode (`-u-`) / Transform (`-t-`) extension keyword.
+    // 7. Canonicalize each Unicode (`-u-`) / Transform (`-t-`) extension keyword.
     for e in &mut loc.extensions {
         if let Some(body) = e.strip_prefix("u-") {
             *e = canonicalize_unicode_ext(body);
@@ -370,7 +391,83 @@ pub fn canonicalize(tag: &str) -> Option<String> {
         }
     }
 
+    // 8. Variants are alphabetical in the canonical form (UTS #35 §3.3.1), which
+    //    also fixes their position once step 2 has substituted one:
+    //    `sl-rozaj-biske` → `sl-biske-rozaj`, `ja-fonipa-hepburn-heploc` →
+    //    `ja-alalc97-fonipa`. Two variants can collide once aliased
+    //    (`ja-heploc-alalc97`, both → `alalc97`); ICU keeps one.
+    loc.variants.sort();
+    loc.variants.dedup();
+
     Some(loc.to_string())
+}
+
+/// Apply the CLDR `languageAlias` rules whose type carries variant subtags:
+/// `und_arevela` → `und`, `aa_saaho` → `ssy`, `und_hepburn_heploc` →
+/// `und_alalc97`. UTS #35 §3.10 treats such a type as a set of fields that must
+/// all be present in the source rather than a whole tag to match literally, so
+/// the rule fires inside any larger tag — `hy-arevela` and
+/// `ja-Latn-hepburn-heploc-fonipa` match `und_arevela` and `und_hepburn_heploc`
+/// just as the bare types do. A type language of `und` matches any language.
+///
+/// On a match the type's variants are dropped and the replacement's fields are
+/// merged in: the language is overwritten, a script/region only fills an empty
+/// one (`sv-FI-aaland` keeps FI rather than taking the rule's AX), and the
+/// replacement's own variants are appended.
+fn apply_variant_language_aliases(loc: &mut Locale) {
+    // Every rule consumes at least one variant and none reintroduces one, so the
+    // starting variant count bounds how many can fire. The loop exists so that
+    // several independent rules still all apply (`aa-saaho-lojban` → `ssy`).
+    for _ in 0..loc.variants.len() {
+        // Rules are indexed by each variant they name, so only the variants the
+        // tag actually has need looking up. Of the matches, the most specific
+        // wins: a named type language beats `und` (`aa-saaho` → `ssy`, not the
+        // `und_saaho` "just drop it"), then a longer variant list.
+        let mut best: Option<(usize, &'static str)> = None;
+        for v in &loc.variants {
+            let Some(rules) = crate::cldr::alias_lookup(&alloc::format!("*v{v}")) else {
+                continue;
+            };
+            for key in rules.split(' ') {
+                let mut fields = key.split('_');
+                let lang = fields.next().unwrap_or("und");
+                if lang != "und" && lang != loc.language {
+                    continue;
+                }
+                let count = fields.clone().count();
+                if !fields.all(|tv| loc.variants.iter().any(|sv| sv == tv)) {
+                    continue;
+                }
+                let rank = usize::from(lang != "und") * 100 + count;
+                if best.is_none_or(|(r, _)| rank > r) {
+                    best = Some((rank, key));
+                }
+            }
+        }
+        let Some((_, key)) = best else { return };
+        let Some(repl) = crate::cldr::alias_lookup(&alloc::format!("l{key}")) else {
+            return;
+        };
+        let Ok(r) = Locale::parse(&subtags_to_tag(repl)) else {
+            return;
+        };
+        let consumed: Vec<&str> = key.split('_').skip(1).collect();
+        loc.variants.retain(|v| !consumed.contains(&v.as_str()));
+        if !r.language.is_empty() {
+            loc.language = r.language;
+        }
+        if loc.script.is_none() {
+            loc.script = r.script;
+        }
+        if loc.region.is_none() {
+            loc.region = r.region;
+        }
+        for v in r.variants {
+            if !loc.variants.contains(&v) {
+                loc.variants.push(v);
+            }
+        }
+    }
 }
 
 /// Canonicalize a Unicode (`-u-`) extension body (the subtags after the `u`

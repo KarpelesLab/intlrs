@@ -66,6 +66,33 @@ fn maximize_minimize() {
     );
 }
 
+/// Variants and extensions take no part in the "Remove Likely Subtags"
+/// comparison and ride through untouched, and the trials are built from the
+/// maximized form so an `und` input still reduces to a real language. Every
+/// expectation below matches node 22 / ICU 77 `new Intl.Locale(t).minimize()`.
+#[test]
+fn minimize_carries_variants_and_extensions() {
+    let m = |t: &str| Locale::parse(t).unwrap().minimize().to_string();
+    assert_eq!(m("en-Latn-US-fonipa"), "en-fonipa");
+    assert_eq!(m("ja-Jpan-JP-fonipa-hepburn"), "ja-fonipa-hepburn");
+    // A variant does not stop the script/region from being dropped, and it does
+    // not stop them being *kept* either: sr needs Latn, zh-TW needs the region.
+    assert_eq!(m("sr-Latn-RS-fonipa"), "sr-Latn-fonipa");
+    assert_eq!(m("zh-Hant-TW-pinyin"), "zh-TW-pinyin");
+    // Extensions behave the same way.
+    assert_eq!(m("en-Latn-US-u-ca-buddhist"), "en-u-ca-buddhist");
+    assert_eq!(
+        m("en-Latn-US-fonipa-u-ca-buddhist"),
+        "en-fonipa-u-ca-buddhist"
+    );
+    // Trials come from the maximized form, so `und` resolves to its likely
+    // language instead of minimizing back to `und`.
+    assert_eq!(m("und-Latn-US"), "en");
+    assert_eq!(m("und-Latn-ZA"), "en-ZA");
+    assert_eq!(m("und-Deva-IN"), "hi");
+    assert_eq!(m("und-Hant-TW"), "zh-TW");
+}
+
 #[test]
 fn negotiation() {
     use intl::locale::{Locale, negotiate};
@@ -122,6 +149,55 @@ fn canonicalize_script_and_variant() {
     assert_eq!(c("ru-Qaai"), "ru-Zinh");
     // Variant alias.
     assert_eq!(c("und-polytoni"), "und-polyton");
+}
+
+/// CLDR `languageAlias` rules whose type carries a variant (`und-arevela` →
+/// `und`, `aa-saaho` → `ssy`, `und-hepburn-heploc` → `und-alalc97`). UTS #35
+/// §3.10 matches the type's fields *inside* a larger tag, so these fire well
+/// beyond the bare rule key. All expectations match node 22 / ICU 77
+/// `Intl.getCanonicalLocales`.
+#[test]
+fn canonicalize_variant_language_aliases() {
+    let c = |t: &str| canonicalize(t).unwrap();
+    // The rule applies to any language when its type language is `und`...
+    assert_eq!(c("hy-arevela"), "hy");
+    assert_eq!(c("en-lojban"), "en");
+    assert_eq!(c("de-nynorsk"), "de");
+    assert_eq!(c("en-US-lojban"), "en-US");
+    assert_eq!(c("hy-Armn-AM-arevela"), "hy-Armn-AM");
+    // ...and only to the named language otherwise, with the more specific rule
+    // winning over the `und` one (`aa-saaho` → ssy, not the `und-saaho` drop).
+    assert_eq!(c("aa-saaho"), "ssy");
+    assert_eq!(c("fr-saaho"), "fr");
+    assert_eq!(c("cel-gaulish"), "xtg");
+    assert_eq!(c("en-gaulish"), "en-gaulish"); // no und-gaulish rule
+    assert_eq!(c("zh-Hant-guoyu"), "zh-Hant");
+    // The replacement's fields only fill empty ones: `und-aaland` → `und-AX`
+    // supplies AX when there is no region, and is dropped when there is one.
+    assert_eq!(c("sv-aaland"), "sv-AX");
+    assert_eq!(c("sv-FI-aaland"), "sv-FI");
+    assert_eq!(c("cel-Latn-gaulish"), "xtg-Latn"); // script kept, language replaced
+    // A two-variant type must match both, and consumes both: `heploc` →
+    // `alalc97` has to *remove* `hepburn` rather than sit beside it.
+    assert_eq!(c("ja-Latn-hepburn-heploc"), "ja-Latn-alalc97");
+    assert_eq!(c("ja-Latn-heploc-hepburn"), "ja-Latn-alalc97");
+    assert_eq!(c("ja-Latn-hepburn-heploc-fonipa"), "ja-Latn-alalc97-fonipa");
+    assert_eq!(c("ja-alalc97-hepburn-heploc"), "ja-alalc97");
+    // `hepburn` alone is not the rule; the plain variantAlias still maps heploc.
+    assert_eq!(c("ja-Latn-hepburn"), "ja-Latn-hepburn");
+    assert_eq!(c("ja-latn-heploc"), "ja-Latn-alalc97");
+    // The rule runs before the whole-language alias, so both still apply.
+    assert_eq!(c("in-lojban"), "id");
+    assert_eq!(c("tl-lojban"), "fil");
+    // Independent rules both fire: aa-saaho → ssy and und-lojban drops lojban.
+    assert_eq!(c("aa-saaho-lojban"), "ssy");
+    // It no longer takes a bare whole-tag match: an extension used to defeat it.
+    assert_eq!(c("art-lojban-x-foo"), "jbo-x-foo");
+    assert_eq!(c("no-bokmal-u-ca-gregory"), "nb-u-ca-gregory");
+    // Variants that survive are left in canonical (alphabetical) order.
+    assert_eq!(c("sl-rozaj-biske"), "sl-biske-rozaj");
+    assert_eq!(c("de-1996-1901"), "de-1901-1996");
+    assert_eq!(c("hy-arevela-fonipa"), "hy-fonipa");
 }
 
 #[test]
