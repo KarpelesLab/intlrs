@@ -4,6 +4,9 @@
 #![allow(unreachable_patterns)]
 #![allow(unused_parens)]
 #![allow(dead_code)]
+// A dispatch whose every arm is `#[cfg]`-ed out diverges, making the
+// fallback after it unreachable. That is the point of the gating.
+#![allow(unreachable_code)]
 
 use crate::unicode::segment::{Gcb, Incb, Lb, Sb, Wb};
 

@@ -5748,7 +5748,10 @@ fn write_header(out: &mut String) {
          #![allow(clippy::all)]\n\
          #![allow(unreachable_patterns)]\n\
          #![allow(unused_parens)]\n\
-         #![allow(dead_code)]\n\n",
+         #![allow(dead_code)]\n\
+         // A dispatch whose every arm is `#[cfg]`-ed out diverges, making the\n\
+         // fallback after it unreachable. That is the point of the gating.\n\
+         #![allow(unreachable_code)]\n\n",
     );
 }
 

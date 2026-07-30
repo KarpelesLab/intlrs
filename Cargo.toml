@@ -47,7 +47,6 @@ default = [
     "units",
     "units-narrow",
     "datetime",
-    "tz-names",
     "calendars-extra",
     "displaynames",
     "list",
@@ -151,9 +150,14 @@ locale = ["alloc", "_cldr"]                 # BCP-47 + likely-subtags (+ likely.
 # America +1.29 MB, Asia +1.28 MB, Pacific +605 KB, Europe +397 KB,
 # Africa +302 KB, Antarctica +198 KB, Atlantic +189 KB, Australia +151 KB,
 # Indian +126 KB, Arctic +27 KB, Etc +22 KB.
-# `tz-names` (all areas) is in `default` for the same reason `units-narrow` is:
-# silently answering a spec-mandated `"long"` request with an offset is worse
-# than the size. Opt out with `default-features = false`, or select areas.
+# NOT in `default`, unlike `units-narrow`. That a fallback is spec-sanctioned
+# decides whether opting out is *safe*, not whether a table belongs in the
+# default build, and 4.4 MB is roughly what the rest of `default` costs put
+# together — fourteen times `units-narrow`. Since the fallback here is a correct
+# answer rather than a wrong one (a localized GMT offset, not a bad name), the
+# size decides: enable `tz-names` for all eleven areas, or just the areas you
+# serve. A consumer shipping over a network especially wants the latter — the
+# full set measures ~1 MB gzipped in a WebAssembly build.
 tz-names = [
     "tz-names-africa",
     "tz-names-america",

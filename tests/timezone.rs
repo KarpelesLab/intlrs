@@ -243,7 +243,15 @@ fn uncompiled_area_falls_back_to_offset() {
 /// designates it that territory's **primary** zone, which is what
 /// `primaryZones.json` records. Without it `Asia/Shanghai` read "Shanghai Time"
 /// where ICU says "China Time". Values match V8/ICU.
-#[cfg(all(feature = "iana-tz", feature = "displaynames"))]
+#[cfg(all(
+    feature = "iana-tz",
+    feature = "displaynames",
+    any(
+        feature = "tz-names-asia",
+        feature = "tz-names-america",
+        feature = "tz-names-pacific"
+    )
+))]
 #[test]
 fn primary_zone_names_its_country() {
     use TimeZoneNameStyle::LongGeneric;

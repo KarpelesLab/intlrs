@@ -4,6 +4,9 @@
 #![allow(unreachable_patterns)]
 #![allow(unused_parens)]
 #![allow(dead_code)]
+// A dispatch whose every arm is `#[cfg]`-ed out diverges, making the
+// fallback after it unreachable. That is the point of the gating.
+#![allow(unreachable_code)]
 
 #[inline]
 pub(crate) const fn white_space(cp: u32) -> bool {

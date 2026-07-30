@@ -4,6 +4,9 @@
 #![allow(unreachable_patterns)]
 #![allow(unused_parens)]
 #![allow(dead_code)]
+// A dispatch whose every arm is `#[cfg]`-ed out diverges, making the
+// fallback after it unreachable. That is the point of the gating.
+#![allow(unreachable_code)]
 
 const CF1: &[char] = &['\u{27}', '\u{27}'];
 const CF2: &[char] = &['\u{ba}', '\u{2f}', '\u{2080}'];

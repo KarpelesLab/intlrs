@@ -130,9 +130,10 @@ Beyond the `unicode` module:
   nord-américain"` in `fr`; `"longGeneric"` is `"Pacific Time"`, `"short"` is
   `"PDT"`. When a locale has no name for the zone the spec's own fallback chain
   applies — the metazone's name, then the generic location format (`"heure :
-  Los Angeles"`), then the localized GMT offset. One feature per tzdb area
-  (`tz-names-america`, `tz-names-europe`, …) so a build pays only for the zones
-  it uses; see the table below.
+  Los Angeles"`), then the localized GMT offset. **Not in `default`** — the
+  tables are large, so opt in with `tz-names`, or with one feature per tzdb area
+  (`tz-names-america`, `tz-names-europe`, …) to pay only for the zones you use;
+  see the table below.
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
   civil (tabular) Islamic, Persian (Solar Hijri), Hebrew, and Chinese (lunisolar,
   1900–2099 via an embedded lunar table) calendars through the Julian Day Number,
@@ -224,10 +225,12 @@ footprint (`.text` + `.rodata` + `.data.rel.ro`) rather than blob bytes.
 | `iana-tz`         | full IANA tz database for named zones (→ datetime) | dep |
 | `tz-names`        | localized time-zone names, all areas (→ datetime)  | **~4.4 MB** |
 
-`tz-names` is an umbrella over one feature per tzdb area, so a build carries only
+`tz-names` is the one formatter feature **not** in `default`: at ~4.4 MB it costs
+about as much as the rest of `default` together (~1 MB gzipped in a WebAssembly
+build). It is an umbrella over one feature per tzdb area, so a build carries only
 the areas it names zones in. An area that is not compiled in falls back to the
 localized GMT offset — UTS #35's own last resort — so the answer stays correct,
-just less specific.
+just less specific, which is what makes opting out safe.
 
 | area feature          | compiled |     | area feature          | compiled |
 |-----------------------|----------|-----|-----------------------|----------|
