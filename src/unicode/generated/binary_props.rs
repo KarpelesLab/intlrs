@@ -18088,3 +18088,179 @@ const fn cwcm_p1e9(b: u8) -> bool {
         _ => false,
     }
 }
+
+#[inline]
+pub(crate) const fn soft_dotted(cp: u32) -> bool {
+    match cp >> 8 {
+        #[cfg(feature = "ascii")]
+        0x000 => sd_p0(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x001 => sd_p1(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x002 => sd_p2(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x003 => sd_p3(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x004 => sd_p4(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01d => sd_p1d(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x01e => sd_p1e(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x020 => sd_p20(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x021 => sd_p21(cp as u8),
+        #[cfg(feature = "bmp")]
+        0x02c => sd_p2c(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d4 => sd_p1d4(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d5 => sd_p1d5(cp as u8),
+        #[cfg(feature = "full")]
+        0x1d6 => sd_p1d6(cp as u8),
+        #[cfg(feature = "full")]
+        0x1df => sd_p1df(cp as u8),
+        #[cfg(feature = "full")]
+        0x1e0 => sd_p1e0(cp as u8),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "ascii")]
+const fn sd_p0(b: u8) -> bool {
+    match b {
+        0x69..=0x6a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p1(b: u8) -> bool {
+    match b {
+        0x2f => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p2(b: u8) -> bool {
+    match b {
+        0x49 => true,
+        0x68 => true,
+        0x9d => true,
+        0xb2 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p3(b: u8) -> bool {
+    match b {
+        0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p4(b: u8) -> bool {
+    match b {
+        0x56 => true,
+        0x58 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p1d(b: u8) -> bool {
+    match b {
+        0x62 => true,
+        0x96 => true,
+        0xa4 => true,
+        0xa8 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p1e(b: u8) -> bool {
+    match b {
+        0x2d => true,
+        0xcb => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p20(b: u8) -> bool {
+    match b {
+        0x71 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p21(b: u8) -> bool {
+    match b {
+        0x48..=0x49 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "bmp")]
+const fn sd_p2c(b: u8) -> bool {
+    match b {
+        0x7c => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sd_p1d4(b: u8) -> bool {
+    match b {
+        0x22..=0x23 => true,
+        0x56..=0x57 => true,
+        0x8a..=0x8b => true,
+        0xbe..=0xbf => true,
+        0xf2..=0xf3 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sd_p1d5(b: u8) -> bool {
+    match b {
+        0x26..=0x27 => true,
+        0x5a..=0x5b => true,
+        0x8e..=0x8f => true,
+        0xc2..=0xc3 => true,
+        0xf6..=0xf7 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sd_p1d6(b: u8) -> bool {
+    match b {
+        0x2a..=0x2b => true,
+        0x5e..=0x5f => true,
+        0x92..=0x93 => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sd_p1df(b: u8) -> bool {
+    match b {
+        0x1a => true,
+        _ => false,
+    }
+}
+
+#[cfg(feature = "full")]
+const fn sd_p1e0(b: u8) -> bool {
+    match b {
+        0x4c..=0x4d => true,
+        0x68 => true,
+        _ => false,
+    }
+}

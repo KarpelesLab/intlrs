@@ -174,6 +174,8 @@ fn main() {
             "DerivedCoreProperties.txt",
             "Changes_When_Casemapped",
         ),
+        // Needed by the SpecialCasing `After_Soft_Dotted` condition.
+        ("soft_dotted", "sd", "PropList.txt", "Soft_Dotted"),
     ] {
         let codes = parse_binary_prop(&ucd.join(file), prop);
         emit_bool_lookup(&mut bp_out, fn_name, prefix, &codes);
