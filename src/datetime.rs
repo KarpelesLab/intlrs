@@ -1756,9 +1756,10 @@ pub fn format_datetime(
     let date = render(s.date[date_style.idx()], dt, &s);
     // As in `format_time`: no zone is available, so the field is stripped.
     let time = render(&strip_zone_field(s.time[time_style.idx()]), dt, &s);
-    s.datetime[date_style.idx()]
-        .replace("{1}", &date)
-        .replace("{0}", &time)
+    // `{0}` is a time of day, so this is UTS #35's `atTime` combiner — `en`
+    // "August 4, 2021 at 12:00 PM", not "…, 12:00 PM". The plain slot is for a
+    // `{0}` that is a duration or a range; see `compose_range`.
+    combine(s.datetime_at[date_style.idx()], &date, &time)
 }
 
 // ---------------------------------------------------------------------------
@@ -2061,6 +2062,56 @@ fn build_time_skeleton(o: &DateTimeFormatOptions, loc: char) -> (String, bool) {
     }
     let any = !sk.is_empty();
     (sk, any)
+}
+
+/// The `dateTimeFormat` length for a component request, by the same rule
+/// [`glue_style`] applies to a resolved pattern: a wide month picks full when a
+/// weekday is present and long otherwise, an abbreviated month medium, anything
+/// numeric short.
+fn requested_glue_style(o: &DateTimeFormatOptions) -> usize {
+    match o.month {
+        Some(MonthStyle::Long) => usize::from(o.weekday.is_none()),
+        Some(MonthStyle::Short) => 2,
+        _ => 3,
+    }
+}
+
+/// Substitute already-rendered halves into a CLDR combining pattern, unquoting
+/// its literals as it goes. The callers that build a *pattern* can leave the
+/// quotes for `render_parts`, but one substituting finished text cannot, or
+/// `"{1} 'at' {0}"` reaches the caller with the apostrophes still in it.
+fn combine(glue: &str, date: &str, time: &str) -> String {
+    let chars: Vec<char> = glue.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        match chars[i] {
+            '\'' => {
+                i += 1;
+                if i < chars.len() && chars[i] == '\'' {
+                    out.push('\''); // an escaped apostrophe
+                    i += 1;
+                    continue;
+                }
+                while i < chars.len() && chars[i] != '\'' {
+                    out.push(chars[i]);
+                    i += 1;
+                }
+                i += 1; // closing quote
+            }
+            '{' if chars.get(i + 1).is_some_and(|c| matches!(c, '0' | '1'))
+                && chars.get(i + 2) == Some(&'}') =>
+            {
+                out.push_str(if chars[i + 1] == '1' { date } else { time });
+                i += 3;
+            }
+            c => {
+                out.push(c);
+                i += 1;
+            }
+        }
+    }
+    out
 }
 
 /// Whether `pattern` still contains at least one field letter outside quotes —
@@ -2410,7 +2461,17 @@ fn strip_fields(pattern: &str, keep: &[char]) -> String {
                     // collapse a doubled separator left by a removed middle field
                     continue;
                 }
-                out.push_str(&l);
+                // The result is still a *pattern*, so a literal holding field
+                // letters has to stay quoted or the next pass reads it as
+                // fields: `en`'s `Hv` is `HH'h' v`, and the `atTime` combiner
+                // contributes `'at'`, whose `a` would render as AM/PM.
+                if l.chars().any(|c| c.is_ascii_alphabetic()) {
+                    out.push('\'');
+                    out.push_str(&l.replace('\'', "''"));
+                    out.push('\'');
+                } else {
+                    out.push_str(&l);
+                }
                 prev_lit = true;
             }
         }
@@ -2440,7 +2501,7 @@ fn resolve_pattern(
             return Err(DateTimeFormatError::ConflictingOptions);
         }
         let pat = match (o.date_style, o.time_style) {
-            (Some(d), Some(t)) => s.datetime[d.idx()]
+            (Some(d), Some(t)) => s.datetime_at[d.idx()]
                 .replace("{1}", s.date[d.idx()])
                 .replace("{0}", s.time[t.idx()]),
             (Some(d), None) => String::from(s.date[d.idx()]),
@@ -2473,7 +2534,14 @@ fn resolve_pattern(
     };
 
     let mut combined = match (date_pat, time_pat) {
-        (Some(d), Some(t)) => s.datetime[2].replace("{1}", &d).replace("{0}", &t),
+        // `atTime` again, its length following the date half's width the way ICU
+        // picks it — a `MMMM` date takes `en`'s "{1} 'at' {0}", a numeric one
+        // "{1}, {0}". Read the *requested* widths, not `d`: the skeleton carries
+        // a representative `MMM` for lookup and only `patch_widths`, further
+        // down, restores what the caller asked for.
+        (Some(d), Some(t)) => s.datetime_at[requested_glue_style(o)]
+            .replace("{1}", &d)
+            .replace("{0}", &t),
         (Some(d), None) => d,
         (None, Some(t)) => t,
         (None, None) => String::from(s.date[2]),

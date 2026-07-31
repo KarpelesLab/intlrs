@@ -356,9 +356,11 @@ fn plain_time_apis_drop_the_unfillable_zone_field() {
     );
     assert_eq!(format_time("de", &when, DateStyle::Full), "12:00:00");
     assert_eq!(format_time("ja", &when, DateStyle::Full), "12時00分00秒");
+    // The `atTime` combiner: `en`'s full slot is `{1} 'at' {0}`, so a date style
+    // combined with a *time of day* reads "… at 12:00:00 PM". Matches V8/ICU.
     assert_eq!(
         format_datetime("en", &when, DateStyle::Full, DateStyle::Full),
-        "Wednesday, July 15, 2026, 12:00:00\u{202f}PM"
+        "Wednesday, July 15, 2026 at 12:00:00\u{202f}PM"
     );
 }
 

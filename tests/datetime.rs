@@ -1033,3 +1033,80 @@ fn alternate_calendars_report_absent_data_as_none() {
         Some("September".into())
     );
 }
+
+/// UTS #35 has two date+time combining patterns, and ICU picks between them by
+/// what `{0}` holds: `dateTimeFormats-atTime` when it is a *time of day*, the
+/// plain slot otherwise. They differ in 74 of the 101 locales, and the length
+/// follows the date half's own width. Values match V8/ICU.
+#[test]
+fn date_time_combiner_uses_the_at_time_slot() {
+    use intl::datetime::{DateTimeFormatOptions, MonthStyle, NameStyle, Numeric2Digit};
+
+    const T: DateTime = DateTime {
+        year: 2021,
+        month: 8,
+        day: 4,
+        hour: 12,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+    };
+
+    // Whole styles.
+    assert_eq!(
+        fdt("en", &T, Long, Short),
+        "August 4, 2021 at 12:00\u{202f}PM"
+    );
+    assert_eq!(fdt("fi", &T, Long, Short), "4. elokuuta 2021 klo 12.00");
+    assert_eq!(fdt("fr", &T, Full, Short), "mercredi 4 août 2021 à 12:00");
+    // `en`'s short/medium `atTime` is the plain "{1}, {0}", so nothing changes.
+    assert_eq!(fdt("en", &T, Short, Short), "8/4/21, 12:00\u{202f}PM");
+
+    // Components: the slot's length follows the *requested* month width, not the
+    // representative `MMM` the skeleton lookup uses.
+    let with = |b: &dyn Fn(&mut DateTimeFormatOptions)| {
+        let mut o = DateTimeFormatOptions::default();
+        o.day = Some(Numeric2Digit::Numeric);
+        o.year = Some(Numeric2Digit::Numeric);
+        o.hour = Some(Numeric2Digit::Numeric);
+        o.minute = Some(Numeric2Digit::TwoDigit);
+        b(&mut o);
+        o
+    };
+    let f = |o: &DateTimeFormatOptions| intl::datetime::format_options("en", &T, o).unwrap();
+    assert_eq!(
+        f(&with(&|o| o.month = Some(MonthStyle::Long))),
+        "August 4, 2021 at 12:00\u{202f}PM"
+    );
+    assert_eq!(
+        f(&with(&|o| o.month = Some(MonthStyle::Short))),
+        "Aug 4, 2021, 12:00\u{202f}PM"
+    );
+    assert_eq!(
+        f(&with(&|o| o.month = Some(MonthStyle::Numeric))),
+        "8/4/2021, 12:00\u{202f}PM"
+    );
+    assert_eq!(
+        f(&with(&|o| {
+            o.month = Some(MonthStyle::Long);
+            o.weekday = Some(NameStyle::Long);
+        })),
+        "Wednesday, August 4, 2021 at 12:00\u{202f}PM"
+    );
+
+    // A range's `{0}` is a time *range*, not a time of day, so it keeps the
+    // plain slot even with a wide month — as ICU does.
+    let a = DateTime {
+        year: 2024,
+        month: 6,
+        day: 15,
+        hour: 9,
+        ..T
+    };
+    let b = DateTime { hour: 17, ..a };
+    assert_eq!(
+        intl::datetime::format_range("en", &a, &b, &with(&|o| o.month = Some(MonthStyle::Long)))
+            .unwrap(),
+        "June 15, 2024, 9:00\u{202f}AM\u{2009}–\u{2009}5:00\u{202f}PM"
+    );
+}

@@ -7,27 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.0](https://github.com/KarpelesLab/intlrs/compare/v0.5.6...v0.6.0) - 2026-07-31
-
-### Added
-
-- *(datetime)* field-level calendar API, host DST, and the zone-name combiner
-- *(list, relative)* the full ECMA-402 surfaces for both
-- *(collate)* named collations via -u-co-, and a UTS #10 case level
-
-### Fixed
-
-- *(number)* root symbol inheritance, range affix collapsing, units in all notations
-- *(locale)* carry variants through minimize, apply variant language aliases
-- *(case)* honour the conditional SpecialCasing rules
-- *(units)* vendor the Traditional Chinese unit bundles
-
-### Other
-
-- *(relative)* [**breaking**] mark RelativeUnit non_exhaustive
-- *(codegen)* use .cloned() in the alias lookup
-- remove a scratch test committed by mistake
-
 ## [0.5.6](https://github.com/KarpelesLab/intlrs/compare/v0.5.5...v0.5.6) - 2026-07-30
 
 ### Other
