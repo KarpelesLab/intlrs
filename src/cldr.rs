@@ -88,6 +88,11 @@ pub struct NumberSpec {
     pub nan: &'static str,
     /// The infinity placeholder (`"∞"` in every vendored locale).
     pub infinity: &'static str,
+    /// CLDR `numbers/minimumGroupingDigits`: how many digits must sit before the
+    /// first group separator before grouping is used at all. `1` in `en`/`de`,
+    /// `2` in `pl`/`es`/`et`/`lv`, which is why those render `1000` unseparated
+    /// but `10000` grouped. A property of the locale, not of the system.
+    pub min_grouping: u8,
     /// The standard decimal pattern.
     pub dec: Pattern,
     /// The standard percent pattern.

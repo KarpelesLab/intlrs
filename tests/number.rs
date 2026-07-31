@@ -1222,3 +1222,44 @@ fn script_and_region_locales() {
     assert_eq!(k("zh-CN", 123456789.0), "1.2亿");
     assert_eq!(k("zh-SG", 123456789.0), "1.2亿");
 }
+
+/// CLDR `numbers/minimumGroupingDigits` gates the separator: grouping only
+/// appears once that many digits sit before the first group. It is 2 in
+/// `pl`/`es`/`et`/`lv`, so they write 1000 unseparated but 10000 grouped, and 1
+/// in `en`/`de`/`pt`/`cs`/`fi`, which group from 1000. Values match V8/ICU.
+#[test]
+fn minimum_grouping_digits() {
+    // minimumGroupingDigits = 2.
+    for lang in ["pl", "et", "lv"] {
+        assert_eq!(dec(lang, 1000.0), "1000", "{lang}");
+        assert_eq!(dec(lang, 10000.0), "10\u{a0}000", "{lang}");
+        assert_eq!(dec(lang, 100000.0), "100\u{a0}000", "{lang}");
+    }
+    assert_eq!(dec("es", 1000.0), "1000");
+    assert_eq!(dec("es", 10000.0), "10.000");
+
+    // minimumGroupingDigits = 1 — note `pt`/`cs`/`fi` are 1 in CLDR 48, so they
+    // group from 1000 despite sharing the "2" reputation.
+    assert_eq!(dec("en", 1000.0), "1,000");
+    assert_eq!(dec("de", 1000.0), "1.000");
+    assert_eq!(dec("pt", 1000.0), "1.000");
+    assert_eq!(dec("cs", 1000.0), "1\u{a0}000");
+    assert_eq!(dec("fi", 1000.0), "1\u{a0}000");
+    // Indian grouping is unaffected: `hi` is 1, and its secondary group still
+    // applies past the first.
+    assert_eq!(dec("hi", 100000.0), "1,00,000");
+
+    // It gates every style, not just plain decimals.
+    assert_eq!(pct("pl", 10.0), "1000%");
+    #[cfg(feature = "currency")]
+    assert_eq!(
+        intl::number::format_currency("pl", 1000.0, "PLN"),
+        "1000,00\u{a0}zł"
+    );
+
+    // `useGrouping` still overrides the locale in both directions.
+    let always = nf(|o| o.use_grouping = intl::number::UseGrouping::Always);
+    let never = nf(|o| o.use_grouping = intl::number::UseGrouping::Never);
+    assert_eq!(intl::number::format("pl", 1000.0, &always), "1\u{a0}000");
+    assert_eq!(intl::number::format("pl", 1000.0, &never), "1000");
+}

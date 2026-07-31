@@ -2444,6 +2444,10 @@ fn script_region_alias_keys(keys: &[String], likely: &Json) -> Vec<(String, Stri
 #[derive(PartialEq, Eq)]
 struct NsSpec {
     ns: String,
+    /// CLDR `numbers/minimumGroupingDigits` — a property of the *locale*, so it
+    /// is the same in every one of its systems, but it rides along here because
+    /// `NumberSpec` is what the runtime resolves.
+    min_grouping: u8,
     decimal: String,
     group: String,
     minus: String,
@@ -2663,6 +2667,7 @@ fn emit_numbers(
                 pct_raw = pct_pattern.clone();
             }
             specs.push(NsSpec {
+                min_grouping: min_grouping_digits(n),
                 dec: parse_number_pattern(&dec_pattern, &percent),
                 pct: parse_number_pattern(&pct_pattern, &percent),
                 decimal: g(sym, "decimal"),
@@ -2702,6 +2707,7 @@ fn emit_numbers(
                 };
                 let percent = field("percentSign", &r.percent);
                 specs.push(NsSpec {
+                    min_grouping: min_grouping_digits(n),
                     dec: parse_number_pattern(
                         &over_pat("decimalFormats", &r.dec, &dec_raw),
                         &percent,
@@ -2844,10 +2850,22 @@ fn rust_pattern(p: &PatFields) -> String {
     )
 }
 
+/// CLDR `numbers/minimumGroupingDigits`: how many digits must precede the first
+/// group separator before grouping appears at all. `2` in `pl`/`es`/`et`/`lv`
+/// and others, so they render 1000 unseparated but 10000 grouped. Absent means
+/// `1`, CLDR's own default.
+fn min_grouping_digits(numbers: &Json) -> u8 {
+    numbers
+        .get("minimumGroupingDigits")
+        .and_then(Json::as_str)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1)
+}
+
 /// Render one numbering system's block as a `crate::cldr::NumberSpec` literal.
 fn rust_spec(s: &NsSpec) -> String {
     format!(
-        "NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, dec: {}, pct: {} }}",
+        "NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, min_grouping: {}, dec: {}, pct: {} }}",
         rust_str(&s.decimal),
         rust_str(&s.group),
         rust_str(&s.minus),
@@ -2855,6 +2873,7 @@ fn rust_spec(s: &NsSpec) -> String {
         rust_str(&s.percent),
         rust_str(&s.nan),
         rust_str(&s.infinity),
+        s.min_grouping,
         rust_pattern(&s.dec),
         rust_pattern(&s.pct),
     )
@@ -2984,7 +3003,7 @@ fn write_numbers_rs(
         let _ = write!(
             out,
             "        #[cfg(feature = \"number-numsys\")]\n        \
-             \"{}\" => NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, dec: latn.dec, pct: {} }},\n",
+             \"{}\" => NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, min_grouping: latn.min_grouping, dec: latn.dec, pct: {} }},\n",
             r.ns,
             rust_str(&r.decimal),
             rust_str(&r.group),

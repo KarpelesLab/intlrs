@@ -1674,6 +1674,7 @@ pub intl::number::NumberSpec::dec: intl::number::Pattern
 pub intl::number::NumberSpec::decimal: &'static str
 pub intl::number::NumberSpec::group: &'static str
 pub intl::number::NumberSpec::infinity: &'static str
+pub intl::number::NumberSpec::min_grouping: u8
 pub intl::number::NumberSpec::minus: &'static str
 pub intl::number::NumberSpec::nan: &'static str
 pub intl::number::NumberSpec::pct: intl::number::Pattern

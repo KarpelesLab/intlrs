@@ -927,8 +927,17 @@ fn fixed_body(p: &Pattern, value: f64, r: &Resolved) -> Body {
     }
 
     let is_zero = int_str.bytes().all(|b| b == b'0') && frac.bytes().all(|b| b == b'0');
+    // The locale's `minimumGroupingDigits` gates the separator here too — this
+    // path has no `NumberFormatOptions`, so it takes the `useGrouping: "auto"`
+    // behaviour that the free functions document.
+    let (pri, sec) =
+        if int_str.len() >= p.primary_group as usize + r.spec.min_grouping.max(1) as usize {
+            (p.primary_group, p.secondary_group)
+        } else {
+            (0, 0)
+        };
     Body {
-        parts: digit_parts(int_str, frac, p.primary_group, p.secondary_group, r),
+        parts: digit_parts(int_str, frac, pri, sec, r),
         inner: (0, 0),
         negative,
         is_zero,
@@ -1136,27 +1145,37 @@ fn sign_part(
     }
 }
 
-/// Effective grouping sizes after applying the `useGrouping` strategy.
+/// Effective grouping sizes after applying the `useGrouping` strategy and the
+/// locale's own `minimumGroupingDigits`.
 ///
-/// ECMA-402 `InitializeNumberFormat` step 21 gives compact notation a default of
-/// `"min2"` rather than `"auto"`, which is why `de` compacts `1234` to `"1234"`
-/// but `12345` to `"12.345"`.
-fn effective_grouping(opts: &NumberFormatOptions, pattern: &Pattern, int_len: usize) -> (u8, u8) {
+/// Both express the same rule — how many digits the leftmost group needs before
+/// a separator appears at all — so they combine as a maximum. CLDR sets
+/// `minimumGroupingDigits` to 2 for `pl`/`es`/`et`/`lv` and others, which is why
+/// they render `1000` unseparated but `10000` grouped; ECMA-402
+/// `InitializeNumberFormat` step 21 independently gives compact notation a
+/// default of `"min2"`, which is why `de` compacts `1234` to `"1234"` but
+/// `12345` to `"12.345"`. `"always"` overrides the locale, as the spec says.
+fn effective_grouping(
+    opts: &NumberFormatOptions,
+    pattern: &Pattern,
+    spec: &NumberSpec,
+    int_len: usize,
+) -> (u8, u8) {
     let strategy = match (opts.use_grouping, opts.notation) {
         (UseGrouping::Auto, Notation::Compact) => UseGrouping::Min2,
         (other, _) => other,
     };
-    match strategy {
-        UseGrouping::Never => (0, 0),
-        UseGrouping::Min2 => {
-            // Group only when the leftmost group would have ≥2 digits.
-            if int_len > pattern.primary_group as usize + 1 {
-                (pattern.primary_group, pattern.secondary_group)
-            } else {
-                (0, 0)
-            }
-        }
-        UseGrouping::Auto | UseGrouping::Always => (pattern.primary_group, pattern.secondary_group),
+    let sizes = (pattern.primary_group, pattern.secondary_group);
+    let min = match strategy {
+        UseGrouping::Never => return (0, 0),
+        UseGrouping::Always => return sizes,
+        UseGrouping::Auto => spec.min_grouping.max(1),
+        UseGrouping::Min2 => spec.min_grouping.max(2),
+    };
+    if int_len >= pattern.primary_group as usize + min as usize {
+        sizes
+    } else {
+        (0, 0)
     }
 }
 
@@ -1745,7 +1764,7 @@ fn standard_body(
     let abs = if scaled < 0.0 { -scaled } else { scaled };
     let (int_d, frac_d) = round_to(abs, min_int, p, opts.rounding_mode, negative);
     let is_zero = int_d.bytes().all(|b| b == b'0') && frac_d.bytes().all(|b| b == b'0');
-    let (pri, sec) = effective_grouping(opts, pattern, int_d.len());
+    let (pri, sec) = effective_grouping(opts, pattern, &r.spec, int_d.len());
     Body {
         parts: digit_parts(&int_d, &frac_d, pri, sec, r),
         inner: (0, 0),
@@ -1917,7 +1936,7 @@ fn compact_body(
                     // The mantissa groups like any other integer, which only
                     // shows past the largest band, where it runs long: ICU
                     // writes 10^18 as "1,000,000T".
-                    let (pri, sec) = effective_grouping(opts, pattern, int_d.len());
+                    let (pri, sec) = effective_grouping(opts, pattern, &r.spec, int_d.len());
                     parts.extend(digit_parts(&int_d, &frac_d, pri, sec, r));
                     digits_end = parts.len();
                     wrote = true;
@@ -2345,6 +2364,7 @@ mod tests {
             percent: "%",
             nan: "NaN",
             infinity: "∞",
+            min_grouping: 1,
             dec: pat,
             pct: pat,
         }
