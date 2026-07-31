@@ -39,7 +39,14 @@ use alloc::vec::Vec;
 pub use crate::cldr::RelUnit;
 
 /// A relative time unit — ECMA-402's eight `SingularRelativeTimeUnit` values.
+///
+/// The enum is `#[non_exhaustive]`: it names units of time rather than a closed
+/// presentation axis, and CLDR carries relative fields ECMA-402 does not expose
+/// yet (`Quarter` was itself a later addition), so match the variants you handle
+/// and leave a fallback arm. The width and `numeric` axes are closed sets and are
+/// exhaustive.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum RelativeUnit {
     /// Years.
     Year,

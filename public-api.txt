@@ -1913,7 +1913,7 @@ impl<T> core::clone::CloneToUninit for intl::relative::RelativeNumeric where T: 
 pub unsafe fn intl::relative::RelativeNumeric::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::relative::RelativeNumeric
 pub fn intl::relative::RelativeNumeric::from(T) -> T
-pub enum intl::relative::RelativeUnit
+#[non_exhaustive] pub enum intl::relative::RelativeUnit
 pub intl::relative::RelativeUnit::Day
 pub intl::relative::RelativeUnit::Hour
 pub intl::relative::RelativeUnit::Minute
