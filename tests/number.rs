@@ -96,13 +96,16 @@ fn compact() {
     assert_eq!(k("en", 150000.0), "150K");
     assert_eq!(k("en", 2_300_000.0), "2.3M");
     assert_eq!(k("en", 1_000_000_000.0), "1B");
-    assert_eq!(k("de", 1500.0), "1.500"); // German doesn't abbreviate thousands
+    // German doesn't abbreviate thousands, and compact notation groups `min2`
+    // (ECMA-402), so the four digits stay bare: `Intl.NumberFormat('de',
+    // {notation: 'compact'}).format(1500)` is "1500".
+    assert_eq!(k("de", 1500.0), "1500");
     assert_eq!(k("fr", 1500.0), "1,5\u{a0}k"); // French: NBSP + lowercase k
 }
 
 #[test]
 fn native_digits() {
-    use intl::number::{format_decimal_default_numbering as fdn, to_numbering_system as tns};
+    use intl::number::{format_decimal as fdn, to_numbering_system as tns};
     assert_eq!(tns("2024", "arab"), "٢٠٢٤");
     assert_eq!(tns("3.14", "deva"), "३.१४");
     assert_eq!(tns("123", "latn"), "123");
@@ -218,9 +221,7 @@ fn numbering_system_root_inheritance() {
 /// does not have (UTS #35 §3.4); they inherit everything else from it.
 #[test]
 fn region_default_numbering_system() {
-    use intl::number::{
-        default_numbering_system as d, format_decimal as f, format_decimal_default_numbering as fdn,
-    };
+    use intl::number::{default_numbering_system as d, format_decimal as f};
     assert_eq!(d("ar"), "latn");
     assert_eq!(d("ar-EG"), "arab");
     assert_eq!(d("ar-SA"), "arab");
@@ -234,14 +235,14 @@ fn region_default_numbering_system() {
     // `Intl.NumberFormat('ar-EG').format(1.5)` is "١٫٥"; plain `ar` is "1.5".
     #[cfg(feature = "number-numsys")]
     {
-        assert_eq!(fdn("ar-EG", 1.5), "١\u{66b}٥");
-        assert_eq!(fdn("ar-SA", 1.5), "١\u{66b}٥");
-        assert_eq!(fdn("ur-IN", 1.5), "۱\u{66b}۵");
+        assert_eq!(f("ar-EG", 1.5), "١\u{66b}٥");
+        assert_eq!(f("ar-SA", 1.5), "١\u{66b}٥");
+        assert_eq!(f("ur-IN", 1.5), "۱\u{66b}۵");
     }
-    assert_eq!(fdn("ar", 1.5), "1.5");
-    // The region tag inherits the base language's symbols, so an explicit
-    // request resolves identically for both.
-    assert_eq!(f("ar-EG", 1234.5), f("ar", 1234.5));
+    assert_eq!(f("ar", 1.5), "1.5");
+    // The region tag inherits the base language's symbols, so a request for the
+    // same system resolves identically for both.
+    assert_eq!(f("ar-EG-u-nu-latn", 1234.5), f("ar", 1234.5));
 }
 
 #[test]
@@ -341,6 +342,15 @@ fn format_range_currency_and_parts() {
     // repeats — and the repetition is what makes the separator take spaces.
     assert_eq!(format_range("en", 2.9, 3.1, &cur), "$2.90 \u{2013} $3.10");
     assert_eq!(format_range("en", 2.999, 3.001, &cur), "~$3.00");
+    // `code` now lives in the same modifier layer as the symbol, and "USD" plus
+    // its spacing space is over the threshold, so it factors out and the
+    // separator stays tight — node gives "USD\u{a0}3.00–5.00".
+    let mut code = cur;
+    code.currency_display = intl::number::CurrencyDisplay::Code;
+    assert_eq!(
+        format_range("en", 3.0, 5.0, &code),
+        "USD\u{a0}3.00\u{2013}5.00"
+    );
 
     let parts = format_range_to_parts("en", 2.9, 3.1, &cur);
     let tagged: Vec<_> = parts
@@ -562,10 +572,12 @@ fn unit_style_outside_standard_notation() {
     o.style = NumberStyle::Unit;
     o.unit = Some("kilometer");
     assert_eq!(format("en", 3.0, &o), "3 km");
+    // Compact's own rounding reaches the unit path too: node gives "12K km",
+    // not "12.3K km".
     o.notation = Notation::Compact;
-    assert!(format("en", 12345.0, &o).ends_with("K km"));
+    assert_eq!(format("en", 12345.0, &o), "12K km");
     o.notation = Notation::Scientific;
-    assert!(format("en", 12345.0, &o).ends_with("E4 km"));
+    assert_eq!(format("en", 12345.0, &o), "1.235E4 km");
     o.notation = Notation::Engineering;
     assert!(format("en", 12345.0, &o).ends_with("E3 km"));
     o.notation = Notation::Standard;
@@ -597,7 +609,7 @@ fn fraction_digit_defaults_interact() {
         c.maximum_fraction_digits = Some(0);
         assert_eq!(format("en", 3.0, &c), "$3");
         c.currency_display = CurrencyDisplay::Code;
-        assert_eq!(format("en", 3.0, &c), "3 USD");
+        assert_eq!(format("en", 3.0, &c), "USD\u{a0}3");
         // An explicit minimum above the default raises the maximum instead.
         let mut m = NumberFormatOptions::default();
         m.style = NumberStyle::Currency;
@@ -805,9 +817,11 @@ fn currency_display() {
         format("en", 1234.5, &mk("USD", CurrencyDisplay::Symbol)),
         "$1,234.50"
     );
+    // `code` renders through the ¤ pattern, like the symbol — so `en` puts it
+    // in front, with the UTS #35 currency-spacing no-break space.
     assert_eq!(
         format("en", 1234.5, &mk("USD", CurrencyDisplay::Code)),
-        "1,234.50 USD"
+        "USD\u{a0}1,234.50"
     );
     assert_eq!(
         format("en", 1234.5, &mk("USD", CurrencyDisplay::Name)),
@@ -869,6 +883,316 @@ fn non_finite() {
     assert_eq!(intl::number::format("en", f64::NAN, &o), "NaN");
 }
 
+/// A non-finite value is a placeholder *inside* the style's affixes on the
+/// options path too, not a bare "NaN": both entry points build it from the same
+/// body/affix pair. node 22 (ICU 77):
+/// `new Intl.NumberFormat('en', {style: 'currency', currency: 'USD'})
+///  .format(NaN)` is `"$NaN"` and `{style: 'percent'}` on `Infinity` is `"∞%"`.
+#[test]
+fn non_finite_keeps_style_affixes() {
+    use intl::number::{
+        Notation, NumberPartType, NumberStyle, SignDisplay, format, format_percent, format_to_parts,
+    };
+    let percent = nf(|o| o.style = NumberStyle::Percent);
+    assert_eq!(format("en", f64::INFINITY, &percent), "∞%");
+    assert_eq!(format("en", f64::NAN, &percent), "NaN%");
+    assert_eq!(format("de", f64::INFINITY, &percent), "∞\u{a0}%");
+    // …and the free-function path, which always kept them, still agrees.
+    assert_eq!(format_percent("en", f64::INFINITY), "∞%");
+    assert_eq!(
+        format_to_parts("en", f64::NAN, &percent)
+            .iter()
+            .map(|p| p.kind)
+            .collect::<Vec<_>>(),
+        vec![NumberPartType::Nan, NumberPartType::PercentSign]
+    );
+
+    // The notation modifiers drop out (there are no digits to abbreviate), but
+    // the style's affixes do not.
+    let sci_percent = nf(|o| {
+        o.style = NumberStyle::Percent;
+        o.notation = Notation::Scientific;
+    });
+    assert_eq!(format("en", f64::NAN, &sci_percent), "NaN%");
+    let compact_percent = nf(|o| {
+        o.style = NumberStyle::Percent;
+        o.notation = Notation::Compact;
+    });
+    assert_eq!(format("en", f64::INFINITY, &compact_percent), "∞%");
+
+    // ECMA-402 `PartitionNumberPattern` treats NaN as it treats zero for the
+    // sign: `exceptZero` leaves it unsigned, `always` signs it.
+    let always = nf(|o| o.sign_display = SignDisplay::Always);
+    assert_eq!(format("en", f64::NAN, &always), "+NaN");
+    assert_eq!(format("en", f64::INFINITY, &always), "+∞");
+    let except_zero = nf(|o| o.sign_display = SignDisplay::ExceptZero);
+    assert_eq!(format("en", f64::NAN, &except_zero), "NaN");
+
+    #[cfg(feature = "currency")]
+    {
+        use intl::number::CurrencyDisplay;
+        let usd = nf(|o| {
+            o.style = NumberStyle::Currency;
+            o.currency = Some("USD");
+        });
+        assert_eq!(format("en", f64::NAN, &usd), "$NaN");
+        assert_eq!(format("en", f64::NEG_INFINITY, &usd), "-$∞");
+        assert_eq!(
+            intl::number::format_currency("en", f64::NAN, "USD"),
+            format("en", f64::NAN, &usd)
+        );
+        // No currency spacing here: the placeholder does not start with a digit,
+        // so UTS #35's `surroundingMatch` fails — node gives "USDNaN" too.
+        let code = nf(|o| {
+            o.style = NumberStyle::Currency;
+            o.currency = Some("USD");
+            o.currency_display = CurrencyDisplay::Code;
+        });
+        assert_eq!(format("en", f64::NAN, &code), "USDNaN");
+        assert_eq!(format("en", f64::INFINITY, &code), "USD∞");
+    }
+    #[cfg(feature = "units")]
+    {
+        let km = nf(|o| {
+            o.style = NumberStyle::Unit;
+            o.unit = Some("kilometer");
+        });
+        assert_eq!(format("en", f64::NAN, &km), "NaN km");
+    }
+}
+
+/// ECMA-402 `SetNumberFormatDigitOptions` step 15 gives compact notation a
+/// rounding default of its own — `roundingPriority: "morePrecision"` over
+/// `maximumFractionDigits: 0` and 2 significant digits — so a compact value
+/// keeps a tenth only when that is *more* precise than the units place.
+/// Expected values from node 22 (ICU 77),
+/// `new Intl.NumberFormat(l, o).format(v)`.
+#[test]
+fn compact_rounding_defaults() {
+    use intl::number::{Notation, NumberStyle, format, format_compact as k};
+    // 123.456789 million: the units place wins, so no fraction digit.
+    assert_eq!(k("en", 123_456_789.0), "123M");
+    assert_eq!(k("en", -123_456_789.0), "-123M");
+    assert_eq!(k("en", 12345.0), "12K");
+    // 1.5 thousand: the tenth is more precise than the units place, so it stays.
+    assert_eq!(k("en", 1500.0), "1.5K");
+    assert_eq!(k("en", 1234.0), "1.2K");
+    // Rounding that carries into the next band re-selects the magnitude, as
+    // ICU's second pass does: "1M", not "1000K".
+    assert_eq!(k("en", 999_999.0), "1M");
+    // Below the smallest band the value is written out, still at compact's
+    // precision — `Intl.NumberFormat('en', {notation: 'compact'})` gives "123".
+    assert_eq!(k("en", 123.456), "123");
+    assert_eq!(k("en", 0.5), "0.5");
+    assert_eq!(k("en", 999.0), "999");
+
+    // Explicit precision options override the default, both ways.
+    let compact = nf(|o| o.notation = Notation::Compact);
+    assert_eq!(format("en", 123_456_789.0, &compact), "123M");
+    let mxfd = nf(|o| {
+        o.notation = Notation::Compact;
+        o.maximum_fraction_digits = Some(1);
+    });
+    assert_eq!(format("en", 123_456_789.0, &mxfd), "123.5M");
+    let mnfd = nf(|o| {
+        o.notation = Notation::Compact;
+        o.minimum_fraction_digits = Some(2);
+    });
+    // The style's `mxfdDefault` (3) applies once fraction digits are requested.
+    assert_eq!(format("en", 123_456_789.0, &mnfd), "123.457M");
+    let mxsd = nf(|o| {
+        o.notation = Notation::Compact;
+        o.maximum_significant_digits = Some(3);
+    });
+    assert_eq!(format("en", 123_456_789.0, &mxsd), "123M");
+
+    // The default carries into every style the notation can wrap.
+    let percent = nf(|o| {
+        o.notation = Notation::Compact;
+        o.style = NumberStyle::Percent;
+    });
+    assert_eq!(format("en", 12345.0, &percent), "1.2M%");
+    #[cfg(feature = "currency")]
+    {
+        let usd = nf(|o| {
+            o.notation = Notation::Compact;
+            o.style = NumberStyle::Currency;
+            o.currency = Some("USD");
+        });
+        assert_eq!(format("en", 123_456_789.0, &usd), "$123M");
+    }
+
+    // Compact also groups `min2` by default (ECMA-402 step 21), which shows in
+    // a locale that does not abbreviate thousands: node gives "1500"/"12.345".
+    assert_eq!(k("de", 1500.0), "1500");
+    assert_eq!(k("de", 12345.0), "12.345");
+    // Past the largest band the mantissa runs long and groups by the same rule:
+    // node gives "1000T" for 10^15 and "1,000,000T" for 10^18.
+    assert_eq!(k("en", 1e15), "1000T");
+    assert_eq!(k("en", 1e18), "1,000,000T");
+}
+
+/// The scientific/engineering mantissa takes the *style's* fraction-digit
+/// defaults, like every other notation — ECMA-402 defaults
+/// `maximumFractionDigits` to 3 for the decimal style, to the currency's digits
+/// for a currency. node: `new Intl.NumberFormat('en', {notation: 'scientific'})
+/// .format(12345.6789)` is `"1.235E4"`.
+#[test]
+fn scientific_default_fraction_digits() {
+    use intl::number::{Notation, NumberStyle, format, format_scientific};
+    let sci = nf(|o| o.notation = Notation::Scientific);
+    assert_eq!(format("en", 12345.6789, &sci), "1.235E4");
+    assert_eq!(format("en", 12345.0, &sci), "1.235E4");
+    let eng = nf(|o| o.notation = Notation::Engineering);
+    assert_eq!(format("en", 12345.6789, &eng), "12.346E3");
+
+    // An explicit maximum still wins.
+    let wide = nf(|o| {
+        o.notation = Notation::Scientific;
+        o.maximum_fraction_digits = Some(6);
+    });
+    assert_eq!(format("en", 12345.6789, &wide), "1.234568E4");
+    let sig = nf(|o| {
+        o.notation = Notation::Scientific;
+        o.maximum_significant_digits = Some(2);
+    });
+    assert_eq!(format("en", 12345.6789, &sig), "1.2E4");
+
+    // The style's own defaults reach the mantissa: percent rounds to 0 fraction
+    // digits (and scales by 100), a currency to its two.
+    let percent = nf(|o| {
+        o.notation = Notation::Scientific;
+        o.style = NumberStyle::Percent;
+    });
+    assert_eq!(format("en", 12345.6789, &percent), "1E6%");
+    #[cfg(feature = "currency")]
+    {
+        let usd = nf(|o| {
+            o.notation = Notation::Scientific;
+            o.style = NumberStyle::Currency;
+            o.currency = Some("USD");
+        });
+        assert_eq!(format("en", 12345.6789, &usd), "$1.23E4");
+    }
+
+    // The free function takes its mantissa width as an argument and is unchanged.
+    assert_eq!(format_scientific("en", 12345.6789, 6), "1.234568E4");
+    assert_eq!(format_scientific("en", 12345.6789, 3), "1.235E4");
+}
+
+/// `currencyDisplay: "code"` substitutes the ISO code into the locale's `¤`
+/// pattern, exactly as a symbol — so `en` writes it in front — with the UTS #35
+/// `currencySpacing` no-break space between an alphabetic currency and a digit.
+/// Only `"name"` goes through the currency *unit* pattern. node:
+/// `new Intl.NumberFormat('en', {style: 'currency', currency: 'USD',
+/// currencyDisplay: 'code'}).format(3)` is `"USD\u{a0}3.00"`.
+#[cfg(feature = "currency")]
+#[test]
+fn currency_display_code_uses_the_currency_pattern() {
+    use intl::number::{
+        CurrencyDisplay, NumberPartType, NumberStyle, format, format_currency, format_to_parts,
+    };
+    let code = |lang, c| {
+        format(
+            lang,
+            3.0,
+            &nf(|o| {
+                o.style = NumberStyle::Currency;
+                o.currency = Some(c);
+                o.currency_display = CurrencyDisplay::Code;
+            }),
+        )
+    };
+    assert_eq!(code("en", "USD"), "USD\u{a0}3.00");
+    assert_eq!(code("ja", "USD"), "USD\u{a0}3.00");
+    // A pattern that already ends in a space inserts none: its `¤`-adjacent
+    // character is a space, which `currencyMatch` excludes.
+    assert_eq!(code("de", "USD"), "3,00\u{a0}USD");
+    assert_eq!(code("fr", "USD"), "3,00\u{a0}USD");
+    assert_eq!(code("ja", "JPY"), "JPY\u{a0}3"); // and the currency's digits
+
+    let opts = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("USD");
+        o.currency_display = CurrencyDisplay::Code;
+    });
+    assert_eq!(format("en", -3.0, &opts), "-USD\u{a0}3.00");
+    // ICU tags the inserted space as a literal, between currency and integer.
+    let parts = format_to_parts("en", 3.0, &opts);
+    assert_eq!(
+        parts
+            .iter()
+            .map(|p| (p.kind, p.value.as_str()))
+            .take(3)
+            .collect::<Vec<_>>(),
+        vec![
+            (NumberPartType::Currency, "USD"),
+            (NumberPartType::Literal, "\u{a0}"),
+            (NumberPartType::Integer, "3"),
+        ]
+    );
+
+    // The same spacing applies to an alphabetic *symbol*, on both paths — `en`'s
+    // symbol for SEK is "SEK" and node gives "SEK\u{a0}3.00".
+    let sek = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("SEK");
+    });
+    assert_eq!(format("en", 3.0, &sek), "SEK\u{a0}3.00");
+    assert_eq!(format_currency("en", 3.0, "SEK"), "SEK\u{a0}3.00");
+    // …and never to a symbol that is a symbol.
+    assert_eq!(format_currency("en", 3.0, "USD"), "$3.00");
+
+    // `name` still renders through the currency unit pattern.
+    let name = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("USD");
+        o.currency_display = CurrencyDisplay::Name;
+    });
+    assert_eq!(format("en", 3.0, &name), "3.00 US dollars");
+}
+
+/// The numbering system defaults to the locale's CLDR `defaultNumberingSystem`,
+/// as ECMA-402 does — `Intl.NumberFormat('ar-EG').format(1234.5)` is
+/// "١٬٢٣٤٫٥". Thirty of the vendored locales have a non-`latn` default: the
+/// eight languages below plus the twenty-one `ar-*` regions and `ur-IN`.
+#[cfg(feature = "number-numsys")]
+#[test]
+fn default_numbering_system_follows_the_locale() {
+    use intl::number::{format, format_decimal as f};
+    assert_eq!(f("ar-EG", 1234.5), "١\u{66c}٢٣٤\u{66b}٥");
+    assert_eq!(f("ar-SA", 1234.5), "١\u{66c}٢٣٤\u{66b}٥");
+    assert_eq!(f("fa", 1234.5), "۱\u{66c}۲۳۴\u{66b}۵");
+    assert_eq!(f("ps", 1234.5), "۱\u{66c}۲۳۴\u{66b}۵");
+    assert_eq!(f("ur-IN", 1234.5), "۱\u{66c}۲۳۴\u{66b}۵");
+    assert_eq!(f("bn", 1234.5), "১,২৩৪.৫");
+    assert_eq!(f("as", 1234.5), "১,২৩৪.৫");
+    assert_eq!(f("mr", 1234.5), "१,२३४.५");
+    assert_eq!(f("ne", 1234.5), "१,२३४.५");
+    assert_eq!(f("my", 1234.5), "၁,၂၃၄.၅");
+    // `sd`'s arab block keeps an ASCII decimal separator; node agrees.
+    assert_eq!(f("sd", 1234.5), "١\u{66c}٢٣٤.٥");
+
+    // The other 95 keep Latin digits, `ar` and `hi` included (their CLDR
+    // default is `latn`, whatever their native system).
+    assert_eq!(f("ar", 1234.5), "1,234.5");
+    assert_eq!(f("hi", 1234.5), "1,234.5");
+    assert_eq!(f("en", 1234.5), "1,234.5");
+    assert_eq!(f("ur", 1234.5), "1,234.5");
+
+    // Both overrides still outrank it, in ECMA-402's order.
+    assert_eq!(f("ar-EG-u-nu-latn", 1234.5), "1,234.5");
+    let latn = nf(|o| o.numbering_system = Some("latn"));
+    assert_eq!(format("ar-EG-u-nu-arab", 1234.5, &latn), "1,234.5");
+
+    // It reaches every entry point, not just the decimal one.
+    assert_eq!(pct("ar-EG", 0.5), "٥٠٪\u{61c}");
+    assert_eq!(
+        intl::number::format_compact("ar-EG", 123_456_789.0),
+        "١٢٣\u{a0}مليون"
+    );
+}
+
 /// Region and script tags that carry their own CLDR number data. The tables are
 /// keyed by the vendored locale, and the lookup truncates a tag at each `-` with
 /// no script inference — so `zh-Hant` needs its own record, and `zh-TW` needs an
@@ -884,8 +1208,8 @@ fn script_and_region_locales() {
     assert_eq!(dec("en", 12345678.0), "12,345,678");
     assert_eq!(dec("en-GB", 12345678.0), "12,345,678");
     // `en-IN` also abbreviates in crores rather than millions.
-    assert_eq!(k("en-IN", 123456789.0), "12.3Cr");
-    assert_eq!(k("en", 123456789.0), "123.5M");
+    assert_eq!(k("en-IN", 123456789.0), "12Cr");
+    assert_eq!(k("en", 123456789.0), "123M");
 
     // Traditional Chinese uses 億; Simplified uses 亿.
     assert_eq!(k("zh-Hant", 123456789.0), "1.2億");

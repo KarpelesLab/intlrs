@@ -83,7 +83,9 @@ Beyond the `unicode` module:
   (`"1.2345E4"`), `format_compact` (`"1.5K"`, `"2.3M"`), and `parse_decimal`
   back to an `f64` (`parse_decimal("de", "1.234,5")` → `1234.5`), plus ranges
   (`format_range("en", 2.9, 3.1, …)` → `"2.9–3.1"`), numbering systems
-  (`format_decimal("ar-u-nu-native", 1.5)` → `"١٫٥"`,
+  (the locale's CLDR `defaultNumberingSystem` by default, as ECMA-402 does —
+  `format_decimal("ar-EG", 1.5)` → `"١٫٥"` — overridable per request with
+  `format_decimal("ar-u-nu-native", 1.5)` → `"١٫٥"` or
   `to_numbering_system("2024", "arab")` → `"٢٠٢٤"`) and ordinals
   (`format_ordinal("en", 21)` → `"21st"`).
 

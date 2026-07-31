@@ -1,6 +1,6 @@
 [package]
 name = "intl"
-version = "0.5.6"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.88"
 description = "Pure-Rust, no_std internationalization primitives (a pure-Rust ICU analog). The `unicode` module provides General_Category, character predicates, scripts, East Asian Width, numeric values, case mapping/folding, UAX #15 normalization (NFC/NFD/NFKC/NFKD), and UTS #10 collation — property tables compiled into const-fn match lookups, with feature-selectable codepoint ranges."
@@ -117,9 +117,11 @@ number = ["alloc", "_cldr"]                 # decimal/percent/scientific/compact
 # CLDR ships per locale (`ar`/`arab`, `fa`/`arabext`, `hi`/`deva`, …), the fields
 # a locale overrides for a system it does not otherwise declare, and **root's**
 # `arab`/`arabext` blocks, which any locale with no block of its own inherits
-# before dropping to its own `latn`. In `default` because without it a `-u-nu-…`
-# request still transliterates the digits but silently keeps the locale's `latn`
-# separators.
+# before dropping to its own `latn`. In `default` because without it a request
+# for a non-`latn` system still transliterates the digits but silently keeps the
+# locale's `latn` separators — and since the default numbering system is now the
+# locale's own (ECMA-402), that is reachable from a bare `ar-EG`/`fa` tag, not
+# only from an explicit `-u-nu-…`.
 number-numsys = ["number"]
 # ECMA-402 v3 `formatRange`/`formatRangeToParts` plus the CLDR data they need —
 # `miscPatterns` (`approximately`, `range`) and `pluralRanges` (to word a unit

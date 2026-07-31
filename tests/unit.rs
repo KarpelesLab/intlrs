@@ -15,6 +15,21 @@ fn units() {
     assert_eq!(fu("xx", 5.0, Kilometer, Long), "5 kilometers");
 }
 
+/// The count is formatted by `number`, so it follows the locale's CLDR
+/// `defaultNumberingSystem` like everything else — `Intl.NumberFormat('mr',
+/// {style: 'unit', unit: 'kilometer', unitDisplay: 'long'}).format(5)` is
+/// "५ किलोमीटर" in node 22 (ICU 77), not "5 किलोमीटर".
+#[test]
+fn count_uses_the_locales_numbering_system() {
+    assert_eq!(fu("mr", 5.0, Kilometer, Long), "५ किलोमीटर");
+    // CLDR 48 respells `bn`'s "hour" with ণ (U+09A3); ICU 77 carries CLDR 47's
+    // ন (U+09A8). The vendored data wins — only the digits are at issue here.
+    assert_eq!(fu("bn", 3.0, Hour, Short), "৩ ঘণ্টা");
+    assert_eq!(fu("ar-EG", 5.0, Kilometer, Long), "٥ كيلومترات");
+    // A `-u-nu-` keyword still overrides it.
+    assert_eq!(fu("mr-u-nu-latn", 5.0, Kilometer, Long), "5 किलोमीटर");
+}
+
 /// The 19 units added to complete ECMA-402's sanctioned set. Their CLDR category
 /// prefixes are irregular (`concentr-percent`, `angle-degree`, `area-acre`), so
 /// each is pinned against the vendored data.
