@@ -5699,12 +5699,16 @@ const COLLATION_SKIP: &[(&str, &str)] = &[
     ),
     (
         "und-u-co-eor",
-        "anchored on `&[last tertiary ignorable]`, a pseudo-anchor the parser does \
-         not resolve to a weight",
+        "gate: \"\u{2c6f}\" (rel 3) \"\u{1d44}\" -> Greater. It parses now that \
+         `[first|last …]` pseudo-anchors are handled, but the European Ordering \
+         Rules reorder whole Latin/Greek/Cyrillic ranges relative to one another, \
+         which this engine's per-relation offsets cannot express",
     ),
     (
         "de-u-co-eor",
-        "`[import und-u-co-eor]`, and `und-u-co-eor` is itself excluded above",
+        "gate: \"Y\" (rel 2) \"\u{1bf}\" -> Greater — `[import und-u-co-eor]`, so \
+         it inherits that rule's misordering, and `und-u-co-eor` is itself \
+         excluded above",
     ),
     (
         "und-u-co-emoji",
