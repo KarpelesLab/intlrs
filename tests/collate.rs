@@ -505,3 +505,76 @@ fn search_collation_resolves_like_icu() {
     assert!(Tailoring::for_locale("ko-u-co-searchjl").is_some());
     assert!(Tailoring::for_locale("de-u-co-searchjl").is_some());
 }
+
+/// `Intl.Locale.prototype.getCollations` and
+/// `Intl.Collator.prototype.resolvedOptions().collation`. Every expectation
+/// below is node 26.3.0 / ICU 78.3 verbatim.
+#[test]
+fn collation_metadata() {
+    use intl::unicode::collate::{collations, default_collation};
+
+    // Root's `emoji` + `eor` reach every locale; the locale's own named
+    // collations join them, sorted.
+    assert_eq!(collations("en"), ["emoji", "eor"]);
+    assert_eq!(collations("fr"), ["emoji", "eor"]);
+    assert_eq!(collations("ru"), ["emoji", "eor"]);
+    assert_eq!(collations("de"), ["emoji", "eor", "phonebk"]);
+    assert_eq!(collations("sv"), ["emoji", "eor", "trad"]);
+    assert_eq!(collations("es"), ["emoji", "eor", "trad"]);
+    assert_eq!(collations("fi"), ["emoji", "eor", "trad"]);
+    assert_eq!(collations("bn"), ["emoji", "eor", "trad"]);
+    assert_eq!(collations("kn"), ["emoji", "eor", "trad"]);
+    assert_eq!(collations("vi"), ["emoji", "eor", "trad"]);
+    assert_eq!(collations("ar"), ["compat", "emoji", "eor"]);
+    assert_eq!(collations("si"), ["dict", "emoji", "eor"]);
+    assert_eq!(collations("ja"), ["emoji", "eor", "unihan"]);
+    assert_eq!(collations("ln"), ["emoji", "eor", "phonetic"]);
+    // `searchjl` is listed even though `search` is not — ICU reports it for ko.
+    assert_eq!(collations("ko"), ["emoji", "eor", "searchjl", "unihan"]);
+    assert_eq!(
+        collations("zh"),
+        ["emoji", "eor", "pinyin", "stroke", "unihan", "zhuyin"]
+    );
+
+    // Script and region subtags inherit the language's list; nothing narrows it.
+    for tag in ["de-AT", "de-DE", "de_AT"] {
+        assert_eq!(collations(tag), ["emoji", "eor", "phonebk"], "{tag}");
+    }
+    for tag in ["ko-KR", "si-LK", "ja-JP", "zh-Hant", "zh-TW", "zh-Hant-TW"] {
+        let base = tag.split(['-', '_']).next().expect("language subtag");
+        assert_eq!(collations(tag), collations(base), "{tag}");
+    }
+    for tag in ["pt-BR", "en-US", "en-US-POSIX", "fil", "nb", "und"] {
+        assert_eq!(collations(tag), ["emoji", "eor"], "{tag}");
+    }
+    // Echoing back a requested `co` keyword is the caller's job; it never
+    // changes what the locale itself offers.
+    assert_eq!(collations("de-u-co-phonebk"), collations("de"));
+
+    // `resolvedOptions().collation`: CLDR names a default for Chinese only.
+    for tag in [
+        "en", "und", "de", "sv", "sv-SE", "ja", "ko", "ar", "fr", "th",
+    ] {
+        assert_eq!(default_collation(tag), "default", "{tag}");
+    }
+    for tag in ["zh", "zh-Hans", "zh-CN", "zh-SG"] {
+        assert_eq!(default_collation(tag), "pinyin", "{tag}");
+    }
+    // zh-Hant is `stroke`, and so are the three region tags ICU resolves onto
+    // it — reached from a table row each, since the walk truncates subtags and
+    // infers no script.
+    for tag in ["zh-Hant", "zh-Hant-TW", "zh-TW", "zh-HK", "zh-MO", "zh_TW"] {
+        assert_eq!(default_collation(tag), "stroke", "{tag}");
+    }
+    // ICU ships no collation bundle for the other regions likelySubtags marks
+    // Traditional, so ECMA-402's lookup truncates those tags to `zh`.
+    for tag in ["zh-AU", "zh-US", "zh-GB", "zh-ID", "zh-VN"] {
+        assert_eq!(default_collation(tag), "pinyin", "{tag}");
+    }
+
+    // A named default is always one of the locale's own collations.
+    for tag in ["en", "de", "zh", "zh-Hant", "ko", "si"] {
+        let def = default_collation(tag);
+        assert!(def == "default" || collations(tag).contains(&def), "{tag}");
+    }
+}

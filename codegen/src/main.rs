@@ -343,7 +343,6 @@ fn main() {
         &cldr.join("bcp47/timezone.xml"),
         &cldr.join("primaryZones.json"),
     );
-    emit_cldr_generated_mod(&cldr_dir);
     emit_rbnf(&cldr_dir, &cldr.join("rbnf.json"));
     emit_numsys(&cldr_dir, &cldr.join("numberingSystems.json"));
     emit_ordsuffix(&cldr_dir, &cldr.join("ordsuffix.json"));
@@ -353,6 +352,13 @@ fn main() {
         &cldr.join("collation"),
         &cldr.join("bcp47/collation.xml"),
     );
+    emit_collation_meta(
+        &cldr_dir,
+        &cldr.join("collation"),
+        &cldr.join("bcp47/collation.xml"),
+        &cldr.join("likely.json"),
+    );
+    emit_cldr_generated_mod(&cldr_dir);
     emit_collation_zh(&root, &cldr.join("collation/zh.xml"));
     emit_collation_zh_rs(&root, &ucd.join("Unihan_kRSUnicode.txt"));
     emit_collation_zh_variant(&root, &cldr.join("collation/zh.xml"), "stroke");
@@ -4244,7 +4250,8 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path, likely_path: &Path) {
 /// The modules under `src/cldr/generated/`, with the cargo feature each is
 /// gated on, so a disabled formatter drops its table — and the megabytes of
 /// string data in it — from the build entirely.
-const CLDR_GENERATED: [(&str, &str); 5] = [
+const CLDR_GENERATED: [(&str, &str); 6] = [
+    ("collations", "collation"),
     ("lists", "list"),
     ("numbers", "number"),
     ("relative", "relative"),
@@ -5926,6 +5933,200 @@ fn emit_collation_rules(cldr_dir: &Path, json_out: &Path, xml_dir: &Path, bcp47_
         skipped.len(),
         names.join(" "),
     );
+}
+
+/// Write `src/cldr/generated/collations.rs`: the collation **metadata** UTS #35
+/// §5.1 puts in `<collations>` — which named collations a locale offers, and
+/// which one it sorts with by default (`<defaultCollation>`).
+///
+/// This is deliberately *not* the same set as [`emit_collation_rules`]: it
+/// describes what CLDR declares, so it lists every named collation including the
+/// ones [`COLLATION_SKIP`] keeps out of the rule table (`eor`, `emoji`, the
+/// `unihan` orders). ECMA-402 reports exactly this: `Intl.Locale.prototype.
+/// getCollations` returns the list, `Intl.Collator.prototype.resolvedOptions().
+/// collation` the default. So it is generated Rust rather than another key shape
+/// in `collation.bin`, whose keys promise a parseable rule.
+///
+/// Two tables, both keyed by an exact lowercased locale id, both walked by
+/// truncating `-` subtags at runtime:
+///
+/// * `collations` — the locale's own types unioned with every ancestor's and
+///   root's, sorted, with `standard` and `search` dropped. ICU omits those two:
+///   `standard` is the unnamed default and `search` serves `usage: "search"`
+///   rather than the `co` keyword — but `searchjl` *is* listed (`ko`). Only a
+///   locale whose union differs from its truncation parent's gets a row, so `de`
+///   is listed and `de-AT` (same union) is not.
+/// * `default_collation` — `<defaultCollation>` mapped to its BCP-47 type, with
+///   `standard` written as `default`, the string ECMA-402 reports. CLDR 48 sets
+///   it in four files: `root` and `sv` (standard), `zh` (pinyin), `zh_Hant`
+///   (stroke). The `zh_Hant` row is duplicated onto the `lang-REGION` tags
+///   likelySubtags maximizes onto it ([`script_region_alias_keys`]), because the
+///   runtime walk truncates subtags and infers no script — without that `zh-TW`
+///   would reach `zh` and answer `pinyin` where ICU answers `stroke`.
+fn emit_collation_meta(cldr_dir: &Path, xml_dir: &Path, bcp47_xml: &Path, likely_path: &Path) {
+    let co_types = bcp47_collation_types(bcp47_xml);
+
+    // Every vendored collation file's own named types and `<defaultCollation>`.
+    let mut own: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut defaults: BTreeMap<String, String> = BTreeMap::new();
+    let mut files: Vec<PathBuf> = fs::read_dir(xml_dir)
+        .expect("read collation dir")
+        .map(|e| e.expect("dir entry").path())
+        .filter(|p| p.extension().is_some_and(|e| e == "xml"))
+        .collect();
+    files.sort();
+    for path in &files {
+        let stem = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .expect("collation file stem");
+        // As in `emit_collation_rules`, root is keyed `und` — the tag the runtime
+        // walk ends on.
+        let lang = match stem {
+            "root" => "und".to_string(),
+            s => s.replace('_', "-").to_ascii_lowercase(),
+        };
+        let xml = strip_xml_comments(&fs::read_to_string(path).expect("read collation xml"));
+        let types = collation_rules(&xml)
+            .into_iter()
+            // A type with no BCP-47 name is not requestable and not reportable
+            // (CLDR's `private-*`, cs's `digits-after`).
+            .filter_map(|(ty, _)| co_types.get(&ty).cloned())
+            .filter(|co| co != "standard" && co != "search")
+            .collect();
+        own.insert(lang.clone(), types);
+        if let Some(dc) = element_text(&xml, "defaultCollation") {
+            let co = co_types
+                .get(&dc)
+                .unwrap_or_else(|| panic!("{lang}: unknown defaultCollation {dc}"));
+            let co = if co == "standard" { "default" } else { co };
+            defaults.insert(lang, co.to_string());
+        }
+    }
+
+    // A locale offers its own collations plus every ancestor's, root's included
+    // — `zh-Hant` declares none of its own yet ICU lists `zh`'s six for it.
+    let union = |lang: &str| -> BTreeSet<String> {
+        let mut out = own.get("und").cloned().unwrap_or_default();
+        let mut key = lang;
+        loop {
+            if let Some(t) = own.get(key) {
+                out.extend(t.iter().cloned());
+            }
+            let Some(i) = key.rfind('-') else { break };
+            key = &key[..i];
+        }
+        out
+    };
+    // Row only where the union actually changes; the runtime walk finds the rest
+    // by truncation. `und` is always emitted — it terminates that walk.
+    let rows: Vec<(String, BTreeSet<String>)> = own
+        .keys()
+        .filter_map(|lang| {
+            let set = union(lang);
+            let parent = lang.rfind('-').map_or("und", |i| &lang[..i]);
+            (lang == "und" || set != union(parent)).then(|| (lang.clone(), set))
+        })
+        .collect();
+
+    let likely_text = fs::read_to_string(likely_path).expect("read likely.json");
+    let likely = json_parse(&likely_text);
+    let keys: Vec<String> = defaults.keys().cloned().collect();
+    // `lang-Script` prefix of a maximized tag, lowercased.
+    let lang_script = |tag: &str| -> String {
+        let mut it = tag.split('-');
+        match (it.next(), it.next()) {
+            (Some(l), Some(s)) => format!("{l}-{s}").to_ascii_lowercase(),
+            _ => tag.to_ascii_lowercase(),
+        }
+    };
+    // Which regions actually get an alias is narrower here than for the number
+    // and unit tables. ECMA-402's ResolveLocale is a *lookup* — it truncates
+    // subtags and never adds likely ones — so a `zh-XX` tag answers ICU's `zh`
+    // (pinyin) unless CLDR ships a bundle for that region. likelySubtags alone
+    // is too generous: it maximizes `zh-AU` to `zh-Hant-AU` for the overseas
+    // community, yet `new Intl.Collator("zh-AU").resolvedOptions()` reports
+    // `pinyin`. Keep only the regions whose *own* likely language and script are
+    // the source's — `und-TW`/`und-HK`/`und-MO` all maximize to `zh-Hant-…`,
+    // where `und-AU` is `en-Latn-AU` — which is exactly the set ICU has bundles
+    // for (`zh-TW`, `zh-HK`, `zh-MO` → stroke; everything else → pinyin).
+    let map = likely.get("map").expect("likely map");
+    let aliases: Vec<(String, String)> = script_region_alias_keys(&keys, &likely)
+        .into_iter()
+        .filter(|(alias, src)| {
+            let region = alias.rsplit('-').next().unwrap_or_default();
+            map.get(&format!("und-{}", region.to_ascii_uppercase()))
+                .and_then(Json::as_str)
+                .is_some_and(|max| lang_script(max) == lang_script(src))
+        })
+        .collect();
+    for (alias, src) in aliases {
+        let value = defaults[&src].clone();
+        defaults.insert(alias, value);
+    }
+
+    let mut out = String::new();
+    write_header(&mut out);
+    out.push_str(
+        "//! CLDR collation metadata (UTS #35 §5.1 `<collations>`): the named\n\
+         //! collations a locale offers, and the one it sorts with by default.\n\
+         //!\n\
+         //! *Metadata*, not rules — it names collations `collation.bin` has no\n\
+         //! parseable rule for, which is what ECMA-402 reports from\n\
+         //! `Intl.Locale.prototype.getCollations` and\n\
+         //! `Intl.Collator.prototype.resolvedOptions().collation`.\n\
+         //!\n\
+         //! Keyed by an exact (lowercased) CLDR locale id; walking the fallback\n\
+         //! chain is the caller's job, as for the `.bin` tables.\n\n",
+    );
+
+    out.push_str(
+        "/// The BCP-47 `co` types available for exactly this locale id: its own\n\
+         /// `<collation type=…>` elements unioned with every ancestor's and root's,\n\
+         /// sorted, minus `standard` (the unnamed default) and `search` (which\n\
+         /// serves `usage: \"search\"`, not the `co` keyword). Listed only where the\n\
+         /// union differs from the truncation parent's, so the caller truncates\n\
+         /// `-` subtags until a row hits and ends at `und`.\n\
+         pub(crate) fn collations(lang: &str) -> Option<&'static [&'static str]> {\n    \
+         Some(match lang {\n",
+    );
+    for (lang, set) in &rows {
+        let _ = write!(out, "        {} => &[", rust_str(lang));
+        for (i, co) in set.iter().enumerate() {
+            let _ = write!(out, "{}{}", if i == 0 { "" } else { ", " }, rust_str(co));
+        }
+        out.push_str("],\n");
+    }
+    out.push_str("        _ => return None,\n    })\n}\n\n");
+
+    out.push_str(
+        "/// This locale's `<defaultCollation>` as a BCP-47 `co` type, with CLDR's\n\
+         /// `standard` written as ECMA-402's `default`. Walked by truncation like\n\
+         /// [`collations`]; a `standard` row is kept rather than elided so a child\n\
+         /// of a locale that names one (`zh`) can still answer `default`.\n\
+         pub(crate) fn default_collation(lang: &str) -> Option<&'static str> {\n    \
+         Some(match lang {\n",
+    );
+    for (lang, co) in &defaults {
+        let _ = write!(out, "        {} => {},\n", rust_str(lang), rust_str(co));
+    }
+    out.push_str("        _ => return None,\n    })\n}\n");
+
+    write_cldr_generated(cldr_dir, "collations", &out);
+    println!(
+        "codegen: wrote generated/collations.rs ({} collation lists, {} defaults)",
+        rows.len(),
+        defaults.len(),
+    );
+}
+
+/// The text of the first `<name>…</name>` element in `xml`, or `None`.
+fn element_text(xml: &str, name: &str) -> Option<String> {
+    let open = format!("<{name}>");
+    let close = format!("</{name}>");
+    let i = xml.find(&open)? + open.len();
+    let j = xml[i..].find(&close)? + i;
+    Some(xml[i..j].trim().to_string())
 }
 
 /// Map every LDML collation element name to its BCP-47 `co` type name, read from

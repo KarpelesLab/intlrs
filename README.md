@@ -351,9 +351,15 @@ codepoint would.
   plain `de` stays root order), `sv-u-co-trad`, `es-u-co-trad`, `si-u-co-dict`,
   `fi-u-co-trad`, `ar-u-co-compat`, plus zh `stroke`/`zhuyin`/`unihan` under
   `collation-zh` — and falls back to the locale's standard collation when it has
-  no collation by that name, as ICU does. Validated against the full official
-  `CollationTest` suite (both modes), and each bundled rule is checked against
-  itself by `tests/collation_data_consistency`. Requires the `alloc` feature.
+  no collation by that name, as ICU does. `collate::collations("de")` enumerates
+  the BCP-47 types a locale offers (`["emoji", "eor", "phonebk"]`, ECMA-402's
+  `Intl.Locale.prototype.getCollations`) and `collate::default_collation("zh")`
+  names the one it sorts with by default (`"pinyin"`; `"stroke"` for `zh-Hant` /
+  `zh-TW`, `"default"` elsewhere — `resolvedOptions().collation`). Both report
+  what CLDR *declares*, which is a superset of what `for_locale` can build.
+  Validated against the full official `CollationTest` suite (both modes), and
+  each bundled rule is checked against itself by
+  `tests/collation_data_consistency`. Requires the `alloc` feature.
 - **Normalization** (UAX #15) — `nfd`, `nfc`, `nfkd`, `nfkc` as streaming,
   allocation-free iterator adaptors over `Iterator<Item = char>`; quick-check
   helpers `is_nfc`/`is_nfd`/`is_nfkc`/`is_nfkd` (and tri-state

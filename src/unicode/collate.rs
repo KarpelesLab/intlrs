@@ -1986,6 +1986,105 @@ impl Tailoring {
     }
 }
 
+/// Look `lang` up in one of the generated `<collations>` metadata tables,
+/// walking the UTS #35 §4.4 locale-inheritance chain: the full
+/// language/script/region tag, then one subtag shorter each time, then `und`
+/// (root), which every table carries. Any `-u-`/`-t-`/`-x-` extension is split
+/// off first — the metadata is
+/// a property of the locale, not of the collation the caller asked for.
+///
+/// Truncation only, no script inference: `zh-Hant-TW` reaches `zh-Hant`, and
+/// `zh-TW` reaches the `zh-tw` row codegen writes for exactly that reason.
+fn collation_meta<T>(lang: &str, table: fn(&str) -> Option<T>) -> Option<T> {
+    let full = lang.replace('_', "-").to_ascii_lowercase();
+    let (base, _) = split_collation_keyword(&full);
+    let mut key = base;
+    loop {
+        if let Some(v) = table(key) {
+            return Some(v);
+        }
+        let Some(cut) = key.rfind('-') else { break };
+        key = &key[..cut];
+    }
+    table("und")
+}
+
+/// Every BCP-47 collation type available for `lang`, sorted: the locale's own
+/// CLDR `<collation type=…>` elements (UTS #35 §5.1) unioned with every
+/// ancestor's and root's. This is ECMA-402's
+/// `Intl.Locale.prototype.getCollations`.
+///
+/// `standard` and `search` are absent, as they are in ICU — `standard` is the
+/// unnamed order a locale sorts with when no `co` keyword is given (that is
+/// [`default_collation`]), and `search` serves `usage: "search"` rather than the
+/// `co` keyword. `searchjl` *is* listed, for `ko`. Root contributes `emoji` and
+/// `eor` to every locale, so the slice is never empty.
+///
+/// **This is what CLDR declares, not what this crate can sort with.**
+/// [`Tailoring::for_locale`] returns `None` for several of the types listed
+/// here: `eor`, `emoji` and the `unihan` orders are rules the parser cannot
+/// represent or that the `tests/collation_data_consistency` gate rejects, and
+/// zh's `pinyin`/`stroke`/`zhuyin` need the `collation-zh` feature. Use this to
+/// answer "what would ICU offer for this locale" — which is what
+/// `resolvedOptions()` has to report — and `Tailoring::for_locale` to find out
+/// whether a collator can actually be built.
+///
+/// A `-u-co-` keyword on `lang` is ignored, where `getCollations` echoes one
+/// back as the whole list (`de-u-co-phonebk` → `["phonebk"]`, and even
+/// `de-u-co-bogus` → `["bogus"]`). That half of the operation is pure keyword
+/// plumbing and needs no data; this is the half that does.
+///
+/// One known divergence from ICU: Cantonese (`yue`) answers root's list, where
+/// ICU gives it `zh`'s. That inheritance is a collation-specific
+/// `<parentLocale>` in CLDR's `supplementalData`, which this crate does not
+/// vendor — and ICU's own `Intl.Collator` does not support `yue` either
+/// (`supportedLocalesOf(["yue"])` is empty).
+///
+/// ```
+/// # #[cfg(feature = "alloc")] {
+/// use intl::unicode::collate::collations;
+/// assert_eq!(collations("de"), ["emoji", "eor", "phonebk"]);
+/// assert_eq!(collations("en"), ["emoji", "eor"]);
+/// assert_eq!(collations("si"), ["dict", "emoji", "eor"]);
+/// // Inherited from the parent locale: zh-Hant declares none of its own.
+/// assert_eq!(collations("zh-Hant"), collations("zh"));
+/// # }
+/// ```
+#[must_use]
+pub fn collations(lang: &str) -> &'static [&'static str] {
+    collation_meta(lang, crate::cldr::generated::collations::collations).unwrap_or_default()
+}
+
+/// The collation `lang` sorts with when no `-u-co-` keyword is requested:
+/// CLDR's `<defaultCollation>` for the locale, or `"default"` where it names
+/// none. This is ECMA-402's
+/// `Intl.Collator.prototype.resolvedOptions().collation`, and `"default"` is the
+/// spelling that reports for CLDR's `standard`.
+///
+/// CLDR 48 names one for Chinese only: `zh` sorts by `pinyin`, and Traditional
+/// Chinese by `stroke` — `zh-Hant`, plus the `zh-TW`/`zh-HK`/`zh-MO` tags ICU
+/// resolves onto it. Everything else answers `"default"`.
+///
+/// As with [`collations`], this reports what ICU would; whether the named
+/// collation can be *built* is [`Tailoring::for_locale`]'s answer (the zh orders
+/// need the `collation-zh` feature). A `-u-co-` keyword on `lang` is likewise
+/// ignored: this is the *bare* locale's collation, the value the caller needs
+/// when the request named none.
+///
+/// ```
+/// # #[cfg(feature = "alloc")] {
+/// use intl::unicode::collate::default_collation;
+/// assert_eq!(default_collation("en"), "default");
+/// assert_eq!(default_collation("zh"), "pinyin");
+/// assert_eq!(default_collation("zh-Hant"), "stroke");
+/// assert_eq!(default_collation("zh-TW"), "stroke");
+/// # }
+/// ```
+#[must_use]
+pub fn default_collation(lang: &str) -> &'static str {
+    collation_meta(lang, crate::cldr::generated::collations::default_collation).unwrap_or("default")
+}
+
 /// Build a tailored sort key (UCA `Shifted`, tertiary strength) whose **primary
 /// level emits a `(base, sub)` pair per element** — `sub` is the tailoring
 /// sub-weight (0 for plain DUCET letters). This places a tailored letter
