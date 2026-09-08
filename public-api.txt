@@ -73,8 +73,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::Calendar
 impl<T, U> core::convert::Into<U> for intl::datetime::Calendar where U: core::convert::From<T>
 pub fn intl::datetime::Calendar::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::Calendar where U: core::convert::Into<T>
-pub type intl::datetime::Calendar::Error = core::convert::Infallible
-pub fn intl::datetime::Calendar::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::Calendar::Error = never
+pub fn intl::datetime::Calendar::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::Calendar where U: core::convert::TryFrom<T>
 pub type intl::datetime::Calendar::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::Calendar::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -116,8 +116,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateStyle
 impl<T, U> core::convert::Into<U> for intl::datetime::DateStyle where U: core::convert::From<T>
 pub fn intl::datetime::DateStyle::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateStyle where U: core::convert::Into<T>
-pub type intl::datetime::DateStyle::Error = core::convert::Infallible
-pub fn intl::datetime::DateStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::DateStyle::Error = never
+pub fn intl::datetime::DateStyle::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::DateStyle where U: core::convert::TryFrom<T>
 pub type intl::datetime::DateStyle::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::DateStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -157,8 +157,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimeFormatErro
 impl<T, U> core::convert::Into<U> for intl::datetime::DateTimeFormatError where U: core::convert::From<T>
 pub fn intl::datetime::DateTimeFormatError::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimeFormatError where U: core::convert::Into<T>
-pub type intl::datetime::DateTimeFormatError::Error = core::convert::Infallible
-pub fn intl::datetime::DateTimeFormatError::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::DateTimeFormatError::Error = never
+pub fn intl::datetime::DateTimeFormatError::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimeFormatError where U: core::convert::TryFrom<T>
 pub type intl::datetime::DateTimeFormatError::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::DateTimeFormatError::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -210,8 +210,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimePartType
 impl<T, U> core::convert::Into<U> for intl::datetime::DateTimePartType where U: core::convert::From<T>
 pub fn intl::datetime::DateTimePartType::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimePartType where U: core::convert::Into<T>
-pub type intl::datetime::DateTimePartType::Error = core::convert::Infallible
-pub fn intl::datetime::DateTimePartType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::DateTimePartType::Error = never
+pub fn intl::datetime::DateTimePartType::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimePartType where U: core::convert::TryFrom<T>
 pub type intl::datetime::DateTimePartType::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::DateTimePartType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -253,8 +253,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::HourCycle
 impl<T, U> core::convert::Into<U> for intl::datetime::HourCycle where U: core::convert::From<T>
 pub fn intl::datetime::HourCycle::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::HourCycle where U: core::convert::Into<T>
-pub type intl::datetime::HourCycle::Error = core::convert::Infallible
-pub fn intl::datetime::HourCycle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::HourCycle::Error = never
+pub fn intl::datetime::HourCycle::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::HourCycle where U: core::convert::TryFrom<T>
 pub type intl::datetime::HourCycle::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::HourCycle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -297,8 +297,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::MonthStyle
 impl<T, U> core::convert::Into<U> for intl::datetime::MonthStyle where U: core::convert::From<T>
 pub fn intl::datetime::MonthStyle::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::MonthStyle where U: core::convert::Into<T>
-pub type intl::datetime::MonthStyle::Error = core::convert::Infallible
-pub fn intl::datetime::MonthStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::MonthStyle::Error = never
+pub fn intl::datetime::MonthStyle::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::MonthStyle where U: core::convert::TryFrom<T>
 pub type intl::datetime::MonthStyle::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::MonthStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -339,8 +339,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::NameStyle
 impl<T, U> core::convert::Into<U> for intl::datetime::NameStyle where U: core::convert::From<T>
 pub fn intl::datetime::NameStyle::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::NameStyle where U: core::convert::Into<T>
-pub type intl::datetime::NameStyle::Error = core::convert::Infallible
-pub fn intl::datetime::NameStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::NameStyle::Error = never
+pub fn intl::datetime::NameStyle::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::NameStyle where U: core::convert::TryFrom<T>
 pub type intl::datetime::NameStyle::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::NameStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -380,8 +380,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::Numeric2Digit
 impl<T, U> core::convert::Into<U> for intl::datetime::Numeric2Digit where U: core::convert::From<T>
 pub fn intl::datetime::Numeric2Digit::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::Numeric2Digit where U: core::convert::Into<T>
-pub type intl::datetime::Numeric2Digit::Error = core::convert::Infallible
-pub fn intl::datetime::Numeric2Digit::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::Numeric2Digit::Error = never
+pub fn intl::datetime::Numeric2Digit::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::Numeric2Digit where U: core::convert::TryFrom<T>
 pub type intl::datetime::Numeric2Digit::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::Numeric2Digit::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -424,8 +424,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::RangeSource
 impl<T, U> core::convert::Into<U> for intl::datetime::RangeSource where U: core::convert::From<T>
 pub fn intl::datetime::RangeSource::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::RangeSource where U: core::convert::Into<T>
-pub type intl::datetime::RangeSource::Error = core::convert::Infallible
-pub fn intl::datetime::RangeSource::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::RangeSource::Error = never
+pub fn intl::datetime::RangeSource::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::RangeSource where U: core::convert::TryFrom<T>
 pub type intl::datetime::RangeSource::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::RangeSource::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -469,8 +469,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::TimeZoneNameStyle
 impl<T, U> core::convert::Into<U> for intl::datetime::TimeZoneNameStyle where U: core::convert::From<T>
 pub fn intl::datetime::TimeZoneNameStyle::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::TimeZoneNameStyle where U: core::convert::Into<T>
-pub type intl::datetime::TimeZoneNameStyle::Error = core::convert::Infallible
-pub fn intl::datetime::TimeZoneNameStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::TimeZoneNameStyle::Error = never
+pub fn intl::datetime::TimeZoneNameStyle::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::TimeZoneNameStyle where U: core::convert::TryFrom<T>
 pub type intl::datetime::TimeZoneNameStyle::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::TimeZoneNameStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -523,8 +523,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTime
 impl<T, U> core::convert::Into<U> for intl::datetime::DateTime where U: core::convert::From<T>
 pub fn intl::datetime::DateTime::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTime where U: core::convert::Into<T>
-pub type intl::datetime::DateTime::Error = core::convert::Infallible
-pub fn intl::datetime::DateTime::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::DateTime::Error = never
+pub fn intl::datetime::DateTime::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTime where U: core::convert::TryFrom<T>
 pub type intl::datetime::DateTime::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::DateTime::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -582,8 +582,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimeFormatOpti
 impl<T, U> core::convert::Into<U> for intl::datetime::DateTimeFormatOptions where U: core::convert::From<T>
 pub fn intl::datetime::DateTimeFormatOptions::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimeFormatOptions where U: core::convert::Into<T>
-pub type intl::datetime::DateTimeFormatOptions::Error = core::convert::Infallible
-pub fn intl::datetime::DateTimeFormatOptions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::DateTimeFormatOptions::Error = never
+pub fn intl::datetime::DateTimeFormatOptions::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimeFormatOptions where U: core::convert::TryFrom<T>
 pub type intl::datetime::DateTimeFormatOptions::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::DateTimeFormatOptions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -622,8 +622,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimePart
 impl<T, U> core::convert::Into<U> for intl::datetime::DateTimePart where U: core::convert::From<T>
 pub fn intl::datetime::DateTimePart::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimePart where U: core::convert::Into<T>
-pub type intl::datetime::DateTimePart::Error = core::convert::Infallible
-pub fn intl::datetime::DateTimePart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::DateTimePart::Error = never
+pub fn intl::datetime::DateTimePart::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimePart where U: core::convert::TryFrom<T>
 pub type intl::datetime::DateTimePart::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::DateTimePart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -663,8 +663,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::datetime::DateTimeRangePart
 impl<T, U> core::convert::Into<U> for intl::datetime::DateTimeRangePart where U: core::convert::From<T>
 pub fn intl::datetime::DateTimeRangePart::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::datetime::DateTimeRangePart where U: core::convert::Into<T>
-pub type intl::datetime::DateTimeRangePart::Error = core::convert::Infallible
-pub fn intl::datetime::DateTimeRangePart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::datetime::DateTimeRangePart::Error = never
+pub fn intl::datetime::DateTimeRangePart::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::datetime::DateTimeRangePart where U: core::convert::TryFrom<T>
 pub type intl::datetime::DateTimeRangePart::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::datetime::DateTimeRangePart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -728,8 +728,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::list::ListStyle
 impl<T, U> core::convert::Into<U> for intl::list::ListStyle where U: core::convert::From<T>
 pub fn intl::list::ListStyle::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::list::ListStyle where U: core::convert::Into<T>
-pub type intl::list::ListStyle::Error = core::convert::Infallible
-pub fn intl::list::ListStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::list::ListStyle::Error = never
+pub fn intl::list::ListStyle::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::list::ListStyle where U: core::convert::TryFrom<T>
 pub type intl::list::ListStyle::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::list::ListStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -776,8 +776,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::list::ListType
 impl<T, U> core::convert::Into<U> for intl::list::ListType where U: core::convert::From<T>
 pub fn intl::list::ListType::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::list::ListType where U: core::convert::Into<T>
-pub type intl::list::ListType::Error = core::convert::Infallible
-pub fn intl::list::ListType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::list::ListType::Error = never
+pub fn intl::list::ListType::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::list::ListType where U: core::convert::TryFrom<T>
 pub type intl::list::ListType::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::list::ListType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -822,8 +822,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::list::ListWidth
 impl<T, U> core::convert::Into<U> for intl::list::ListWidth where U: core::convert::From<T>
 pub fn intl::list::ListWidth::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::list::ListWidth where U: core::convert::Into<T>
-pub type intl::list::ListWidth::Error = core::convert::Infallible
-pub fn intl::list::ListWidth::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::list::ListWidth::Error = never
+pub fn intl::list::ListWidth::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::list::ListWidth where U: core::convert::TryFrom<T>
 pub type intl::list::ListWidth::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::list::ListWidth::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -869,8 +869,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::list::ListFormatOptions
 impl<T, U> core::convert::Into<U> for intl::list::ListFormatOptions where U: core::convert::From<T>
 pub fn intl::list::ListFormatOptions::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::list::ListFormatOptions where U: core::convert::Into<T>
-pub type intl::list::ListFormatOptions::Error = core::convert::Infallible
-pub fn intl::list::ListFormatOptions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::list::ListFormatOptions::Error = never
+pub fn intl::list::ListFormatOptions::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::list::ListFormatOptions where U: core::convert::TryFrom<T>
 pub type intl::list::ListFormatOptions::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::list::ListFormatOptions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -908,8 +908,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::list::ListPatterns
 impl<T, U> core::convert::Into<U> for intl::list::ListPatterns where U: core::convert::From<T>
 pub fn intl::list::ListPatterns::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::list::ListPatterns where U: core::convert::Into<T>
-pub type intl::list::ListPatterns::Error = core::convert::Infallible
-pub fn intl::list::ListPatterns::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::list::ListPatterns::Error = never
+pub fn intl::list::ListPatterns::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::list::ListPatterns where U: core::convert::TryFrom<T>
 pub type intl::list::ListPatterns::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::list::ListPatterns::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -951,8 +951,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::locale::ParseError
 impl<T, U> core::convert::Into<U> for intl::locale::ParseError where U: core::convert::From<T>
 pub fn intl::locale::ParseError::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::locale::ParseError where U: core::convert::Into<T>
-pub type intl::locale::ParseError::Error = core::convert::Infallible
-pub fn intl::locale::ParseError::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::locale::ParseError::Error = never
+pub fn intl::locale::ParseError::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::locale::ParseError where U: core::convert::TryFrom<T>
 pub type intl::locale::ParseError::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::locale::ParseError::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1002,8 +1002,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::locale::Locale
 impl<T, U> core::convert::Into<U> for intl::locale::Locale where U: core::convert::From<T>
 pub fn intl::locale::Locale::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::locale::Locale where U: core::convert::Into<T>
-pub type intl::locale::Locale::Error = core::convert::Infallible
-pub fn intl::locale::Locale::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::locale::Locale::Error = never
+pub fn intl::locale::Locale::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::locale::Locale where U: core::convert::TryFrom<T>
 pub type intl::locale::Locale::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::locale::Locale::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1045,8 +1045,8 @@ impl<'a> core::panic::unwind_safe::UnwindSafe for intl::message::Arg<'a>
 impl<T, U> core::convert::Into<U> for intl::message::Arg<'a> where U: core::convert::From<T>
 pub fn intl::message::Arg<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::message::Arg<'a> where U: core::convert::Into<T>
-pub type intl::message::Arg<'a>::Error = core::convert::Infallible
-pub fn intl::message::Arg<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::message::Arg<'a>::Error = never
+pub fn intl::message::Arg<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::message::Arg<'a> where U: core::convert::TryFrom<T>
 pub type intl::message::Arg<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::message::Arg<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1090,8 +1090,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::CompactDisplay
 impl<T, U> core::convert::Into<U> for intl::number::CompactDisplay where U: core::convert::From<T>
 pub fn intl::number::CompactDisplay::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::CompactDisplay where U: core::convert::Into<T>
-pub type intl::number::CompactDisplay::Error = core::convert::Infallible
-pub fn intl::number::CompactDisplay::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::CompactDisplay::Error = never
+pub fn intl::number::CompactDisplay::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::CompactDisplay where U: core::convert::TryFrom<T>
 pub type intl::number::CompactDisplay::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::CompactDisplay::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1135,8 +1135,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::CurrencyDisplay
 impl<T, U> core::convert::Into<U> for intl::number::CurrencyDisplay where U: core::convert::From<T>
 pub fn intl::number::CurrencyDisplay::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::CurrencyDisplay where U: core::convert::Into<T>
-pub type intl::number::CurrencyDisplay::Error = core::convert::Infallible
-pub fn intl::number::CurrencyDisplay::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::CurrencyDisplay::Error = never
+pub fn intl::number::CurrencyDisplay::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::CurrencyDisplay where U: core::convert::TryFrom<T>
 pub type intl::number::CurrencyDisplay::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::CurrencyDisplay::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1180,8 +1180,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::Notation
 impl<T, U> core::convert::Into<U> for intl::number::Notation where U: core::convert::From<T>
 pub fn intl::number::Notation::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::Notation where U: core::convert::Into<T>
-pub type intl::number::Notation::Error = core::convert::Infallible
-pub fn intl::number::Notation::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::Notation::Error = never
+pub fn intl::number::Notation::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::Notation where U: core::convert::TryFrom<T>
 pub type intl::number::Notation::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::Notation::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1238,8 +1238,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberPartType
 impl<T, U> core::convert::Into<U> for intl::number::NumberPartType where U: core::convert::From<T>
 pub fn intl::number::NumberPartType::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::NumberPartType where U: core::convert::Into<T>
-pub type intl::number::NumberPartType::Error = core::convert::Infallible
-pub fn intl::number::NumberPartType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::NumberPartType::Error = never
+pub fn intl::number::NumberPartType::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::NumberPartType where U: core::convert::TryFrom<T>
 pub type intl::number::NumberPartType::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::NumberPartType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1282,8 +1282,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberRangeSource
 impl<T, U> core::convert::Into<U> for intl::number::NumberRangeSource where U: core::convert::From<T>
 pub fn intl::number::NumberRangeSource::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::NumberRangeSource where U: core::convert::Into<T>
-pub type intl::number::NumberRangeSource::Error = core::convert::Infallible
-pub fn intl::number::NumberRangeSource::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::NumberRangeSource::Error = never
+pub fn intl::number::NumberRangeSource::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::NumberRangeSource where U: core::convert::TryFrom<T>
 pub type intl::number::NumberRangeSource::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::NumberRangeSource::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1327,8 +1327,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberStyle
 impl<T, U> core::convert::Into<U> for intl::number::NumberStyle where U: core::convert::From<T>
 pub fn intl::number::NumberStyle::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::NumberStyle where U: core::convert::Into<T>
-pub type intl::number::NumberStyle::Error = core::convert::Infallible
-pub fn intl::number::NumberStyle::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::NumberStyle::Error = never
+pub fn intl::number::NumberStyle::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::NumberStyle where U: core::convert::TryFrom<T>
 pub type intl::number::NumberStyle::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::NumberStyle::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1377,8 +1377,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::RoundingMode
 impl<T, U> core::convert::Into<U> for intl::number::RoundingMode where U: core::convert::From<T>
 pub fn intl::number::RoundingMode::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::RoundingMode where U: core::convert::Into<T>
-pub type intl::number::RoundingMode::Error = core::convert::Infallible
-pub fn intl::number::RoundingMode::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::RoundingMode::Error = never
+pub fn intl::number::RoundingMode::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::RoundingMode where U: core::convert::TryFrom<T>
 pub type intl::number::RoundingMode::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::RoundingMode::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1423,8 +1423,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::SignDisplay
 impl<T, U> core::convert::Into<U> for intl::number::SignDisplay where U: core::convert::From<T>
 pub fn intl::number::SignDisplay::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::SignDisplay where U: core::convert::Into<T>
-pub type intl::number::SignDisplay::Error = core::convert::Infallible
-pub fn intl::number::SignDisplay::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::SignDisplay::Error = never
+pub fn intl::number::SignDisplay::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::SignDisplay where U: core::convert::TryFrom<T>
 pub type intl::number::SignDisplay::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::SignDisplay::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1467,8 +1467,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::UnitDisplay
 impl<T, U> core::convert::Into<U> for intl::number::UnitDisplay where U: core::convert::From<T>
 pub fn intl::number::UnitDisplay::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::UnitDisplay where U: core::convert::Into<T>
-pub type intl::number::UnitDisplay::Error = core::convert::Infallible
-pub fn intl::number::UnitDisplay::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::UnitDisplay::Error = never
+pub fn intl::number::UnitDisplay::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::UnitDisplay where U: core::convert::TryFrom<T>
 pub type intl::number::UnitDisplay::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::UnitDisplay::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1512,8 +1512,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::UseGrouping
 impl<T, U> core::convert::Into<U> for intl::number::UseGrouping where U: core::convert::From<T>
 pub fn intl::number::UseGrouping::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::UseGrouping where U: core::convert::Into<T>
-pub type intl::number::UseGrouping::Error = core::convert::Infallible
-pub fn intl::number::UseGrouping::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::UseGrouping::Error = never
+pub fn intl::number::UseGrouping::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::UseGrouping where U: core::convert::TryFrom<T>
 pub type intl::number::UseGrouping::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::UseGrouping::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1569,8 +1569,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberFormatOptions
 impl<T, U> core::convert::Into<U> for intl::number::NumberFormatOptions where U: core::convert::From<T>
 pub fn intl::number::NumberFormatOptions::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::NumberFormatOptions where U: core::convert::Into<T>
-pub type intl::number::NumberFormatOptions::Error = core::convert::Infallible
-pub fn intl::number::NumberFormatOptions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::NumberFormatOptions::Error = never
+pub fn intl::number::NumberFormatOptions::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::NumberFormatOptions where U: core::convert::TryFrom<T>
 pub type intl::number::NumberFormatOptions::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::NumberFormatOptions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1609,8 +1609,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberPart
 impl<T, U> core::convert::Into<U> for intl::number::NumberPart where U: core::convert::From<T>
 pub fn intl::number::NumberPart::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::NumberPart where U: core::convert::Into<T>
-pub type intl::number::NumberPart::Error = core::convert::Infallible
-pub fn intl::number::NumberPart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::NumberPart::Error = never
+pub fn intl::number::NumberPart::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::NumberPart where U: core::convert::TryFrom<T>
 pub type intl::number::NumberPart::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::NumberPart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1650,8 +1650,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberRangePart
 impl<T, U> core::convert::Into<U> for intl::number::NumberRangePart where U: core::convert::From<T>
 pub fn intl::number::NumberRangePart::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::NumberRangePart where U: core::convert::Into<T>
-pub type intl::number::NumberRangePart::Error = core::convert::Infallible
-pub fn intl::number::NumberRangePart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::NumberRangePart::Error = never
+pub fn intl::number::NumberRangePart::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::NumberRangePart where U: core::convert::TryFrom<T>
 pub type intl::number::NumberRangePart::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::NumberRangePart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1695,8 +1695,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::NumberSpec
 impl<T, U> core::convert::Into<U> for intl::number::NumberSpec where U: core::convert::From<T>
 pub fn intl::number::NumberSpec::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::NumberSpec where U: core::convert::Into<T>
-pub type intl::number::NumberSpec::Error = core::convert::Infallible
-pub fn intl::number::NumberSpec::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::NumberSpec::Error = never
+pub fn intl::number::NumberSpec::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::NumberSpec where U: core::convert::TryFrom<T>
 pub type intl::number::NumberSpec::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::NumberSpec::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1737,8 +1737,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::number::Pattern
 impl<T, U> core::convert::Into<U> for intl::number::Pattern where U: core::convert::From<T>
 pub fn intl::number::Pattern::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::number::Pattern where U: core::convert::Into<T>
-pub type intl::number::Pattern::Error = core::convert::Infallible
-pub fn intl::number::Pattern::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::number::Pattern::Error = never
+pub fn intl::number::Pattern::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::number::Pattern where U: core::convert::TryFrom<T>
 pub type intl::number::Pattern::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::number::Pattern::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1799,8 +1799,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::plural::PluralCategory
 impl<T, U> core::convert::Into<U> for intl::plural::PluralCategory where U: core::convert::From<T>
 pub fn intl::plural::PluralCategory::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::plural::PluralCategory where U: core::convert::Into<T>
-pub type intl::plural::PluralCategory::Error = core::convert::Infallible
-pub fn intl::plural::PluralCategory::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::plural::PluralCategory::Error = never
+pub fn intl::plural::PluralCategory::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::plural::PluralCategory where U: core::convert::TryFrom<T>
 pub type intl::plural::PluralCategory::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::plural::PluralCategory::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1847,8 +1847,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::plural::PluralOperands
 impl<T, U> core::convert::Into<U> for intl::plural::PluralOperands where U: core::convert::From<T>
 pub fn intl::plural::PluralOperands::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::plural::PluralOperands where U: core::convert::Into<T>
-pub type intl::plural::PluralOperands::Error = core::convert::Infallible
-pub fn intl::plural::PluralOperands::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::plural::PluralOperands::Error = never
+pub fn intl::plural::PluralOperands::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::plural::PluralOperands where U: core::convert::TryFrom<T>
 pub type intl::plural::PluralOperands::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::plural::PluralOperands::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1895,8 +1895,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeNumeric
 impl<T, U> core::convert::Into<U> for intl::relative::RelativeNumeric where U: core::convert::From<T>
 pub fn intl::relative::RelativeNumeric::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeNumeric where U: core::convert::Into<T>
-pub type intl::relative::RelativeNumeric::Error = core::convert::Infallible
-pub fn intl::relative::RelativeNumeric::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::relative::RelativeNumeric::Error = never
+pub fn intl::relative::RelativeNumeric::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeNumeric where U: core::convert::TryFrom<T>
 pub type intl::relative::RelativeNumeric::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::relative::RelativeNumeric::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1945,8 +1945,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeUnit
 impl<T, U> core::convert::Into<U> for intl::relative::RelativeUnit where U: core::convert::From<T>
 pub fn intl::relative::RelativeUnit::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeUnit where U: core::convert::Into<T>
-pub type intl::relative::RelativeUnit::Error = core::convert::Infallible
-pub fn intl::relative::RelativeUnit::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::relative::RelativeUnit::Error = never
+pub fn intl::relative::RelativeUnit::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeUnit where U: core::convert::TryFrom<T>
 pub type intl::relative::RelativeUnit::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::relative::RelativeUnit::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -1991,8 +1991,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeWidth
 impl<T, U> core::convert::Into<U> for intl::relative::RelativeWidth where U: core::convert::From<T>
 pub fn intl::relative::RelativeWidth::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeWidth where U: core::convert::Into<T>
-pub type intl::relative::RelativeWidth::Error = core::convert::Infallible
-pub fn intl::relative::RelativeWidth::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::relative::RelativeWidth::Error = never
+pub fn intl::relative::RelativeWidth::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeWidth where U: core::convert::TryFrom<T>
 pub type intl::relative::RelativeWidth::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::relative::RelativeWidth::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2031,8 +2031,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelUnit
 impl<T, U> core::convert::Into<U> for intl::relative::RelUnit where U: core::convert::From<T>
 pub fn intl::relative::RelUnit::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::relative::RelUnit where U: core::convert::Into<T>
-pub type intl::relative::RelUnit::Error = core::convert::Infallible
-pub fn intl::relative::RelUnit::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::relative::RelUnit::Error = never
+pub fn intl::relative::RelUnit::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::relative::RelUnit where U: core::convert::TryFrom<T>
 pub type intl::relative::RelUnit::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::relative::RelUnit::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2078,8 +2078,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeTimeFormat
 impl<T, U> core::convert::Into<U> for intl::relative::RelativeTimeFormatOptions where U: core::convert::From<T>
 pub fn intl::relative::RelativeTimeFormatOptions::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeTimeFormatOptions where U: core::convert::Into<T>
-pub type intl::relative::RelativeTimeFormatOptions::Error = core::convert::Infallible
-pub fn intl::relative::RelativeTimeFormatOptions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::relative::RelativeTimeFormatOptions::Error = never
+pub fn intl::relative::RelativeTimeFormatOptions::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeTimeFormatOptions where U: core::convert::TryFrom<T>
 pub type intl::relative::RelativeTimeFormatOptions::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::relative::RelativeTimeFormatOptions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2119,8 +2119,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::relative::RelativeTimePart
 impl<T, U> core::convert::Into<U> for intl::relative::RelativeTimePart where U: core::convert::From<T>
 pub fn intl::relative::RelativeTimePart::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::relative::RelativeTimePart where U: core::convert::Into<T>
-pub type intl::relative::RelativeTimePart::Error = core::convert::Infallible
-pub fn intl::relative::RelativeTimePart::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::relative::RelativeTimePart::Error = never
+pub fn intl::relative::RelativeTimePart::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::relative::RelativeTimePart where U: core::convert::TryFrom<T>
 pub type intl::relative::RelativeTimePart::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::relative::RelativeTimePart::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2162,8 +2162,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::timezone::IanaZone
 impl<T, U> core::convert::Into<U> for intl::timezone::IanaZone where U: core::convert::From<T>
 pub fn intl::timezone::IanaZone::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::timezone::IanaZone where U: core::convert::Into<T>
-pub type intl::timezone::IanaZone::Error = core::convert::Infallible
-pub fn intl::timezone::IanaZone::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::timezone::IanaZone::Error = never
+pub fn intl::timezone::IanaZone::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::timezone::IanaZone where U: core::convert::TryFrom<T>
 pub type intl::timezone::IanaZone::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::timezone::IanaZone::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2199,8 +2199,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::timezone::PosixTz
 impl<T, U> core::convert::Into<U> for intl::timezone::PosixTz where U: core::convert::From<T>
 pub fn intl::timezone::PosixTz::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::timezone::PosixTz where U: core::convert::Into<T>
-pub type intl::timezone::PosixTz::Error = core::convert::Infallible
-pub fn intl::timezone::PosixTz::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::timezone::PosixTz::Error = never
+pub fn intl::timezone::PosixTz::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::timezone::PosixTz where U: core::convert::TryFrom<T>
 pub type intl::timezone::PosixTz::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::timezone::PosixTz::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2239,8 +2239,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::translit::Transform
 impl<T, U> core::convert::Into<U> for intl::translit::Transform where U: core::convert::From<T>
 pub fn intl::translit::Transform::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::translit::Transform where U: core::convert::Into<T>
-pub type intl::translit::Transform::Error = core::convert::Infallible
-pub fn intl::translit::Transform::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::translit::Transform::Error = never
+pub fn intl::translit::Transform::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::translit::Transform where U: core::convert::TryFrom<T>
 pub type intl::translit::Transform::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::translit::Transform::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2312,8 +2312,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::bidi::BidiClass
 impl<T, U> core::convert::Into<U> for intl::unicode::bidi::BidiClass where U: core::convert::From<T>
 pub fn intl::unicode::bidi::BidiClass::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::bidi::BidiClass where U: core::convert::Into<T>
-pub type intl::unicode::bidi::BidiClass::Error = core::convert::Infallible
-pub fn intl::unicode::bidi::BidiClass::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::bidi::BidiClass::Error = never
+pub fn intl::unicode::bidi::BidiClass::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::bidi::BidiClass where U: core::convert::TryFrom<T>
 pub type intl::unicode::bidi::BidiClass::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::bidi::BidiClass::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2353,8 +2353,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::bidi::Direction
 impl<T, U> core::convert::Into<U> for intl::unicode::bidi::Direction where U: core::convert::From<T>
 pub fn intl::unicode::bidi::Direction::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::bidi::Direction where U: core::convert::Into<T>
-pub type intl::unicode::bidi::Direction::Error = core::convert::Infallible
-pub fn intl::unicode::bidi::Direction::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::bidi::Direction::Error = never
+pub fn intl::unicode::bidi::Direction::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::bidi::Direction where U: core::convert::TryFrom<T>
 pub type intl::unicode::bidi::Direction::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::bidi::Direction::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2390,8 +2390,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::bidi::BidiInfo
 impl<T, U> core::convert::Into<U> for intl::unicode::bidi::BidiInfo where U: core::convert::From<T>
 pub fn intl::unicode::bidi::BidiInfo::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::bidi::BidiInfo where U: core::convert::Into<T>
-pub type intl::unicode::bidi::BidiInfo::Error = core::convert::Infallible
-pub fn intl::unicode::bidi::BidiInfo::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::bidi::BidiInfo::Error = never
+pub fn intl::unicode::bidi::BidiInfo::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::bidi::BidiInfo where U: core::convert::TryFrom<T>
 pub type intl::unicode::bidi::BidiInfo::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::bidi::BidiInfo::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2439,8 +2439,8 @@ pub fn intl::unicode::case::CaseMapIter::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::case::CaseMapIter where U: core::convert::From<T>
 pub fn intl::unicode::case::CaseMapIter::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::case::CaseMapIter where U: core::convert::Into<T>
-pub type intl::unicode::case::CaseMapIter::Error = core::convert::Infallible
-pub fn intl::unicode::case::CaseMapIter::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::case::CaseMapIter::Error = never
+pub fn intl::unicode::case::CaseMapIter::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::case::CaseMapIter where U: core::convert::TryFrom<T>
 pub type intl::unicode::case::CaseMapIter::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::case::CaseMapIter::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2478,8 +2478,8 @@ pub fn intl::unicode::case::CaseMapping<I>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::case::CaseMapping<I> where U: core::convert::From<T>
 pub fn intl::unicode::case::CaseMapping<I>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::case::CaseMapping<I> where U: core::convert::Into<T>
-pub type intl::unicode::case::CaseMapping<I>::Error = core::convert::Infallible
-pub fn intl::unicode::case::CaseMapping<I>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::case::CaseMapping<I>::Error = never
+pub fn intl::unicode::case::CaseMapping<I>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::case::CaseMapping<I> where U: core::convert::TryFrom<T>
 pub type intl::unicode::case::CaseMapping<I>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::case::CaseMapping<I>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2577,8 +2577,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::category::GeneralCa
 impl<T, U> core::convert::Into<U> for intl::unicode::category::GeneralCategory where U: core::convert::From<T>
 pub fn intl::unicode::category::GeneralCategory::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::category::GeneralCategory where U: core::convert::Into<T>
-pub type intl::unicode::category::GeneralCategory::Error = core::convert::Infallible
-pub fn intl::unicode::category::GeneralCategory::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::category::GeneralCategory::Error = never
+pub fn intl::unicode::category::GeneralCategory::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::category::GeneralCategory where U: core::convert::TryFrom<T>
 pub type intl::unicode::category::GeneralCategory::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::category::GeneralCategory::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2629,8 +2629,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::category::Group
 impl<T, U> core::convert::Into<U> for intl::unicode::category::Group where U: core::convert::From<T>
 pub fn intl::unicode::category::Group::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::category::Group where U: core::convert::Into<T>
-pub type intl::unicode::category::Group::Error = core::convert::Infallible
-pub fn intl::unicode::category::Group::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::category::Group::Error = never
+pub fn intl::unicode::category::Group::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::category::Group where U: core::convert::TryFrom<T>
 pub type intl::unicode::category::Group::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::category::Group::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2671,8 +2671,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::collate::AlternateH
 impl<T, U> core::convert::Into<U> for intl::unicode::collate::AlternateHandling where U: core::convert::From<T>
 pub fn intl::unicode::collate::AlternateHandling::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::collate::AlternateHandling where U: core::convert::Into<T>
-pub type intl::unicode::collate::AlternateHandling::Error = core::convert::Infallible
-pub fn intl::unicode::collate::AlternateHandling::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::collate::AlternateHandling::Error = never
+pub fn intl::unicode::collate::AlternateHandling::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::collate::AlternateHandling where U: core::convert::TryFrom<T>
 pub type intl::unicode::collate::AlternateHandling::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::collate::AlternateHandling::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2718,8 +2718,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::collate::Strength
 impl<T, U> core::convert::Into<U> for intl::unicode::collate::Strength where U: core::convert::From<T>
 pub fn intl::unicode::collate::Strength::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::collate::Strength where U: core::convert::Into<T>
-pub type intl::unicode::collate::Strength::Error = core::convert::Infallible
-pub fn intl::unicode::collate::Strength::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::collate::Strength::Error = never
+pub fn intl::unicode::collate::Strength::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::collate::Strength where U: core::convert::TryFrom<T>
 pub type intl::unicode::collate::Strength::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::collate::Strength::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2762,8 +2762,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::collate::Collator
 impl<T, U> core::convert::Into<U> for intl::unicode::collate::Collator where U: core::convert::From<T>
 pub fn intl::unicode::collate::Collator::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::collate::Collator where U: core::convert::Into<T>
-pub type intl::unicode::collate::Collator::Error = core::convert::Infallible
-pub fn intl::unicode::collate::Collator::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::collate::Collator::Error = never
+pub fn intl::unicode::collate::Collator::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::collate::Collator where U: core::convert::TryFrom<T>
 pub type intl::unicode::collate::Collator::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::collate::Collator::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2798,8 +2798,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::collate::Tailoring
 impl<T, U> core::convert::Into<U> for intl::unicode::collate::Tailoring where U: core::convert::From<T>
 pub fn intl::unicode::collate::Tailoring::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::collate::Tailoring where U: core::convert::Into<T>
-pub type intl::unicode::collate::Tailoring::Error = core::convert::Infallible
-pub fn intl::unicode::collate::Tailoring::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::collate::Tailoring::Error = never
+pub fn intl::unicode::collate::Tailoring::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::collate::Tailoring where U: core::convert::TryFrom<T>
 pub type intl::unicode::collate::Tailoring::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::collate::Tailoring::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2849,8 +2849,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::idna::Error
 impl<T, U> core::convert::Into<U> for intl::unicode::idna::Error where U: core::convert::From<T>
 pub fn intl::unicode::idna::Error::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::idna::Error where U: core::convert::Into<T>
-pub type intl::unicode::idna::Error::Error = core::convert::Infallible
-pub fn intl::unicode::idna::Error::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::idna::Error::Error = never
+pub fn intl::unicode::idna::Error::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::idna::Error where U: core::convert::TryFrom<T>
 pub type intl::unicode::idna::Error::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::idna::Error::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2898,8 +2898,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::IsNormal
 impl<T, U> core::convert::Into<U> for intl::unicode::normalize::IsNormalized where U: core::convert::From<T>
 pub fn intl::unicode::normalize::IsNormalized::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::IsNormalized where U: core::convert::Into<T>
-pub type intl::unicode::normalize::IsNormalized::Error = core::convert::Infallible
-pub fn intl::unicode::normalize::IsNormalized::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::normalize::IsNormalized::Error = never
+pub fn intl::unicode::normalize::IsNormalized::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::IsNormalized where U: core::convert::TryFrom<T>
 pub type intl::unicode::normalize::IsNormalized::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::normalize::IsNormalized::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2937,8 +2937,8 @@ pub fn intl::unicode::normalize::Decompositions<I>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::normalize::Decompositions<I> where U: core::convert::From<T>
 pub fn intl::unicode::normalize::Decompositions<I>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::Decompositions<I> where U: core::convert::Into<T>
-pub type intl::unicode::normalize::Decompositions<I>::Error = core::convert::Infallible
-pub fn intl::unicode::normalize::Decompositions<I>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::normalize::Decompositions<I>::Error = never
+pub fn intl::unicode::normalize::Decompositions<I>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::Decompositions<I> where U: core::convert::TryFrom<T>
 pub type intl::unicode::normalize::Decompositions<I>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::normalize::Decompositions<I>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -2962,13 +2962,13 @@ pub fn intl::unicode::normalize::Recompositions<I>::clone(&self) -> intl::unicod
 impl<I: core::iter::traits::iterator::Iterator<Item = char>> core::iter::traits::iterator::Iterator for intl::unicode::normalize::Recompositions<I>
 pub type intl::unicode::normalize::Recompositions<I>::Item = char
 pub fn intl::unicode::normalize::Recompositions<I>::next(&mut self) -> core::option::Option<char>
-impl<I> core::marker::Freeze for intl::unicode::normalize::Recompositions<I> where I: core::marker::Freeze
-impl<I> core::marker::Send for intl::unicode::normalize::Recompositions<I> where I: core::marker::Send
-impl<I> core::marker::Sync for intl::unicode::normalize::Recompositions<I> where I: core::marker::Sync
-impl<I> core::marker::Unpin for intl::unicode::normalize::Recompositions<I> where I: core::marker::Unpin
-impl<I> core::marker::UnsafeUnpin for intl::unicode::normalize::Recompositions<I> where I: core::marker::UnsafeUnpin
-impl<I> core::panic::unwind_safe::RefUnwindSafe for intl::unicode::normalize::Recompositions<I> where I: core::panic::unwind_safe::RefUnwindSafe
-impl<I> core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::Recompositions<I> where I: core::panic::unwind_safe::UnwindSafe
+impl<I> core::marker::Freeze for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::Freeze
+impl<I> core::marker::Send for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::Send
+impl<I> core::marker::Sync for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::Sync
+impl<I> core::marker::Unpin for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::Unpin
+impl<I> core::marker::UnsafeUnpin for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::UnsafeUnpin
+impl<I> core::panic::unwind_safe::RefUnwindSafe for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::panic::unwind_safe::RefUnwindSafe
+impl<I> core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::panic::unwind_safe::UnwindSafe
 impl<I> core::iter::traits::collect::IntoIterator for intl::unicode::normalize::Recompositions<I> where I: core::iter::traits::iterator::Iterator
 pub type intl::unicode::normalize::Recompositions<I>::IntoIter = I
 pub type intl::unicode::normalize::Recompositions<I>::Item = <I as core::iter::traits::iterator::Iterator>::Item
@@ -2976,8 +2976,8 @@ pub fn intl::unicode::normalize::Recompositions<I>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::normalize::Recompositions<I> where U: core::convert::From<T>
 pub fn intl::unicode::normalize::Recompositions<I>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::Recompositions<I> where U: core::convert::Into<T>
-pub type intl::unicode::normalize::Recompositions<I>::Error = core::convert::Infallible
-pub fn intl::unicode::normalize::Recompositions<I>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::normalize::Recompositions<I>::Error = never
+pub fn intl::unicode::normalize::Recompositions<I>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::Recompositions<I> where U: core::convert::TryFrom<T>
 pub type intl::unicode::normalize::Recompositions<I>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::normalize::Recompositions<I>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3040,8 +3040,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::numeric::NumericTyp
 impl<T, U> core::convert::Into<U> for intl::unicode::numeric::NumericType where U: core::convert::From<T>
 pub fn intl::unicode::numeric::NumericType::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::numeric::NumericType where U: core::convert::Into<T>
-pub type intl::unicode::numeric::NumericType::Error = core::convert::Infallible
-pub fn intl::unicode::numeric::NumericType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::numeric::NumericType::Error = never
+pub fn intl::unicode::numeric::NumericType::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::numeric::NumericType where U: core::convert::TryFrom<T>
 pub type intl::unicode::numeric::NumericType::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::numeric::NumericType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3087,8 +3087,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::numeric::NumericVal
 impl<T, U> core::convert::Into<U> for intl::unicode::numeric::NumericValue where U: core::convert::From<T>
 pub fn intl::unicode::numeric::NumericValue::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::numeric::NumericValue where U: core::convert::Into<T>
-pub type intl::unicode::numeric::NumericValue::Error = core::convert::Infallible
-pub fn intl::unicode::numeric::NumericValue::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::numeric::NumericValue::Error = never
+pub fn intl::unicode::numeric::NumericValue::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::numeric::NumericValue where U: core::convert::TryFrom<T>
 pub type intl::unicode::numeric::NumericValue::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::numeric::NumericValue::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3313,8 +3313,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::Script
 impl<T, U> core::convert::Into<U> for intl::unicode::Script where U: core::convert::From<T>
 pub fn intl::unicode::Script::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::Script where U: core::convert::Into<T>
-pub type intl::unicode::Script::Error = core::convert::Infallible
-pub fn intl::unicode::Script::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::Script::Error = never
+pub fn intl::unicode::Script::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::Script where U: core::convert::TryFrom<T>
 pub type intl::unicode::Script::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::Script::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3358,8 +3358,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::script::ScriptExten
 impl<T, U> core::convert::Into<U> for intl::unicode::script::ScriptExtensions where U: core::convert::From<T>
 pub fn intl::unicode::script::ScriptExtensions::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::script::ScriptExtensions where U: core::convert::Into<T>
-pub type intl::unicode::script::ScriptExtensions::Error = core::convert::Infallible
-pub fn intl::unicode::script::ScriptExtensions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::script::ScriptExtensions::Error = never
+pub fn intl::unicode::script::ScriptExtensions::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::script::ScriptExtensions where U: core::convert::TryFrom<T>
 pub type intl::unicode::script::ScriptExtensions::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::script::ScriptExtensions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3402,8 +3402,8 @@ pub fn intl::unicode::segment::Graphemes<'a>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::Graphemes<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::Graphemes<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::Graphemes<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::Graphemes<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::Graphemes<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::Graphemes<'a>::Error = never
+pub fn intl::unicode::segment::Graphemes<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::Graphemes<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::Graphemes<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::Graphemes<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3443,8 +3443,8 @@ impl<'a> core::panic::unwind_safe::UnwindSafe for intl::unicode::segment::LineBr
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::LineBreak<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::LineBreak<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::LineBreak<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::LineBreak<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::LineBreak<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::LineBreak<'a>::Error = never
+pub fn intl::unicode::segment::LineBreak<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::LineBreak<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::LineBreak<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::LineBreak<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3482,8 +3482,8 @@ pub fn intl::unicode::segment::LineBreaks<'a>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::LineBreaks<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::LineBreaks<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::LineBreaks<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::LineBreaks<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::LineBreaks<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::LineBreaks<'a>::Error = never
+pub fn intl::unicode::segment::LineBreaks<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::LineBreaks<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::LineBreaks<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::LineBreaks<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3521,8 +3521,8 @@ pub fn intl::unicode::segment::Sentences<'a>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::Sentences<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::Sentences<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::Sentences<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::Sentences<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::Sentences<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::Sentences<'a>::Error = never
+pub fn intl::unicode::segment::Sentences<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::Sentences<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::Sentences<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::Sentences<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3560,8 +3560,8 @@ pub fn intl::unicode::segment::Words<'a>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::Words<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::Words<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::Words<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::Words<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::Words<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::Words<'a>::Error = never
+pub fn intl::unicode::segment::Words<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::Words<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::Words<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::Words<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3623,8 +3623,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::width::EastAsianWid
 impl<T, U> core::convert::Into<U> for intl::unicode::width::EastAsianWidth where U: core::convert::From<T>
 pub fn intl::unicode::width::EastAsianWidth::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::width::EastAsianWidth where U: core::convert::Into<T>
-pub type intl::unicode::width::EastAsianWidth::Error = core::convert::Infallible
-pub fn intl::unicode::width::EastAsianWidth::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::width::EastAsianWidth::Error = never
+pub fn intl::unicode::width::EastAsianWidth::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::width::EastAsianWidth where U: core::convert::TryFrom<T>
 pub type intl::unicode::width::EastAsianWidth::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::width::EastAsianWidth::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3666,8 +3666,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::collate::AlternateH
 impl<T, U> core::convert::Into<U> for intl::unicode::collate::AlternateHandling where U: core::convert::From<T>
 pub fn intl::unicode::collate::AlternateHandling::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::collate::AlternateHandling where U: core::convert::Into<T>
-pub type intl::unicode::collate::AlternateHandling::Error = core::convert::Infallible
-pub fn intl::unicode::collate::AlternateHandling::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::collate::AlternateHandling::Error = never
+pub fn intl::unicode::collate::AlternateHandling::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::collate::AlternateHandling where U: core::convert::TryFrom<T>
 pub type intl::unicode::collate::AlternateHandling::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::collate::AlternateHandling::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3730,8 +3730,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::bidi::BidiClass
 impl<T, U> core::convert::Into<U> for intl::unicode::bidi::BidiClass where U: core::convert::From<T>
 pub fn intl::unicode::bidi::BidiClass::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::bidi::BidiClass where U: core::convert::Into<T>
-pub type intl::unicode::bidi::BidiClass::Error = core::convert::Infallible
-pub fn intl::unicode::bidi::BidiClass::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::bidi::BidiClass::Error = never
+pub fn intl::unicode::bidi::BidiClass::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::bidi::BidiClass where U: core::convert::TryFrom<T>
 pub type intl::unicode::bidi::BidiClass::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::bidi::BidiClass::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3771,8 +3771,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::bidi::Direction
 impl<T, U> core::convert::Into<U> for intl::unicode::bidi::Direction where U: core::convert::From<T>
 pub fn intl::unicode::bidi::Direction::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::bidi::Direction where U: core::convert::Into<T>
-pub type intl::unicode::bidi::Direction::Error = core::convert::Infallible
-pub fn intl::unicode::bidi::Direction::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::bidi::Direction::Error = never
+pub fn intl::unicode::bidi::Direction::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::bidi::Direction where U: core::convert::TryFrom<T>
 pub type intl::unicode::bidi::Direction::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::bidi::Direction::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3825,8 +3825,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::width::EastAsianWid
 impl<T, U> core::convert::Into<U> for intl::unicode::width::EastAsianWidth where U: core::convert::From<T>
 pub fn intl::unicode::width::EastAsianWidth::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::width::EastAsianWidth where U: core::convert::Into<T>
-pub type intl::unicode::width::EastAsianWidth::Error = core::convert::Infallible
-pub fn intl::unicode::width::EastAsianWidth::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::width::EastAsianWidth::Error = never
+pub fn intl::unicode::width::EastAsianWidth::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::width::EastAsianWidth where U: core::convert::TryFrom<T>
 pub type intl::unicode::width::EastAsianWidth::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::width::EastAsianWidth::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3912,8 +3912,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::category::GeneralCa
 impl<T, U> core::convert::Into<U> for intl::unicode::category::GeneralCategory where U: core::convert::From<T>
 pub fn intl::unicode::category::GeneralCategory::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::category::GeneralCategory where U: core::convert::Into<T>
-pub type intl::unicode::category::GeneralCategory::Error = core::convert::Infallible
-pub fn intl::unicode::category::GeneralCategory::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::category::GeneralCategory::Error = never
+pub fn intl::unicode::category::GeneralCategory::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::category::GeneralCategory where U: core::convert::TryFrom<T>
 pub type intl::unicode::category::GeneralCategory::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::category::GeneralCategory::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -3964,8 +3964,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::category::Group
 impl<T, U> core::convert::Into<U> for intl::unicode::category::Group where U: core::convert::From<T>
 pub fn intl::unicode::category::Group::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::category::Group where U: core::convert::Into<T>
-pub type intl::unicode::category::Group::Error = core::convert::Infallible
-pub fn intl::unicode::category::Group::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::category::Group::Error = never
+pub fn intl::unicode::category::Group::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::category::Group where U: core::convert::TryFrom<T>
 pub type intl::unicode::category::Group::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::category::Group::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4019,8 +4019,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::IndicPositionalCate
 impl<T, U> core::convert::Into<U> for intl::unicode::IndicPositionalCategory where U: core::convert::From<T>
 pub fn intl::unicode::IndicPositionalCategory::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::IndicPositionalCategory where U: core::convert::Into<T>
-pub type intl::unicode::IndicPositionalCategory::Error = core::convert::Infallible
-pub fn intl::unicode::IndicPositionalCategory::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::IndicPositionalCategory::Error = never
+pub fn intl::unicode::IndicPositionalCategory::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::IndicPositionalCategory where U: core::convert::TryFrom<T>
 pub type intl::unicode::IndicPositionalCategory::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::IndicPositionalCategory::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4095,8 +4095,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::IndicSyllabicCatego
 impl<T, U> core::convert::Into<U> for intl::unicode::IndicSyllabicCategory where U: core::convert::From<T>
 pub fn intl::unicode::IndicSyllabicCategory::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::IndicSyllabicCategory where U: core::convert::Into<T>
-pub type intl::unicode::IndicSyllabicCategory::Error = core::convert::Infallible
-pub fn intl::unicode::IndicSyllabicCategory::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::IndicSyllabicCategory::Error = never
+pub fn intl::unicode::IndicSyllabicCategory::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::IndicSyllabicCategory where U: core::convert::TryFrom<T>
 pub type intl::unicode::IndicSyllabicCategory::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::IndicSyllabicCategory::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4137,8 +4137,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::IsNormal
 impl<T, U> core::convert::Into<U> for intl::unicode::normalize::IsNormalized where U: core::convert::From<T>
 pub fn intl::unicode::normalize::IsNormalized::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::IsNormalized where U: core::convert::Into<T>
-pub type intl::unicode::normalize::IsNormalized::Error = core::convert::Infallible
-pub fn intl::unicode::normalize::IsNormalized::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::normalize::IsNormalized::Error = never
+pub fn intl::unicode::normalize::IsNormalized::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::IsNormalized where U: core::convert::TryFrom<T>
 pub type intl::unicode::normalize::IsNormalized::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::normalize::IsNormalized::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4282,8 +4282,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::JoiningGroup
 impl<T, U> core::convert::Into<U> for intl::unicode::JoiningGroup where U: core::convert::From<T>
 pub fn intl::unicode::JoiningGroup::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::JoiningGroup where U: core::convert::Into<T>
-pub type intl::unicode::JoiningGroup::Error = core::convert::Infallible
-pub fn intl::unicode::JoiningGroup::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::JoiningGroup::Error = never
+pub fn intl::unicode::JoiningGroup::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::JoiningGroup where U: core::convert::TryFrom<T>
 pub type intl::unicode::JoiningGroup::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::JoiningGroup::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4327,8 +4327,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::JoiningType
 impl<T, U> core::convert::Into<U> for intl::unicode::JoiningType where U: core::convert::From<T>
 pub fn intl::unicode::JoiningType::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::JoiningType where U: core::convert::Into<T>
-pub type intl::unicode::JoiningType::Error = core::convert::Infallible
-pub fn intl::unicode::JoiningType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::JoiningType::Error = never
+pub fn intl::unicode::JoiningType::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::JoiningType where U: core::convert::TryFrom<T>
 pub type intl::unicode::JoiningType::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::JoiningType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4375,8 +4375,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::numeric::NumericTyp
 impl<T, U> core::convert::Into<U> for intl::unicode::numeric::NumericType where U: core::convert::From<T>
 pub fn intl::unicode::numeric::NumericType::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::numeric::NumericType where U: core::convert::Into<T>
-pub type intl::unicode::numeric::NumericType::Error = core::convert::Infallible
-pub fn intl::unicode::numeric::NumericType::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::numeric::NumericType::Error = never
+pub fn intl::unicode::numeric::NumericType::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::numeric::NumericType where U: core::convert::TryFrom<T>
 pub type intl::unicode::numeric::NumericType::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::numeric::NumericType::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4597,8 +4597,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::Script
 impl<T, U> core::convert::Into<U> for intl::unicode::Script where U: core::convert::From<T>
 pub fn intl::unicode::Script::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::Script where U: core::convert::Into<T>
-pub type intl::unicode::Script::Error = core::convert::Infallible
-pub fn intl::unicode::Script::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::Script::Error = never
+pub fn intl::unicode::Script::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::Script where U: core::convert::TryFrom<T>
 pub type intl::unicode::Script::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::Script::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4642,8 +4642,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::script::ScriptExten
 impl<T, U> core::convert::Into<U> for intl::unicode::script::ScriptExtensions where U: core::convert::From<T>
 pub fn intl::unicode::script::ScriptExtensions::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::script::ScriptExtensions where U: core::convert::Into<T>
-pub type intl::unicode::script::ScriptExtensions::Error = core::convert::Infallible
-pub fn intl::unicode::script::ScriptExtensions::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::script::ScriptExtensions::Error = never
+pub fn intl::unicode::script::ScriptExtensions::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::script::ScriptExtensions where U: core::convert::TryFrom<T>
 pub type intl::unicode::script::ScriptExtensions::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::script::ScriptExtensions::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4689,8 +4689,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::collate::Strength
 impl<T, U> core::convert::Into<U> for intl::unicode::collate::Strength where U: core::convert::From<T>
 pub fn intl::unicode::collate::Strength::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::collate::Strength where U: core::convert::Into<T>
-pub type intl::unicode::collate::Strength::Error = core::convert::Infallible
-pub fn intl::unicode::collate::Strength::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::collate::Strength::Error = never
+pub fn intl::unicode::collate::Strength::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::collate::Strength where U: core::convert::TryFrom<T>
 pub type intl::unicode::collate::Strength::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::collate::Strength::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4732,8 +4732,8 @@ pub fn intl::unicode::case::CaseMapIter::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::case::CaseMapIter where U: core::convert::From<T>
 pub fn intl::unicode::case::CaseMapIter::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::case::CaseMapIter where U: core::convert::Into<T>
-pub type intl::unicode::case::CaseMapIter::Error = core::convert::Infallible
-pub fn intl::unicode::case::CaseMapIter::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::case::CaseMapIter::Error = never
+pub fn intl::unicode::case::CaseMapIter::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::case::CaseMapIter where U: core::convert::TryFrom<T>
 pub type intl::unicode::case::CaseMapIter::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::case::CaseMapIter::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4771,8 +4771,8 @@ pub fn intl::unicode::case::CaseMapping<I>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::case::CaseMapping<I> where U: core::convert::From<T>
 pub fn intl::unicode::case::CaseMapping<I>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::case::CaseMapping<I> where U: core::convert::Into<T>
-pub type intl::unicode::case::CaseMapping<I>::Error = core::convert::Infallible
-pub fn intl::unicode::case::CaseMapping<I>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::case::CaseMapping<I>::Error = never
+pub fn intl::unicode::case::CaseMapping<I>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::case::CaseMapping<I> where U: core::convert::TryFrom<T>
 pub type intl::unicode::case::CaseMapping<I>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::case::CaseMapping<I>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4815,8 +4815,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::collate::Collator
 impl<T, U> core::convert::Into<U> for intl::unicode::collate::Collator where U: core::convert::From<T>
 pub fn intl::unicode::collate::Collator::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::collate::Collator where U: core::convert::Into<T>
-pub type intl::unicode::collate::Collator::Error = core::convert::Infallible
-pub fn intl::unicode::collate::Collator::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::collate::Collator::Error = never
+pub fn intl::unicode::collate::Collator::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::collate::Collator where U: core::convert::TryFrom<T>
 pub type intl::unicode::collate::Collator::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::collate::Collator::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4854,8 +4854,8 @@ pub fn intl::unicode::normalize::Decompositions<I>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::normalize::Decompositions<I> where U: core::convert::From<T>
 pub fn intl::unicode::normalize::Decompositions<I>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::Decompositions<I> where U: core::convert::Into<T>
-pub type intl::unicode::normalize::Decompositions<I>::Error = core::convert::Infallible
-pub fn intl::unicode::normalize::Decompositions<I>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::normalize::Decompositions<I>::Error = never
+pub fn intl::unicode::normalize::Decompositions<I>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::Decompositions<I> where U: core::convert::TryFrom<T>
 pub type intl::unicode::normalize::Decompositions<I>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::normalize::Decompositions<I>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4893,8 +4893,8 @@ pub fn intl::unicode::segment::Graphemes<'a>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::Graphemes<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::Graphemes<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::Graphemes<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::Graphemes<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::Graphemes<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::Graphemes<'a>::Error = never
+pub fn intl::unicode::segment::Graphemes<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::Graphemes<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::Graphemes<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::Graphemes<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4934,8 +4934,8 @@ impl<'a> core::panic::unwind_safe::UnwindSafe for intl::unicode::segment::LineBr
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::LineBreak<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::LineBreak<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::LineBreak<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::LineBreak<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::LineBreak<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::LineBreak<'a>::Error = never
+pub fn intl::unicode::segment::LineBreak<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::LineBreak<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::LineBreak<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::LineBreak<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -4973,8 +4973,8 @@ pub fn intl::unicode::segment::LineBreaks<'a>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::LineBreaks<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::LineBreaks<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::LineBreaks<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::LineBreaks<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::LineBreaks<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::LineBreaks<'a>::Error = never
+pub fn intl::unicode::segment::LineBreaks<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::LineBreaks<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::LineBreaks<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::LineBreaks<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -5020,8 +5020,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::numeric::NumericVal
 impl<T, U> core::convert::Into<U> for intl::unicode::numeric::NumericValue where U: core::convert::From<T>
 pub fn intl::unicode::numeric::NumericValue::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::numeric::NumericValue where U: core::convert::Into<T>
-pub type intl::unicode::numeric::NumericValue::Error = core::convert::Infallible
-pub fn intl::unicode::numeric::NumericValue::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::numeric::NumericValue::Error = never
+pub fn intl::unicode::numeric::NumericValue::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::numeric::NumericValue where U: core::convert::TryFrom<T>
 pub type intl::unicode::numeric::NumericValue::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::numeric::NumericValue::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -5045,13 +5045,13 @@ pub fn intl::unicode::normalize::Recompositions<I>::clone(&self) -> intl::unicod
 impl<I: core::iter::traits::iterator::Iterator<Item = char>> core::iter::traits::iterator::Iterator for intl::unicode::normalize::Recompositions<I>
 pub type intl::unicode::normalize::Recompositions<I>::Item = char
 pub fn intl::unicode::normalize::Recompositions<I>::next(&mut self) -> core::option::Option<char>
-impl<I> core::marker::Freeze for intl::unicode::normalize::Recompositions<I> where I: core::marker::Freeze
-impl<I> core::marker::Send for intl::unicode::normalize::Recompositions<I> where I: core::marker::Send
-impl<I> core::marker::Sync for intl::unicode::normalize::Recompositions<I> where I: core::marker::Sync
-impl<I> core::marker::Unpin for intl::unicode::normalize::Recompositions<I> where I: core::marker::Unpin
-impl<I> core::marker::UnsafeUnpin for intl::unicode::normalize::Recompositions<I> where I: core::marker::UnsafeUnpin
-impl<I> core::panic::unwind_safe::RefUnwindSafe for intl::unicode::normalize::Recompositions<I> where I: core::panic::unwind_safe::RefUnwindSafe
-impl<I> core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::Recompositions<I> where I: core::panic::unwind_safe::UnwindSafe
+impl<I> core::marker::Freeze for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::Freeze
+impl<I> core::marker::Send for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::Send
+impl<I> core::marker::Sync for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::Sync
+impl<I> core::marker::Unpin for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::Unpin
+impl<I> core::marker::UnsafeUnpin for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::marker::UnsafeUnpin
+impl<I> core::panic::unwind_safe::RefUnwindSafe for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::panic::unwind_safe::RefUnwindSafe
+impl<I> core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::Recompositions<I> where intl::unicode::normalize::Decompositions<I>: core::panic::unwind_safe::UnwindSafe
 impl<I> core::iter::traits::collect::IntoIterator for intl::unicode::normalize::Recompositions<I> where I: core::iter::traits::iterator::Iterator
 pub type intl::unicode::normalize::Recompositions<I>::IntoIter = I
 pub type intl::unicode::normalize::Recompositions<I>::Item = <I as core::iter::traits::iterator::Iterator>::Item
@@ -5059,8 +5059,8 @@ pub fn intl::unicode::normalize::Recompositions<I>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::normalize::Recompositions<I> where U: core::convert::From<T>
 pub fn intl::unicode::normalize::Recompositions<I>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::Recompositions<I> where U: core::convert::Into<T>
-pub type intl::unicode::normalize::Recompositions<I>::Error = core::convert::Infallible
-pub fn intl::unicode::normalize::Recompositions<I>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::normalize::Recompositions<I>::Error = never
+pub fn intl::unicode::normalize::Recompositions<I>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::Recompositions<I> where U: core::convert::TryFrom<T>
 pub type intl::unicode::normalize::Recompositions<I>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::normalize::Recompositions<I>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -5098,8 +5098,8 @@ pub fn intl::unicode::segment::Sentences<'a>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::Sentences<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::Sentences<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::Sentences<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::Sentences<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::Sentences<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::Sentences<'a>::Error = never
+pub fn intl::unicode::segment::Sentences<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::Sentences<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::Sentences<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::Sentences<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -5134,8 +5134,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unicode::collate::Tailoring
 impl<T, U> core::convert::Into<U> for intl::unicode::collate::Tailoring where U: core::convert::From<T>
 pub fn intl::unicode::collate::Tailoring::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::collate::Tailoring where U: core::convert::Into<T>
-pub type intl::unicode::collate::Tailoring::Error = core::convert::Infallible
-pub fn intl::unicode::collate::Tailoring::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::collate::Tailoring::Error = never
+pub fn intl::unicode::collate::Tailoring::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::collate::Tailoring where U: core::convert::TryFrom<T>
 pub type intl::unicode::collate::Tailoring::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::collate::Tailoring::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -5167,8 +5167,8 @@ pub fn intl::unicode::segment::Words<'a>::into_iter(self) -> I
 impl<T, U> core::convert::Into<U> for intl::unicode::segment::Words<'a> where U: core::convert::From<T>
 pub fn intl::unicode::segment::Words<'a>::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unicode::segment::Words<'a> where U: core::convert::Into<T>
-pub type intl::unicode::segment::Words<'a>::Error = core::convert::Infallible
-pub fn intl::unicode::segment::Words<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unicode::segment::Words<'a>::Error = never
+pub fn intl::unicode::segment::Words<'a>::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unicode::segment::Words<'a> where U: core::convert::TryFrom<T>
 pub type intl::unicode::segment::Words<'a>::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unicode::segment::Words<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -5378,8 +5378,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unit::Unit
 impl<T, U> core::convert::Into<U> for intl::unit::Unit where U: core::convert::From<T>
 pub fn intl::unit::Unit::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unit::Unit where U: core::convert::Into<T>
-pub type intl::unit::Unit::Error = core::convert::Infallible
-pub fn intl::unit::Unit::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unit::Unit::Error = never
+pub fn intl::unit::Unit::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unit::Unit where U: core::convert::TryFrom<T>
 pub type intl::unit::Unit::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unit::Unit::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
@@ -5420,8 +5420,8 @@ impl core::panic::unwind_safe::UnwindSafe for intl::unit::UnitWidth
 impl<T, U> core::convert::Into<U> for intl::unit::UnitWidth where U: core::convert::From<T>
 pub fn intl::unit::UnitWidth::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for intl::unit::UnitWidth where U: core::convert::Into<T>
-pub type intl::unit::UnitWidth::Error = core::convert::Infallible
-pub fn intl::unit::UnitWidth::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+pub type intl::unit::UnitWidth::Error = never
+pub fn intl::unit::UnitWidth::try_from(U) -> core::result::Result<T, never>
 impl<T, U> core::convert::TryInto<U> for intl::unit::UnitWidth where U: core::convert::TryFrom<T>
 pub type intl::unit::UnitWidth::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn intl::unit::UnitWidth::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
