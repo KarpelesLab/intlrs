@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2](https://github.com/KarpelesLab/intlrs/compare/v0.6.1...v0.6.2) - 2026-09-08
+
+### Added
+
+- *(calendars)* gate each non-Gregorian calendar behind its own feature
+- *(collate)* enumerate a locale's collations and its default
+
+### Fixed
+
+- *(collation)* bundle the CLDR `search` collations as `<locale>-u-co-search`
+- *(number)* honour the region subtag for number symbols, patterns and currency placement
+
+### Other
+
+- *(codegen)* correct the skip reasons for the eor collations
+- regenerate public-api.txt on current nightly
+- *(categories)* call CharExt::is_assigned through the trait
+
 ## [0.6.1](https://github.com/KarpelesLab/intlrs/compare/v0.6.0...v0.6.1) - 2026-07-31
 
 ### Fixed
