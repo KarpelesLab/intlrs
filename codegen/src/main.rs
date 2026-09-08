@@ -2478,9 +2478,11 @@ struct NumbersRecord {
 impl NumbersRecord {
     /// Whether two locales can share one table index. Everything the index
     /// addresses — symbols, patterns, `miscPatterns` — must match; the numbering
-    /// system pair is deliberately excluded because that is the *only* thing the
-    /// 22 vendored `lang-REGION` files change (see `numbers-raw/README.txt`), and
-    /// it is emitted as a per-locale override instead.
+    /// system pair is deliberately excluded because 22 of the vendored
+    /// `lang-REGION` files change nothing else (`ar-EG` is `ar` plus `arab`; see
+    /// `numbers-raw/README.txt`), and it is emitted as a per-locale override
+    /// instead. A region file that does change symbols or patterns (`pt-PT`,
+    /// `de-CH`, `es-MX`, …) gets an index of its own.
     fn shares_index_with(&self, other: &NumbersRecord) -> bool {
         self.specs == other.specs
             && self.approximately == other.approximately
@@ -2730,7 +2732,7 @@ fn emit_numbers(
         }
 
         // `miscPatterns` are per numbering system in CLDR but identical across
-        // systems in all 103 vendored locales, so one per locale is enough.
+        // systems in every vendored locale, so one per locale is enough.
         let misc = n
             .get("miscPatterns-numberSystem-latn")
             .expect("miscPatterns-numberSystem-latn");
@@ -3593,22 +3595,28 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
         .collect();
     files.sort();
 
-    let mut records = Vec::new();
-    for locale in files {
-        let cur_text = fs::read_to_string(currencies_dir.join(alloc_format(&locale)))
-            .unwrap_or_else(|_| panic!("read currencies {locale}"));
-        let cur_json = json_parse(&cur_text);
-        let (_, cur_loc) = cur_json
-            .get("main")
-            .expect("main")
-            .entries()
-            .first()
-            .expect("locale");
-        let currencies = cur_loc
-            .get("numbers")
-            .and_then(|n| n.get("currencies"))
-            .expect("currencies");
+    // The `lang-REGION` files vendored under `numbers-raw` for their number
+    // formatting carry the region's *currency pattern* too (`pt-PT` puts the
+    // symbol after the amount where `pt` puts it before), but no currency names
+    // of their own — those live in `currencies.json`, which is vendored per base
+    // language only. Such a locale gets a pattern-only record (an empty name
+    // table), and the runtime's fallback walk picks the names up from the base.
+    let mut pattern_only: Vec<String> = locale_files(numbers_dir)
+        .into_iter()
+        .filter(|l| l != "root" && !files.contains(l))
+        .collect();
+    pattern_only.sort();
 
+    // `(pattern, unit pattern)` per emitted locale key, so a pattern-only record
+    // that merely repeats what the runtime's truncating fallback would reach can
+    // be pruned (`en-GB`'s pattern is `en`'s).
+    let mut patterns: BTreeMap<String, (String, String)> = BTreeMap::new();
+    let mut records = Vec::new();
+    for (locale, has_names) in files
+        .iter()
+        .map(|l| (l.clone(), true))
+        .chain(pattern_only.iter().map(|l| (l.clone(), false)))
+    {
         let num_text = fs::read_to_string(numbers_dir.join(alloc_format(&locale)))
             .unwrap_or_else(|_| panic!("read numbers {locale}"));
         let num_json = json_parse(&num_text);
@@ -3634,6 +3642,43 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
         let mut p = Vec::new();
         enc_pattern(&mut p, &parse_number_pattern(pat, ""));
         enc_str(&mut p, unit_pat);
+        let key = locale.to_ascii_lowercase();
+        if !has_names {
+            // Pattern-only region record: drop it when the nearest vendored
+            // ancestor already formats this way.
+            let mut end = key.len();
+            let inherited = loop {
+                match key[..end].rfind('-') {
+                    Some(i) => end = i,
+                    None => break None,
+                }
+                if let Some(v) = patterns.get(&key[..end]) {
+                    break Some(v);
+                }
+            };
+            if inherited.is_some_and(|(ip, iu)| ip == pat && iu == unit_pat) {
+                continue;
+            }
+            p.extend_from_slice(&0u16.to_le_bytes());
+            patterns.insert(key.clone(), (pat.to_string(), unit_pat.to_string()));
+            records.push((key, p));
+            continue;
+        }
+        patterns.insert(key.clone(), (pat.to_string(), unit_pat.to_string()));
+
+        let cur_text = fs::read_to_string(currencies_dir.join(alloc_format(&locale)))
+            .unwrap_or_else(|_| panic!("read currencies {locale}"));
+        let cur_json = json_parse(&cur_text);
+        let (_, cur_loc) = cur_json
+            .get("main")
+            .expect("main")
+            .entries()
+            .first()
+            .expect("locale");
+        let currencies = cur_loc
+            .get("numbers")
+            .and_then(|n| n.get("currencies"))
+            .expect("currencies");
         let entries = currencies.entries();
         p.extend_from_slice(&(entries.len() as u16).to_le_bytes());
         for (code, info) in entries {
@@ -3655,8 +3700,11 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
             enc_str(&mut p, narrow);
             enc_str(&mut p, name);
         }
-        records.push((locale.to_ascii_lowercase(), p));
+        records.push((key, p));
     }
+    // The pattern-only records are appended after the base set; the blob is
+    // looked up by exact key, so order only matters for determinism.
+    records.sort_by(|a, b| a.0.cmp(&b.0));
     write_blob(cldr_dir, "currency", &records);
 }
 
