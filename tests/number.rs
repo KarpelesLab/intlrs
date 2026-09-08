@@ -1263,3 +1263,418 @@ fn minimum_grouping_digits() {
     assert_eq!(intl::number::format("pl", 1000.0, &always), "1\u{a0}000");
     assert_eq!(intl::number::format("pl", 1000.0, &never), "1000");
 }
+
+/// ECMA-402's default `roundingMode` is `halfExpand` — ties away from zero —
+/// where this crate used to round half to even. Values from node 26 / ICU 78.3:
+/// `Intl.NumberFormat("en", {maximumFractionDigits: 0}).format(2.5)` is `"3"`,
+/// `.format(0.5)` is `"1"`, `.format(-2.5)` is `"-3"`, and
+/// `Intl.NumberFormat("en", {maximumSignificantDigits: 2}).format(1.25)` is
+/// `"1.3"` — so the significant-digit and compact paths take the same tie-break.
+#[test]
+fn default_rounding_mode_is_half_expand() {
+    use intl::number::{Notation, RoundingMode, format};
+    let frac0 = nf(|o| o.maximum_fraction_digits = Some(0));
+    assert_eq!(format("en", 2.5, &frac0), "3");
+    assert_eq!(format("en", 0.5, &frac0), "1");
+    assert_eq!(format("en", 1.5, &frac0), "2");
+    assert_eq!(format("en", -2.5, &frac0), "-3");
+    assert_eq!(format("en", -0.5, &frac0), "-1");
+
+    // Significant digits round the same way: "1.3" / "1.4", not half-even's
+    // "1.2" / "1.4".
+    let sig2 = nf(|o| o.maximum_significant_digits = Some(2));
+    assert_eq!(format("en", 1.25, &sig2), "1.3");
+    assert_eq!(format("en", 1.35, &sig2), "1.4");
+
+    // And so does compact's `morePrecision` pass: node's
+    // `{notation: "compact"}` on 1250 is `"1.3K"`, on `de` -1234.5 `"-1235"`.
+    let compact = nf(|o| o.notation = Notation::Compact);
+    assert_eq!(format("en", 1250.0, &compact), "1.3K");
+    assert_eq!(format("de", -1234.5, &compact), "-1235");
+
+    // An explicit mode still wins.
+    let half_even = nf(|o| {
+        o.maximum_fraction_digits = Some(0);
+        o.rounding_mode = RoundingMode::HalfEven;
+    });
+    assert_eq!(format("en", 2.5, &half_even), "2");
+    assert_eq!(RoundingMode::default(), RoundingMode::HalfExpand);
+}
+
+/// The free functions round at the same boundary as `format`: they used to go
+/// through the float formatter, whose ties are half-even. Node:
+/// `Intl.NumberFormat("en", {style: "currency", currency: "JPY"}).format(2.5)`
+/// is `"¥3"` and `("ja", ...).format(1234.5)` is `"￥1,235"`; `fa`'s IRR (which
+/// CLDR gives 0 fraction digits) writes `"\u{200e}ریال\u{a0}۱٬۲۳۵"`.
+#[cfg(feature = "currency")]
+#[test]
+fn currency_ties_round_away_from_zero() {
+    use intl::number::{NumberStyle, format, format_currency};
+    let mk = |code: &'static str| {
+        nf(move |o| {
+            o.style = NumberStyle::Currency;
+            o.currency = Some(code);
+        })
+    };
+    assert_eq!(format("en", 2.5, &mk("JPY")), "¥3");
+    assert_eq!(format("ja", 1234.5, &mk("JPY")), "￥1,235");
+    assert_eq!(format_currency("en", 2.5, "JPY"), "¥3");
+    // `fa`'s `arabext` group separator needs the per-system blocks; without
+    // `number-numsys` the digits are Persian but the separators stay `latn`.
+    #[cfg(feature = "number-numsys")]
+    assert_eq!(
+        format("fa", 1234.5, &mk("IRR")),
+        "\u{200e}ریال\u{a0}\u{6f1}\u{66c}\u{6f2}\u{6f3}\u{6f5}"
+    );
+}
+
+/// The exponent separator is the numbering system's CLDR `symbols/exponential`,
+/// not a hard-coded `E`. Node `{notation: "scientific"}` on 12345:
+/// `en` `"1.235E4"`, `sv` `"1,235×10^4"`, `el` `"1,235e4"`, `uk` `"1,235Е4"`
+/// (Cyrillic Е), `ar` `"1.235E4"` but `ar-EG` `"١٫٢٣٥أس٤"` — the difference
+/// being that `ar` defaults to `latn` and `ar-EG` to `arab`.
+#[test]
+fn scientific_exponent_separator_is_localized() {
+    use intl::number::{Notation, format};
+    let sci = nf(|o| o.notation = Notation::Scientific);
+    assert_eq!(format("en", 12345.0, &sci), "1.235E4");
+    assert_eq!(format("sv", 12345.0, &sci), "1,235×10^4");
+    assert_eq!(format("el", 12345.0, &sci), "1,235e4");
+    assert_eq!(format("uk", 12345.0, &sci), "1,235\u{415}4");
+    assert_eq!(format("ar", 12345.0, &sci), "1.235E4");
+    // Engineering notation shares the separator.
+    let eng = nf(|o| o.notation = Notation::Engineering);
+    assert_eq!(format("sv", 12345.0, &eng), "12,345×10^3");
+}
+
+/// The per-numbering-system blocks carry their own exponential symbol, so the
+/// locale's default system changes it. Node: `ar-EG` (default `arab`) is
+/// `"١٫٢٣٥أس٤"` and `fa` (default `arabext`) `"۱٫۲۳۵×۱۰^۴"`.
+#[cfg(feature = "number-numsys")]
+#[test]
+fn exponent_separator_follows_the_numbering_system() {
+    use intl::number::{Notation, format};
+    let sci = nf(|o| o.notation = Notation::Scientific);
+    assert_eq!(
+        format("ar-EG", 12345.0, &sci),
+        "\u{661}\u{66b}\u{662}\u{663}\u{665}أس\u{664}"
+    );
+    assert_eq!(
+        format("fa", 12345.0, &sci),
+        "\u{6f1}\u{66b}\u{6f2}\u{6f3}\u{6f5}×\u{6f1}\u{6f0}^\u{6f4}"
+    );
+}
+
+/// Compact patterns are keyed by plural category, and by UTS #35 §3.5's
+/// explicit `count="1"` where a locale has one. Node
+/// `{notation: "compact", compactDisplay: "long"}`: `fr` 1000 is `"mille"`
+/// (its `1000-count-1` is that bare word, with no `{0}`), 1500 `"1,5 millier"`
+/// (`count-one`) and 2000 `"2 mille"` (`count-other`); `de` 999999 rounds into
+/// the million band as `"1 Million"` against 2e6's `"2 Millionen"`; `ru` 12345
+/// is `"12 тысяч"` (`many`) and `ro` 12345 `"12 mii"` (`few`).
+#[test]
+fn compact_patterns_follow_the_plural_category() {
+    use intl::number::{CompactDisplay, Notation, format, format_compact};
+    let long = nf(|o| {
+        o.notation = Notation::Compact;
+        o.compact_display = CompactDisplay::Long;
+    });
+    assert_eq!(format("fr", 1000.0, &long), "mille");
+    assert_eq!(format("fr", 1500.0, &long), "1,5 millier");
+    assert_eq!(format("fr", 2000.0, &long), "2 mille");
+    assert_eq!(format("de", 999_999.0, &long), "1 Million");
+    assert_eq!(format("de", 2e6, &long), "2 Millionen");
+    assert_eq!(format("ru", 12345.0, &long), "12 тысяч");
+    assert_eq!(format("ru", 1e10, &long), "10 миллиардов");
+    assert_eq!(format("ro", 12345.0, &long), "12 mii");
+
+    // Short forms too: `bn`'s `10000000000-count-one` carries a space its
+    // `count-other` lacks, which node reproduces as "১ শত কো" / "২শত কো".
+    assert_eq!(format_compact("bn", 1e10), "\u{9e7}\u{a0}শত\u{a0}কো");
+    assert_eq!(format_compact("bn", 2e10), "\u{9e8}শত\u{a0}কো");
+}
+
+/// A compact pattern may carry a negative subpattern of its own after `;`, which
+/// places the sign rather than leaving it in front. `sw`'s long forms do, and
+/// node writes `"bilioni -1"` for -1e9 against `"bilioni 1"` — while its short
+/// `"0B;-0B"` puts the sign back where the default would.
+#[test]
+fn compact_negative_subpattern() {
+    use intl::number::{CompactDisplay, Notation, format};
+    let long = nf(|o| {
+        o.notation = Notation::Compact;
+        o.compact_display = CompactDisplay::Long;
+    });
+    let short = nf(|o| o.notation = Notation::Compact);
+    assert_eq!(format("sw", -1e9, &long), "bilioni -1");
+    assert_eq!(format("sw", 1e9, &long), "bilioni 1");
+    assert_eq!(format("sw", -1e9, &short), "-1B");
+}
+
+/// Compact notation replaces the style's affixes with the compact pattern's, so
+/// a percent loses the `percentFormat` `%` and ICU words it through the CLDR
+/// `concentr-percent` short unit instead — a different string *and* a different
+/// spacing. Node `{style: "percent", notation: "compact"}` on 123.45:
+/// `da` `"12\u{a0}t pct."`, `de` `"12.345 %"` (plain space where its pattern
+/// uses U+00A0), `ro` `"12\u{a0}K%"` (no space where its pattern has one),
+/// `tr` `"%12\u{a0}B"` — with the sign *inside* the affix, `"%-50"` for -0.5,
+/// because the unit sits outside the sign.
+#[test]
+fn compact_percent_uses_the_percent_unit_pattern() {
+    use intl::number::{Notation, NumberStyle, format};
+    let pctc = nf(|o| {
+        o.style = NumberStyle::Percent;
+        o.notation = Notation::Compact;
+    });
+    assert_eq!(format("da", 123.45, &pctc), "12\u{a0}t pct.");
+    assert_eq!(format("de", 123.45, &pctc), "12.345 %");
+    assert_eq!(format("en", 123.45, &pctc), "12K%");
+    assert_eq!(format("ro", 123.45, &pctc), "12\u{a0}K%");
+    assert_eq!(format("uk", 123.45, &pctc), "12\u{a0}тис. %");
+    assert_eq!(format("tr", 123.45, &pctc), "%12\u{a0}B");
+    assert_eq!(format("tr", -0.5, &pctc), "%-50");
+    assert_eq!(format("ar", -0.5, &pctc), "\u{200e}-50\u{66a}");
+
+    // It applies below the smallest compact band too, where the value is
+    // written out in full: node's `de` is "50 %" compact but "50\u{a0}%" plain.
+    assert_eq!(format("de", 0.5, &pctc), "50 %");
+    assert_eq!(pct("de", 0.5), "50\u{a0}%");
+    assert_eq!(format("uk", 0.5, &pctc), "50 %");
+    assert_eq!(pct("uk", 0.5), "50%");
+
+    // The unit is plural-selected: `is` is the one locale in CLDR 48 whose
+    // short percent differs by category ("1%" for one, "2 %" for other).
+    assert_eq!(format("is", 0.01, &pctc), "1%");
+    assert_eq!(format("is", 0.02, &pctc), "2 %");
+}
+
+/// The symbol a compact percent picks up is tagged `unit`, not `percentSign` —
+/// it comes from the unit rather than from the number pattern. Node's
+/// `Intl.NumberFormat("da", {style: "percent", notation: "compact"})
+/// .formatToParts(-12345)` ends `... compact("mio.") literal(" ")
+/// unit("pct.")`.
+///
+/// Only the last two are asserted: ICU splits the space *before* a compact
+/// suffix into its own `literal` part where this crate keeps it inside the
+/// `compact` one, which is a separate (pre-existing) `formatToParts` difference
+/// and not what the percent unit changes.
+#[test]
+fn compact_percent_parts_tag_the_symbol_as_a_unit() {
+    use intl::number::{Notation, NumberPartType, NumberStyle, format_to_parts};
+    let pctc = nf(|o| {
+        o.style = NumberStyle::Percent;
+        o.notation = Notation::Compact;
+    });
+    let parts = format_to_parts("da", -12345.0, &pctc);
+    let tail: Vec<(NumberPartType, &str)> = parts
+        .iter()
+        .rev()
+        .take(2)
+        .rev()
+        .map(|p| (p.kind, p.value.as_str()))
+        .collect();
+    assert_eq!(
+        tail,
+        [
+            (NumberPartType::Literal, " "),
+            (NumberPartType::Unit, "pct."),
+        ]
+    );
+}
+
+/// CLDR currency patterns can carry an explicit negative subpattern after `;`,
+/// and it places the sign itself. Node `{style: "currency", currency: "USD"}` on
+/// -1234.5: `nl` `"US$\u{a0}-1.234,50"` (sign after the symbol, not before it),
+/// `de-CH` `"$-1'234.50"` (which also drops the positive pattern's space),
+/// `es-CL` `"US$-1.234,50"`, and `he`
+/// `"\u{200f}\u{200e}-1,234.50\u{a0}\u{200f}$"` — the pattern's leading RLM
+/// ahead of the sign, where synthesising it put the sign first. `en` has no
+/// negative subpattern and keeps `"-$1,234.50"`.
+#[cfg(feature = "currency")]
+#[test]
+fn currency_negative_subpattern() {
+    use intl::number::{NumberStyle, SignDisplay, format, format_currency};
+    let usd = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("USD");
+    });
+    assert_eq!(format("nl", -1234.5, &usd), "US$\u{a0}-1.234,50");
+    assert_eq!(format("nl", 1234.5, &usd), "US$\u{a0}1.234,50");
+    assert_eq!(format("de-CH", -1234.5, &usd), "$-1'234.50");
+    assert_eq!(format("de-CH", 1234.5, &usd), "$\u{a0}1'234.50");
+    assert_eq!(format("es-CL", -1234.5, &usd), "US$-1.234,50");
+    assert_eq!(
+        format("he", -1234.5, &usd),
+        "\u{200f}\u{200e}-1,234.50\u{a0}\u{200f}$"
+    );
+    assert_eq!(
+        format("he", 1234.5, &usd),
+        "\u{200f}1,234.50\u{a0}\u{200f}$"
+    );
+    assert_eq!(format("en", -1234.5, &usd), "-$1,234.50");
+    // The free function shares the pattern, so it shares the placement.
+    assert_eq!(format_currency("nl", -1234.5, "USD"), "US$\u{a0}-1.234,50");
+
+    // ICU reuses the negative subpattern for a shown `+` (its
+    // `PatternSignType::POS_SIGN`) and the positive one when no sign is shown:
+    // node writes `"US$ +1.234,50"` and `"US$ 1.234,50"`.
+    let always = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("USD");
+        o.sign_display = SignDisplay::Always;
+    });
+    let never = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("USD");
+        o.sign_display = SignDisplay::Never;
+    });
+    assert_eq!(format("nl", 1234.5, &always), "US$\u{a0}+1.234,50");
+    assert_eq!(format("nl", -1234.5, &never), "US$\u{a0}1.234,50");
+    assert_eq!(format("de-CH", 1234.5, &always), "$+1'234.50");
+}
+
+/// The negative subpattern belongs to the ¤ affixes, so it applies wherever they
+/// do and nowhere else. Node, for `nl` USD: `"US$ -∞"` keeps it and so does
+/// scientific notation, `currencyDisplay: "name"` drops it with the affixes
+/// (`"-1.234,50 Amerikaanse dollar"`), and compact notation drops it because the
+/// compact pattern replaces them and has none (`"-US$ 1,2 mln."`).
+#[cfg(feature = "currency")]
+#[test]
+fn currency_negative_subpattern_scope() {
+    use intl::number::{CurrencyDisplay, Notation, NumberFormatOptions, NumberStyle, format};
+    let base = |build: fn(&mut NumberFormatOptions)| {
+        nf(|o| {
+            o.style = NumberStyle::Currency;
+            o.currency = Some("USD");
+            build(o);
+        })
+    };
+    let usd = base(|_| {});
+    assert_eq!(format("nl", f64::NEG_INFINITY, &usd), "US$\u{a0}-∞");
+    assert_eq!(format("nl", f64::NAN, &usd), "US$\u{a0}NaN");
+    // (The mantissa keeps the currency's two fraction digits, where ICU uses the
+    // decimal pattern's — an unrelated divergence; the sign placement is what
+    // this asserts.)
+    let sci = base(|o| o.notation = Notation::Scientific);
+    assert_eq!(format("nl", -1000.0, &sci), "US$\u{a0}-1,00E3");
+    let compact = base(|o| o.notation = Notation::Compact);
+    assert_eq!(
+        format("nl", -1_234_500.0, &compact),
+        "-US$\u{a0}1,2\u{a0}mln."
+    );
+    let name = base(|o| o.currency_display = CurrencyDisplay::Name);
+    assert_eq!(format("nl", -1234.5, &name), "-1.234,50 Amerikaanse dollar");
+}
+
+/// `currencyFormats` is per numbering system, and the blocks differ in ways a
+/// `latn`-only table cannot express: `ar`'s `arab` pattern has *no* negative
+/// subpattern where its `latn` one does, so node writes `ar` (default `latn`)
+/// as `"\u{200f}\u{200e}-1,234.50\u{a0}US$"` but `ar-EG` (default `arab`) as
+/// `"\u{61c}-\u{200f}١٬٢٣٤٫٥٠\u{a0}US$"`, with the sign in front. `fa`'s
+/// `arabext` pattern drops the space its `latn` one puts after the symbol:
+/// `"\u{200e}$۱٬۲۳۴٫۵۰"`.
+#[cfg(all(feature = "currency", feature = "number-numsys"))]
+#[test]
+fn currency_pattern_follows_the_numbering_system() {
+    use intl::number::{NumberStyle, format};
+    let usd = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("USD");
+    });
+    assert_eq!(
+        format("ar", -1234.5, &usd),
+        "\u{200f}\u{200e}-1,234.50\u{a0}US$"
+    );
+    assert_eq!(
+        format("ar-EG", -1234.5, &usd),
+        "\u{61c}-\u{200f}\u{661}\u{66c}\u{662}\u{663}\u{664}\u{66b}\u{665}\u{660}\u{a0}US$"
+    );
+    assert_eq!(
+        format("fa", 1234.5, &usd),
+        "\u{200e}$\u{6f1}\u{66c}\u{6f2}\u{6f3}\u{6f4}\u{66b}\u{6f5}\u{6f0}"
+    );
+}
+
+/// The per-numbering-system currency pattern is the *standard* pattern, and
+/// compact notation does not use it. ICU feeds compact currency from CLDR's
+/// `currencyFormats/short/standard` patterns, a separate table that is not
+/// split per numbering system, so the affixes can disagree with the system's
+/// standard pattern — and where they do, the `latn` pattern is what they match.
+///
+/// `fa`'s `arabext` standard pattern drops the space after the symbol, but both
+/// its short blocks keep it, so node compacts to `"\u{200e}$\u{a0}۱٫۲ هزار"`
+/// with the space back. `sd` is starker: its `arab` standard pattern puts the
+/// symbol *last*, and CLDR ships no `arab` short block at all, so ICU reads the
+/// `latn` one and node writes the symbol first, `"US$\u{a0}١ هزار"`.
+///
+/// Below the smallest compact band nothing abbreviates and the ordinary pattern
+/// applies again — `ar-EG` at -1 keeps its `arab` sign placement.
+#[cfg(all(feature = "currency", feature = "number-numsys"))]
+#[test]
+fn compact_currency_does_not_use_the_numbering_system_pattern() {
+    use intl::number::{Notation, NumberStyle, format};
+    let usd = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("USD");
+        o.notation = Notation::Compact;
+    });
+    // fa: the space the `arabext` standard pattern drops is back.
+    assert_eq!(
+        format("fa", 1234.5, &usd),
+        "\u{200e}$\u{a0}\u{6f1}\u{66b}\u{6f2}\u{a0}هزار"
+    );
+    // sd: symbol first, as the `latn` short block has it — not last, as the
+    // `arab` standard pattern would put it.
+    assert_eq!(format("sd", 1000.0, &usd), "US$\u{a0}\u{661}\u{a0}هزار");
+    // Under the band, the numbering system's own pattern still decides.
+    assert_eq!(
+        format("ar-EG", -1.0, &usd),
+        "\u{61c}-\u{200f}\u{661}\u{a0}US$"
+    );
+}
+
+/// UTS #35 §3.5's explicit `count="1"` matches the literal *signed* value 1, so
+/// a negative mantissa falls through to the plural category. `fr` has both
+/// `1000-count-1` ("mille") and `1000-count-one` ("0 millier"), and node
+/// compacts 1000 to `"mille"` but -1000 to `"-1 millier"` — including under
+/// `signDisplay: "never"`, which shows it is the value and not the printed sign
+/// that decides. `it` has no `count-1` at all; its `1000-count-one` is the bare
+/// word, so -1000 really is `"-mille"` there.
+#[test]
+fn explicit_count_one_is_signed() {
+    use intl::number::{CompactDisplay, Notation, SignDisplay, format};
+    let long = nf(|o| {
+        o.notation = Notation::Compact;
+        o.compact_display = CompactDisplay::Long;
+    });
+    assert_eq!(format("fr", 1000.0, &long), "mille");
+    assert_eq!(format("fr", -1000.0, &long), "-1 millier");
+    assert_eq!(format("fr", 1500.0, &long), "1,5 millier");
+    assert_eq!(format("fr", 2000.0, &long), "2 mille");
+    // Not the printed sign: hiding it does not bring `count-1` back.
+    let never = nf(|o| {
+        o.notation = Notation::Compact;
+        o.compact_display = CompactDisplay::Long;
+        o.sign_display = SignDisplay::Never;
+    });
+    assert_eq!(format("fr", -1000.0, &never), "1 millier");
+    // `it` reaches the bare word through `count-one`, so its negative keeps it.
+    assert_eq!(format("it", -1000.0, &long), "-mille");
+}
+
+/// `fr-CA`'s short `concentr-percent` pattern is `"{0}\u{a0}%"` where `fr`'s is
+/// `"{0} %"`, and compact percent formats through that unit pattern — so the
+/// bundle is vendored on top of the base language, as `zh-Hant`'s is. Node:
+/// `fr-CA` `{style: "percent", notation: "compact"}` on 12345 is
+/// `"1,2\u{a0}M\u{a0}%"`, against `fr`'s `"1,2\u{a0}M %"`.
+#[test]
+fn compact_percent_fr_ca_keeps_its_no_break_space() {
+    use intl::number::{Notation, NumberStyle, format};
+    let o = nf(|o| {
+        o.style = NumberStyle::Percent;
+        o.notation = Notation::Compact;
+    });
+    assert_eq!(format("fr-CA", 12345.0, &o), "1,2\u{a0}M\u{a0}%");
+    assert_eq!(format("fr-CA", 0.5, &o), "50\u{a0}%");
+    assert_eq!(format("fr", 12345.0, &o), "1,2\u{a0}M %");
+}

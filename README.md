@@ -87,7 +87,13 @@ Beyond the `unicode` module:
   `format_decimal("ar-EG", 1.5)` → `"١٫٥"` — overridable per request with
   `format_decimal("ar-u-nu-native", 1.5)` → `"١٫٥"` or
   `to_numbering_system("2024", "arab")` → `"٢٠٢٤"`) and ordinals
-  (`format_ordinal("en", 21)` → `"21st"`).
+  (`format_ordinal("en", 21)` → `"21st"`). Rounding follows ECMA-402's default
+  `roundingMode: "halfExpand"`; compact patterns are selected by the plural
+  category CLDR keys them by, so `fr` at `CompactDisplay::Long` gives `"mille"`
+  for 1000 but `"1,5 millier"` for 1500; the scientific exponent separator is
+  the locale's (`sv` → `"1,235×10^4"`); and a currency pattern's CLDR negative
+  subpattern places the sign where the locale puts it (`nl` →
+  `"US$ -1.234,50"`, not `"-US$ 1.234,50"`).
 
 - `intl::list` (alloc) joins items with locale connectors, over all nine
   ECMA-402 `type` × `style` combinations —
@@ -232,11 +238,15 @@ code block per arm, which costs more than the strings it holds) — so their
 figures below are *compiled* footprint (`.text` + `.rodata` + `.data.rel.ro`)
 rather than blob bytes. `relative` grew from a 95 KB blob covering seven units in
 one width to 243 KB covering eight units in three; interning the strings across
-the corpus is what kept 3.4× the data to 2.5× the bytes.
+the corpus is what kept 3.4× the data to 2.5× the bytes. `number` grew ~58 KB
+when compact patterns gained the plural dimension CLDR keys them by: +11.5 KB of
+`compact.bin` (which stores only the categories a locale words differently, not
+all six — the naive cross product is +205 KB), and selecting one links the CLDR
+plural rules (~20 KB) that a `number`-only build used to leave out.
 
 | feature           | what it provides                                  | gated data |
 |-------------------|---------------------------------------------------|------------|
-| `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~50 KB |
+| `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~108 KB |
 | `number-numsys`   | + non-`latn` numbering-system symbols (→ number)  | ~8 KB |
 | `number-range`    | + `formatRange`/`formatRangeToParts` (→ number)   | ~20 KB |
 | `currency`        | currency formatting (→ number)                    | **~0.9 MB** |

@@ -309,6 +309,7 @@ fn main() {
     emit_numbers(
         &cldr_dir,
         &cldr.join("numbers-raw"),
+        &cldr.join("units-raw"),
         &cldr.join("likely.json"),
         &cldr.join("pluralRanges.json"),
         &cldr.join("numbersSymbolOverrides.json"),
@@ -2350,9 +2351,17 @@ fn emit_plural_fn(out: &mut String, path: &Path, section: &str, fn_name: &str, k
     out.push_str("        _ => None,\n    }\n}\n\n");
 }
 
+/// The `count` values a compact pattern can be keyed by *besides* `other`, in
+/// the bit order of a compact slot's override mask. The first five are the
+/// `crate::plural::PluralCategory` discriminants; the last is UTS #35 §3.5's
+/// *explicit* count, which matches a mantissa of exactly 1 and outranks the
+/// category — `fr`'s `1000-count-1` is the bare word "mille", where its
+/// `count-one` is "0 millier" (used for 1,5) and `count-other` "0 mille".
+const COMPACT_PLURALS: [&str; 6] = ["zero", "one", "two", "few", "many", "1"];
+
 /// Write `cldr/numbers.bin`: per-locale symbols + decimal/percent patterns.
 /// Compact-notation magnitudes 10³…10¹⁴ (the `decimalFormat` keys are
-/// `<magnitude>-count-other`).
+/// `<magnitude>-count-<category>`).
 const COMPACT_MAGNITUDES: [&str; 12] = [
     "1000",
     "10000",
@@ -2461,6 +2470,10 @@ struct NsSpec {
     percent: String,
     nan: String,
     infinity: String,
+    /// CLDR `symbols/exponential` — the exponent separator of scientific
+    /// notation, which genuinely differs per system (`fa`'s `arabext` is
+    /// `"×۱۰^"` while its `latn` is `"E"`).
+    exponential: String,
     dec: PatFields,
     pct: PatFields,
 }
@@ -2514,6 +2527,7 @@ struct RootNs {
     percent: String,
     nan: String,
     infinity: String,
+    exponential: String,
     /// The pattern root defines for this system, or `None` where root aliases it
     /// back to the requesting locale's `latn` block (which is the common case:
     /// only `arab`'s percent pattern is root's own, which is why `en-IN-u-nu-arab`
@@ -2568,6 +2582,7 @@ fn parse_root_numbers(path: &Path) -> Vec<RootNs> {
             plus: text_of("plusSign"),
             nan: text_of("nan"),
             infinity: text_of("infinity"),
+            exponential: text_of("exponential"),
             percent: text_of("percentSign"),
             dec: pattern("decimalFormats", ns),
             pct: pattern("percentFormats", ns),
@@ -2615,6 +2630,7 @@ fn parse_plural_ranges(path: &Path) -> Vec<(String, [u8; 36])> {
 fn emit_numbers(
     cldr_dir: &Path,
     numbers_dir: &Path,
+    units_dir: &Path,
     likely_path: &Path,
     plural_ranges_path: &Path,
     overrides_path: &Path,
@@ -2684,6 +2700,7 @@ fn emit_numbers(
                 plus: g(sym, "plusSign"),
                 nan: g(sym, "nan"),
                 infinity: g(sym, "infinity"),
+                exponential: g(sym, "exponential"),
                 percent,
                 ns,
             });
@@ -2730,6 +2747,7 @@ fn emit_numbers(
                     plus: field("plusSign", &r.plus),
                     nan: field("nan", &r.nan),
                     infinity: field("infinity", &r.infinity),
+                    exponential: field("exponential", &r.exponential),
                     percent,
                     ns: r.ns.clone(),
                 });
@@ -2757,7 +2775,13 @@ fn emit_numbers(
             pct_raw,
         });
 
-        // Compact short then long, `count-other` per magnitude.
+        // Compact short then long, per magnitude. ICU picks the pattern by the
+        // plural category of the *rounded mantissa*, which is why `fr` compacts
+        // 1000 to "mille" (its `1000-count-one` has no `{0}` at all) and `bn`
+        // 10^10 to "১ শত কো" (`count-one` carries a space its `count-other`
+        // lacks). Storing all six categories would be six times the data for
+        // one that varies, so each slot is the `other` form plus a bitmask of
+        // the categories that differ from it — 834 overrides in CLDR 48.
         let dec_fmt = n
             .get("decimalFormats-numberSystem-latn")
             .expect("decimalFormats");
@@ -2765,12 +2789,24 @@ fn emit_numbers(
         for width in ["short", "long"] {
             let df = dec_fmt.get(width).and_then(|w| w.get("decimalFormat"));
             for mag in COMPACT_MAGNITUDES {
-                let key = alloc_concat(mag, "-count-other");
-                let pat = df
-                    .and_then(|d| d.get(&key))
-                    .and_then(Json::as_str)
-                    .unwrap_or("0");
-                enc_str(&mut c, pat);
+                let form = |cat: &str| {
+                    df.and_then(|d| d.get(&alloc_concat(mag, &alloc_concat("-count-", cat))))
+                        .and_then(Json::as_str)
+                };
+                let other = form("other").unwrap_or("0");
+                let mut mask = 0u8;
+                let mut overrides = Vec::new();
+                for (bit, cat) in COMPACT_PLURALS.iter().enumerate() {
+                    if let Some(p) = form(cat).filter(|p| *p != other) {
+                        mask |= 1 << bit;
+                        overrides.push(p);
+                    }
+                }
+                c.push(mask);
+                enc_str(&mut c, other);
+                for p in overrides {
+                    enc_str(&mut c, p);
+                }
             }
         }
         compact_records.push((locale.to_ascii_lowercase(), c));
@@ -2819,6 +2855,7 @@ fn emit_numbers(
         &aliases,
         &root,
         &parse_plural_ranges(plural_ranges_path),
+        &parse_percent_units(units_dir),
     );
 }
 
@@ -2845,7 +2882,19 @@ fn prune_inherited(records: &[(String, Vec<u8>)]) -> Vec<(String, Vec<u8>)> {
 }
 
 /// Render a parsed CLDR number pattern as a `crate::cldr::Pattern` literal.
+///
+/// `crate::cldr::Pattern` carries no negative subpattern: in CLDR 48 every one
+/// of the 41 patterns that has a `;` is a `currencyFormats`, and those go
+/// through `enc_pattern` into `currency.bin` instead. Paying two `Option<&str>`
+/// per `Pattern` would cost ~10 KB of always-`None` fields across the 316
+/// decimal/percent literals this emits, so the assertion is what keeps the two
+/// encodings honest: a future CLDR that gives a decimal or percent pattern a
+/// negative subpattern fails the build here rather than losing it silently.
 fn rust_pattern(p: &PatFields) -> String {
+    assert!(
+        p.neg.is_none(),
+        "decimal/percent pattern with a negative subpattern: {p:?}"
+    );
     format!(
         "Pattern {{ prefix: {}, suffix: {}, min_int: {}, min_frac: {}, max_frac: {}, primary_group: {}, secondary_group: {} }}",
         rust_str(&p.prefix),
@@ -2873,7 +2922,7 @@ fn min_grouping_digits(numbers: &Json) -> u8 {
 /// Render one numbering system's block as a `crate::cldr::NumberSpec` literal.
 fn rust_spec(s: &NsSpec) -> String {
     format!(
-        "NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, min_grouping: {}, dec: {}, pct: {} }}",
+        "NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, exponential: {}, min_grouping: {}, dec: {}, pct: {} }}",
         rust_str(&s.decimal),
         rust_str(&s.group),
         rust_str(&s.minus),
@@ -2881,6 +2930,7 @@ fn rust_spec(s: &NsSpec) -> String {
         rust_str(&s.percent),
         rust_str(&s.nan),
         rust_str(&s.infinity),
+        rust_str(&s.exponential),
         s.min_grouping,
         rust_pattern(&s.dec),
         rust_pattern(&s.pct),
@@ -2900,6 +2950,7 @@ fn write_numbers_rs(
     aliases: &[(String, usize)],
     root: &[RootNs],
     plural_ranges: &[(String, [u8; 36])],
+    percent_units: &[(String, [Option<String>; 6])],
 ) {
     let mut out = String::new();
     write_header(&mut out);
@@ -3011,7 +3062,7 @@ fn write_numbers_rs(
         let _ = write!(
             out,
             "        #[cfg(feature = \"number-numsys\")]\n        \
-             \"{}\" => NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, min_grouping: latn.min_grouping, dec: latn.dec, pct: {} }},\n",
+             \"{}\" => NumberSpec {{ decimal: {}, group: {}, minus: {}, plus: {}, percent: {}, nan: {}, infinity: {}, exponential: {}, min_grouping: latn.min_grouping, dec: latn.dec, pct: {} }},\n",
             r.ns,
             rust_str(&r.decimal),
             rust_str(&r.group),
@@ -3020,6 +3071,7 @@ fn write_numbers_rs(
             rust_str(&r.percent),
             rust_str(&r.nan),
             rust_str(&r.infinity),
+            rust_str(&r.exponential),
             pct,
         );
     }
@@ -3177,10 +3229,125 @@ fn write_numbers_rs(
     let _ = write!(
         out,
         "        _ => return OTHER,\n    }};\n    \
-         row.get(start * 6 + end).map_or(OTHER, |&c| c as usize)\n}}\n"
+         row.get(start * 6 + end).map_or(OTHER, |&c| c as usize)\n}}\n\n"
     );
 
+    write_percent_unit(&mut out, percent_units);
+
     write_cldr_generated(cldr_dir, "numbers", &out);
+}
+
+/// Emit `percent_unit`: the CLDR `concentr-percent` **short** unit pattern per
+/// locale and plural category.
+///
+/// Compact notation replaces the style's `modMiddle` with the compact pattern's
+/// own affixes (ICU's `CompactHandler::processQuantity`), so a percent formatted
+/// compactly loses the `percentFormat` pattern's `%` and ICU words it through
+/// this unit instead — which is why `da` writes "1,2 mio. pct." but "123.450 %"
+/// uncompacted, and `ro` "50%" compact against "50 %" plain.
+///
+/// It lives here rather than in the (feature-gated, much larger) unit tables
+/// because `--features number` alone must still format a compact percent. One
+/// string per locale plus the handful of plural overrides — `is` is the only
+/// locale in CLDR 48 whose short percent varies by category — is ~1.5 KB.
+fn write_percent_unit(out: &mut String, table: &[(String, [Option<String>; 6])]) {
+    // Locales sharing a pattern set share an index.
+    let mut sets: Vec<&[Option<String>; 6]> = Vec::new();
+    let mut keys: Vec<(&str, usize)> = Vec::new();
+    for (locale, forms) in table {
+        let i = match sets.iter().position(|s| *s == forms) {
+            Some(i) => i,
+            None => {
+                sets.push(forms);
+                sets.len() - 1
+            }
+        };
+        keys.push((locale.as_str(), i));
+    }
+    let _ = write!(
+        out,
+        "/// The CLDR `concentr-percent` short unit pattern for an exact\n\
+         /// (lowercased) locale id in plural category `plural` (a\n\
+         /// `PluralCategory` discriminant), e.g. `da` `\"{{0}} pct.\"`.\n\
+         ///\n\
+         /// This is how ICU words a percent in **compact** notation: the compact\n\
+         /// pattern replaces the `percentFormat` affixes, taking the `%` with\n\
+         /// them, so the sign comes from the unit instead.\n\
+         pub(crate) fn percent_unit(lang: &str, plural: usize) -> Option<&'static str> {{\n    \
+         let set = match lang {{\n"
+    );
+    for (key, i) in &keys {
+        let _ = write!(out, "        \"{key}\" => {i},\n");
+    }
+    let _ = write!(
+        out,
+        "        _ => return None,\n    }};\n    Some(match (set, plural) {{\n"
+    );
+    for (i, forms) in sets.iter().enumerate() {
+        for (cat, form) in forms.iter().enumerate().take(5) {
+            if let Some(f) = form {
+                let _ = write!(out, "        ({i}, {cat}) => {},\n", rust_str(f));
+            }
+        }
+        let other = forms[5].as_deref().unwrap_or("{0}%");
+        let _ = write!(out, "        ({i}, _) => {},\n", rust_str(other));
+    }
+    let _ = write!(out, "        _ => return None,\n    }})\n}}\n");
+}
+
+/// Read each locale's CLDR `concentr-percent` short unit pattern out of
+/// `units-raw`, as `[Option<String>; 6]` indexed by `PluralCategory`
+/// discriminant: the `other` form (index 5) plus the categories a locale words
+/// differently. Locales whose set repeats their nearest vendored ancestor's are
+/// dropped — the runtime's truncating fallback reaches it anyway.
+fn parse_percent_units(units_dir: &Path) -> Vec<(String, [Option<String>; 6])> {
+    const CATS: [&str; 6] = ["zero", "one", "two", "few", "many", "other"];
+    let mut out: Vec<(String, [Option<String>; 6])> = Vec::new();
+    let mut files = locale_files(units_dir);
+    files.sort();
+    for locale in files {
+        let path = units_dir.join(alloc_format(&locale));
+        let text = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", path.display()));
+        let json = json_parse(&text);
+        let Some(block) = json
+            .get("main")
+            .and_then(|m| m.entries().first().map(|(_, v)| v))
+            .and_then(|l| l.get("units"))
+            .and_then(|u| u.get("short"))
+            .and_then(|s| s.get("concentr-percent"))
+        else {
+            continue;
+        };
+        let form = |cat: &str| {
+            block
+                .get(&alloc_concat("unitPattern-count-", cat))
+                .and_then(Json::as_str)
+                .map(String::from)
+        };
+        let other = form("other").unwrap_or_else(|| String::from("{0}%"));
+        let mut forms: [Option<String>; 6] = Default::default();
+        for (i, cat) in CATS.iter().enumerate().take(5) {
+            forms[i] = form(cat).filter(|f| *f != other);
+        }
+        forms[5] = Some(other);
+        let key = locale.to_ascii_lowercase();
+        // Drop a record the truncating fallback would reach unchanged.
+        let mut end = key.len();
+        let inherited = loop {
+            match key[..end].rfind('-') {
+                Some(i) => end = i,
+                None => break None,
+            }
+            if let Some((_, f)) = out.iter().find(|(k, _)| *k == key[..end]) {
+                break Some(f);
+            }
+        };
+        if inherited == Some(&forms) {
+            continue;
+        }
+        out.push((key, forms));
+    }
+    out
 }
 
 fn alloc_format(locale: &str) -> String {
@@ -3613,10 +3780,11 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
         .collect();
     pattern_only.sort();
 
-    // `(pattern, unit pattern)` per emitted locale key, so a pattern-only record
-    // that merely repeats what the runtime's truncating fallback would reach can
-    // be pruned (`en-GB`'s pattern is `en`'s).
-    let mut patterns: BTreeMap<String, (String, String)> = BTreeMap::new();
+    // `(pattern, non-latn patterns, unit pattern)` per emitted locale key, so a
+    // pattern-only record that merely repeats what the runtime's truncating
+    // fallback would reach can be pruned (`en-GB`'s pattern is `en`'s).
+    type CurPats = (String, Vec<(String, String)>, String);
+    let mut patterns: BTreeMap<String, CurPats> = BTreeMap::new();
     let mut records = Vec::new();
     for (locale, has_names) in files
         .iter()
@@ -3644,9 +3812,35 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
             .and_then(|f| f.get("unitPattern-count-other"))
             .and_then(Json::as_str)
             .unwrap_or("{0} {1}");
+        // `currencyFormats` is per numbering system like the decimal ones, and
+        // the blocks genuinely differ: `ar`'s `arab` pattern has no negative
+        // subpattern where its `latn` one does, and `fa`'s `arabext` drops the
+        // space after the symbol. Only the systems that differ from `latn` are
+        // stored (32 locales in CLDR 48, ~0.7 KB).
+        let ns_pats: Vec<(String, String)> = num_loc
+            .get("numbers")
+            .map(|n| {
+                let mut v: Vec<(String, String)> = n
+                    .entries()
+                    .iter()
+                    .filter_map(|(k, o)| {
+                        let ns = k.strip_prefix("currencyFormats-numberSystem-")?;
+                        let std = o.get("standard").and_then(Json::as_str)?;
+                        (ns != "latn" && std != pat).then(|| (String::from(ns), String::from(std)))
+                    })
+                    .collect();
+                v.sort();
+                v
+            })
+            .unwrap_or_default();
 
         let mut p = Vec::new();
         enc_pattern(&mut p, &parse_number_pattern(pat, ""));
+        p.push(ns_pats.len() as u8);
+        for (ns, np) in &ns_pats {
+            enc_str(&mut p, ns);
+            enc_pattern(&mut p, &parse_number_pattern(np, ""));
+        }
         enc_str(&mut p, unit_pat);
         let key = locale.to_ascii_lowercase();
         if !has_names {
@@ -3662,15 +3856,22 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
                     break Some(v);
                 }
             };
-            if inherited.is_some_and(|(ip, iu)| ip == pat && iu == unit_pat) {
+            if inherited.is_some_and(|(ip, ins, iu)| ip == pat && *ins == ns_pats && iu == unit_pat)
+            {
                 continue;
             }
             p.extend_from_slice(&0u16.to_le_bytes());
-            patterns.insert(key.clone(), (pat.to_string(), unit_pat.to_string()));
+            patterns.insert(
+                key.clone(),
+                (pat.to_string(), ns_pats, unit_pat.to_string()),
+            );
             records.push((key, p));
             continue;
         }
-        patterns.insert(key.clone(), (pat.to_string(), unit_pat.to_string()));
+        patterns.insert(
+            key.clone(),
+            (pat.to_string(), ns_pats, unit_pat.to_string()),
+        );
 
         let cur_text = fs::read_to_string(currencies_dir.join(alloc_format(&locale)))
             .unwrap_or_else(|_| panic!("read currencies {locale}"));
@@ -7118,7 +7319,7 @@ fn emit_display(cldr_dir: &Path, localenames_dir: &Path) {
 /// Parse a CLDR number pattern (e.g. `#,##0.###`, `#,##0 %`) into a Rust
 /// `Pattern { ... }` literal. `%` in the affixes is replaced by `percent_sym`.
 /// The parsed fields of a CLDR number pattern.
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 struct PatFields {
     prefix: String,
     suffix: String,
@@ -7127,17 +7328,32 @@ struct PatFields {
     max_frac: u8,
     primary: u8,
     secondary: u8,
+    /// The affixes of the pattern's explicit negative subpattern (UTS #35 §3.5:
+    /// the part after `;`), `None` where the pattern has none and the sign is
+    /// synthesized in front. `nl`'s currency pattern is `¤ #,##0.00;¤ -#,##0.00`
+    /// — the sign goes *inside* the symbol, so it is not a prefix a formatter
+    /// can derive. All 41 in CLDR 48 are `currencyFormats`; see [`rust_pattern`].
+    neg: Option<(String, String)>,
 }
 
 fn parse_number_pattern(pat: &str, percent_sym: &str) -> PatFields {
-    let pat = pat.split(';').next().unwrap_or(pat); // positive subpattern only
+    let mut subs = pat.split(';');
+    let pat = subs.next().unwrap_or(pat);
+    let neg = subs.next().map(|n| {
+        let (prefix, suffix) = pattern_affixes(n);
+        (
+            prefix.replace('%', percent_sym),
+            suffix.replace('%', percent_sym),
+        )
+    });
+    let (prefix, suffix) = pattern_affixes(pat);
+    let prefix = prefix.replace('%', percent_sym);
+    let suffix = suffix.replace('%', percent_sym);
     let is_core = |c: char| matches!(c, '#' | '0' | '.' | ',');
     let first = pat.find(is_core).unwrap_or(0);
     let last = pat
         .rfind(is_core)
         .map_or(0, |i| i + pat[i..].chars().next().unwrap().len_utf8());
-    let prefix = pat[..first].replace('%', percent_sym);
-    let suffix = pat[last..].replace('%', percent_sym);
     let core = &pat[first..last];
 
     let (int_part, frac_part) = match core.split_once('.') {
@@ -7170,7 +7386,19 @@ fn parse_number_pattern(pat: &str, percent_sym: &str) -> PatFields {
         max_frac,
         primary,
         secondary,
+        neg,
     }
+}
+
+/// The literal text either side of a subpattern's number core (`#0.,`), which is
+/// what a formatter writes around the digits.
+fn pattern_affixes(pat: &str) -> (&str, &str) {
+    let is_core = |c: char| matches!(c, '#' | '0' | '.' | ',');
+    let first = pat.find(is_core).unwrap_or(0);
+    let last = pat
+        .rfind(is_core)
+        .map_or(0, |i| i + pat[i..].chars().next().unwrap().len_utf8());
+    (&pat[..first], &pat[last..])
 }
 
 // ---- Binary blob encoding for the locale formatter tables (psl2 style). ----
@@ -7198,6 +7426,10 @@ fn enc_pattern(buf: &mut Vec<u8>, p: &PatFields) {
     enc_str(buf, &p.prefix);
     enc_str(buf, &p.suffix);
     buf.extend_from_slice(&[p.min_int, p.min_frac, p.max_frac, p.primary, p.secondary]);
+    // The explicit negative subpattern's affixes (two bytes for the common
+    // `None`), which only the currency patterns carry.
+    enc_opt(buf, p.neg.as_ref().map(|(pre, _)| pre.as_str()));
+    enc_opt(buf, p.neg.as_ref().map(|(_, suf)| suf.as_str()));
 }
 
 /// Write a keyed-record blob to `<cldr_dir>/<name>.bin`.

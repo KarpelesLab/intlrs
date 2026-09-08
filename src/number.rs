@@ -231,18 +231,18 @@ pub enum RoundingMode {
     HalfCeil,
     /// Nearest; ties toward −∞.
     HalfFloor,
-    /// Nearest; ties away from zero.
+    /// Nearest; ties away from zero (the default).
+    #[default]
     HalfExpand,
     /// Nearest; ties toward zero.
     HalfTrunc,
-    /// Nearest; ties to even (the default).
-    #[default]
+    /// Nearest; ties to even.
     HalfEven,
 }
 
 /// Options for [`format`] / [`format_to_parts`], modeled on the ECMA-402
 /// `Intl.NumberFormat` options. [`Default`] is plain decimal formatting with the
-/// locale's pattern precision and half-even rounding.
+/// locale's pattern precision and `halfExpand` rounding.
 ///
 /// Currency/unit codes are `&'static str` (so the struct stays `Copy` and borrows
 /// from compile-time string literals, matching the crate's data model).
@@ -315,6 +315,9 @@ fn normalize(lang: &str) -> String {
 struct Resolved {
     spec: NumberSpec,
     digits: Option<&'static str>,
+    /// The numbering system the request resolved to. CLDR keys the currency
+    /// pattern by system as well as by locale, so the currency path needs it.
+    system: String,
 }
 
 /// Split a normalized tag into its language part and the `-u-nu-` numbering
@@ -392,6 +395,7 @@ fn resolve(lang: &str, system: Option<&str>) -> Resolved {
         digits: (system != "latn")
             .then(|| crate::cldr::numbering_digits(system))
             .flatten(),
+        system: String::from(system),
     }
 }
 
@@ -492,14 +496,21 @@ fn resolve_systems(lang: &str) -> (&'static str, &'static str) {
 #[must_use]
 pub fn format_decimal(lang: &str, value: f64) -> String {
     let r = resolve(lang, None);
-    format_with(&r.spec.dec, value, &r, NumberStyle::Decimal, "")
+    format_with(&r.spec.dec, None, value, &r, NumberStyle::Decimal, "")
 }
 
 /// Format `value` (a ratio, so `0.5` → `50%`) as a percent in `lang`.
 #[must_use]
 pub fn format_percent(lang: &str, value: f64) -> String {
     let r = resolve(lang, None);
-    format_with(&r.spec.pct, value * 100.0, &r, NumberStyle::Percent, "")
+    format_with(
+        &r.spec.pct,
+        None,
+        value * 100.0,
+        &r,
+        NumberStyle::Percent,
+        "",
+    )
 }
 
 /// Format `value` in scientific notation (mantissa × 10ⁿ) in `lang`, e.g.
@@ -736,8 +747,70 @@ pub fn parse_decimal(lang: &str, input: &str) -> Option<f64> {
     parse_decimal_with(&resolve(lang, None).spec, input)
 }
 
+/// A body's displayed-number plural category, evaluated only where a caller
+/// will read it (see [`wants_plural`]) — the rules cost an allocation and a
+/// float parse, and the ordinary decimal path has no wording to agree with.
+fn body_plural(
+    lang: &str,
+    opts: &NumberFormatOptions,
+    int_d: &str,
+    frac_d: &str,
+    exponent: usize,
+) -> usize {
+    if wants_plural(opts) {
+        plural_of_digits(lang, int_d, frac_d, exponent)
+    } else {
+        crate::plural::PluralCategory::Other as usize
+    }
+}
+
+/// Whether anything will read a body's plural category. Only ICU's `modOuter`
+/// does — a unit phrase, or a compact percent's unit — and the compact pattern
+/// lookup, so the ordinary decimal/currency path skips evaluating the rules.
+fn wants_plural(opts: &NumberFormatOptions) -> bool {
+    opts.style == NumberStyle::Unit
+        || (opts.style == NumberStyle::Percent && opts.notation == Notation::Compact)
+}
+
+/// The CLDR plural category (a [`crate::plural::PluralCategory`] discriminant)
+/// of the number written `int_d`.`frac_d` × 10^`exponent`.
+///
+/// Read off the *rounded digit strings* rather than the `f64`, because the UTS
+/// #35 operands `v`/`w`/`f`/`t` count **visible** fraction digits — which only
+/// the formatted output knows. `{maximumFractionDigits: 0}` on 1.4 is therefore
+/// "1 meter", not "1 meters".
+///
+/// `exponent` is compact notation's: it shifts the decimal point right, and
+/// rides along as the `c`/`e` operand, matching ICU's `DecimalQuantity::
+/// adjustExponent` + `getPluralOperands`.
+fn plural_of_digits(lang: &str, int_d: &str, frac_d: &str, exponent: usize) -> usize {
+    use crate::plural::{PluralOperands, plural_category};
+    // Shift the point right by `exponent`, zero-padding when it runs past the
+    // digits (1.2 × 10³ is 1200, with no visible fraction left).
+    let shift = exponent.min(frac_d.len());
+    let mut int_s = String::from(int_d);
+    int_s.push_str(&frac_d[..shift]);
+    for _ in 0..exponent - shift {
+        int_s.push('0');
+    }
+    let frac_s = &frac_d[shift..];
+
+    let digits = |s: &str| s.bytes().fold(0u64, |a, b| a * 10 + u64::from(b - b'0'));
+    let trimmed = frac_s.trim_end_matches('0');
+    let operands = PluralOperands {
+        n: alloc::format!("{int_s}.{frac_s}").parse().unwrap_or(0.0),
+        i: int_s.parse().unwrap_or(0),
+        v: frac_s.len() as u32,
+        w: trimmed.len() as u32,
+        f: digits(frac_s),
+        t: digits(trimmed),
+        c: exponent as u32,
+    };
+    plural_category(lang, &operands) as usize
+}
+
 /// The locale's compact-notation pattern table, through the fallback chain.
-fn compact_table(lang: &str) -> [&'static str; 24] {
+fn compact_table(lang: &str) -> crate::cldr::CompactPatterns {
     let norm = normalize(lang);
     let (base, _) = split_nu(&norm);
     let mut end = base.len();
@@ -822,13 +895,13 @@ pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
     // Resolve the currency pattern and symbol through the locale fallback chain.
     let norm = normalize(lang);
     let norm = String::from(split_nu(&norm).0);
-    let mut pat = cur::currency_pattern("en").expect("root currency pattern");
+    let (mut pat, mut neg) = cur::currency_pattern("en", &r.system).expect("root currency pattern");
     let mut symbol = code;
     let mut end = norm.len();
     let (mut got_pat, mut got_sym) = (false, false);
     loop {
-        if !got_pat && let Some(p) = cur::currency_pattern(&norm[..end]) {
-            pat = p;
+        if !got_pat && let Some((p, n)) = cur::currency_pattern(&norm[..end], &r.system) {
+            (pat, neg) = (p, n);
             got_pat = true;
         }
         if !got_sym && let Some((sym, _, _)) = cur::currency_forms(&norm[..end], code) {
@@ -854,17 +927,18 @@ pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
 
     // The pattern carries the ¤ placeholder; `format_with` substitutes the
     // symbol for it (and applies UTS #35 currency spacing around it).
-    format_with(&pat, value, &r, NumberStyle::Currency, symbol)
+    format_with(&pat, neg, value, &r, NumberStyle::Currency, symbol)
 }
 
 fn format_with(
     p: &Pattern,
+    neg: Option<(&str, &str)>,
     value: f64,
     r: &Resolved,
     style: NumberStyle,
     currency: &str,
 ) -> String {
-    join_parts(&format_with_parts(p, value, r, style, currency))
+    join_parts(&format_with_parts(p, neg, value, r, style, currency))
 }
 
 /// The free-function path ([`format_decimal`] / [`format_percent`] /
@@ -874,6 +948,7 @@ fn format_with(
 /// from drifting apart between the two entry points.
 fn format_with_parts(
     p: &Pattern,
+    neg: Option<(&str, &str)>,
     value: f64,
     r: &Resolved,
     style: NumberStyle,
@@ -888,43 +963,32 @@ fn format_with_parts(
     } else {
         non_finite_body(value, &r.spec)
     };
-    wrap(body, p, &opts, &r.spec, currency).parts
+    wrap(body, p, neg, &opts, &r.spec, currency).parts
 }
 
-/// Round `value` to the pattern's fixed fraction width and group it — the
-/// historical [`format_decimal`] rounding (the float formatter's, not
-/// [`round_digits`]'s), which the free functions keep.
+/// Round `value` to the pattern's fixed fraction width and group it — the free
+/// functions' precision, which is the pattern's own rather than an options bag's.
+///
+/// The rounding boundary is [`round_digits`]'s, at ECMA-402's default
+/// `roundingMode: "halfExpand"`. These functions used to round through the float
+/// formatter (`{:.*}`), whose ties go to even, so they disagreed with
+/// `Intl.NumberFormat` on exactly the ties — `format_currency("en", 2.5, "JPY")`
+/// wrote `"¥2"` where ICU writes `"¥3"`.
 fn fixed_body(p: &Pattern, value: f64, r: &Resolved) -> Body {
     let negative = value.is_sign_negative() && value != 0.0;
     let abs = if value < 0.0 { -value } else { value };
 
-    // Round to max_frac fixed decimals via the float formatter.
-    let formatted = alloc::format!("{:.*}", p.max_frac as usize, abs);
-    let (int_str, frac_full) = match formatted.split_once('.') {
-        Some((a, b)) => (a, b),
-        None => (formatted.as_str(), ""),
-    };
-
-    // Left-pad the integer to the minimum digit count. Compare in `usize` (not
-    // `as u8`, which would truncate for >255-digit values and could underflow
-    // the subtraction below).
-    let mut int_owned;
-    let int_str: &str = if int_str.len() < p.min_int as usize {
-        int_owned = String::new();
-        for _ in 0..(p.min_int as usize - int_str.len()) {
-            int_owned.push('0');
-        }
-        int_owned.push_str(int_str);
-        &int_owned
-    } else {
-        int_str
-    };
-
-    // Trim trailing zeros from the fraction down to the minimum count.
-    let mut frac = frac_full;
-    while frac.len() > p.min_frac as usize && frac.ends_with('0') {
-        frac = &frac[..frac.len() - 1];
-    }
+    let (int_owned, frac_owned) = round_digits(
+        abs,
+        p.min_int as usize,
+        p.min_frac as usize,
+        p.max_frac as usize,
+        None,
+        None,
+        RoundingMode::HalfExpand,
+        negative,
+    );
+    let (int_str, frac) = (int_owned.as_str(), frac_owned.as_str());
 
     let is_zero = int_str.bytes().all(|b| b == b'0') && frac.bytes().all(|b| b == b'0');
     // The locale's `minimumGroupingDigits` gates the separator here too — this
@@ -937,10 +1001,13 @@ fn fixed_body(p: &Pattern, value: f64, r: &Resolved) -> Body {
             (0, 0)
         };
     Body {
+        plural: crate::plural::PluralCategory::Other as usize,
+        sign_included: false,
         parts: digit_parts(int_str, frac, pri, sec, r),
         inner: (0, 0),
         negative,
         is_zero,
+        notation_affixes: false,
     }
 }
 
@@ -1400,6 +1467,8 @@ struct Formatted {
     parts: Vec<NumberPart>,
     middle: (usize, usize),
     inner: (usize, usize),
+    /// The displayed number's plural category (see [`Body::plural`]).
+    plural: usize,
 }
 
 #[cfg(feature = "number-range")]
@@ -1451,24 +1520,55 @@ struct Body {
     negative: bool,
     /// Zero *or* NaN: what ECMA-402's `exceptZero` sign display suppresses.
     is_zero: bool,
+    /// The plural category of the number as *displayed* — ICU's `StandardPlural`
+    /// off the rounded `DecimalQuantity`, which is what `modOuter`'s wording
+    /// agrees with.
+    plural: usize,
+    /// Whether the body already carries the sign, because the notation's pattern
+    /// placed it itself (a compact negative subpattern). [`wrap`] then writes
+    /// none of its own.
+    sign_included: bool,
+    /// Whether the notation replaced the style's `modMiddle` with affixes of
+    /// its own — ICU's `CompactHandler::processQuantity`, which swaps in a
+    /// modifier built from the compact pattern. Such a pattern has no negative
+    /// subpattern, so a signed value falls back to the synthesized sign.
+    notation_affixes: bool,
 }
 
 /// Apply the sign and the pattern's affixes — ICU's `modMiddle` — around a
 /// [`Body`]. The sign precedes the prefix affix and belongs to the same
 /// modifier as it: `+$` is one two-code-point `modMiddle`.
+///
+/// `neg` is the pattern's explicit negative subpattern affixes where CLDR gives
+/// it one. Those place the sign themselves, so they are used *instead of*
+/// prepending it — for a `+` as much as a `−`, since ICU's
+/// `PatternStringUtils::patternInfoToStringBuilder` maps `signDisplay:
+/// "always"` on a positive value to the same `PatternSignType::POS_SIGN`
+/// subpattern (`nl` writes `US$ +1.234,50`, not `+US$ 1.234,50`).
 fn wrap(
     body: Body,
     pattern: &Pattern,
+    neg: Option<(&str, &str)>,
     opts: &NumberFormatOptions,
     s: &NumberSpec,
     currency: &str,
 ) -> Formatted {
     let mut parts = Vec::new();
-    if let Some(sign) = sign_part(body.negative, body.is_zero, opts, s) {
-        parts.push(sign);
-    }
-    let mut prefix = affix_parts(pattern.prefix, opts.style, s, currency);
-    let mut suffix = affix_parts(pattern.suffix, opts.style, s, currency);
+    let sign = sign_part(body.negative, body.is_zero, opts, s).filter(|_| !body.sign_included);
+    let neg = neg.filter(|_| !body.notation_affixes);
+    let (mut prefix, mut suffix) = match (&sign, neg) {
+        (Some(sign), Some((pre, suf))) => (
+            neg_affix_parts(pre, sign, opts.style, s, currency),
+            neg_affix_parts(suf, sign, opts.style, s, currency),
+        ),
+        _ => {
+            parts.extend(sign);
+            (
+                affix_parts(pattern.prefix, opts.style, s, currency),
+                affix_parts(pattern.suffix, opts.style, s, currency),
+            )
+        }
+    };
     currency_spacing(&mut prefix, &mut suffix, &body.parts, opts.style);
     let middle = (parts.len() + prefix.len(), suffix.len());
     parts.extend(prefix);
@@ -1478,7 +1578,28 @@ fn wrap(
         parts,
         middle,
         inner: body.inner,
+        plural: body.plural,
     }
+}
+
+/// Split a negative-subpattern affix into parts, putting `sign` where UTS #35's
+/// `-` sign placeholder sits (ICU's `AffixUtils` `TYPE_MINUS_SIGN`). The rest is
+/// tagged as in any other affix.
+fn neg_affix_parts(
+    text: &str,
+    sign: &NumberPart,
+    style: NumberStyle,
+    s: &NumberSpec,
+    currency: &str,
+) -> Vec<NumberPart> {
+    let mut parts = Vec::new();
+    for (i, seg) in text.split('-').enumerate() {
+        if i > 0 {
+            parts.push(sign.clone());
+        }
+        parts.extend(affix_parts(seg, style, s, currency));
+    }
+    parts
 }
 
 /// UTS #35 §3.5 `currencySpacing`: insert a no-break space between the currency
@@ -1536,7 +1657,6 @@ fn currency_spacing(
 /// `… literal(" ") unit("m")` and `"5 meters per second"` is
 /// `… literal(" ") unit("meters per second")`. `prefix` says which end abuts the
 /// number: a prefix affix is separated on its right, a suffix affix on its left.
-#[cfg(feature = "units")]
 fn unit_affix(text: &str, prefix: bool) -> Vec<NumberPart> {
     let mut parts = Vec::new();
     let (unit, sep) = if prefix {
@@ -1614,8 +1734,58 @@ fn outer_wrap(
     if opts.style == NumberStyle::Currency && opts.currency_display == CurrencyDisplay::Name {
         return currency_unit_wrap(lang, opts, parts);
     }
+    if opts.style == NumberStyle::Percent && opts.notation == Notation::Compact {
+        return percent_unit_wrap(lang, plural, parts);
+    }
     let _ = (lang, opts, plural);
     (parts, (0, 0))
+}
+
+/// Wrap a compactly formatted percent in the locale's CLDR `concentr-percent`
+/// short unit pattern, ICU's `modOuter` for it.
+///
+/// ECMA-402 gives `style: "percent"` to ICU as `unit(NoUnit::percent())`, and
+/// compact notation replaces the `modMiddle` the `percentFormat` pattern would
+/// have supplied (`CompactHandler::processQuantity` swaps in a modifier built
+/// from the compact pattern, which has no `%`), so the symbol comes from the
+/// unit instead — with its own spacing and wording: `da` writes "1,2 mio. pct.",
+/// `de` "50 %" with a plain space where its pattern uses U+00A0, `ro` "50%"
+/// where its pattern has one, and `tr` "%-50", the sign *inside* the affix
+/// because this layer sits outside the sign.
+///
+/// The symbol is tagged `Unit`, not `PercentSign`, matching what ICU reports and
+/// `Intl.NumberFormat.prototype.formatToParts` returns.
+///
+/// The pattern table is vendored per base language (see
+/// `data/cldr/48/units-raw/README.txt`), so a `lang-REGION` locale takes its
+/// language's wording: `fr-CA` reads `fr`'s `"{0} %"` where ICU has an `fr-CA`
+/// bundle with U+00A0. That is the same gap `style: "unit"` already has for
+/// `fr-CA`, and the only one across the 218 vendored number locales.
+fn percent_unit_wrap(
+    lang: &str,
+    plural: usize,
+    core: Vec<NumberPart>,
+) -> (Vec<NumberPart>, (usize, usize)) {
+    let norm = normalize(lang);
+    let (base, _) = split_nu(&norm);
+    let mut end = base.len();
+    let pattern = loop {
+        if let Some(p) = crate::cldr::percent_unit(&base[..end], plural) {
+            break p;
+        }
+        match base[..end].rfind('-') {
+            Some(i) => end = i,
+            None => break crate::cldr::percent_unit("en", plural).unwrap_or("{0}%"),
+        }
+    };
+    let (pre, post) = pattern.split_once("{0}").unwrap_or(("", pattern));
+    let head = unit_affix(pre, true);
+    let tail = unit_affix(post, false);
+    let counts = (head.len(), tail.len());
+    let mut parts = head;
+    parts.extend(core);
+    parts.extend(tail);
+    (parts, counts)
 }
 
 /// Render a currency amount with `currencyDisplay: name`: the numeric `core`
@@ -1694,32 +1864,86 @@ fn currency_unit_wrap(
     (parts, (before, after))
 }
 
+/// What the style contributes to a formatted number: the pattern it is written
+/// with, the value after the style's own scaling, and the currency text its ¤
+/// placeholder stands for.
+struct Style {
+    pattern: Pattern,
+    /// The pattern's explicit negative-subpattern affixes, where CLDR has one.
+    neg: Option<(&'static str, &'static str)>,
+    scaled: f64,
+    currency: String,
+}
+
+impl Style {
+    /// A style with no ¤ text and no negative subpattern (decimal, percent, unit).
+    fn plain(pattern: Pattern, scaled: f64) -> Style {
+        Style {
+            pattern,
+            neg: None,
+            scaled,
+            currency: String::new(),
+        }
+    }
+}
+
 /// Resolve the base pattern, scaled value, and currency symbol for `style`.
 fn resolve_style(
     lang: &str,
     value: f64,
     s: &NumberSpec,
+    system: &str,
     opts: &NumberFormatOptions,
-) -> (Pattern, f64, String) {
+) -> Style {
     match opts.style {
-        NumberStyle::Decimal | NumberStyle::Unit => (s.dec, value, String::new()),
-        NumberStyle::Percent => (s.pct, value * 100.0, String::new()),
+        NumberStyle::Decimal | NumberStyle::Unit => Style::plain(s.dec, value),
+        NumberStyle::Percent => Style::plain(s.pct, value * 100.0),
         // Without the `currency` feature, currency style degrades to decimal.
         #[cfg(not(feature = "currency"))]
-        NumberStyle::Currency => (s.dec, value, String::new()),
+        NumberStyle::Currency => Style::plain(s.dec, value),
         #[cfg(feature = "currency")]
         NumberStyle::Currency => {
             let code = opts.currency.unwrap_or("XXX");
             let norm = normalize(lang);
             let norm = String::from(split_nu(&norm).0);
-            let mut pat = crate::cldr::currency_pattern("en").expect("root currency pattern");
+            // ICU feeds compact currency from CLDR's *currency short* patterns
+            // (`currencyFormats/short/standard/<magnitude>-count-*`), which are
+            // a different table from the `standard` pattern this approximates
+            // them with — and, crucially, are not split per numbering system
+            // the way `standard` is. `fa`'s `arabext` standard pattern drops the
+            // space after the symbol, but both its short blocks keep it; `sd`'s
+            // `arab` standard pattern puts the symbol last, and CLDR ships no
+            // `arab` short block at all, so ICU reads the `latn` one and keeps
+            // the symbol first. In both, the `latn` pattern is what the short
+            // affixes agree with, so the compact path asks for it by name. See
+            // `currency_pattern`, which falls back to `latn` for any system it
+            // has no override for.
+            //
+            // Only where the value actually abbreviates: below the smallest
+            // band `compact_body` hands back to `standard_body`, and there the
+            // ordinary pattern applies — `ar-EG`'s `arab` block has no negative
+            // subpattern where its `latn` one does, so borrowing `latn` for a
+            // value ICU never compacts would misplace the sign. The threshold
+            // mirrors `compact_body`'s own first gate; currency style does not
+            // scale the value, so this is the same number it tests.
+            let system = if opts.notation == Notation::Compact && value.abs() >= 1000.0 {
+                "latn"
+            } else {
+                system
+            };
+            let (mut pat, mut neg) =
+                crate::cldr::currency_pattern("en", system).expect("root currency pattern");
             // (symbol, narrow symbol, display name) for the requested currency.
             let mut forms: Option<(&str, &str, &str)> = None;
             let mut end = norm.len();
             let mut got_pat = false;
             loop {
-                if !got_pat && let Some(p) = crate::cldr::currency_pattern(&norm[..end]) {
-                    pat = p;
+                // The negative subpattern belongs to the pattern, so it comes
+                // from the same record rather than being walked separately.
+                if !got_pat
+                    && let Some((p, n)) = crate::cldr::currency_pattern(&norm[..end], system)
+                {
+                    (pat, neg) = (p, n);
                     got_pat = true;
                 }
                 if forms.is_none() {
@@ -1746,13 +1970,19 @@ fn resolve_style(
             let digits = crate::cldr::currency_digits(code);
             pat.min_frac = digits;
             pat.max_frac = digits;
-            (pat, value, shown)
+            Style {
+                pattern: pat,
+                neg,
+                scaled: value,
+                currency: shown,
+            }
         }
     }
 }
 
 /// Standard (positional) notation: the digits, grouped.
 fn standard_body(
+    lang: &str,
     scaled: f64,
     pattern: &Pattern,
     p: &Precision,
@@ -1766,10 +1996,13 @@ fn standard_body(
     let is_zero = int_d.bytes().all(|b| b == b'0') && frac_d.bytes().all(|b| b == b'0');
     let (pri, sec) = effective_grouping(opts, pattern, &r.spec, int_d.len());
     Body {
+        plural: body_plural(lang, opts, &int_d, &frac_d, 0),
+        sign_included: false,
         parts: digit_parts(&int_d, &frac_d, pri, sec, r),
         inner: (0, 0),
         negative,
         is_zero,
+        notation_affixes: false,
     }
 }
 
@@ -1777,6 +2010,7 @@ fn standard_body(
 /// ICU's `modInner` — the innermost modifier, which the AUTO collapse level
 /// never factors out of a range.
 fn exponent_body(
+    lang: &str,
     value: f64,
     p: &Precision,
     opts: &NumberFormatOptions,
@@ -1832,7 +2066,13 @@ fn exponent_body(
         ));
     }
     let digits_end = parts.len();
-    parts.push(NumberPart::new(NumberPartType::ExponentSeparator, "E"));
+    // The separator is the numbering system's CLDR `symbols/exponential`, not a
+    // hard-coded `E`: `el` writes `e`, `sv` `×10^`, and `ar`'s `arab` block `أس`
+    // — which is why `ar` (latn by default) keeps `E` but `ar-EG` does not.
+    parts.push(NumberPart::new(
+        NumberPartType::ExponentSeparator,
+        s.exponential,
+    ));
     if exp < 0 {
         parts.push(NumberPart::new(NumberPartType::ExponentMinusSign, s.minus));
     }
@@ -1841,11 +2081,23 @@ fn exponent_body(
         map_digits(&alloc::format!("{}", exp.unsigned_abs()), r.digits),
     ));
     Body {
+        plural: body_plural(lang, opts, &int_d, &frac_d, 0),
+        sign_included: false,
         inner: (0, parts.len() - digits_end),
         parts,
         negative,
         is_zero: abs == 0.0,
+        // The exponent is ICU's `modInner`; `modMiddle` stays the style's, so a
+        // negative subpattern still applies (`he` writes "‏‎-1.235E3 ‏$").
+        notation_affixes: false,
     }
+}
+
+/// A UTS #35 pattern's positive subpattern: everything before the `;` that
+/// introduces the negative one. What the number of `0`s — and so the band's
+/// multiplier — is read from.
+fn positive_subpattern(pattern: &str) -> &str {
+    pattern.split(';').next().unwrap_or(pattern)
 }
 
 /// Compact notation: the mantissa spliced into the locale's magnitude pattern.
@@ -1864,7 +2116,7 @@ fn compact_body(
     // Below 1000 the magnitude exponent is not one of the table's bands, so the
     // `exp - 3` index below cannot underflow.
     if abs < 1000.0 {
-        return standard_body(scaled, pattern, p, opts, r);
+        return standard_body(lang, scaled, pattern, p, opts, r);
     }
     let table = compact_table(lang);
     let mut exp = 0usize;
@@ -1883,18 +2135,28 @@ fn compact_body(
     // into the *next* band (999_999 rounds to 1000 thousands), so re-select the
     // magnitude and round again rather than printing "1000K" — ICU's
     // `CompactHandler::processQuantity` does the same second pass, giving "1M".
-    let (magnitude, int_d, frac_d, negative) = loop {
-        let magnitude = table[base + (exp - 3).min(11)];
-        let zeros = magnitude.chars().filter(|&c| c == '0').count();
+    let (magnitude, exponent, int_d, frac_d, negative) = loop {
+        let slot = base + (exp - 3).min(11);
+        // The band's shape — how many digits it keeps, and whether it abbreviates
+        // at all — is read from the `count-other` form: ICU's `CompactData` holds
+        // one multiplier per magnitude, so the plural forms of a band must agree
+        // on their `0`-run and only their wording may differ.
+        let other = positive_subpattern(table.get(
+            slot,
+            crate::plural::PluralCategory::Other as usize,
+            false,
+        ));
+        let zeros = other.chars().filter(|&c| c == '0').count();
         // A pattern of only `0`s (no magnitude suffix) means "do not abbreviate".
-        let has_suffix = magnitude
+        let has_suffix = other
             .chars()
             .any(|c| c != '0' && c != '\'' && !c.is_whitespace());
         if zeros == 0 || !has_suffix {
-            return standard_body(scaled, pattern, p, opts, r);
+            return standard_body(lang, scaled, pattern, p, opts, r);
         }
+        let exponent = (exp + 1).saturating_sub(zeros);
         let mut divisor = 1.0f64;
-        for _ in 0..(exp + 1).saturating_sub(zeros) {
+        for _ in 0..exponent {
             divisor *= 10.0;
         }
         let mantissa = scaled / divisor;
@@ -1905,8 +2167,36 @@ fn compact_body(
             exp += 1;
             continue;
         }
-        break (magnitude, int_d, frac_d, negative);
+        // ICU's `CompactHandler::processQuantity` selects the pattern by the
+        // plural category of the *rounded mantissa* — it applies
+        // `adjustExponent` only afterwards, with the comment "Change the
+        // exponent only after we select the plural form" — so the exponent is
+        // deliberately not part of these operands. `bn`'s
+        // `10000000000-count-one` carries a space its `count-other` lacks.
+        //
+        // UTS #35 §3.5's explicit `count="1"` matches the literal *signed*
+        // value 1, not a magnitude, so a negative mantissa falls through to the
+        // plural category: `fr` has `1000-count-1` "mille" and `1000-count-one`
+        // "0 millier", and ICU compacts 1000 to "mille" but −1000 to
+        // "-1 millier" — including under `signDisplay: "never"`, which shows
+        // that it is the value and not the printed sign that decides.
+        let eq_one = !negative && int_d == "1" && frac_d.bytes().all(|b| b == b'0');
+        let magnitude = table.get(slot, plural_of_digits(lang, &int_d, &frac_d, 0), eq_one);
+        break (magnitude, exponent, int_d, frac_d, negative);
     };
+
+    // UTS #35 §3.5: a compact pattern may carry a negative subpattern of its own
+    // after `;`, which places the sign rather than leaving it in front. Only
+    // `sw` and its regions do in CLDR 48 ("bilioni 0;bilioni -0" → "bilioni -1"),
+    // and like a currency's it is used whenever a sign is shown, `+` included.
+    let sign = sign_part(negative, false, opts, &r.spec);
+    let (magnitude, sign) = match (magnitude.split_once(';'), sign) {
+        (Some((_, neg)), Some(sign)) => (neg, Some(sign)),
+        (Some((pos, _)), None) => (pos, None),
+        // No subpattern of its own: `wrap` writes the sign in front, as always.
+        (None, _) => (magnitude, None),
+    };
+    let sign_included = sign.is_some();
 
     // Render the magnitude pattern, substituting the digits for the `0`-run and
     // tagging its literal text as `compact`. Those literals are ICU's
@@ -1942,6 +2232,10 @@ fn compact_body(
                     wrote = true;
                 }
             }
+            '-' if sign_included => {
+                flush_lit(&mut lit, &mut parts);
+                parts.extend(sign.clone());
+            }
             '\'' => {
                 for q in chars.by_ref() {
                     if q == '\'' {
@@ -1955,10 +2249,17 @@ fn compact_body(
     }
     flush_lit(&mut lit, &mut parts);
     Body {
+        plural: body_plural(lang, opts, &int_d, &frac_d, exponent),
+        sign_included,
         inner: (digits_start, parts.len() - digits_end),
         parts,
         negative,
         is_zero: false,
+        // An abbreviated value is the one case where the notation replaces
+        // `modMiddle`: ICU formats it through the *compact* pattern, which has
+        // no negative subpattern, so `nl` writes "-US$ 1,2 mln." where its
+        // standard pattern would give "US$ -1,2".
+        notation_affixes: true,
     }
 }
 
@@ -1979,6 +2280,9 @@ fn non_finite_body(value: f64, s: &NumberSpec) -> Body {
         // `signDisplay: "exceptZero"` leaves it unsigned while `"always"` does
         // sign it (`"+NaN"`).
         is_zero: nan,
+        plural: crate::plural::PluralCategory::Other as usize,
+        sign_included: false,
+        notation_affixes: false,
     }
 }
 
@@ -1993,7 +2297,12 @@ fn non_finite_body(value: f64, s: &NumberSpec) -> Body {
 fn format_number(lang: &str, value: f64, r: &Resolved, opts: &NumberFormatOptions) -> Formatted {
     let s = &r.spec;
     #[allow(unused_mut)]
-    let (mut pattern, scaled, currency) = resolve_style(lang, value, s, opts);
+    let Style {
+        mut pattern,
+        mut neg,
+        scaled,
+        currency,
+    } = resolve_style(lang, value, s, &r.system, opts);
     // `currencyDisplay: name` keeps the currency pattern's digits and grouping
     // but drops its ¤ affixes: the display name is applied outside, through the
     // locale's currency unit pattern ("{0} {1}"). `code` is *not* one of those —
@@ -2003,19 +2312,30 @@ fn format_number(lang: &str, value: f64, r: &Resolved, opts: &NumberFormatOption
     if opts.style == NumberStyle::Currency && opts.currency_display == CurrencyDisplay::Name {
         pattern.prefix = "";
         pattern.suffix = "";
+        // The negative subpattern is those same affixes with the sign placed
+        // among them, so it goes with them: `nl` writes "-1.234,50 Amerikaanse
+        // dollar", not "1.234,50 -Amerikaanse dollar".
+        neg = None;
+    }
+    // Compact notation displaces the percent pattern's affixes (see
+    // [`percent_unit_wrap`], which puts the symbol back on the outside); the
+    // pattern's grouping and fraction bounds still apply.
+    if opts.style == NumberStyle::Percent && opts.notation == Notation::Compact {
+        pattern.prefix = "";
+        pattern.suffix = "";
     }
     let body = if scaled.is_finite() {
         let p = digit_options(opts, pattern.min_frac as usize, pattern.max_frac as usize);
         match opts.notation {
-            Notation::Standard => standard_body(scaled, &pattern, &p, opts, r),
-            Notation::Scientific => exponent_body(scaled, &p, opts, r, 1),
-            Notation::Engineering => exponent_body(scaled, &p, opts, r, 3),
+            Notation::Standard => standard_body(lang, scaled, &pattern, &p, opts, r),
+            Notation::Scientific => exponent_body(lang, scaled, &p, opts, r, 1),
+            Notation::Engineering => exponent_body(lang, scaled, &p, opts, r, 3),
             Notation::Compact => compact_body(lang, scaled, &pattern, &p, opts, r),
         }
     } else {
         non_finite_body(scaled, s)
     };
-    wrap(body, &pattern, opts, s, &currency)
+    wrap(body, &pattern, neg, opts, s, &currency)
 }
 
 /// Format `value` in `lang` per ECMA-402-style `opts`, returning the tagged
@@ -2033,7 +2353,7 @@ fn format_number(lang: &str, value: f64, r: &Resolved, opts: &NumberFormatOption
 pub fn format_to_parts(lang: &str, value: f64, opts: &NumberFormatOptions) -> Vec<NumberPart> {
     let r = resolve(lang, opts.numbering_system);
     let f = format_number(lang, value, &r, opts);
-    outer_wrap(lang, opts, plural_of(lang, value), f.parts).0
+    outer_wrap(lang, opts, f.plural, f.parts).0
 }
 
 /// Format `value` in `lang` per ECMA-402-style `opts` (`Intl.NumberFormat`).
@@ -2364,6 +2684,7 @@ mod tests {
             percent: "%",
             nan: "NaN",
             infinity: "∞",
+            exponential: "E",
             min_grouping: 1,
             dec: pat,
             pct: pat,

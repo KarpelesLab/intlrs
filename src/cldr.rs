@@ -88,6 +88,12 @@ pub struct NumberSpec {
     pub nan: &'static str,
     /// The infinity placeholder (`"∞"` in every vendored locale).
     pub infinity: &'static str,
+    /// The exponent separator of scientific/engineering notation (`en` `"E"`,
+    /// `el` `"e"`, `sv` `"×10^"`, `fa`'s `arabext` `"×۱۰^"`). CLDR's
+    /// `symbols/exponential`; ECMA-402 `PartitionNotationSubPattern` writes it
+    /// as the `exponentSeparator` part. The sibling `superscriptingExponent`
+    /// (`"×"`) is not vendored — nothing in ECMA-402 reads it.
+    pub exponential: &'static str,
     /// CLDR `numbers/minimumGroupingDigits`: how many digits must sit before the
     /// first group separator before grouping is used at all. `1` in `en`/`de`,
     /// `2` in `pl`/`es`/`et`/`lv`, which is why those render `1000` unseparated
@@ -338,12 +344,84 @@ pub(crate) fn numbering_digits(system: &str) -> Option<&'static str> {
     find(NUMSYS_DIGITS, system).map(|mut c| c.str())
 }
 
-/// Compact (short) decimal patterns for magnitudes 10³…10¹⁴ in an exact
-/// (lowercased) locale key.
+/// One locale's compact-notation patterns: 12 short then 12 long magnitude
+/// slots (10³…10¹⁴), each keyed by plural category.
+///
+/// A handle rather than an array because the slots are variable-width: a slot
+/// is its `count-other` pattern plus, for the categories CLDR words
+/// differently, an override. Resolving the locale is the expensive half and is
+/// done once, in [`compact_patterns`].
 #[cfg(feature = "number")]
-pub(crate) fn compact_patterns(lang: &str) -> Option<[&'static str; 24]> {
-    let mut c = find(COMPACT, lang)?;
-    Some(core::array::from_fn(|_| c.str()))
+#[derive(Clone, Copy)]
+pub(crate) struct CompactPatterns {
+    payload: &'static [u8],
+}
+
+#[cfg(feature = "number")]
+impl CompactPatterns {
+    /// The pattern for magnitude slot `slot` (0..24, short then long) in plural
+    /// category `plural` (a `PluralCategory` discriminant), falling back to the
+    /// slot's `count-other` form where the locale words that category the same.
+    ///
+    /// `eq_one` says the mantissa is exactly 1, which selects UTS #35 §3.5's
+    /// *explicit* `count="1"` form where the locale has one — it outranks the
+    /// plural category, so `fr` compacts 1000 to "mille" but 1500 to
+    /// "1,5 millier".
+    pub(crate) fn get(&self, slot: usize, plural: usize, eq_one: bool) -> &'static str {
+        let mut c = Cursor {
+            b: self.payload,
+            o: 0,
+        };
+        for _ in 0..slot {
+            let n = (c.u8().count_ones() + 1) as usize;
+            for _ in 0..n {
+                let _ = c.str();
+            }
+        }
+        let mask = c.u8();
+        let other = c.str();
+        // Bit `i` of the mask is `COMPACT_PLURALS[i]` — the five categories below
+        // `other`, then the explicit `count="1"`. `other` has no bit and is
+        // stored first, so an override sits after the ones below it in the mask.
+        const EQ_ONE: usize = 5;
+        let want = if eq_one && mask & (1 << EQ_ONE) != 0 {
+            EQ_ONE
+        } else if plural < EQ_ONE {
+            plural
+        } else {
+            return other;
+        };
+        let bit = 1u8 << want;
+        if mask & bit == 0 {
+            return other;
+        }
+        for _ in 0..(mask & (bit - 1)).count_ones() {
+            let _ = c.str();
+        }
+        c.str()
+    }
+}
+
+/// Compact decimal patterns for an exact (lowercased) locale key.
+#[cfg(feature = "number")]
+pub(crate) fn compact_patterns(lang: &str) -> Option<CompactPatterns> {
+    let count = rd_u16(COMPACT, 0);
+    let mut o = 2;
+    for _ in 0..count {
+        let klen = COMPACT[o] as usize;
+        o += 1;
+        let k = &COMPACT[o..o + klen];
+        o += klen;
+        let plen = rd_u16(COMPACT, o);
+        o += 2;
+        if k == lang.as_bytes() {
+            return Some(CompactPatterns {
+                payload: &COMPACT[o..o + plen],
+            });
+        }
+        o += plen;
+    }
+    None
 }
 
 /// The raw RBNF payload bytes for an exact (lowercased) locale key (parsed by
@@ -795,6 +873,30 @@ impl Cursor {
             secondary_group: self.u8(),
         }
     }
+    /// The negative-subpattern affixes that follow a blob `pattern()`.
+    fn neg(&mut self) -> Option<(&'static str, &'static str)> {
+        let prefix = self.opt();
+        let suffix = self.opt();
+        Some((prefix?, suffix.unwrap_or("")))
+    }
+    /// Skip past those affixes.
+    fn skip_neg(&mut self) {
+        self.skip_opt();
+        self.skip_opt();
+    }
+    /// Skip a currency record's whole pattern block: the `latn` pattern and the
+    /// per-numbering-system ones that follow it.
+    #[cfg(feature = "currency")]
+    fn skip_currency_patterns(&mut self) {
+        let _ = self.pattern();
+        self.skip_neg();
+        let n = self.u8();
+        for _ in 0..n {
+            let _ = self.str();
+            let _ = self.pattern();
+            self.skip_neg();
+        }
+    }
 }
 
 /// Locate the record for `key` and return a cursor at its payload.
@@ -842,6 +944,15 @@ pub(crate) fn numbering_systems(lang: &str) -> Option<(&'static str, &'static st
     generated::numbers::numbering_systems(lang)
 }
 
+/// The CLDR `concentr-percent` short unit pattern for an exact (lowercased)
+/// locale key in plural category `plural` — how ICU words a percent formatted
+/// in compact notation, where the compact pattern displaces the `percentFormat`
+/// affixes and the `%` with them.
+#[cfg(feature = "number")]
+pub(crate) fn percent_unit(lang: &str, plural: usize) -> Option<&'static str> {
+    generated::numbers::percent_unit(lang, plural)
+}
+
 /// The CLDR `miscPatterns` `(approximately, range)` forms for an exact
 /// (lowercased) locale key.
 #[cfg(feature = "number-range")]
@@ -886,18 +997,44 @@ pub(crate) fn relative_unit(loc: u16, unit: usize, width: usize) -> RelUnit {
     }
 }
 
-/// Standard currency pattern for an exact (lowercased) locale key.
+/// The standard currency pattern for an exact (lowercased) locale key in
+/// numbering system `system`, with the affixes of its explicit negative
+/// subpattern (UTS #35 §3.5) where CLDR gives it one.
+///
+/// A negative subpattern places the sign itself and is not derivable from the
+/// positive one: `nl` is `¤ #,##0.00;¤ -#,##0.00`, where the sign sits *after*
+/// the symbol, and `he` is `‏#,##0.00 ‏¤;‏-#,##0.00 ‏¤`, where the RLM the
+/// pattern opens with precedes it.
+///
+/// `currencyFormats` is per numbering system exactly as the decimal blocks are,
+/// and the difference is load-bearing: `ar`'s `arab` pattern has *no* negative
+/// subpattern where its `latn` one does (so `ar-EG`, which defaults to `arab`,
+/// writes the sign in front), and `fa`'s `arabext` pattern drops the space
+/// after the symbol. Only systems whose pattern differs from `latn` are stored.
 #[cfg(feature = "currency")]
-pub(crate) fn currency_pattern(lang: &str) -> Option<Pattern> {
+#[allow(clippy::type_complexity)]
+pub(crate) fn currency_pattern(
+    lang: &str,
+    system: &str,
+) -> Option<(Pattern, Option<(&'static str, &'static str)>)> {
     let mut c = find(CURRENCY, lang)?;
-    Some(c.pattern())
+    let latn = (c.pattern(), c.neg());
+    let n = c.u8();
+    for _ in 0..n {
+        if c.str() == system {
+            return Some((c.pattern(), c.neg()));
+        }
+        let _ = c.pattern();
+        c.skip_neg();
+    }
+    Some(latn)
 }
 
 /// The currency unit pattern (number + code/name, e.g. `"{0} {1}"`) for `lang`.
 #[cfg(feature = "currency")]
 pub(crate) fn currency_unit_pattern(lang: &str) -> Option<&'static str> {
     let mut c = find(CURRENCY, lang)?;
-    let _ = c.pattern();
+    c.skip_currency_patterns();
     Some(c.str())
 }
 
@@ -909,7 +1046,7 @@ pub(crate) fn currency_forms(
     code: &str,
 ) -> Option<(&'static str, &'static str, &'static str)> {
     let mut c = find(CURRENCY, lang)?;
-    let _ = c.pattern();
+    c.skip_currency_patterns();
     let _ = c.str(); // unit pattern
     let n = c.u16();
     for _ in 0..n {

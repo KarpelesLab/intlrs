@@ -1672,6 +1672,7 @@ pub fn intl::number::NumberRangePart::from(T) -> T
 #[non_exhaustive] pub struct intl::number::NumberSpec
 pub intl::number::NumberSpec::dec: intl::number::Pattern
 pub intl::number::NumberSpec::decimal: &'static str
+pub intl::number::NumberSpec::exponential: &'static str
 pub intl::number::NumberSpec::group: &'static str
 pub intl::number::NumberSpec::infinity: &'static str
 pub intl::number::NumberSpec::min_grouping: u8
