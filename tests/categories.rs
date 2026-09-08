@@ -3,6 +3,11 @@
 
 use intl::unicode::{CharExt, GeneralCategory as GC, Group, UNICODE_VERSION, general_category};
 
+// `CharExt::is_assigned` is called through the trait rather than as a method:
+// std is adding an inherent `char::is_assigned`, which would win the method
+// resolution and silently test *its* answer instead of this crate's. The other
+// `CharExt` predicates have no such collision and read better as methods.
+
 #[test]
 fn ascii_categories() {
     assert_eq!(general_category('A'), GC::UppercaseLetter);
@@ -29,7 +34,7 @@ fn ascii_predicates() {
     assert!('\n'.is_control());
     assert!('!'.is_punctuation());
     assert!('+'.is_symbol());
-    assert!('A'.is_assigned());
+    assert!(CharExt::is_assigned(&'A'));
     assert!(!'5'.is_alphabetic());
 }
 
@@ -68,7 +73,7 @@ fn bmp_categories() {
     assert_eq!(general_category('Ω'), GC::UppercaseLetter); // U+03A9
     assert_eq!(general_category('中'), GC::OtherLetter); // U+4E2D (CJK)
     assert_eq!(general_category('٣'), GC::DecimalNumber); // U+0663 Arabic-Indic 3
-    assert!('中'.is_alphabetic() && '中'.is_letter() && '中'.is_assigned());
+    assert!('中'.is_alphabetic() && '中'.is_letter() && CharExt::is_assigned(&'中'));
     assert!('٣'.is_numeric());
 }
 
@@ -77,7 +82,7 @@ fn bmp_categories() {
 fn unassigned_in_bmp() {
     // U+0378 is a reserved (unassigned) codepoint inside the BMP.
     assert_eq!(general_category('\u{0378}'), GC::Unassigned);
-    assert!(!'\u{0378}'.is_assigned());
+    assert!(!CharExt::is_assigned(&'\u{0378}'));
     assert!(!'\u{0378}'.is_alphabetic());
 }
 
@@ -86,7 +91,7 @@ fn unassigned_in_bmp() {
 fn supplementary_categories() {
     assert_eq!(general_category('\u{10000}'), GC::OtherLetter); // Linear B
     assert_eq!(general_category('😀'), GC::OtherSymbol); // U+1F600
-    assert!('\u{10000}'.is_assigned() && '\u{10000}'.is_letter());
+    assert!(CharExt::is_assigned(&'\u{10000}') && '\u{10000}'.is_letter());
 }
 
 #[cfg(feature = "bmp")]
