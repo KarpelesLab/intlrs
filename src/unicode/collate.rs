@@ -1145,8 +1145,17 @@ impl Tailoring {
     /// keyword the locale does not have falls back to its `standard` collation,
     /// matching ICU — `new Intl.Collator('en-u-co-phonebk').resolvedOptions()`
     /// reports collation `default`, so `for_locale("en-u-co-phonebk")` is `None`
-    /// exactly as `for_locale("en")` is. `standard`, `search` and `searchjl` are
-    /// not selectable this way (`search`/`searchjl` serve `usage: "search"`).
+    /// exactly as `for_locale("en")` is. `standard` is not selectable this way.
+    ///
+    /// **`search`** — the collation behind ECMA-402's `usage: "search"` — is
+    /// requested as `<locale>-u-co-search` too (ECMA-402 rejects it as a `co`
+    /// *option* value, but this is the natural key for it). It resolves as ICU
+    /// does: the locale's own CLDR `search` rule (German folds `ä` with `ae`,
+    /// so `for_locale("de-u-co-search")` orders `"AE"` before `"Ä"` where plain
+    /// `de` orders `"Ä"` first), else root's `search` rule — *not* the locale's
+    /// `standard` order — so it is `Some` for every locale. `searchjl` (Korean
+    /// jamo-initial search) is bundled for `ko` only and degrades to `search`
+    /// elsewhere.
     ///
     /// A self-consistency gate (`tests/collation_data_consistency`) excludes from
     /// the generated table any rule the parser rejects or would mis-order
@@ -1189,8 +1198,10 @@ impl Tailoring {
         // `-u-co-stroke` / `-u-co-zhuyin` BCP-47 collation keywords select the
         // stroke / zhuyin variants. Handled before the CLDR rule table since zh's
         // Han order is a per-codepoint weight table, not a runtime rule string.
+        // `zh-u-co-search` is the exception: CLDR has no Chinese `search`
+        // collation, so it resolves to root's below, as it does in ICU.
         #[cfg(feature = "collation-zh")]
-        if primary == "zh" {
+        if primary == "zh" && !matches!(co, Some("search" | "searchjl")) {
             // `zh-u-co-unihan` orders every Han by radical-stroke (readings
             // ignored) — a distinct code path, not a ranked Han-weight table.
             if co == Some("unihan") {
@@ -1213,11 +1224,29 @@ impl Tailoring {
             "tl" => Some("fil"),
             _ => None,
         };
+        // The `search` collation (`usage: "search"` in ECMA-402) is resolved like
+        // ICU resolves it: the locale's own `search` rule, else its parent's,
+        // else **root's** `search` — never the locale's `standard` order. So
+        // `cs-u-co-search` sorts `ch` as c+h (root search) where `cs` proper
+        // sorts it after `h`, exactly as `Intl.Collator("cs", {usage: "search"})`
+        // does. `searchjl` (Korean jamo-initial search) is only ever bundled for
+        // `ko`; anywhere else it degrades to the `search` lookup.
+        if let Some(co) = co.filter(|c| matches!(*c, "search" | "searchjl")) {
+            let stems = [Some(base), Some(primary), inherited];
+            for stem in stems.into_iter().flatten() {
+                if let Some(rule) = crate::cldr::collation_rule(&format!("{stem}-u-co-{co}"))
+                    && let Some(t) = Tailoring::parse(rule)
+                {
+                    return Some(t);
+                }
+            }
+            return crate::cldr::collation_rule("und-u-co-search").and_then(Tailoring::parse);
+        }
         // A named collation is looked up for the full tag then the language alone
         // (`de-at-u-co-phonebk`, then `de-u-co-phonebk`) — and, when the locale
         // has none by that name, we fall through to its `standard` collation
         // below, which is what ICU resolves such a request to.
-        if let Some(co) = co.filter(|c| !matches!(*c, "standard" | "search" | "searchjl")) {
+        if let Some(co) = co.filter(|c| *c != "standard") {
             for stem in [base, primary] {
                 if let Some(rule) = crate::cldr::collation_rule(&format!("{stem}-u-co-{co}"))
                     && let Some(t) = Tailoring::parse(rule)
@@ -1381,6 +1410,13 @@ impl Tailoring {
         // just after the tailored `cs` rather than after root `c`.
         let mut anchor_ce: Option<u64> = None;
         let mut before = false; // current reset was `[before …]`
+        // The current reset is a `[first|last …]` logical-position pseudo-anchor
+        // (`&[last primary ignorable]<<ـ`): the engine has no weight to hang the
+        // following relations on, so they are dropped rather than failing the
+        // whole rule. Root's `search` collation opens with one to place the
+        // Arabic tatweel and Thai phinthu among the ignorables — an ordering
+        // that is invisible at every level this engine compares anyway.
+        let mut unanchored = false;
         // Running offsets within each level relative to the reset anchor.
         let (mut p_off, mut s_off, mut t_off) = (0u32, 0u32, 0u32);
         let mut i = 0;
@@ -1397,6 +1433,17 @@ impl Tailoring {
                         before = *lvl >= 1;
                         i += 1;
                     }
+                    if matches!(toks.get(i), Some(Tok::Pseudo)) {
+                        i += 1;
+                        anchor.clear();
+                        anchor_ces.clear();
+                        anchor_ce = None;
+                        anchor_primary = 0;
+                        unanchored = true;
+                        (p_off, s_off, t_off) = (0, 0, 0);
+                        continue;
+                    }
+                    unanchored = false;
                     let mut a = Vec::new();
                     while let Some(Tok::Lit(c)) = toks.get(i) {
                         a.push(*c);
@@ -1438,6 +1485,9 @@ impl Tailoring {
                         }
                     }
                     if target.is_empty() || anchor_primary == 0 {
+                        if unanchored {
+                            continue; // relation off a pseudo-anchor: dropped
+                        }
                         return None;
                     }
                     // `<*abc` (and friends) is shorthand for `<a<b<c`: apply the
@@ -2224,6 +2274,10 @@ enum Tok {
     /// `[reorder <code> <code> …]` — the whitespace-split group codes (script
     /// tags like `Cyrl`, or special groups `space`/`punct`/`digit`/`others`).
     Reorder(Vec<String>),
+    /// A `[first …]` / `[last …]` logical-position pseudo-anchor
+    /// (`&[last primary ignorable]`, `&[first regular]`): a reset onto a
+    /// position in the weight space rather than onto a character.
+    Pseudo,
 }
 
 /// Read `n` hex digits from `chars[start..]` into a code point.
@@ -2332,6 +2386,8 @@ fn lex(rules: &str) -> Option<Vec<Tok>> {
                     if !codes.is_empty() {
                         out.push(Tok::Reorder(codes));
                     }
+                } else if content.starts_with("first ") || content.starts_with("last ") {
+                    out.push(Tok::Pseudo);
                 }
                 // Else an ordering-free option (normalization / caseFirst /
                 // suppressContractions / optimize / …): ignored.

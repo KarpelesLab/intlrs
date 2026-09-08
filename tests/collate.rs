@@ -422,10 +422,9 @@ fn named_collations_via_u_co_keyword() {
         Tailoring::for_locale("sv").unwrap().sort_key("ö"),
     );
 
-    // `standard`, `search` and `searchjl` are not selectable as `co` values;
-    // they resolve to the locale's default order (for de, to nothing).
+    // `standard` is not selectable as a `co` value; it resolves to the locale's
+    // default order (for de, to nothing).
     assert!(Tailoring::for_locale("de-u-co-standard").is_none());
-    assert!(Tailoring::for_locale("de-u-co-search").is_none());
 
     // Tag shapes: the keyword is found after a region, before or after another
     // `-u-` key, and independently of case or of the `_` separator.
@@ -449,4 +448,60 @@ fn named_collations_via_u_co_keyword() {
             .sort_key("ä"),
         de.sort_key("ä"),
     );
+}
+
+/// The `search` collation (ECMA-402 `usage: "search"`), keyed `-u-co-search`:
+/// a locale's own CLDR `search` rule where it has one, root's otherwise — never
+/// the locale's `standard` order, matching ICU.
+#[test]
+fn search_collation_resolves_like_icu() {
+    use core::cmp::Ordering::{Greater, Less};
+    use intl::unicode::collate::Tailoring;
+    // German search folds ä with ae (`&AE<<ä<<<Ä` via `[import de-u-co-phonebk]`):
+    // "AE" < "Ä" at the tertiary level, where plain `de` (root order) sorts the
+    // single letter "Ä" before the two-letter "AE".
+    let de = Tailoring::for_locale("de-u-co-search").expect("de search");
+    assert_eq!(de.compare("AE", "Ä"), Less);
+    assert_eq!(de.compare("ae", "ä"), Less);
+    assert_eq!(de.compare("oe", "ö"), Less);
+    assert_eq!(de.compare("ue", "ü"), Less);
+    assert_eq!(de.compare("äa", "af"), Less);
+    assert_eq!(de.compare("ä", "b"), Less);
+    assert!(Tailoring::for_locale("de").is_none());
+    assert_eq!(Collator::default().compare("AE", "Ä"), Greater);
+    // Root's search rule, inherited by every locale without one of its own —
+    // including ones with a `standard` tailoring: Czech sorts `ch` after `h`,
+    // but `Intl.Collator("cs", {usage: "search"})` sorts it as c+h.
+    let root = Tailoring::for_locale("und-u-co-search").expect("root search");
+    assert_eq!(root.compare("=", "≠"), Less);
+    let cs = Tailoring::for_locale("cs-u-co-search").expect("cs search -> root");
+    assert_eq!(cs.compare("ch", "h"), Less);
+    assert_eq!(
+        Tailoring::for_locale("cs").unwrap().compare("ch", "h"),
+        Greater
+    );
+    assert_eq!(cs.compare("AE", "Ä"), Greater); // no German folding here
+    for tag in [
+        "en-u-co-search",
+        "fr-u-co-search",
+        "und-u-co-search",
+        "pl-u-co-search",
+    ] {
+        let t = Tailoring::for_locale(tag).unwrap_or_else(|| panic!("{tag} unresolved"));
+        assert_eq!(t.sort_key("≠"), root.sort_key("≠"), "{tag}");
+        assert_eq!(t.compare("ch", "h"), Less, "{tag}");
+    }
+    // A locale with its own search rule keeps its letter order: Swedish still
+    // puts å after z when searching.
+    let sv = Tailoring::for_locale("sv-u-co-search").expect("sv search");
+    assert_eq!(sv.compare("z", "å"), Less);
+    assert_eq!(sv.compare("=", "≠"), Less);
+    // Root search's Arabic rules: presentation forms are tertiary variants of
+    // the base letter, equal at the primary level.
+    assert_eq!(root.compare("ا", "ﺎ"), Less);
+    assert_eq!(Collator::default().compare("ا", "ﺎ"), Less);
+    // Korean has both `search` and `searchjl`; the latter only exists for `ko`.
+    assert!(Tailoring::for_locale("ko-u-co-search").is_some());
+    assert!(Tailoring::for_locale("ko-u-co-searchjl").is_some());
+    assert!(Tailoring::for_locale("de-u-co-searchjl").is_some());
 }

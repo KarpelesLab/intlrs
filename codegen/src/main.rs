@@ -5682,19 +5682,20 @@ const COLLATION_SKIP: &[(&str, &str)] = &[
         "anchored on a bare combining mark, which has no DUCET primary weight",
     ),
     (
-        "cu",
-        "anchored on a `[first|last … ignorable]` pseudo-anchor, which the parser \
-         does not resolve to a weight",
-    ),
-    (
         "km",
-        "anchored on a `[first|last … ignorable]` pseudo-anchor, which the parser \
-         does not resolve to a weight",
+        "anchored on a bare combining mark (`&ៈ<<៎…`), which has no DUCET primary \
+         weight",
     ),
     (
         "ur",
-        "anchored on a `[first|last … ignorable]` pseudo-anchor, which the parser \
-         does not resolve to a weight",
+        "anchored on a bare combining mark (`&\\u0652<<\\u064E…`), which has no DUCET \
+         primary weight",
+    ),
+    (
+        "cu",
+        "gate: \"\\u{a67c}\" (rel 0) \"꙾\" -> Greater — the whole rule hangs off an \
+         `&[first secondary ignorable]` pseudo-anchor, whose relations the engine \
+         drops rather than places",
     ),
     (
         "und-u-co-eor",
@@ -5762,6 +5763,12 @@ const COLLATION_SKIP: &[(&str, &str)] = &[
     // Shipping these would sort text *wrong*, which is worse than sorting it
     // coarsely, so they fall back to a hand rule or to root DUCET.
     ("af", "gate: \"N\" (rel 3) \"ŉ\" -> Greater"),
+    // `search` collations that fail the gate fall back to root's `search` rule
+    // (`und-u-co-search`), which is what `Tailoring::for_locale` resolves
+    // `<locale>-u-co-search` to when the locale has none of its own.
+    ("ca-u-co-search", "gate: \"ŀ\" (rel 0) \"l·\" -> Greater"),
+    ("ko-u-co-search", "gate: \"ᅴᅮ\" (rel 0) \"ᆗ\" -> Less"),
+    ("ko-u-co-searchjl", "gate: \"״\" (rel 2) \"ـ\" -> Greater"),
     (
         "bn-u-co-trad",
         "gate: \"ৎ\" (rel 0) \"ত\\u{9cd}\\u{200d}\" -> Greater",
@@ -5860,13 +5867,15 @@ fn emit_collation_rules(cldr_dir: &Path, json_out: &Path, xml_dir: &Path, bcp47_
             _ => {}
         }
 
-        // Every named collation, keyed `<locale>-u-co-<bcp47 type>`. `search` and
-        // `searchjl` are excluded: they serve `usage: "search"` (ECMA-402 rejects
-        // them as `co` values, and ICU resolves `de-u-co-search` to the default
-        // collation), and CLDR's `private-*` types are not BCP-47 types at all —
-        // both fall out of the `co_types` lookup rather than needing a list.
+        // Every named collation, keyed `<locale>-u-co-<bcp47 type>`. That
+        // includes `search` and `searchjl`, which serve `usage: "search"` rather
+        // than the `co` keyword (ECMA-402 rejects them as `co` values) — the
+        // runtime keys them the same way so a locale's `[import und-u-co-search]`
+        // resolves against the table, and root's own `search` is what every
+        // locale without one of its own falls back to. CLDR's `private-*` types
+        // are not BCP-47 types at all and fall out of the `co_types` lookup.
         for (ty, rule) in &rules {
-            if ty == "standard" || ty == "search" || ty == "searchjl" {
+            if ty == "standard" {
                 continue;
             }
             let Some(co) = co_types.get(ty.as_str()) else {
