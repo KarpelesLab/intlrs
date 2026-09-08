@@ -5115,12 +5115,12 @@ fn emit_array<T: std::fmt::Display>(out: &mut String, cfg: &str, name: &str, ty:
 }
 
 /// The non-lunisolar alternate calendars whose month and era names go into
-/// `alt_calendars.bin`, in BCP-47 `-u-ca-` order. Each name is simultaneously the
+/// `cal_<name>.bin`, in BCP-47 `-u-ca-` order. Each name is simultaneously the
 /// CLDR calendar key inside `dates.calendars`, the `<name>-raw/` data directory,
-/// and the blob key prefix. The lunisolar pair (chinese, dangi) has cyclic year
-/// names and leap-month patterns instead and lives in `lunisolar.bin`; the
-/// Japanese calendar's 237 eras live in `japanese{,_hist}.bin`; `gregory` and
-/// `iso8601` are `calendar.bin` itself.
+/// the blob file name and the `cal-<name>` Cargo feature. The lunisolar pair
+/// (chinese, dangi) has cyclic year names and leap-month patterns instead, in the
+/// same one-file-per-calendar shape; the Japanese calendar's 237 eras live in
+/// `cal_japanese{,_hist}.bin`; `gregory` and `iso8601` are `calendar.bin` itself.
 const ALT_CALENDARS: [&str; 8] = [
     "buddhist", "coptic", "ethiopic", "hebrew", "indian", "islamic", "persian", "roc",
 ];
@@ -5143,14 +5143,15 @@ fn month_names(months: &Json, width: &str, count: usize) -> Vec<String> {
         .collect()
 }
 
-/// Write `cldr/alt_calendars.bin`: the month and era names, the leap-year month
-/// variant and the date patterns of every calendar in [`ALT_CALENDARS`], keyed
-/// `"<ca-key>/<locale>"`.
+/// Write `cldr/cal_<ca-key>.bin` for every calendar in [`ALT_CALENDARS`]: the
+/// month and era names, the leap-year month variant and the date patterns,
+/// keyed by locale.
 ///
-/// One table rather than one blob per calendar, because the record shape is the
-/// same for all of them and the field-level accessors (`datetime::era_name`,
-/// `datetime::month_name`) want a single keyed lookup they can reach with a
-/// `Calendar` value.
+/// One blob per calendar, all sharing this record shape, because `include_bytes!`
+/// is all-or-nothing: a `cal-<name>` Cargo feature can only drop a calendar's
+/// data if that data is its own file. The field-level accessors
+/// (`datetime::era_name`, `datetime::month_name`) pick the blob with a `#[cfg]`-ed
+/// match on the calendar key and then do one locale lookup.
 ///
 /// Record payload (little-endian, strings are `[u8 len][bytes]`):
 /// ```text
@@ -5172,8 +5173,8 @@ fn month_names(months: &Json, width: &str, count: usize) -> Vec<String> {
 /// future CLDR that diverges starts storing them. `gregorian_dir` is the
 /// `dates/<locale>/ca-gregorian.json` tree that comparison reads.
 fn emit_alt_calendars(cldr_dir: &Path, cldr: &Path, gregorian_dir: &Path) {
-    let mut records = Vec::new();
     for name in ALT_CALENDARS {
+        let mut records = Vec::new();
         let raw_dir = cldr.join(alloc_concat(name, "-raw"));
         let mut locales = locale_files(&raw_dir);
         locales.sort();
@@ -5312,43 +5313,38 @@ fn emit_alt_calendars(cldr_dir: &Path, cldr: &Path, gregorian_dir: &Path) {
                 enc_str(&mut p, df.get(k).and_then(Json::as_str).unwrap_or(""));
             }
 
-            let mut key = String::from(name);
-            key.push('/');
-            key.push_str(&locale.to_ascii_lowercase());
-            records.push((key, p));
+            records.push((locale.to_ascii_lowercase(), p));
         }
+        write_cal_blob(cldr_dir, name, &mut records);
     }
+}
+
+/// Write one calendar's locale-keyed blob to `<cldr_dir>/cal_<name>.bin` and log
+/// its size, so a data refresh that grows one calendar is visible in the build
+/// log — and so the `cal-<name>` feature's cost is a number, not a guess.
+///
+/// One file per calendar rather than one shared table: `include_bytes!` is
+/// all-or-nothing, so a per-calendar Cargo feature needs a per-calendar file.
+/// The calendar is the file name, which is why the record key is just the
+/// locale.
+fn write_cal_blob(cldr_dir: &Path, name: &str, records: &mut [(String, Vec<u8>)]) {
     records.sort_by(|a, b| a.0.cmp(&b.0));
-    report_calendar_sizes("alt_calendars", &records);
-    write_blob(cldr_dir, "alt_calendars", &records);
-}
-
-/// Log the per-calendar share of a `"<ca-key>/<locale>"`-keyed blob, so a data
-/// refresh that grows one calendar is visible in the build log.
-fn report_calendar_sizes(name: &str, records: &[(String, Vec<u8>)]) {
-    let mut by_cal: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
-    for (key, payload) in records {
-        let cal = key.split('/').next().unwrap_or(key);
-        let e = by_cal.entry(cal).or_default();
-        e.0 += 1;
-        e.1 += payload.len() + key.len() + 3;
-    }
-    let parts: Vec<String> = by_cal
+    let bytes: usize = records
         .iter()
-        .map(|(c, (n, b))| alloc_format_kb(c, *n, *b))
-        .collect();
-    println!("codegen: {name}.bin per calendar: {}", parts.join(", "));
+        .map(|(k, p)| k.len() + p.len() + 3)
+        .sum::<usize>()
+        + 2;
+    write_blob(cldr_dir, &alloc_concat("cal_", name), records);
+    println!(
+        "codegen: wrote cal_{name}.bin ({} locales, {} KB)",
+        records.len(),
+        bytes / 1024
+    );
 }
 
-fn alloc_format_kb(cal: &str, locales: usize, bytes: usize) -> String {
-    let mut s = String::from(cal);
-    s.push_str(&format!(" {locales} loc/{} KB", bytes / 1024));
-    s
-}
-
-/// Write `cldr/lunisolar.bin`: per-locale data for the two lunisolar calendars
-/// CLDR names by cycle rather than by era — `chinese` and the Korean `dangi` —
-/// keyed `"<ca-key>/<locale>"`. Each record holds the 60 sexagenary (cyclic) year
+/// Write `cldr/cal_chinese.bin` and `cldr/cal_dangi.bin`: per-locale data for the
+/// two lunisolar calendars CLDR names by cycle rather than by era — `chinese` and
+/// the Korean `dangi` — keyed by locale. Each record holds the 60 sexagenary (cyclic) year
 /// names (the `U` field), the 12 numeric month names in all three widths, the
 /// leap-month marker pattern in four widths (wide, abbreviated, narrow, numeric —
 /// e.g. `"闰{0}"` / `"{0}bis"` / `"{0}b"`) and the 4 date patterns
@@ -5369,8 +5365,8 @@ fn emit_lunisolar(cldr_dir: &Path, cldr: &Path) {
             .unwrap_or("")
     }
 
-    let mut records = Vec::new();
     for name in ["chinese", "dangi"] {
+        let mut records = Vec::new();
         let raw_dir = cldr.join(alloc_concat(name, "-raw"));
         let mut locales = locale_files(&raw_dir);
         locales.sort();
@@ -5451,18 +5447,13 @@ fn emit_lunisolar(cldr_dir: &Path, cldr: &Path) {
                 enc_str(&mut p, df.get(k).map(pat_str).unwrap_or(""));
             }
 
-            let mut key = String::from(name);
-            key.push('/');
-            key.push_str(&locale.to_ascii_lowercase());
-            records.push((key, p));
+            records.push((locale.to_ascii_lowercase(), p));
         }
+        write_cal_blob(cldr_dir, name, &mut records);
     }
-    records.sort_by(|a, b| a.0.cmp(&b.0));
-    report_calendar_sizes("lunisolar", &records);
-    write_blob(cldr_dir, "lunisolar", &records);
 }
 
-/// Write `cldr/japanese.bin`: per-locale Japanese-calendar data for the 5 modern
+/// Write `cldr/cal_japanese.bin`: per-locale Japanese-calendar data for the 5 modern
 /// eras (CLDR era indices 232=Meiji, 233=Taishō, 234=Shōwa, 235=Heisei,
 /// 236=Reiwa). Each record holds, in this order: the 5 eras in each of the three
 /// widths (`eraNames` wide, `eraAbbr` abbreviated, `eraNarrow` narrow), then the
@@ -5529,14 +5520,14 @@ fn emit_japanese(cldr_dir: &Path, raw_dir: &Path) {
 
         records.push((locale.to_ascii_lowercase(), p));
     }
-    write_blob(cldr_dir, "japanese", &records);
+    write_cal_blob(cldr_dir, "japanese", &mut records);
 }
 
 /// Number of pre-Meiji (historical) Japanese era names carried by
-/// `japanese_hist.bin`: CLDR era indices 0 (Taika) .. 231 (Keiō).
+/// `cal_japanese_hist.bin`: CLDR era indices 0 (Taika) .. 231 (Keiō).
 const HIST_ERA_COUNT: usize = 232;
 
-/// Write `cldr/japanese_hist.bin`: the localized pre-Meiji nengō (era) names for
+/// Write `cldr/cal_japanese_hist.bin`: the localized pre-Meiji nengō (era) names for
 /// CLDR era indices 0..=231, in all three widths (`eraNames` wide, `eraAbbr`,
 /// `eraNarrow`). Because these are mostly identical Latin romanizations across
 /// locales (only ~20 distinct sets over ~100 locales), the per-locale name sets
@@ -5551,8 +5542,10 @@ const HIST_ERA_COUNT: usize = 232;
 ///   sets region: per set, 3 × 232 strings [u8 len][bytes], in the order
 ///                wide[0..232], abbr[0..232], narrow[0..232]
 /// ```
-/// The modern eras (232..=236) live in `japanese.bin`; the Gregorian era-start
-/// dates that select an index live in the runtime (`datetime.rs`).
+/// The modern eras (232..=236) live in `cal_japanese.bin`; the Gregorian era-start
+/// dates that select an index live in the runtime (`datetime.rs`). This is by far
+/// the largest calendar table, and gated on its own `cal-japanese-hist` feature
+/// so a build that only needs Reiwa/Heisei/Shōwa does not carry it.
 fn emit_japanese_hist(cldr_dir: &Path, raw_dir: &Path) {
     let mut locales = locale_files(raw_dir);
     locales.sort();
@@ -5614,10 +5607,10 @@ fn emit_japanese_hist(cldr_dir: &Path, raw_dir: &Path) {
         blob.extend_from_slice(s);
     }
 
-    let path = cldr_dir.join("japanese_hist.bin");
-    fs::write(&path, &blob).expect("write japanese_hist.bin");
+    let path = cldr_dir.join("cal_japanese_hist.bin");
+    fs::write(&path, &blob).expect("write cal_japanese_hist.bin");
     println!(
-        "codegen: wrote japanese_hist.bin ({} locales, {} sets, {} KB)",
+        "codegen: wrote cal_japanese_hist.bin ({} locales, {} sets, {} KB)",
         loc_map.len(),
         sets.len(),
         blob.len() / 1024

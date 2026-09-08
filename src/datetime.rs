@@ -662,8 +662,10 @@ pub fn format_skeleton(lang: &str, dt: &DateTime, skeleton: &str) -> String {
 }
 
 /// Render a non-Gregorian date with a calendar's month names/era; the weekday
-/// name (if any) uses the Gregorian day names at the date's `jdn`.
-#[cfg(feature = "calendars-extra")]
+/// name (if any) uses the Gregorian day names at the date's `jdn`. Only the
+/// Islamic and Persian whole-date formatters render this way, so it is gated on
+/// their pair of features rather than on `_calendars`.
+#[cfg(any(feature = "cal-islamic", feature = "cal-persian"))]
 fn render_alt(
     cal: &crate::cldr::AltCalSpec,
     style: DateStyle,
@@ -740,18 +742,21 @@ fn render_alt(
 }
 
 /// The [`crate::cldr::AltCalSpec`] for calendar `cal` (a BCP-47 `ca-` key) in
-/// `lang`, via the CLDR locale fallback chain (`fr-CA` → `fr` → `en`).
-#[cfg(feature = "calendars-extra")]
-fn alt_spec(lang: &str, cal: &str) -> crate::cldr::AltCalSpec {
+/// `lang`, via the CLDR locale fallback chain (`fr-CA` → `fr` → `en`), or `None`
+/// when `cal`'s own `cal-<key>` feature is not enabled. Every locale reaches a
+/// record once the calendar is compiled in, so `None` means exactly "that
+/// calendar was left out of this build".
+#[cfg(feature = "_calendars")]
+fn alt_spec(lang: &str, cal: &str) -> Option<crate::cldr::AltCalSpec> {
     let norm = normalize_lang(lang);
     let mut end = norm.len();
     loop {
         if let Some(s) = crate::cldr::alt_cal_spec(cal, &norm[..end]) {
-            return s;
+            return Some(s);
         }
         match norm[..end].rfind('-') {
             Some(i) => end = i,
-            None => return crate::cldr::alt_cal_spec(cal, "en").expect("root calendar present"),
+            None => return crate::cldr::alt_cal_spec(cal, "en"),
         }
     }
 }
@@ -759,7 +764,7 @@ fn alt_spec(lang: &str, cal: &str) -> crate::cldr::AltCalSpec {
 /// Format an Islamic (Hijri) date in `lang`, e.g.
 /// `format_islamic_date("en", 1445, 9, 1, DateStyle::Long)` →
 /// `"Ramadan 1, 1445 AH"` (localized month names + era).
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-islamic")]
 #[must_use]
 pub fn format_islamic_date(
     lang: &str,
@@ -768,7 +773,7 @@ pub fn format_islamic_date(
     day: i64,
     style: DateStyle,
 ) -> String {
-    let cal = alt_spec(lang, "islamic");
+    let cal = alt_spec(lang, "islamic").expect("cal-islamic is on");
     let jdn = crate::calendar::islamic_to_jdn(year, month, day);
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
@@ -779,7 +784,7 @@ pub fn format_islamic_date(
 /// `(year, month, day)` is resolved through the Umm al-Qura month-length table
 /// (the official Saudi calendar) instead of the civil tabular rule; the
 /// localized month names and era ("AH") are shared.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-islamic")]
 #[must_use]
 pub fn format_islamic_umalqura_date(
     lang: &str,
@@ -788,7 +793,7 @@ pub fn format_islamic_umalqura_date(
     day: i64,
     style: DateStyle,
 ) -> String {
-    let cal = alt_spec(lang, "islamic");
+    let cal = alt_spec(lang, "islamic").expect("cal-islamic is on");
     let jdn = crate::calendar::umalqura_to_jdn(year, month, day);
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
@@ -802,7 +807,7 @@ pub fn format_islamic_umalqura_date(
 /// - `y` renders the 1-based cyclic year number (`cyclic1`, 1..=60), numeric.
 /// - `M`/`L` render the numeric month name (or number), wrapped in the leap
 ///   marker pattern when `is_leap` is set.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-chinese")]
 #[allow(clippy::too_many_arguments)]
 fn render_chinese(
     cal: &crate::cldr::ChineseCalSpec,
@@ -894,7 +899,7 @@ fn render_chinese(
 /// `month` (the month name is then wrapped in the locale's leap marker, e.g.
 /// `"闰正月"` / `"First Monthbis"`). The related year and the cyclic year are
 /// derived from the Gregorian year in which the Chinese year begins.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-chinese")]
 #[must_use]
 pub fn format_chinese_date(
     lang: &str,
@@ -904,7 +909,7 @@ pub fn format_chinese_date(
     is_leap_month: bool,
     style: DateStyle,
 ) -> String {
-    let cal = chinese_alt_spec(lang, "chinese");
+    let cal = chinese_alt_spec(lang, "chinese").expect("cal-chinese is on");
     // The Gregorian year in which this Chinese year begins (its 1st month, 1st
     // day). Falls back to `year` itself if the conversion is out of range.
     let related = crate::calendar::chinese_to_gregorian(year, 1, 1, false).map_or(year, |g| g.0);
@@ -925,20 +930,19 @@ pub fn format_chinese_date(
 }
 
 /// Lunisolar-calendar spec (`"chinese"` or `"dangi"`) for `lang` via the locale
-/// fallback chain (to `en`).
-#[cfg(feature = "calendars-extra")]
-fn chinese_alt_spec(lang: &str, cal: &str) -> crate::cldr::ChineseCalSpec {
+/// fallback chain (to `en`), or `None` when that calendar's feature is not
+/// enabled. See [`alt_spec`].
+#[cfg(feature = "_calendars")]
+fn chinese_alt_spec(lang: &str, cal: &str) -> Option<crate::cldr::ChineseCalSpec> {
     let norm = normalize_lang(lang);
     let mut end = norm.len();
     loop {
         if let Some(s) = crate::cldr::chinese_spec(cal, &norm[..end]) {
-            return s;
+            return Some(s);
         }
         match norm[..end].rfind('-') {
             Some(i) => end = i,
-            None => {
-                return crate::cldr::chinese_spec(cal, "en").expect("root lunisolar calendar");
-            }
+            None => return crate::cldr::chinese_spec(cal, "en"),
         }
     }
 }
@@ -946,7 +950,7 @@ fn chinese_alt_spec(lang: &str, cal: &str) -> crate::cldr::ChineseCalSpec {
 /// Format a Persian (Solar Hijri) date in `lang`, e.g.
 /// `format_persian_date("en", 1404, 1, 1, DateStyle::Long)` →
 /// `"Farvardin 1, 1404 AP"` (localized month names + era).
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-persian")]
 #[must_use]
 pub fn format_persian_date(
     lang: &str,
@@ -955,7 +959,7 @@ pub fn format_persian_date(
     day: i64,
     style: DateStyle,
 ) -> String {
-    let cal = alt_spec(lang, "persian");
+    let cal = alt_spec(lang, "persian").expect("cal-persian is on");
     let jdn = crate::calendar::persian_to_jdn(year, month, day);
     render_alt(&cal, style, year, month, day, jdn, &spec(lang))
 }
@@ -968,7 +972,7 @@ pub fn format_persian_date(
 /// Eishō 187) are likewise given valid days. These dates are the exact Gregorian
 /// era boundaries ICU/V8 use for dates on or after the 1582-10-15 Gregorian
 /// cutover; before it, the Julian–Gregorian offset applies.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese")]
 #[rustfmt::skip]
 const JAPANESE_ERA_STARTS: [(i16, u8, u8); 237] = [
     (645,6,19),(650,2,15),(672,1,1),(686,7,20),(701,3,21),(704,5,10),(708,1,11),
@@ -1011,7 +1015,7 @@ const JAPANESE_ERA_STARTS: [(i16, u8, u8); 237] = [
 
 /// The number of modern Japanese eras (Meiji..Reiwa); CLDR index 232 is the
 /// first modern era.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "_calendars")]
 const JAPANESE_FIRST_MODERN: usize = 232;
 
 /// The CLDR Japanese era index (0..=236) and year-within-era for a Gregorian
@@ -1019,7 +1023,7 @@ const JAPANESE_FIRST_MODERN: usize = 232;
 /// `gregYear − eraStartYear + 1`. Exact vs ICU/V8 for dates on or after the
 /// 1582-10-15 Gregorian cutover (this covers every Edo-period era); earlier
 /// dates may differ by the Julian–Gregorian offset.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese")]
 fn japanese_nengo(year: i64, month: i64, day: i64) -> (usize, i64) {
     for (i, &(sy, sm, sd)) in JAPANESE_ERA_STARTS.iter().enumerate().rev() {
         if (year, month, day) >= (sy as i64, sm as i64, sd as i64) {
@@ -1033,17 +1037,31 @@ fn japanese_nengo(year: i64, month: i64, day: i64) -> (usize, i64) {
 
 /// The localized pre-Meiji nengō names `[wide, abbr, narrow]` for CLDR era
 /// `index` (0..=231) in `lang`, via the locale fallback chain (to `en`).
-#[cfg(feature = "calendars-extra")]
+///
+/// All-empty when `cal-japanese-hist` is compiled out — the 232 historical nengō
+/// are 314 KB, twenty times the five modern eras, and a build that only formats
+/// present-day dates has no use for them. Both callers already treat an empty
+/// name as "CLDR has none": `render_japanese` falls back to the localized
+/// Gregorian era, `era_name` reports `None`.
+#[cfg(feature = "_calendars")]
 fn japanese_hist_eras(lang: &str, index: usize) -> [&'static str; 3] {
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    loop {
-        if let Some(e) = crate::cldr::japanese_hist_eras(&norm[..end], index) {
-            return e;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return crate::cldr::japanese_hist_eras("en", index).unwrap_or([""; 3]),
+    #[cfg(not(feature = "cal-japanese-hist"))]
+    {
+        let _ = (lang, index);
+        [""; 3]
+    }
+    #[cfg(feature = "cal-japanese-hist")]
+    {
+        let norm = normalize_lang(lang);
+        let mut end = norm.len();
+        loop {
+            if let Some(e) = crate::cldr::japanese_hist_eras(&norm[..end], index) {
+                return e;
+            }
+            match norm[..end].rfind('-') {
+                Some(i) => end = i,
+                None => return crate::cldr::japanese_hist_eras("en", index).unwrap_or([""; 3]),
+            }
         }
     }
 }
@@ -1053,7 +1071,7 @@ fn japanese_hist_eras(lang: &str, index: usize) -> [&'static str; 3] {
 /// year-within-era) differ. When `gannen` is set, year 1 of the era renders as 元.
 /// A pre-Meiji date (`era_idx == None`) falls back to the localized Gregorian era
 /// with `year_in_era` holding the proleptic Gregorian year.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese")]
 #[allow(clippy::too_many_arguments)]
 fn render_japanese(
     cal: &crate::cldr::JapaneseCalSpec,
@@ -1175,19 +1193,26 @@ fn render_japanese(
     out
 }
 
-/// Japanese-calendar spec for `lang` via the locale fallback chain (to `en`).
-#[cfg(feature = "calendars-extra")]
-fn japanese_alt_spec(lang: &str) -> crate::cldr::JapaneseCalSpec {
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    loop {
-        if let Some(s) = crate::cldr::japanese_spec(&norm[..end]) {
-            return s;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => {
-                return crate::cldr::japanese_spec("en").expect("root japanese calendar present");
+/// Japanese-calendar spec for `lang` via the locale fallback chain (to `en`), or
+/// `None` when `cal-japanese` is not enabled. See [`alt_spec`].
+#[cfg(feature = "_calendars")]
+fn japanese_alt_spec(lang: &str) -> Option<crate::cldr::JapaneseCalSpec> {
+    #[cfg(not(feature = "cal-japanese"))]
+    {
+        let _ = lang;
+        None
+    }
+    #[cfg(feature = "cal-japanese")]
+    {
+        let norm = normalize_lang(lang);
+        let mut end = norm.len();
+        loop {
+            if let Some(s) = crate::cldr::japanese_spec(&norm[..end]) {
+                return Some(s);
+            }
+            match norm[..end].rfind('-') {
+                Some(i) => end = i,
+                None => return crate::cldr::japanese_spec("en"),
             }
         }
     }
@@ -1208,7 +1233,7 @@ fn japanese_alt_spec(lang: &str) -> crate::cldr::JapaneseCalSpec {
 /// `"3 Kaei…"`), resolved from ICU's Gregorian era-start dates and the localized
 /// era names. This is exact vs V8 for dates on or after the 1582 Gregorian
 /// cutover (all Edo-period eras); earlier dates carry the Julian–Gregorian offset.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese")]
 #[must_use]
 pub fn format_japanese_date(
     lang: &str,
@@ -1217,7 +1242,7 @@ pub fn format_japanese_date(
     day: i64,
     style: DateStyle,
 ) -> String {
-    let cal = japanese_alt_spec(lang);
+    let cal = japanese_alt_spec(lang).expect("cal-japanese is on");
     let (cldr_idx, year_in_era) = japanese_nengo(year, month, day);
     // Modern eras (Meiji..Reiwa) are indices 232..=236; earlier indices are the
     // historical nengō localized via `japanese_hist_eras`.
@@ -1368,7 +1393,7 @@ impl Calendar {
     }
 
     /// Which embedded table holds this calendar's field names.
-    #[cfg(feature = "calendars-extra")]
+    #[cfg(feature = "_calendars")]
     fn names(self) -> CalNames {
         match self {
             Calendar::Gregory | Calendar::Iso8601 => CalNames::Gregorian,
@@ -1391,17 +1416,20 @@ impl Calendar {
     }
 }
 
-/// Where a [`Calendar`]'s localized field names come from.
-#[cfg(feature = "calendars-extra")]
+/// Where a [`Calendar`]'s localized field names come from. The variant says which
+/// blob shape to read; whether that blob is in the build at all is the
+/// corresponding `cal-<key>` feature's business, and the lookup reports a
+/// calendar that was left out as `None`.
+#[cfg(feature = "_calendars")]
 enum CalNames {
     /// `calendar.bin` — the Gregorian names, also used for the calendars that
     /// reuse them (Buddhist, ROC and Japanese share the Gregorian months).
     Gregorian,
-    /// `alt_calendars.bin`, under this CLDR calendar key.
+    /// `cal_<key>.bin` in the [`crate::cldr::AltCalSpec`] shape.
     Alt(&'static str),
-    /// `lunisolar.bin`, under this CLDR calendar key.
+    /// `cal_<key>.bin` in the [`crate::cldr::ChineseCalSpec`] shape.
     Lunisolar(&'static str),
-    /// `japanese{,_hist}.bin` — 237 eras, Gregorian months.
+    /// `cal_japanese{,_hist}.bin` — 237 eras, Gregorian months.
     Japanese,
 }
 
@@ -1428,7 +1456,8 @@ const fn name_width(w: NameStyle) -> usize {
 /// - the Chinese and Korean (`dangi`) calendars, which CLDR gives no eras at all
 ///   (ICU emits no `era` part for them either);
 /// - an `era` outside the calendar's range;
-/// - any non-Gregorian calendar when the `calendars-extra` feature is off.
+/// - a non-Gregorian calendar whose `cal-<key>` feature is off (including a
+///   pre-Meiji Japanese nengō without `cal-japanese-hist`).
 ///
 /// ```
 /// # #[cfg(feature = "calendars-extra")] {
@@ -1474,22 +1503,22 @@ fn era_name_inner(
         };
         table.get(era as usize).copied()
     };
-    #[cfg(not(feature = "calendars-extra"))]
+    #[cfg(not(feature = "_calendars"))]
     {
         return match calendar {
             Calendar::Gregory | Calendar::Iso8601 => gregorian(era),
             _ => None,
         };
     }
-    #[cfg(feature = "calendars-extra")]
+    #[cfg(feature = "_calendars")]
     match calendar.names() {
         CalNames::Gregorian => gregorian(era),
-        CalNames::Alt(cal) => alt_spec(lang, cal).era(era, w),
+        CalNames::Alt(cal) => alt_spec(lang, cal)?.era(era, w),
         CalNames::Lunisolar(_) => None,
         CalNames::Japanese => {
             let idx = era as usize;
             if let Some(modern) = idx.checked_sub(JAPANESE_FIRST_MODERN) {
-                let cal = japanese_alt_spec(lang);
+                let cal = japanese_alt_spec(lang)?;
                 let table = match w {
                     0 => cal.eras_wide,
                     1 => cal.eras_abbr,
@@ -1526,7 +1555,7 @@ fn era_name_inner(
 /// For a calendar with neither (all the solar ones) `leap` has no effect.
 /// `None` means a real gap, never an empty string: a `month` outside the
 /// calendar's range (Coptic, Ethiopic and Hebrew have 13, everything else 12), or
-/// a non-Gregorian calendar with `calendars-extra` off.
+/// a non-Gregorian calendar whose `cal-<key>` feature is off.
 ///
 /// ```
 /// # #[cfg(feature = "calendars-extra")] {
@@ -1594,21 +1623,27 @@ fn month_name_inner(
         };
         Some(String::from(table[month as usize - 1]))
     };
-    #[cfg(not(feature = "calendars-extra"))]
+    #[cfg(not(feature = "_calendars"))]
     {
         return match calendar {
             Calendar::Gregory | Calendar::Iso8601 => gregorian(),
             _ => None,
         };
     }
-    #[cfg(feature = "calendars-extra")]
+    #[cfg(feature = "_calendars")]
     match calendar.names() {
         // Buddhist, ROC and Japanese reuse the Gregorian month names, and CLDR
         // ships them verbatim under those calendar keys (codegen checks this and
         // stores nothing when it holds).
-        CalNames::Gregorian | CalNames::Japanese => gregorian(),
+        CalNames::Gregorian => gregorian(),
+        // Japanese too — but only when its calendar is in the build. Answering
+        // for the months of a calendar this build does not carry would make
+        // `cal-japanese` the one feature whose absence is partly invisible;
+        // Buddhist and ROC already report `None` for the same shared names,
+        // because their (month-less) records live in blobs that are gone.
+        CalNames::Japanese => cfg!(feature = "cal-japanese").then(gregorian).flatten(),
         CalNames::Alt(cal) => {
-            let s = alt_spec(lang, cal);
+            let s = alt_spec(lang, cal)?;
             if s.month_count == 0 {
                 return gregorian();
             }
@@ -1619,7 +1654,7 @@ fn month_name_inner(
             if month == 0 || month > 12 {
                 return None;
             }
-            let s = chinese_alt_spec(lang, cal);
+            let s = chinese_alt_spec(lang, cal)?;
             let name = numeric.unwrap_or_else(|| {
                 let table = match w {
                     0 => s.months_wide,
@@ -1656,12 +1691,12 @@ fn month_name_inner(
 /// ```
 #[must_use]
 pub fn cyclic_year_name(lang: &str, calendar: Calendar, cyclic: u32) -> Option<&'static str> {
-    #[cfg(not(feature = "calendars-extra"))]
+    #[cfg(not(feature = "_calendars"))]
     {
         let _ = (lang, calendar, cyclic);
         None
     }
-    #[cfg(feature = "calendars-extra")]
+    #[cfg(feature = "_calendars")]
     {
         let CalNames::Lunisolar(cal) = calendar.names() else {
             return None;
@@ -1669,7 +1704,7 @@ pub fn cyclic_year_name(lang: &str, calendar: Calendar, cyclic: u32) -> Option<&
         if cyclic == 0 || cyclic > 60 {
             return None;
         }
-        Some(chinese_alt_spec(lang, cal).cyclic[cyclic as usize - 1]).filter(|s| !s.is_empty())
+        Some(chinese_alt_spec(lang, cal)?.cyclic[cyclic as usize - 1]).filter(|s| !s.is_empty())
     }
 }
 

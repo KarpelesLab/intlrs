@@ -150,7 +150,7 @@ fn gmt_offset_extremes() {
     assert_eq!(g("en", -480), "GMT-08:00");
 }
 
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-islamic")]
 #[test]
 fn islamic_dates() {
     use intl::datetime::{DateStyle::*, format_islamic_date as fi};
@@ -162,7 +162,7 @@ fn islamic_dates() {
     assert!(fi("fr", 1445, 9, 1, Long).contains("1445"));
 }
 
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-islamic")]
 #[test]
 fn islamic_umalqura_dates() {
     use intl::datetime::{DateStyle::*, format_islamic_umalqura_date as fu};
@@ -215,7 +215,7 @@ fn arithmetic() {
     assert_eq!(DT.add_seconds(12345).add_seconds(-12345), DT);
 }
 
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-persian")]
 #[test]
 fn persian_dates() {
     use intl::datetime::{DateStyle::*, format_persian_date as fp};
@@ -224,7 +224,7 @@ fn persian_dates() {
     assert!(fp("fr", 1404, 1, 1, Long).contains("1404"));
 }
 
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-chinese")]
 #[test]
 fn chinese_dates() {
     use intl::datetime::{DateStyle::*, format_chinese_date as fc};
@@ -268,7 +268,7 @@ fn chinese_dates() {
     assert_eq!(fc("zh", 2023, 2, 11, true, Long), "2023癸卯年闰二月11");
 }
 
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese")]
 #[test]
 fn japanese_dates() {
     use intl::datetime::{DateStyle::*, format_japanese_date as fj};
@@ -311,11 +311,19 @@ fn japanese_dates() {
     // A non-en/ja locale (`fr`) localizes month names; the era names are the CLDR
     // Japanese era names (V8: "1 mai 1 Reiwa").
     assert_eq!(fj("fr", 2019, 5, 1, Long), "1 mai 1 Reiwa");
+}
 
-    // ---- Pre-Meiji historical nengō. Now rendered from ICU's Gregorian
-    // era-start dates + the localized era names. Every assertion is the EXACT
-    // output of Node/V8 `Intl.DateTimeFormat(loc,{calendar:'japanese',dateStyle})`.
-    // Kaei era (1848-02-28 .. 1854-11-27): 1850 → Kaei 3. ----
+/// The pre-Meiji nengō, which are `cal-japanese-hist` rather than `cal-japanese`:
+/// 314 KB of names for eras nobody dates a modern document in.
+#[cfg(feature = "cal-japanese-hist")]
+#[test]
+fn japanese_historical_nengo_dates() {
+    use intl::datetime::{DateStyle::*, format_japanese_date as fj};
+
+    // Rendered from ICU's Gregorian era-start dates + the localized era names.
+    // Every assertion is the EXACT output of Node/V8
+    // `Intl.DateTimeFormat(loc,{calendar:'japanese',dateStyle})`.
+    // Kaei era (1848-02-28 .. 1854-11-27): 1850 → Kaei 3.
     assert_eq!(fj("en", 1850, 3, 15, Long), "March 15, 3 Kaei (1848–1854)");
     assert_eq!(fj("en", 1850, 3, 15, Medium), "Mar 15, 3 Kaei (1848–1854)");
     assert_eq!(fj("en", 1850, 3, 15, Short), "3/15/3 Kaei (1848–1854)");
@@ -338,6 +346,19 @@ fn japanese_dates() {
     // The Meiji boundary matches ICU/V8 (1868-09-08, not the civil 1868-10-23):
     // 1868-09-10 is already Meiji 1 (gannen in `ja`).
     assert_eq!(fj("ja", 1868, 9, 10, Long), "明治元年9月10日");
+}
+
+/// Without `cal-japanese-hist` a pre-Meiji date keeps its numbers and its
+/// Gregorian month name and falls back to the localized *Gregorian* era — the
+/// path `render_japanese` already takes for a nengō CLDR has no name for. The
+/// answer is coarser, never wrong.
+#[cfg(all(feature = "cal-japanese", not(feature = "cal-japanese-hist")))]
+#[test]
+fn pre_meiji_dates_fall_back_to_the_gregorian_era() {
+    use intl::datetime::{DateStyle::*, format_japanese_date as fj};
+    assert_eq!(fj("en", 1850, 3, 15, Long), "March 15, 3 AD");
+    // The modern eras are unaffected: they are `cal-japanese`.
+    assert_eq!(fj("en", 2019, 5, 1, Long), "May 1, 1 Reiwa");
 }
 
 #[test]
@@ -864,7 +885,7 @@ fn era_names_across_calendars() {
     }
 }
 
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese-hist")]
 #[test]
 fn japanese_era_names_span_all_237_nengo() {
     use intl::datetime::{Calendar::Japanese, NameStyle::*, era_name};
@@ -1002,7 +1023,7 @@ fn leap_month_names() {
     );
 }
 
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-chinese")]
 #[test]
 fn cyclic_year_names() {
     use intl::datetime::{Calendar::*, cyclic_year_name as cy};
@@ -1019,19 +1040,81 @@ fn cyclic_year_names() {
     assert_eq!(cy("en", Islamic, 41), None);
 }
 
-/// Without `calendars-extra` the non-Gregorian tables are not compiled in, and
-/// the field lookups say so with `None` rather than an empty string.
-#[cfg(not(feature = "calendars-extra"))]
+/// Gregorian and ISO 8601 never need a `cal-*` feature: their names are
+/// `calendar.bin`, which `datetime` itself embeds.
 #[test]
-fn alternate_calendars_report_absent_data_as_none() {
+fn gregorian_names_need_no_calendar_feature() {
     use intl::datetime::{Calendar::*, MonthStyle, NameStyle, era_name, month_name};
-    assert_eq!(era_name("en", Islamic, 0, NameStyle::Long), None);
-    assert_eq!(month_name("en", Islamic, 9, false, MonthStyle::Long), None);
-    // Gregorian still works: it is `calendar.bin`, which `datetime` embeds.
     assert_eq!(
         month_name("en", Gregory, 9, false, MonthStyle::Long),
         Some("September".into())
     );
+    assert_eq!(
+        month_name("en", Iso8601, 9, false, MonthStyle::Long),
+        Some("September".into())
+    );
+    assert_eq!(
+        era_name("en", Gregory, 1, NameStyle::Long),
+        Some("Anno Domini")
+    );
+}
+
+/// A calendar that is compiled out reports *absent* data: `None`, never an empty
+/// string and never a silently Gregorian answer. (The other half of the
+/// degradation — that `format_<cal>_date` does not exist at all — is enforced by
+/// the compiler, so it cannot be asserted here.) One `#[cfg(not(…))]` test per
+/// calendar, so CI's per-calendar runs exercise every gate from both sides;
+/// `tests/timezone.rs` does the same for the tz-name areas.
+macro_rules! absent_without {
+    ($name:ident, $feat:literal, $cal:ident, $era:expr, $month:expr) => {
+        #[cfg(not(feature = $feat))]
+        #[test]
+        fn $name() {
+            use intl::datetime::{
+                Calendar::$cal, MonthStyle, NameStyle, cyclic_year_name, era_name, month_name,
+            };
+            assert_eq!(era_name("en", $cal, $era, NameStyle::Long), None);
+            assert_eq!(era_name("ja", $cal, $era, NameStyle::Narrow), None);
+            assert_eq!(
+                month_name("en", $cal, $month, false, MonthStyle::Long),
+                None
+            );
+            assert_eq!(
+                month_name("en", $cal, $month, true, MonthStyle::Numeric),
+                None
+            );
+            assert_eq!(cyclic_year_name("en", $cal, 41), None);
+        }
+    };
+}
+
+absent_without!(buddhist_absent, "cal-buddhist", Buddhist, 0, 9);
+absent_without!(chinese_absent, "cal-chinese", Chinese, 0, 5);
+absent_without!(coptic_absent, "cal-coptic", Coptic, 1, 13);
+absent_without!(dangi_absent, "cal-dangi", Dangi, 0, 5);
+absent_without!(ethiopic_absent, "cal-ethiopic", Ethiopic, 0, 13);
+absent_without!(ethioaa_absent, "cal-ethiopic", EthiopicAmeteAlem, 0, 13);
+absent_without!(hebrew_absent, "cal-hebrew", Hebrew, 0, 7);
+absent_without!(indian_absent, "cal-indian", Indian, 0, 9);
+absent_without!(islamic_absent, "cal-islamic", Islamic, 0, 9);
+absent_without!(umalqura_absent, "cal-islamic", IslamicUmalqura, 0, 9);
+absent_without!(japanese_absent, "cal-japanese", Japanese, 236, 9);
+absent_without!(persian_absent, "cal-persian", Persian, 0, 1);
+absent_without!(roc_absent, "cal-roc", Roc, 0, 9);
+
+/// The historical nengō are gated separately from the modern five, so a
+/// `cal-japanese` build without `cal-japanese-hist` answers for Reiwa and not for
+/// Kaei.
+#[cfg(all(feature = "cal-japanese", not(feature = "cal-japanese-hist")))]
+#[test]
+fn historical_nengo_absent_without_cal_japanese_hist() {
+    use intl::datetime::{Calendar::Japanese, NameStyle::*, era_name};
+    assert_eq!(era_name("en", Japanese, 236, Long), Some("Reiwa"));
+    assert_eq!(era_name("ja", Japanese, 232, Long), Some("明治"));
+    // 0..=231 are the pre-Meiji nengō, which this build does not carry.
+    assert_eq!(era_name("en", Japanese, 226, Long), None);
+    assert_eq!(era_name("ja", Japanese, 226, Long), None);
+    assert_eq!(era_name("en", Japanese, 0, Long), None);
 }
 
 /// UTS #35 has two date+time combining patterns, and ICU picks between them by

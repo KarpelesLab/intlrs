@@ -247,6 +247,22 @@ jobs:
             echo "::endgroup::"
           done
 
+      # Each non-Gregorian calendar must also stand alone: the four calendar
+      # blobs are `#[cfg]`-gated per calendar, and a calendar that is compiled
+      # out has to report absent data (`None`) rather than an empty string or a
+      # Gregorian answer. `tests/datetime.rs` asserts both sides of every gate,
+      # so run the tests, not just the build. `cal-japanese-hist` is listed
+      # separately from `cal-japanese` on purpose: the historical nengō are half
+      # the calendar data and their own feature.
+      - name: Test each calendar alone
+        run: |
+          for cal in buddhist chinese coptic dangi ethiopic hebrew indian \
+                     islamic japanese japanese-hist persian roc; do
+            echo "::group::features=cal-$cal"
+            cargo test --no-default-features --features "cal-$cal" --tests
+            echo "::endgroup::"
+          done
+
       # Each tzdb area of the localized time-zone names must also stand alone:
       # the zone/metazone tables are `#[cfg]`-gated per area, and the areas that
       # are compiled out have to fall back to the localized GMT offset. The

@@ -134,7 +134,8 @@ Beyond the `unicode` module:
   `"5bis"` in `en`. Eighteen BCP-47 calendars resolve; each call returns `None`
   rather than an empty string where CLDR has no such field (the Chinese and
   `dangi` calendars have no eras at all, Coptic's only era is index 1). Needs
-  `calendars-extra` for everything but `gregory`/`iso8601`.
+  the calendar's own `cal-<key>` feature (or the `calendars-extra` umbrella) for
+  everything but `gregory`/`iso8601`.
 - `intl::spellout` spells integers out in words via the CLDR RBNF rules
   (locale-driven) — `spell_cardinal("en", 1234)` → `"one thousand two hundred
   thirty-four"`, `spell_cardinal("fr", 80)` → `"quatre-vingts"`, and ordinals via `spell_ordinal("en", 21)` → `"twenty-first"`. *(alloc)*
@@ -242,7 +243,7 @@ the corpus is what kept 3.4× the data to 2.5× the bytes.
 | `units`           | measurement units, long + short (→ number)        | ~905 KB |
 | `units-narrow`    | + the narrow unit width (→ units)                 | ~315 KB |
 | `datetime`        | date/time/skeleton + POSIX-TZ/GMT (→ number)      | 219 KB |
-| `calendars-extra` | non-Gregorian calendar names (→ datetime)          | 705 KB |
+| `calendars-extra` | non-Gregorian calendar names, all 11 (→ datetime)  | 705 KB |
 | `displaynames`    | `Intl.DisplayNames` (languages/regions)           | **~1.6 MB** |
 | `list`            | `Intl.ListFormat`, all 9 `type` × `style`         | 15 KB |
 | `relative`        | `Intl.RelativeTimeFormat`, 8 units × 3 styles (→ number) | 243 KB |
@@ -252,6 +253,38 @@ the corpus is what kept 3.4× the data to 2.5× the bytes.
 | `locale`          | BCP-47 + likely-subtags                           | 139 KB |
 | `iana-tz`         | full IANA tz database for named zones (→ datetime) | dep |
 | `tz-names`        | localized time-zone names, all areas (→ datetime)  | **~2.1 MB** |
+
+Like `tz-names`, `calendars-extra` is an umbrella — 12 features over 11
+calendars, so a build carries only the calendars it formats. A calendar that is
+not compiled in degrades to *absent* data rather than a wrong string: `era_name` /
+`month_name` / `cyclic_year_name` return `None`, and `format_<cal>_date` does not
+exist, so a missing calendar is a compile error at the call site and never a
+silently Gregorian result. Each calendar's names are their own locale-keyed
+`src/cldr/cal_<key>.bin`; measured `text` + `rodata` over `datetime` alone:
+
+| calendar feature     | compiled |     | calendar feature     | compiled |
+|----------------------|----------|-----|----------------------|----------|
+| `cal-japanese-hist`  | 334 KB   |     | `cal-hebrew`         | 38 KB    |
+| `cal-dangi`          | 77 KB    |     | `cal-persian`        | 37 KB    |
+| `cal-chinese`        | 77 KB    |     | `cal-coptic`         | 37 KB    |
+| `cal-islamic`        | 41 KB    |     | `cal-japanese`       | 19 KB    |
+| `cal-indian`         | 41 KB    |     | `cal-roc`            | 17 KB    |
+| `cal-ethiopic`       | 40 KB    |     | `cal-buddhist`       | 13 KB    |
+
+Each figure includes a ~4 KB one-time dispatch shared by all of them, so a second
+calendar costs about its blob. `cal-japanese-hist` (which implies `cal-japanese`)
+is the 232 *historical* pre-Meiji nengō — nearly half of all the calendar data,
+20× the five modern eras — and is its own feature because a build that dates
+present-day documents needs Reiwa/Heisei/Shōwa and nothing else. Without it a
+pre-Meiji date renders with the localized Gregorian era instead of its nengō,
+which is the fallback `format_japanese_date` already takes for a nengō CLDR has
+no name for.
+
+`calendars-extra` **stays in `default`** even so. That its fallback is absent
+data rather than a wrong answer settles whether opting out is *safe*, not whether
+the table belongs in the default build; size settles that, and 705 KB is mid-pack
+here — smaller than `currency`, `units` or `displaynames`, all of which are in
+`default`, and a third of what keeps `tz-names` out.
 
 `tz-names` is the one formatter feature **not** in `default`: at ~2.1 MB it is the
 largest single table in the crate — more than `currency` and `units` together, and
@@ -282,6 +315,10 @@ intl = { version = "0.1", default-features = false, features = ["number", "datet
 intl = { version = "0.1", default-features = false, features = [
     "number", "units", "datetime", "calendars-extra", "list", "relative",
     "message", "spellout", "transliterate", "locale",
+] }
+# Date/time with only the calendars you format (here: Hijri + Persian):
+intl = { version = "0.1", default-features = false, features = [
+    "datetime", "cal-islamic", "cal-persian",
 ] }
 ```
 

@@ -262,14 +262,33 @@ const NUMSYS_DIGITS: &[u8] = include_bytes!("cldr/numsys_digits.bin");
 const ORDSUFFIX: &[u8] = include_bytes!("cldr/ordsuffix.bin");
 #[cfg(feature = "collation")]
 const COLLATION: &[u8] = include_bytes!("cldr/collation.bin");
-#[cfg(feature = "calendars-extra")]
-const ALT_CALENDARS: &[u8] = include_bytes!("cldr/alt_calendars.bin");
-#[cfg(feature = "calendars-extra")]
-const LUNISOLAR: &[u8] = include_bytes!("cldr/lunisolar.bin");
-#[cfg(feature = "calendars-extra")]
-const JAPANESE: &[u8] = include_bytes!("cldr/japanese.bin");
-#[cfg(feature = "calendars-extra")]
-const JAPANESE_HIST: &[u8] = include_bytes!("cldr/japanese_hist.bin");
+// One blob per non-Gregorian calendar, each gated on its own `cal-<key>` feature.
+// `include_bytes!` is all-or-nothing, so per-calendar gating means per-calendar
+// files; the calendar is the file name and each record is keyed by locale alone.
+#[cfg(feature = "cal-buddhist")]
+const CAL_BUDDHIST: &[u8] = include_bytes!("cldr/cal_buddhist.bin");
+#[cfg(feature = "cal-chinese")]
+const CAL_CHINESE: &[u8] = include_bytes!("cldr/cal_chinese.bin");
+#[cfg(feature = "cal-coptic")]
+const CAL_COPTIC: &[u8] = include_bytes!("cldr/cal_coptic.bin");
+#[cfg(feature = "cal-dangi")]
+const CAL_DANGI: &[u8] = include_bytes!("cldr/cal_dangi.bin");
+#[cfg(feature = "cal-ethiopic")]
+const CAL_ETHIOPIC: &[u8] = include_bytes!("cldr/cal_ethiopic.bin");
+#[cfg(feature = "cal-hebrew")]
+const CAL_HEBREW: &[u8] = include_bytes!("cldr/cal_hebrew.bin");
+#[cfg(feature = "cal-indian")]
+const CAL_INDIAN: &[u8] = include_bytes!("cldr/cal_indian.bin");
+#[cfg(feature = "cal-islamic")]
+const CAL_ISLAMIC: &[u8] = include_bytes!("cldr/cal_islamic.bin");
+#[cfg(feature = "cal-japanese")]
+const CAL_JAPANESE: &[u8] = include_bytes!("cldr/cal_japanese.bin");
+#[cfg(feature = "cal-japanese-hist")]
+const CAL_JAPANESE_HIST: &[u8] = include_bytes!("cldr/cal_japanese_hist.bin");
+#[cfg(feature = "cal-persian")]
+const CAL_PERSIAN: &[u8] = include_bytes!("cldr/cal_persian.bin");
+#[cfg(feature = "cal-roc")]
+const CAL_ROC: &[u8] = include_bytes!("cldr/cal_roc.bin");
 
 /// The CLDR collation tailoring rule string for an exact (lowercased) locale
 /// key, or `None`. Used by `unicode::collate::Tailoring::for_locale`.
@@ -353,9 +372,8 @@ pub(crate) fn rbnf_payload(lang: &str) -> Option<&'static [u8]> {
 pub const ALT_MAX_MONTHS: usize = 13;
 
 /// Month names, era names and patterns for one non-lunisolar, non-Gregorian
-/// calendar in one locale — the shape shared by every calendar in
-/// `alt_calendars.bin` (Buddhist, Coptic, Ethiopic, Hebrew, Indian, Islamic,
-/// Persian, ROC).
+/// calendar in one locale — the shape shared by every `cal_<key>.bin` blob
+/// (Buddhist, Coptic, Ethiopic, Hebrew, Indian, Islamic, Persian, ROC).
 ///
 /// The month and era lists are fixed-size arrays with an explicit count rather
 /// than slices, because the blob is read into a value on the stack; entries at or
@@ -408,7 +426,7 @@ impl AltCalSpec {
     /// 2 = narrow), or `None` if this calendar has no month of that number (or
     /// borrows the Gregorian ones — `month_count == 0`). `leap` selects the
     /// leap-year variant where the calendar has one.
-    #[cfg(feature = "calendars-extra")]
+    #[cfg(feature = "_calendars")]
     pub(crate) fn month(&self, month: u32, leap: bool, w: usize) -> Option<&'static str> {
         if month == 0 || month > u32::from(self.month_count) {
             return None;
@@ -426,7 +444,7 @@ impl AltCalSpec {
 
     /// The name of CLDR era index `era` at width `w` (0 = wide, 1 = abbreviated,
     /// 2 = narrow), or `None` if this calendar has no such era.
-    #[cfg(feature = "calendars-extra")]
+    #[cfg(feature = "_calendars")]
     pub(crate) fn era(&self, era: u32, w: usize) -> Option<&'static str> {
         let i = era.checked_sub(u32::from(self.era_base))?;
         if i >= u32::from(self.era_count) {
@@ -441,11 +459,42 @@ impl AltCalSpec {
     }
 }
 
+/// The `cal_<key>.bin` blob for an [`AltCalSpec`] calendar, or `None` when that
+/// calendar's `cal-<key>` feature is not enabled.
+///
+/// The wildcard is the only arm left when none of them are, hence the
+/// `match_single_binding` allow: that shape is the gating working, not a
+/// simplifiable match.
+#[cfg(feature = "_calendars")]
+#[allow(clippy::match_single_binding)]
+fn alt_cal_blob(cal: &str) -> Option<&'static [u8]> {
+    match cal {
+        #[cfg(feature = "cal-buddhist")]
+        "buddhist" => Some(CAL_BUDDHIST),
+        #[cfg(feature = "cal-coptic")]
+        "coptic" => Some(CAL_COPTIC),
+        #[cfg(feature = "cal-ethiopic")]
+        "ethiopic" => Some(CAL_ETHIOPIC),
+        #[cfg(feature = "cal-hebrew")]
+        "hebrew" => Some(CAL_HEBREW),
+        #[cfg(feature = "cal-indian")]
+        "indian" => Some(CAL_INDIAN),
+        #[cfg(feature = "cal-islamic")]
+        "islamic" => Some(CAL_ISLAMIC),
+        #[cfg(feature = "cal-persian")]
+        "persian" => Some(CAL_PERSIAN),
+        #[cfg(feature = "cal-roc")]
+        "roc" => Some(CAL_ROC),
+        _ => None,
+    }
+}
+
 /// Names + patterns for calendar `cal` (a BCP-47 `ca-` key such as `"islamic"`)
-/// in an exact (lowercased) locale key.
-#[cfg(feature = "calendars-extra")]
+/// in an exact (lowercased) locale key, or `None` if the locale is absent — or
+/// if `cal`'s `cal-<key>` feature is not enabled.
+#[cfg(feature = "_calendars")]
 pub(crate) fn alt_cal_spec(cal: &str, lang: &str) -> Option<AltCalSpec> {
-    let mut c = find2(ALT_CALENDARS, cal, lang)?;
+    let mut c = find(alt_cal_blob(cal)?, lang)?;
     let month_count = c.u8();
     let n = month_count as usize;
     let mut months = [[""; ALT_MAX_MONTHS]; 3];
@@ -522,7 +571,7 @@ pub struct ChineseCalSpec {
 impl ChineseCalSpec {
     /// The leap-month marker pattern at width `w` (0 = wide, 1 = abbreviated,
     /// 2 = narrow, 3 = numeric).
-    #[cfg(feature = "calendars-extra")]
+    #[cfg(feature = "_calendars")]
     pub(crate) fn leap(&self, w: usize) -> &'static str {
         match w {
             0 => self.leap_wide,
@@ -533,11 +582,27 @@ impl ChineseCalSpec {
     }
 }
 
+/// The `cal_<key>.bin` blob for a [`ChineseCalSpec`] calendar, or `None` when
+/// that calendar's feature is not enabled. See [`alt_cal_blob`] for the
+/// `match_single_binding` allow.
+#[cfg(feature = "_calendars")]
+#[allow(clippy::match_single_binding)]
+fn lunisolar_blob(cal: &str) -> Option<&'static [u8]> {
+    match cal {
+        #[cfg(feature = "cal-chinese")]
+        "chinese" => Some(CAL_CHINESE),
+        #[cfg(feature = "cal-dangi")]
+        "dangi" => Some(CAL_DANGI),
+        _ => None,
+    }
+}
+
 /// Lunisolar-calendar names + patterns for calendar `cal` (`"chinese"` or
-/// `"dangi"`) in an exact (lowercased) locale key.
-#[cfg(feature = "calendars-extra")]
+/// `"dangi"`) in an exact (lowercased) locale key, or `None` if the locale is
+/// absent — or if that calendar's feature is not enabled.
+#[cfg(feature = "_calendars")]
 pub(crate) fn chinese_spec(cal: &str, lang: &str) -> Option<ChineseCalSpec> {
-    let mut c = find2(LUNISOLAR, cal, lang)?;
+    let mut c = find(lunisolar_blob(cal)?, lang)?;
     Some(ChineseCalSpec {
         cyclic: core::array::from_fn(|_| c.str()),
         months_wide: core::array::from_fn(|_| c.str()),
@@ -575,9 +640,9 @@ pub struct JapaneseCalSpec {
 }
 
 /// Japanese-calendar names + patterns for an exact (lowercased) locale key.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese")]
 pub(crate) fn japanese_spec(lang: &str) -> Option<JapaneseCalSpec> {
-    let mut c = find(JAPANESE, lang)?;
+    let mut c = find(CAL_JAPANESE, lang)?;
     Some(JapaneseCalSpec {
         eras_wide: core::array::from_fn(|_| c.str()),
         eras_abbr: core::array::from_fn(|_| c.str()),
@@ -587,21 +652,21 @@ pub(crate) fn japanese_spec(lang: &str) -> Option<JapaneseCalSpec> {
     })
 }
 
-/// Number of pre-Meiji historical Japanese era names in `japanese_hist.bin`
+/// Number of pre-Meiji historical Japanese era names in `cal_japanese_hist.bin`
 /// (CLDR era indices 0 = Taika .. 231 = Keiō); must match codegen's
 /// `HIST_ERA_COUNT`.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese-hist")]
 pub(crate) const HIST_ERA_COUNT: usize = 232;
 
 /// The localized pre-Meiji nengō (era) name for CLDR era `index` (0..=231) in
 /// an exact (lowercased) locale key, as `[wide, abbr, narrow]`, or `None` if the
 /// locale is absent. See `emit_japanese_hist` for the blob layout.
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese-hist")]
 pub(crate) fn japanese_hist_eras(lang: &str, index: usize) -> Option<[&'static str; 3]> {
     if index >= HIST_ERA_COUNT {
         return None;
     }
-    let b = JAPANESE_HIST;
+    let b = CAL_JAPANESE_HIST;
     let nloc = rd_u16(b, 0);
     let mut o = 2;
     let mut setid: Option<usize> = None;
@@ -668,7 +733,7 @@ fn rd_u16(b: &[u8], o: usize) -> usize {
     u16::from_le_bytes([b[o], b[o + 1]]) as usize
 }
 
-#[cfg(feature = "calendars-extra")]
+#[cfg(feature = "cal-japanese-hist")]
 fn rd_u32(b: &[u8], o: usize) -> usize {
     u32::from_le_bytes([b[o], b[o + 1], b[o + 2], b[o + 3]]) as usize
 }
@@ -744,34 +809,6 @@ fn find(blob: &'static [u8], key: &str) -> Option<Cursor> {
         let plen = rd_u16(blob, o);
         o += 2;
         if k == key.as_bytes() {
-            return Some(Cursor { b: blob, o });
-        }
-        o += plen;
-    }
-    None
-}
-
-/// Locate the record whose key is `"<a>/<b>"` and return a cursor at its payload.
-///
-/// The per-calendar tables are keyed by calendar *and* locale, and this module is
-/// alloc-free, so the two halves are compared in place rather than concatenated
-/// into a lookup key.
-#[cfg(feature = "calendars-extra")]
-fn find2(blob: &'static [u8], a: &str, b: &str) -> Option<Cursor> {
-    let count = rd_u16(blob, 0);
-    let mut o = 2;
-    for _ in 0..count {
-        let klen = blob[o] as usize;
-        o += 1;
-        let k = &blob[o..o + klen];
-        o += klen;
-        let plen = rd_u16(blob, o);
-        o += 2;
-        if k.len() == a.len() + 1 + b.len()
-            && &k[..a.len()] == a.as_bytes()
-            && k[a.len()] == b'/'
-            && &k[a.len() + 1..] == b.as_bytes()
-        {
             return Some(Cursor { b: blob, o });
         }
         o += plen;
