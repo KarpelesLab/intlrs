@@ -31,7 +31,7 @@ no runtime initialization.
 
 ```toml
 [dependencies]
-intl = "0.1"
+intl = "0.6"
 ```
 
 ```rust
@@ -125,9 +125,14 @@ Beyond the `unicode` module:
   `format_date("de", &dt, DateStyle::Long)` → `"4. Juni 2026"` (CLDR patterns,
   month/weekday names, am/pm; weekday via Sakamoto's algorithm). Also
   `format_skeleton("en", &dt, "yMMMd")` → `"Jun 4, 2026"` (flexible field-set
-  formatting), and renders **Islamic (Hijri)** and **Persian** dates with
-  localized month names (`format_islamic_date("en", 1445, 9, 1, DateStyle::Long)`
-  → `"Ramadan 1, 1445 AH"`; `format_persian_date` likewise).
+  formatting), `format_datetime` (date + time styles), `format_options` /
+  `format_to_parts` over ECMA-402-style `DateTimeFormatOptions`, and
+  `format_range` / `format_range_to_parts` for date intervals. Renders **Islamic (Hijri)**, **Umm al-Qura**, **Persian**,
+  **Chinese** and **Japanese** dates with localized names
+  (`format_islamic_date("en", 1445, 9, 1, DateStyle::Long)` →
+  `"Ramadan 1, 1445 AH"`; `format_islamic_umalqura_date`,
+  `format_persian_date`, `format_chinese_date` and `format_japanese_date`
+  likewise, each behind its calendar's `cal-<key>` feature).
 - **Calendar fields, one at a time** — what a Temporal/ECMA-402 layer needs to
   build its own `formatToParts`. A `Calendar` names the calendar by its BCP-47
   `-u-ca-` key (`Calendar::from_bcp47("islamic-umalqura")`), and
@@ -164,8 +169,9 @@ Beyond the `unicode` module:
   (`tz-names-america`, `tz-names-europe`, …) to pay only for the zones you use;
   see the table below.
 - `intl::calendar` (`no_std`, no alloc) converts dates between the Gregorian,
-  civil (tabular) Islamic, Persian (Solar Hijri), Hebrew, and Chinese (lunisolar,
-  1900–2099 via an embedded lunar table) calendars through the Julian Day Number,
+  civil (tabular) Islamic, Umm al-Qura, Persian (Solar Hijri), Hebrew, Chinese
+  and Korean `dangi` (lunisolar, 1800–2200 via an embedded lunar table)
+  calendars through the Julian Day Number,
   gives the Japanese era/year, plus ISO-8601 week dates and day-of-week — pure
   integer arithmetic. `DateTime` also does
   ISO-8601 timestamp parse/format, date arithmetic (`add_seconds`/`add_days`/
@@ -204,7 +210,7 @@ disabling one removes it from the build entirely:
 | `bidi`          | UAX #9 bidirectional algorithm           | 61 KB |
 | `case`          | case mapping/folding (→ normalization, segmentation) | 284 KB |
 | `collation`     | UTS #10 collation (→ case, alloc)        | **1.9 MB** |
-| `idna`          | UTS #46 IDNA (→ normalization, alloc)    | 464 KB |
+| `idna`          | UTS #46 IDNA (→ normalization, alloc, bidi) | 464 KB |
 | `confusables`   | UTS #39 confusable/skeleton (→ normalization, alloc) | 369 KB |
 | `identifiers`   | UAX #31 identifiers                      | — |
 | `names`         | full character-name database (→ alloc)   | 1.3 MB |
@@ -212,13 +218,25 @@ disabling one removes it from the build entirely:
 The foundational property lookups — `General_Category`, predicates, scripts,
 East Asian Width, numeric values — are always available and not gated.
 
+A few further components are **opt-in, not in `default`**, because their data is
+large and only some applications need it:
+
+| feature                 | what it provides                                   | gated data |
+|-------------------------|----------------------------------------------------|------------|
+| `collation-zh`          | Chinese collation: pinyin + `stroke`/`zhuyin`/`unihan` (→ collation) | ~964 KB |
+| `segmentation-dict`     | dictionary word breaking for Thai (→ segmentation) | ~149 KB |
+| `segmentation-dict-lao` | + Lao (→ segmentation-dict)                        | ~197 KB |
+| `segmentation-dict-km`  | + Khmer (→ segmentation-dict)                      | ~920 KB |
+| `segmentation-dict-my`  | + Burmese / Myanmar (→ segmentation-dict)          | ~554 KB |
+| `segmentation-dict-cjk` | + Chinese / Japanese (→ segmentation-dict, alloc, normalization) | **~2.5 MB** |
+
 ```toml
 # Just normalization, nothing else:
-intl = { version = "0.1", default-features = false, features = ["full", "normalization"] }
+intl = { version = "0.6", default-features = false, features = ["full", "normalization"] }
 # Just collation (pulls in case + normalization + alloc automatically):
-intl = { version = "0.1", default-features = false, features = ["collation"] }
+intl = { version = "0.6", default-features = false, features = ["collation"] }
 # Everything except the 1.9 MB collation table and IANA tz:
-intl = { version = "0.1", default-features = false, features = [
+intl = { version = "0.6", default-features = false, features = [
     "names", "segmentation", "bidi", "case", "idna", "confusables", "identifiers",
 ] }
 ```
@@ -316,18 +334,18 @@ safe.
 
 ```toml
 # Date/time with localized zone names for the Americas and Europe only:
-intl = { version = "0.1", default-features = false, features = [
+intl = { version = "0.6", default-features = false, features = [
     "datetime", "iana-tz", "tz-names-america", "tz-names-europe",
 ] }
 # Just number + date/time formatting (no currency, display-names, etc.):
-intl = { version = "0.1", default-features = false, features = ["number", "datetime"] }
+intl = { version = "0.6", default-features = false, features = ["number", "datetime"] }
 # Everything except the heavy currency + display-name data:
-intl = { version = "0.1", default-features = false, features = [
+intl = { version = "0.6", default-features = false, features = [
     "number", "units", "datetime", "calendars-extra", "list", "relative",
     "message", "spellout", "transliterate", "locale",
 ] }
 # Date/time with only the calendars you format (here: Hijri + Persian):
-intl = { version = "0.1", default-features = false, features = [
+intl = { version = "0.6", default-features = false, features = [
     "datetime", "cal-islamic", "cal-persian",
 ] }
 ```
@@ -346,13 +364,13 @@ coverage for binary size. They are nested (each implies the smaller ones):
 
 ```toml
 # Everything, the default:
-intl = "0.1"
+intl = "0.6"
 # Trim to the BMP and drop alloc/names for a smaller no_std build:
-intl = { version = "0.1", default-features = false, features = ["bmp"] }
+intl = { version = "0.6", default-features = false, features = ["bmp"] }
 # Minimal: ASCII tables only:
-intl = { version = "0.1", default-features = false, features = ["ascii"] }
+intl = { version = "0.6", default-features = false, features = ["ascii"] }
 # Unicode + alloc only — no CLDR formatters (add the ones you need, see above):
-intl = { version = "0.1", default-features = false, features = ["full", "alloc"] }
+intl = { version = "0.6", default-features = false, features = ["full", "alloc"] }
 ```
 
 A codepoint outside the compiled tier reports `GeneralCategory::Unassigned`
@@ -376,10 +394,13 @@ codepoint would.
   marks, Hangul, Indic conjuncts, regional-indicator flags, and emoji ZWJ
   sequences; word and sentence breaking implement the full WB / SB rule sets.
   All three validated against the official `GraphemeBreakTest` / `WordBreakTest`
-  / `SentenceBreakTest` suites.
+  / `SentenceBreakTest` suites. With the opt-in `segmentation-dict*` features,
+  `words` also splits space-less scripts using ports of ICU's dictionary break
+  engines — Thai, Lao, Khmer and Burmese (allocation-free), and Chinese/Japanese
+  (Viterbi over ICU's `cjdict`, needs `alloc`).
 - **Line breaking** (UAX #14) — `line_breaks(&str)` yielding break opportunities
-  (mandatory vs allowed). ~99.98% conformant against `LineBreakTest` (a few CJK
-  quotation/East-Asian-Width edge cases remain).
+  (mandatory vs allowed). Validated against the full official `LineBreakTest`
+  suite.
 - **Collation** (UTS #10) — DUCET root collation via `collate::compare` /
   `collate::Collator` (and `sort_key`), with non-ignorable or shifted variable
   handling, **strength levels** (`with_strength`: accent-/case-insensitive),
@@ -425,16 +446,19 @@ codepoint would.
 - **Bidirectional text** (UAX #9) — `bidi_class` (the `BidiClass` enum),
   `base_direction(&str)` (rules P2–P3), and (with `alloc`) the full reordering
   algorithm `bidi::process(&str, …) -> BidiInfo` (embedding levels + visual
-  order). ~99.996% conformant against `BidiCharacterTest`.
+  order). Passes the exhaustive `BidiTest` suite in full and ~99.996% of
+  `BidiCharacterTest` (four deeply-nested isolate/override lines differ).
 - **Identifiers** (UAX #31) — `is_xid_start`, `is_xid_continue`, and
   `is_identifier(&str)` for default identifier validation.
 - **Confusables / spoof detection** (UTS #39) — `spoof::skeleton`,
   `spoof::confusable`, and `spoof::is_single_script` (mixed-script detection).
   Requires `alloc`.
 - **IDNA / Punycode** (UTS #46 / RFC 3492) — `idna::to_ascii` / `idna::to_unicode`
-  for domain names (mapping + NFC + Punycode). The mapping/Punycode core passes
-  every clean-success line of IdnaTestV2; the contextual validity rules
-  (CheckBidi/CheckJoiners) are not yet enforced. Requires `alloc`.
+  for domain names (mapping + NFC + Punycode), with the full IDNA2008 validity
+  set — CheckBidi (RFC 5893), CheckJoiners / ContextJ (RFC 5892), CheckHyphens,
+  and DNS length checks. Passes every clean-success line of IdnaTestV2 and
+  rejects every must-reject line the test harness can represent. Requires
+  `alloc`.
 - `Numeric_Type` and exact `Numeric_Value` via `numeric_type` and
   `numeric_value` / `numeric_value_u32` (`NumericValue` is a rational
   `numerator / denominator`, with `.to_i64()` / `.as_f64()`).
