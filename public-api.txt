@@ -53,10 +53,10 @@ impl intl::datetime::Calendar
 pub fn intl::datetime::Calendar::as_bcp47(self) -> &'static str
 pub fn intl::datetime::Calendar::from_bcp47(&str) -> core::option::Option<intl::datetime::Calendar>
 impl core::clone::Clone for intl::datetime::Calendar
-pub fn intl::datetime::Calendar::clone(&self) -> intl::datetime::Calendar
+pub fn intl::datetime::Calendar::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::Calendar
 impl core::cmp::PartialEq for intl::datetime::Calendar
-pub fn intl::datetime::Calendar::eq(&self, &intl::datetime::Calendar) -> bool
+pub fn intl::datetime::Calendar::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::Calendar
 pub fn intl::datetime::Calendar::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::datetime::Calendar
@@ -98,10 +98,10 @@ pub intl::datetime::DateStyle::Long
 pub intl::datetime::DateStyle::Medium
 pub intl::datetime::DateStyle::Short
 impl core::clone::Clone for intl::datetime::DateStyle
-pub fn intl::datetime::DateStyle::clone(&self) -> intl::datetime::DateStyle
+pub fn intl::datetime::DateStyle::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::DateStyle
 impl core::cmp::PartialEq for intl::datetime::DateStyle
-pub fn intl::datetime::DateStyle::eq(&self, &intl::datetime::DateStyle) -> bool
+pub fn intl::datetime::DateStyle::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::DateStyle
 pub fn intl::datetime::DateStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::DateStyle
@@ -139,10 +139,10 @@ pub fn intl::datetime::DateStyle::from(T) -> T
 pub intl::datetime::DateTimeFormatError::ConflictingOptions
 pub intl::datetime::DateTimeFormatError::UnsupportedOptions
 impl core::clone::Clone for intl::datetime::DateTimeFormatError
-pub fn intl::datetime::DateTimeFormatError::clone(&self) -> intl::datetime::DateTimeFormatError
+pub fn intl::datetime::DateTimeFormatError::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::DateTimeFormatError
 impl core::cmp::PartialEq for intl::datetime::DateTimeFormatError
-pub fn intl::datetime::DateTimeFormatError::eq(&self, &intl::datetime::DateTimeFormatError) -> bool
+pub fn intl::datetime::DateTimeFormatError::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::DateTimeFormatError
 pub fn intl::datetime::DateTimeFormatError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::DateTimeFormatError
@@ -192,10 +192,10 @@ pub intl::datetime::DateTimePartType::Year
 impl intl::datetime::DateTimePartType
 pub fn intl::datetime::DateTimePartType::as_str(&self) -> &'static str
 impl core::clone::Clone for intl::datetime::DateTimePartType
-pub fn intl::datetime::DateTimePartType::clone(&self) -> intl::datetime::DateTimePartType
+pub fn intl::datetime::DateTimePartType::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::DateTimePartType
 impl core::cmp::PartialEq for intl::datetime::DateTimePartType
-pub fn intl::datetime::DateTimePartType::eq(&self, &intl::datetime::DateTimePartType) -> bool
+pub fn intl::datetime::DateTimePartType::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::DateTimePartType
 pub fn intl::datetime::DateTimePartType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::DateTimePartType
@@ -235,10 +235,10 @@ pub intl::datetime::HourCycle::H12
 pub intl::datetime::HourCycle::H23
 pub intl::datetime::HourCycle::H24
 impl core::clone::Clone for intl::datetime::HourCycle
-pub fn intl::datetime::HourCycle::clone(&self) -> intl::datetime::HourCycle
+pub fn intl::datetime::HourCycle::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::HourCycle
 impl core::cmp::PartialEq for intl::datetime::HourCycle
-pub fn intl::datetime::HourCycle::eq(&self, &intl::datetime::HourCycle) -> bool
+pub fn intl::datetime::HourCycle::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::HourCycle
 pub fn intl::datetime::HourCycle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::HourCycle
@@ -279,10 +279,10 @@ pub intl::datetime::MonthStyle::Numeric
 pub intl::datetime::MonthStyle::Short
 pub intl::datetime::MonthStyle::TwoDigit
 impl core::clone::Clone for intl::datetime::MonthStyle
-pub fn intl::datetime::MonthStyle::clone(&self) -> intl::datetime::MonthStyle
+pub fn intl::datetime::MonthStyle::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::MonthStyle
 impl core::cmp::PartialEq for intl::datetime::MonthStyle
-pub fn intl::datetime::MonthStyle::eq(&self, &intl::datetime::MonthStyle) -> bool
+pub fn intl::datetime::MonthStyle::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::MonthStyle
 pub fn intl::datetime::MonthStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::MonthStyle
@@ -321,10 +321,10 @@ pub intl::datetime::NameStyle::Long
 pub intl::datetime::NameStyle::Narrow
 pub intl::datetime::NameStyle::Short
 impl core::clone::Clone for intl::datetime::NameStyle
-pub fn intl::datetime::NameStyle::clone(&self) -> intl::datetime::NameStyle
+pub fn intl::datetime::NameStyle::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::NameStyle
 impl core::cmp::PartialEq for intl::datetime::NameStyle
-pub fn intl::datetime::NameStyle::eq(&self, &intl::datetime::NameStyle) -> bool
+pub fn intl::datetime::NameStyle::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::NameStyle
 pub fn intl::datetime::NameStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::NameStyle
@@ -362,10 +362,10 @@ pub enum intl::datetime::Numeric2Digit
 pub intl::datetime::Numeric2Digit::Numeric
 pub intl::datetime::Numeric2Digit::TwoDigit
 impl core::clone::Clone for intl::datetime::Numeric2Digit
-pub fn intl::datetime::Numeric2Digit::clone(&self) -> intl::datetime::Numeric2Digit
+pub fn intl::datetime::Numeric2Digit::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::Numeric2Digit
 impl core::cmp::PartialEq for intl::datetime::Numeric2Digit
-pub fn intl::datetime::Numeric2Digit::eq(&self, &intl::datetime::Numeric2Digit) -> bool
+pub fn intl::datetime::Numeric2Digit::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::Numeric2Digit
 pub fn intl::datetime::Numeric2Digit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::Numeric2Digit
@@ -406,10 +406,10 @@ pub intl::datetime::RangeSource::StartRange
 impl intl::datetime::RangeSource
 pub fn intl::datetime::RangeSource::as_str(&self) -> &'static str
 impl core::clone::Clone for intl::datetime::RangeSource
-pub fn intl::datetime::RangeSource::clone(&self) -> intl::datetime::RangeSource
+pub fn intl::datetime::RangeSource::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::RangeSource
 impl core::cmp::PartialEq for intl::datetime::RangeSource
-pub fn intl::datetime::RangeSource::eq(&self, &intl::datetime::RangeSource) -> bool
+pub fn intl::datetime::RangeSource::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::RangeSource
 pub fn intl::datetime::RangeSource::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::RangeSource
@@ -451,10 +451,10 @@ pub intl::datetime::TimeZoneNameStyle::Short
 pub intl::datetime::TimeZoneNameStyle::ShortGeneric
 pub intl::datetime::TimeZoneNameStyle::ShortOffset
 impl core::clone::Clone for intl::datetime::TimeZoneNameStyle
-pub fn intl::datetime::TimeZoneNameStyle::clone(&self) -> intl::datetime::TimeZoneNameStyle
+pub fn intl::datetime::TimeZoneNameStyle::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::TimeZoneNameStyle
 impl core::cmp::PartialEq for intl::datetime::TimeZoneNameStyle
-pub fn intl::datetime::TimeZoneNameStyle::eq(&self, &intl::datetime::TimeZoneNameStyle) -> bool
+pub fn intl::datetime::TimeZoneNameStyle::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::TimeZoneNameStyle
 pub fn intl::datetime::TimeZoneNameStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::TimeZoneNameStyle
@@ -503,10 +503,10 @@ pub fn intl::datetime::DateTime::parse_iso8601(&str) -> core::option::Option<int
 pub fn intl::datetime::DateTime::to_iso8601(&self) -> alloc::string::String
 pub fn intl::datetime::DateTime::weekday(&self) -> u8
 impl core::clone::Clone for intl::datetime::DateTime
-pub fn intl::datetime::DateTime::clone(&self) -> intl::datetime::DateTime
+pub fn intl::datetime::DateTime::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::DateTime
 impl core::cmp::PartialEq for intl::datetime::DateTime
-pub fn intl::datetime::DateTime::eq(&self, &intl::datetime::DateTime) -> bool
+pub fn intl::datetime::DateTime::eq(&self, &Self) -> bool
 impl core::default::Default for intl::datetime::DateTime
 pub fn intl::datetime::DateTime::default() -> Self
 impl core::fmt::Debug for intl::datetime::DateTime
@@ -562,12 +562,12 @@ pub intl::datetime::DateTimeFormatOptions::tz_offset_minutes: core::option::Opti
 pub intl::datetime::DateTimeFormatOptions::weekday: core::option::Option<intl::datetime::NameStyle>
 pub intl::datetime::DateTimeFormatOptions::year: core::option::Option<intl::datetime::Numeric2Digit>
 impl core::clone::Clone for intl::datetime::DateTimeFormatOptions
-pub fn intl::datetime::DateTimeFormatOptions::clone(&self) -> intl::datetime::DateTimeFormatOptions
+pub fn intl::datetime::DateTimeFormatOptions::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::DateTimeFormatOptions
 impl core::cmp::PartialEq for intl::datetime::DateTimeFormatOptions
-pub fn intl::datetime::DateTimeFormatOptions::eq(&self, &intl::datetime::DateTimeFormatOptions) -> bool
+pub fn intl::datetime::DateTimeFormatOptions::eq(&self, &Self) -> bool
 impl core::default::Default for intl::datetime::DateTimeFormatOptions
-pub fn intl::datetime::DateTimeFormatOptions::default() -> intl::datetime::DateTimeFormatOptions
+pub fn intl::datetime::DateTimeFormatOptions::default() -> Self
 impl core::fmt::Debug for intl::datetime::DateTimeFormatOptions
 pub fn intl::datetime::DateTimeFormatOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::datetime::DateTimeFormatOptions
@@ -605,10 +605,10 @@ pub struct intl::datetime::DateTimePart
 pub intl::datetime::DateTimePart::kind: intl::datetime::DateTimePartType
 pub intl::datetime::DateTimePart::value: alloc::string::String
 impl core::clone::Clone for intl::datetime::DateTimePart
-pub fn intl::datetime::DateTimePart::clone(&self) -> intl::datetime::DateTimePart
+pub fn intl::datetime::DateTimePart::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::DateTimePart
 impl core::cmp::PartialEq for intl::datetime::DateTimePart
-pub fn intl::datetime::DateTimePart::eq(&self, &intl::datetime::DateTimePart) -> bool
+pub fn intl::datetime::DateTimePart::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::DateTimePart
 pub fn intl::datetime::DateTimePart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::StructuralPartialEq for intl::datetime::DateTimePart
@@ -646,10 +646,10 @@ pub intl::datetime::DateTimeRangePart::kind: intl::datetime::DateTimePartType
 pub intl::datetime::DateTimeRangePart::source: intl::datetime::RangeSource
 pub intl::datetime::DateTimeRangePart::value: alloc::string::String
 impl core::clone::Clone for intl::datetime::DateTimeRangePart
-pub fn intl::datetime::DateTimeRangePart::clone(&self) -> intl::datetime::DateTimeRangePart
+pub fn intl::datetime::DateTimeRangePart::clone(&self) -> Self
 impl core::cmp::Eq for intl::datetime::DateTimeRangePart
 impl core::cmp::PartialEq for intl::datetime::DateTimeRangePart
-pub fn intl::datetime::DateTimeRangePart::eq(&self, &intl::datetime::DateTimeRangePart) -> bool
+pub fn intl::datetime::DateTimeRangePart::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::datetime::DateTimeRangePart
 pub fn intl::datetime::DateTimeRangePart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::StructuralPartialEq for intl::datetime::DateTimeRangePart
@@ -708,10 +708,10 @@ pub enum intl::list::ListStyle
 pub intl::list::ListStyle::And
 pub intl::list::ListStyle::Or
 impl core::clone::Clone for intl::list::ListStyle
-pub fn intl::list::ListStyle::clone(&self) -> intl::list::ListStyle
+pub fn intl::list::ListStyle::clone(&self) -> Self
 impl core::cmp::Eq for intl::list::ListStyle
 impl core::cmp::PartialEq for intl::list::ListStyle
-pub fn intl::list::ListStyle::eq(&self, &intl::list::ListStyle) -> bool
+pub fn intl::list::ListStyle::eq(&self, &Self) -> bool
 impl core::convert::From<intl::list::ListStyle> for intl::list::ListType
 pub fn intl::list::ListType::from(intl::list::ListStyle) -> Self
 impl core::fmt::Debug for intl::list::ListStyle
@@ -752,16 +752,16 @@ pub intl::list::ListType::Conjunction
 pub intl::list::ListType::Disjunction
 pub intl::list::ListType::Unit
 impl core::clone::Clone for intl::list::ListType
-pub fn intl::list::ListType::clone(&self) -> intl::list::ListType
+pub fn intl::list::ListType::clone(&self) -> Self
 impl core::cmp::Eq for intl::list::ListType
 impl core::cmp::PartialEq for intl::list::ListType
-pub fn intl::list::ListType::eq(&self, &intl::list::ListType) -> bool
+pub fn intl::list::ListType::eq(&self, &Self) -> bool
 impl core::convert::From<intl::list::ListStyle> for intl::list::ListType
 pub fn intl::list::ListType::from(intl::list::ListStyle) -> Self
 impl core::convert::From<intl::list::ListType> for intl::list::ListFormatOptions
 pub fn intl::list::ListFormatOptions::from(intl::list::ListType) -> Self
 impl core::default::Default for intl::list::ListType
-pub fn intl::list::ListType::default() -> intl::list::ListType
+pub fn intl::list::ListType::default() -> Self
 impl core::fmt::Debug for intl::list::ListType
 pub fn intl::list::ListType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::list::ListType
@@ -800,14 +800,14 @@ pub intl::list::ListWidth::Long
 pub intl::list::ListWidth::Narrow
 pub intl::list::ListWidth::Short
 impl core::clone::Clone for intl::list::ListWidth
-pub fn intl::list::ListWidth::clone(&self) -> intl::list::ListWidth
+pub fn intl::list::ListWidth::clone(&self) -> Self
 impl core::cmp::Eq for intl::list::ListWidth
 impl core::cmp::PartialEq for intl::list::ListWidth
-pub fn intl::list::ListWidth::eq(&self, &intl::list::ListWidth) -> bool
+pub fn intl::list::ListWidth::eq(&self, &Self) -> bool
 impl core::convert::From<intl::list::ListWidth> for intl::list::ListFormatOptions
 pub fn intl::list::ListFormatOptions::from(intl::list::ListWidth) -> Self
 impl core::default::Default for intl::list::ListWidth
-pub fn intl::list::ListWidth::default() -> intl::list::ListWidth
+pub fn intl::list::ListWidth::default() -> Self
 impl core::fmt::Debug for intl::list::ListWidth
 pub fn intl::list::ListWidth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::list::ListWidth
@@ -845,16 +845,16 @@ pub fn intl::list::ListWidth::from(T) -> T
 pub intl::list::ListFormatOptions::list_type: intl::list::ListType
 pub intl::list::ListFormatOptions::width: intl::list::ListWidth
 impl core::clone::Clone for intl::list::ListFormatOptions
-pub fn intl::list::ListFormatOptions::clone(&self) -> intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::clone(&self) -> Self
 impl core::cmp::Eq for intl::list::ListFormatOptions
 impl core::cmp::PartialEq for intl::list::ListFormatOptions
-pub fn intl::list::ListFormatOptions::eq(&self, &intl::list::ListFormatOptions) -> bool
+pub fn intl::list::ListFormatOptions::eq(&self, &Self) -> bool
 impl core::convert::From<intl::list::ListType> for intl::list::ListFormatOptions
 pub fn intl::list::ListFormatOptions::from(intl::list::ListType) -> Self
 impl core::convert::From<intl::list::ListWidth> for intl::list::ListFormatOptions
 pub fn intl::list::ListFormatOptions::from(intl::list::ListWidth) -> Self
 impl core::default::Default for intl::list::ListFormatOptions
-pub fn intl::list::ListFormatOptions::default() -> intl::list::ListFormatOptions
+pub fn intl::list::ListFormatOptions::default() -> Self
 impl core::fmt::Debug for intl::list::ListFormatOptions
 pub fn intl::list::ListFormatOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::list::ListFormatOptions
@@ -894,7 +894,7 @@ pub intl::list::ListPatterns::middle: &'static str
 pub intl::list::ListPatterns::start: &'static str
 pub intl::list::ListPatterns::two: &'static str
 impl core::clone::Clone for intl::list::ListPatterns
-pub fn intl::list::ListPatterns::clone(&self) -> intl::list::ListPatterns
+pub fn intl::list::ListPatterns::clone(&self) -> Self
 impl core::fmt::Debug for intl::list::ListPatterns
 pub fn intl::list::ListPatterns::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::list::ListPatterns
@@ -933,10 +933,10 @@ pub enum intl::locale::ParseError
 pub intl::locale::ParseError::Empty
 pub intl::locale::ParseError::InvalidSubtag
 impl core::clone::Clone for intl::locale::ParseError
-pub fn intl::locale::ParseError::clone(&self) -> intl::locale::ParseError
+pub fn intl::locale::ParseError::clone(&self) -> Self
 impl core::cmp::Eq for intl::locale::ParseError
 impl core::cmp::PartialEq for intl::locale::ParseError
-pub fn intl::locale::ParseError::eq(&self, &intl::locale::ParseError) -> bool
+pub fn intl::locale::ParseError::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::locale::ParseError
 pub fn intl::locale::ParseError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::locale::ParseError
@@ -981,12 +981,12 @@ pub fn intl::locale::Locale::maximize(&self) -> intl::locale::Locale
 pub fn intl::locale::Locale::minimize(&self) -> intl::locale::Locale
 pub fn intl::locale::Locale::parse(&str) -> core::result::Result<intl::locale::Locale, intl::locale::ParseError>
 impl core::clone::Clone for intl::locale::Locale
-pub fn intl::locale::Locale::clone(&self) -> intl::locale::Locale
+pub fn intl::locale::Locale::clone(&self) -> Self
 impl core::cmp::Eq for intl::locale::Locale
 impl core::cmp::PartialEq for intl::locale::Locale
-pub fn intl::locale::Locale::eq(&self, &intl::locale::Locale) -> bool
+pub fn intl::locale::Locale::eq(&self, &Self) -> bool
 impl core::default::Default for intl::locale::Locale
-pub fn intl::locale::Locale::default() -> intl::locale::Locale
+pub fn intl::locale::Locale::default() -> Self
 impl core::fmt::Debug for intl::locale::Locale
 pub fn intl::locale::Locale::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::fmt::Display for intl::locale::Locale
@@ -1031,7 +1031,7 @@ pub enum intl::message::Arg<'a>
 pub intl::message::Arg::Num(f64)
 pub intl::message::Arg::Str(&'a str)
 impl<'a> core::clone::Clone for intl::message::Arg<'a>
-pub fn intl::message::Arg<'a>::clone(&self) -> intl::message::Arg<'a>
+pub fn intl::message::Arg<'a>::clone(&self) -> Self
 impl<'a> core::fmt::Debug for intl::message::Arg<'a>
 pub fn intl::message::Arg<'a>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<'a> core::marker::Copy for intl::message::Arg<'a>
@@ -1070,12 +1070,12 @@ pub enum intl::number::CompactDisplay
 pub intl::number::CompactDisplay::Long
 pub intl::number::CompactDisplay::Short
 impl core::clone::Clone for intl::number::CompactDisplay
-pub fn intl::number::CompactDisplay::clone(&self) -> intl::number::CompactDisplay
+pub fn intl::number::CompactDisplay::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::CompactDisplay
 impl core::cmp::PartialEq for intl::number::CompactDisplay
-pub fn intl::number::CompactDisplay::eq(&self, &intl::number::CompactDisplay) -> bool
+pub fn intl::number::CompactDisplay::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::CompactDisplay
-pub fn intl::number::CompactDisplay::default() -> intl::number::CompactDisplay
+pub fn intl::number::CompactDisplay::default() -> Self
 impl core::fmt::Debug for intl::number::CompactDisplay
 pub fn intl::number::CompactDisplay::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::CompactDisplay
@@ -1115,12 +1115,12 @@ pub intl::number::CurrencyDisplay::Name
 pub intl::number::CurrencyDisplay::NarrowSymbol
 pub intl::number::CurrencyDisplay::Symbol
 impl core::clone::Clone for intl::number::CurrencyDisplay
-pub fn intl::number::CurrencyDisplay::clone(&self) -> intl::number::CurrencyDisplay
+pub fn intl::number::CurrencyDisplay::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::CurrencyDisplay
 impl core::cmp::PartialEq for intl::number::CurrencyDisplay
-pub fn intl::number::CurrencyDisplay::eq(&self, &intl::number::CurrencyDisplay) -> bool
+pub fn intl::number::CurrencyDisplay::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::CurrencyDisplay
-pub fn intl::number::CurrencyDisplay::default() -> intl::number::CurrencyDisplay
+pub fn intl::number::CurrencyDisplay::default() -> Self
 impl core::fmt::Debug for intl::number::CurrencyDisplay
 pub fn intl::number::CurrencyDisplay::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::CurrencyDisplay
@@ -1160,12 +1160,12 @@ pub intl::number::Notation::Engineering
 pub intl::number::Notation::Scientific
 pub intl::number::Notation::Standard
 impl core::clone::Clone for intl::number::Notation
-pub fn intl::number::Notation::clone(&self) -> intl::number::Notation
+pub fn intl::number::Notation::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::Notation
 impl core::cmp::PartialEq for intl::number::Notation
-pub fn intl::number::Notation::eq(&self, &intl::number::Notation) -> bool
+pub fn intl::number::Notation::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::Notation
-pub fn intl::number::Notation::default() -> intl::number::Notation
+pub fn intl::number::Notation::default() -> Self
 impl core::fmt::Debug for intl::number::Notation
 pub fn intl::number::Notation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::Notation
@@ -1220,10 +1220,10 @@ pub intl::number::NumberPartType::Unit
 impl intl::number::NumberPartType
 pub fn intl::number::NumberPartType::as_str(&self) -> &'static str
 impl core::clone::Clone for intl::number::NumberPartType
-pub fn intl::number::NumberPartType::clone(&self) -> intl::number::NumberPartType
+pub fn intl::number::NumberPartType::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::NumberPartType
 impl core::cmp::PartialEq for intl::number::NumberPartType
-pub fn intl::number::NumberPartType::eq(&self, &intl::number::NumberPartType) -> bool
+pub fn intl::number::NumberPartType::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::number::NumberPartType
 pub fn intl::number::NumberPartType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::NumberPartType
@@ -1264,10 +1264,10 @@ pub intl::number::NumberRangeSource::StartRange
 impl intl::number::NumberRangeSource
 pub fn intl::number::NumberRangeSource::as_str(&self) -> &'static str
 impl core::clone::Clone for intl::number::NumberRangeSource
-pub fn intl::number::NumberRangeSource::clone(&self) -> intl::number::NumberRangeSource
+pub fn intl::number::NumberRangeSource::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::NumberRangeSource
 impl core::cmp::PartialEq for intl::number::NumberRangeSource
-pub fn intl::number::NumberRangeSource::eq(&self, &intl::number::NumberRangeSource) -> bool
+pub fn intl::number::NumberRangeSource::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::number::NumberRangeSource
 pub fn intl::number::NumberRangeSource::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::NumberRangeSource
@@ -1307,12 +1307,12 @@ pub intl::number::NumberStyle::Decimal
 pub intl::number::NumberStyle::Percent
 pub intl::number::NumberStyle::Unit
 impl core::clone::Clone for intl::number::NumberStyle
-pub fn intl::number::NumberStyle::clone(&self) -> intl::number::NumberStyle
+pub fn intl::number::NumberStyle::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::NumberStyle
 impl core::cmp::PartialEq for intl::number::NumberStyle
-pub fn intl::number::NumberStyle::eq(&self, &intl::number::NumberStyle) -> bool
+pub fn intl::number::NumberStyle::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::NumberStyle
-pub fn intl::number::NumberStyle::default() -> intl::number::NumberStyle
+pub fn intl::number::NumberStyle::default() -> Self
 impl core::fmt::Debug for intl::number::NumberStyle
 pub fn intl::number::NumberStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::NumberStyle
@@ -1357,12 +1357,12 @@ pub intl::number::RoundingMode::HalfFloor
 pub intl::number::RoundingMode::HalfTrunc
 pub intl::number::RoundingMode::Trunc
 impl core::clone::Clone for intl::number::RoundingMode
-pub fn intl::number::RoundingMode::clone(&self) -> intl::number::RoundingMode
+pub fn intl::number::RoundingMode::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::RoundingMode
 impl core::cmp::PartialEq for intl::number::RoundingMode
-pub fn intl::number::RoundingMode::eq(&self, &intl::number::RoundingMode) -> bool
+pub fn intl::number::RoundingMode::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::RoundingMode
-pub fn intl::number::RoundingMode::default() -> intl::number::RoundingMode
+pub fn intl::number::RoundingMode::default() -> Self
 impl core::fmt::Debug for intl::number::RoundingMode
 pub fn intl::number::RoundingMode::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::RoundingMode
@@ -1403,12 +1403,12 @@ pub intl::number::SignDisplay::ExceptZero
 pub intl::number::SignDisplay::Negative
 pub intl::number::SignDisplay::Never
 impl core::clone::Clone for intl::number::SignDisplay
-pub fn intl::number::SignDisplay::clone(&self) -> intl::number::SignDisplay
+pub fn intl::number::SignDisplay::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::SignDisplay
 impl core::cmp::PartialEq for intl::number::SignDisplay
-pub fn intl::number::SignDisplay::eq(&self, &intl::number::SignDisplay) -> bool
+pub fn intl::number::SignDisplay::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::SignDisplay
-pub fn intl::number::SignDisplay::default() -> intl::number::SignDisplay
+pub fn intl::number::SignDisplay::default() -> Self
 impl core::fmt::Debug for intl::number::SignDisplay
 pub fn intl::number::SignDisplay::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::SignDisplay
@@ -1447,12 +1447,12 @@ pub intl::number::UnitDisplay::Long
 pub intl::number::UnitDisplay::Narrow
 pub intl::number::UnitDisplay::Short
 impl core::clone::Clone for intl::number::UnitDisplay
-pub fn intl::number::UnitDisplay::clone(&self) -> intl::number::UnitDisplay
+pub fn intl::number::UnitDisplay::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::UnitDisplay
 impl core::cmp::PartialEq for intl::number::UnitDisplay
-pub fn intl::number::UnitDisplay::eq(&self, &intl::number::UnitDisplay) -> bool
+pub fn intl::number::UnitDisplay::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::UnitDisplay
-pub fn intl::number::UnitDisplay::default() -> intl::number::UnitDisplay
+pub fn intl::number::UnitDisplay::default() -> Self
 impl core::fmt::Debug for intl::number::UnitDisplay
 pub fn intl::number::UnitDisplay::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::UnitDisplay
@@ -1492,12 +1492,12 @@ pub intl::number::UseGrouping::Auto
 pub intl::number::UseGrouping::Min2
 pub intl::number::UseGrouping::Never
 impl core::clone::Clone for intl::number::UseGrouping
-pub fn intl::number::UseGrouping::clone(&self) -> intl::number::UseGrouping
+pub fn intl::number::UseGrouping::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::UseGrouping
 impl core::cmp::PartialEq for intl::number::UseGrouping
-pub fn intl::number::UseGrouping::eq(&self, &intl::number::UseGrouping) -> bool
+pub fn intl::number::UseGrouping::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::UseGrouping
-pub fn intl::number::UseGrouping::default() -> intl::number::UseGrouping
+pub fn intl::number::UseGrouping::default() -> Self
 impl core::fmt::Debug for intl::number::UseGrouping
 pub fn intl::number::UseGrouping::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::UseGrouping
@@ -1549,12 +1549,12 @@ pub intl::number::NumberFormatOptions::unit: core::option::Option<&'static str>
 pub intl::number::NumberFormatOptions::unit_display: intl::number::UnitDisplay
 pub intl::number::NumberFormatOptions::use_grouping: intl::number::UseGrouping
 impl core::clone::Clone for intl::number::NumberFormatOptions
-pub fn intl::number::NumberFormatOptions::clone(&self) -> intl::number::NumberFormatOptions
+pub fn intl::number::NumberFormatOptions::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::NumberFormatOptions
 impl core::cmp::PartialEq for intl::number::NumberFormatOptions
-pub fn intl::number::NumberFormatOptions::eq(&self, &intl::number::NumberFormatOptions) -> bool
+pub fn intl::number::NumberFormatOptions::eq(&self, &Self) -> bool
 impl core::default::Default for intl::number::NumberFormatOptions
-pub fn intl::number::NumberFormatOptions::default() -> intl::number::NumberFormatOptions
+pub fn intl::number::NumberFormatOptions::default() -> Self
 impl core::fmt::Debug for intl::number::NumberFormatOptions
 pub fn intl::number::NumberFormatOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::NumberFormatOptions
@@ -1592,10 +1592,10 @@ pub struct intl::number::NumberPart
 pub intl::number::NumberPart::kind: intl::number::NumberPartType
 pub intl::number::NumberPart::value: alloc::string::String
 impl core::clone::Clone for intl::number::NumberPart
-pub fn intl::number::NumberPart::clone(&self) -> intl::number::NumberPart
+pub fn intl::number::NumberPart::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::NumberPart
 impl core::cmp::PartialEq for intl::number::NumberPart
-pub fn intl::number::NumberPart::eq(&self, &intl::number::NumberPart) -> bool
+pub fn intl::number::NumberPart::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::number::NumberPart
 pub fn intl::number::NumberPart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::StructuralPartialEq for intl::number::NumberPart
@@ -1633,10 +1633,10 @@ pub intl::number::NumberRangePart::kind: intl::number::NumberPartType
 pub intl::number::NumberRangePart::source: intl::number::NumberRangeSource
 pub intl::number::NumberRangePart::value: alloc::string::String
 impl core::clone::Clone for intl::number::NumberRangePart
-pub fn intl::number::NumberRangePart::clone(&self) -> intl::number::NumberRangePart
+pub fn intl::number::NumberRangePart::clone(&self) -> Self
 impl core::cmp::Eq for intl::number::NumberRangePart
 impl core::cmp::PartialEq for intl::number::NumberRangePart
-pub fn intl::number::NumberRangePart::eq(&self, &intl::number::NumberRangePart) -> bool
+pub fn intl::number::NumberRangePart::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::number::NumberRangePart
 pub fn intl::number::NumberRangePart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::StructuralPartialEq for intl::number::NumberRangePart
@@ -1682,7 +1682,7 @@ pub intl::number::NumberSpec::pct: intl::number::Pattern
 pub intl::number::NumberSpec::percent: &'static str
 pub intl::number::NumberSpec::plus: &'static str
 impl core::clone::Clone for intl::number::NumberSpec
-pub fn intl::number::NumberSpec::clone(&self) -> intl::number::NumberSpec
+pub fn intl::number::NumberSpec::clone(&self) -> Self
 impl core::fmt::Debug for intl::number::NumberSpec
 pub fn intl::number::NumberSpec::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::NumberSpec
@@ -1724,7 +1724,7 @@ pub intl::number::Pattern::primary_group: u8
 pub intl::number::Pattern::secondary_group: u8
 pub intl::number::Pattern::suffix: &'static str
 impl core::clone::Clone for intl::number::Pattern
-pub fn intl::number::Pattern::clone(&self) -> intl::number::Pattern
+pub fn intl::number::Pattern::clone(&self) -> Self
 impl core::fmt::Debug for intl::number::Pattern
 pub fn intl::number::Pattern::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::number::Pattern
@@ -1782,10 +1782,10 @@ pub intl::plural::PluralCategory::Other
 pub intl::plural::PluralCategory::Two
 pub intl::plural::PluralCategory::Zero
 impl core::clone::Clone for intl::plural::PluralCategory
-pub fn intl::plural::PluralCategory::clone(&self) -> intl::plural::PluralCategory
+pub fn intl::plural::PluralCategory::clone(&self) -> Self
 impl core::cmp::Eq for intl::plural::PluralCategory
 impl core::cmp::PartialEq for intl::plural::PluralCategory
-pub fn intl::plural::PluralCategory::eq(&self, &intl::plural::PluralCategory) -> bool
+pub fn intl::plural::PluralCategory::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::plural::PluralCategory
 pub fn intl::plural::PluralCategory::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::plural::PluralCategory
@@ -1831,9 +1831,9 @@ impl intl::plural::PluralOperands
 pub const fn intl::plural::PluralOperands::from_int(i64) -> Self
 pub fn intl::plural::PluralOperands::parse(&str) -> core::option::Option<Self>
 impl core::clone::Clone for intl::plural::PluralOperands
-pub fn intl::plural::PluralOperands::clone(&self) -> intl::plural::PluralOperands
+pub fn intl::plural::PluralOperands::clone(&self) -> Self
 impl core::cmp::PartialEq for intl::plural::PluralOperands
-pub fn intl::plural::PluralOperands::eq(&self, &intl::plural::PluralOperands) -> bool
+pub fn intl::plural::PluralOperands::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::plural::PluralOperands
 pub fn intl::plural::PluralOperands::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::plural::PluralOperands
@@ -1874,14 +1874,14 @@ pub enum intl::relative::RelativeNumeric
 pub intl::relative::RelativeNumeric::Always
 pub intl::relative::RelativeNumeric::Auto
 impl core::clone::Clone for intl::relative::RelativeNumeric
-pub fn intl::relative::RelativeNumeric::clone(&self) -> intl::relative::RelativeNumeric
+pub fn intl::relative::RelativeNumeric::clone(&self) -> Self
 impl core::cmp::Eq for intl::relative::RelativeNumeric
 impl core::cmp::PartialEq for intl::relative::RelativeNumeric
-pub fn intl::relative::RelativeNumeric::eq(&self, &intl::relative::RelativeNumeric) -> bool
+pub fn intl::relative::RelativeNumeric::eq(&self, &Self) -> bool
 impl core::convert::From<intl::relative::RelativeNumeric> for intl::relative::RelativeTimeFormatOptions
 pub fn intl::relative::RelativeTimeFormatOptions::from(intl::relative::RelativeNumeric) -> Self
 impl core::default::Default for intl::relative::RelativeNumeric
-pub fn intl::relative::RelativeNumeric::default() -> intl::relative::RelativeNumeric
+pub fn intl::relative::RelativeNumeric::default() -> Self
 impl core::fmt::Debug for intl::relative::RelativeNumeric
 pub fn intl::relative::RelativeNumeric::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::relative::RelativeNumeric
@@ -1928,10 +1928,10 @@ impl intl::relative::RelativeUnit
 pub fn intl::relative::RelativeUnit::as_str(&self) -> &'static str
 pub fn intl::relative::RelativeUnit::from_ecma_id(&str) -> core::option::Option<intl::relative::RelativeUnit>
 impl core::clone::Clone for intl::relative::RelativeUnit
-pub fn intl::relative::RelativeUnit::clone(&self) -> intl::relative::RelativeUnit
+pub fn intl::relative::RelativeUnit::clone(&self) -> Self
 impl core::cmp::Eq for intl::relative::RelativeUnit
 impl core::cmp::PartialEq for intl::relative::RelativeUnit
-pub fn intl::relative::RelativeUnit::eq(&self, &intl::relative::RelativeUnit) -> bool
+pub fn intl::relative::RelativeUnit::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::relative::RelativeUnit
 pub fn intl::relative::RelativeUnit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::relative::RelativeUnit
@@ -1970,14 +1970,14 @@ pub intl::relative::RelativeWidth::Long
 pub intl::relative::RelativeWidth::Narrow
 pub intl::relative::RelativeWidth::Short
 impl core::clone::Clone for intl::relative::RelativeWidth
-pub fn intl::relative::RelativeWidth::clone(&self) -> intl::relative::RelativeWidth
+pub fn intl::relative::RelativeWidth::clone(&self) -> Self
 impl core::cmp::Eq for intl::relative::RelativeWidth
 impl core::cmp::PartialEq for intl::relative::RelativeWidth
-pub fn intl::relative::RelativeWidth::eq(&self, &intl::relative::RelativeWidth) -> bool
+pub fn intl::relative::RelativeWidth::eq(&self, &Self) -> bool
 impl core::convert::From<intl::relative::RelativeWidth> for intl::relative::RelativeTimeFormatOptions
 pub fn intl::relative::RelativeTimeFormatOptions::from(intl::relative::RelativeWidth) -> Self
 impl core::default::Default for intl::relative::RelativeWidth
-pub fn intl::relative::RelativeWidth::default() -> intl::relative::RelativeWidth
+pub fn intl::relative::RelativeWidth::default() -> Self
 impl core::fmt::Debug for intl::relative::RelativeWidth
 pub fn intl::relative::RelativeWidth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::relative::RelativeWidth
@@ -2018,7 +2018,7 @@ pub intl::relative::RelUnit::past: [core::option::Option<&'static str>; 6]
 impl intl::relative::RelUnit
 pub fn intl::relative::RelUnit::literal(&self, i64) -> core::option::Option<&'static str>
 impl core::clone::Clone for intl::relative::RelUnit
-pub fn intl::relative::RelUnit::clone(&self) -> intl::relative::RelUnit
+pub fn intl::relative::RelUnit::clone(&self) -> Self
 impl core::fmt::Debug for intl::relative::RelUnit
 pub fn intl::relative::RelUnit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::relative::RelUnit
@@ -2055,16 +2055,16 @@ pub fn intl::relative::RelUnit::from(T) -> T
 pub intl::relative::RelativeTimeFormatOptions::numeric: intl::relative::RelativeNumeric
 pub intl::relative::RelativeTimeFormatOptions::width: intl::relative::RelativeWidth
 impl core::clone::Clone for intl::relative::RelativeTimeFormatOptions
-pub fn intl::relative::RelativeTimeFormatOptions::clone(&self) -> intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::clone(&self) -> Self
 impl core::cmp::Eq for intl::relative::RelativeTimeFormatOptions
 impl core::cmp::PartialEq for intl::relative::RelativeTimeFormatOptions
-pub fn intl::relative::RelativeTimeFormatOptions::eq(&self, &intl::relative::RelativeTimeFormatOptions) -> bool
+pub fn intl::relative::RelativeTimeFormatOptions::eq(&self, &Self) -> bool
 impl core::convert::From<intl::relative::RelativeNumeric> for intl::relative::RelativeTimeFormatOptions
 pub fn intl::relative::RelativeTimeFormatOptions::from(intl::relative::RelativeNumeric) -> Self
 impl core::convert::From<intl::relative::RelativeWidth> for intl::relative::RelativeTimeFormatOptions
 pub fn intl::relative::RelativeTimeFormatOptions::from(intl::relative::RelativeWidth) -> Self
 impl core::default::Default for intl::relative::RelativeTimeFormatOptions
-pub fn intl::relative::RelativeTimeFormatOptions::default() -> intl::relative::RelativeTimeFormatOptions
+pub fn intl::relative::RelativeTimeFormatOptions::default() -> Self
 impl core::fmt::Debug for intl::relative::RelativeTimeFormatOptions
 pub fn intl::relative::RelativeTimeFormatOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::relative::RelativeTimeFormatOptions
@@ -2103,10 +2103,10 @@ pub intl::relative::RelativeTimePart::kind: intl::number::NumberPartType
 pub intl::relative::RelativeTimePart::unit: core::option::Option<intl::relative::RelativeUnit>
 pub intl::relative::RelativeTimePart::value: alloc::string::String
 impl core::clone::Clone for intl::relative::RelativeTimePart
-pub fn intl::relative::RelativeTimePart::clone(&self) -> intl::relative::RelativeTimePart
+pub fn intl::relative::RelativeTimePart::clone(&self) -> Self
 impl core::cmp::Eq for intl::relative::RelativeTimePart
 impl core::cmp::PartialEq for intl::relative::RelativeTimePart
-pub fn intl::relative::RelativeTimePart::eq(&self, &intl::relative::RelativeTimePart) -> bool
+pub fn intl::relative::RelativeTimePart::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::relative::RelativeTimePart
 pub fn intl::relative::RelativeTimePart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::StructuralPartialEq for intl::relative::RelativeTimePart
@@ -2182,10 +2182,10 @@ pub fn intl::timezone::PosixTz::is_dst(&self, &intl::datetime::DateTime) -> bool
 pub fn intl::timezone::PosixTz::offset_seconds(&self, &intl::datetime::DateTime) -> i32
 pub fn intl::timezone::PosixTz::parse(&str) -> core::option::Option<intl::timezone::PosixTz>
 impl core::clone::Clone for intl::timezone::PosixTz
-pub fn intl::timezone::PosixTz::clone(&self) -> intl::timezone::PosixTz
+pub fn intl::timezone::PosixTz::clone(&self) -> Self
 impl core::cmp::Eq for intl::timezone::PosixTz
 impl core::cmp::PartialEq for intl::timezone::PosixTz
-pub fn intl::timezone::PosixTz::eq(&self, &intl::timezone::PosixTz) -> bool
+pub fn intl::timezone::PosixTz::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::timezone::PosixTz
 pub fn intl::timezone::PosixTz::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::timezone::PosixTz
@@ -2227,7 +2227,7 @@ impl intl::translit::Transform
 pub fn intl::translit::Transform::apply(&self, &str) -> alloc::string::String
 pub fn intl::translit::Transform::parse(&str) -> core::option::Option<intl::translit::Transform>
 impl core::clone::Clone for intl::translit::Transform
-pub fn intl::translit::Transform::clone(&self) -> intl::translit::Transform
+pub fn intl::translit::Transform::clone(&self) -> Self
 impl core::fmt::Debug for intl::translit::Transform
 pub fn intl::translit::Transform::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Freeze for intl::translit::Transform
@@ -2295,10 +2295,10 @@ pub intl::unicode::bidi::BidiClass::WS
 impl intl::unicode::bidi::BidiClass
 pub const fn intl::unicode::bidi::BidiClass::is_rtl(self) -> bool
 impl core::clone::Clone for intl::unicode::bidi::BidiClass
-pub fn intl::unicode::bidi::BidiClass::clone(&self) -> intl::unicode::bidi::BidiClass
+pub fn intl::unicode::bidi::BidiClass::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::bidi::BidiClass
 impl core::cmp::PartialEq for intl::unicode::bidi::BidiClass
-pub fn intl::unicode::bidi::BidiClass::eq(&self, &intl::unicode::bidi::BidiClass) -> bool
+pub fn intl::unicode::bidi::BidiClass::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::bidi::BidiClass
 pub fn intl::unicode::bidi::BidiClass::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::bidi::BidiClass
@@ -2336,10 +2336,10 @@ pub enum intl::unicode::bidi::Direction
 pub intl::unicode::bidi::Direction::LeftToRight
 pub intl::unicode::bidi::Direction::RightToLeft
 impl core::clone::Clone for intl::unicode::bidi::Direction
-pub fn intl::unicode::bidi::Direction::clone(&self) -> intl::unicode::bidi::Direction
+pub fn intl::unicode::bidi::Direction::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::bidi::Direction
 impl core::cmp::PartialEq for intl::unicode::bidi::Direction
-pub fn intl::unicode::bidi::Direction::eq(&self, &intl::unicode::bidi::Direction) -> bool
+pub fn intl::unicode::bidi::Direction::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::bidi::Direction
 pub fn intl::unicode::bidi::Direction::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::bidi::Direction
@@ -2378,7 +2378,7 @@ pub intl::unicode::bidi::BidiInfo::levels: alloc::vec::Vec<core::option::Option<
 pub intl::unicode::bidi::BidiInfo::paragraph_level: u8
 pub intl::unicode::bidi::BidiInfo::visual_order: alloc::vec::Vec<usize>
 impl core::clone::Clone for intl::unicode::bidi::BidiInfo
-pub fn intl::unicode::bidi::BidiInfo::clone(&self) -> intl::unicode::bidi::BidiInfo
+pub fn intl::unicode::bidi::BidiInfo::clone(&self) -> Self
 impl core::fmt::Debug for intl::unicode::bidi::BidiInfo
 pub fn intl::unicode::bidi::BidiInfo::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Freeze for intl::unicode::bidi::BidiInfo
@@ -2418,7 +2418,7 @@ pub fn intl::unicode::bidi::process(&str, core::option::Option<intl::unicode::bi
 pub mod intl::unicode::case
 pub struct intl::unicode::case::CaseMapIter
 impl core::clone::Clone for intl::unicode::case::CaseMapIter
-pub fn intl::unicode::case::CaseMapIter::clone(&self) -> intl::unicode::case::CaseMapIter
+pub fn intl::unicode::case::CaseMapIter::clone(&self) -> Self
 impl core::fmt::Debug for intl::unicode::case::CaseMapIter
 pub fn intl::unicode::case::CaseMapIter::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::iter::traits::exact_size::ExactSizeIterator for intl::unicode::case::CaseMapIter
@@ -2461,7 +2461,7 @@ impl<T> core::convert::From<T> for intl::unicode::case::CaseMapIter
 pub fn intl::unicode::case::CaseMapIter::from(T) -> T
 pub struct intl::unicode::case::CaseMapping<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::case::CaseMapping<I>
-pub fn intl::unicode::case::CaseMapping<I>::clone(&self) -> intl::unicode::case::CaseMapping<I>
+pub fn intl::unicode::case::CaseMapping<I>::clone(&self) -> Self
 impl<I: core::iter::traits::iterator::Iterator<Item = char>> core::iter::traits::iterator::Iterator for intl::unicode::case::CaseMapping<I>
 pub type intl::unicode::case::CaseMapping<I>::Item = char
 pub fn intl::unicode::case::CaseMapping<I>::next(&mut self) -> core::option::Option<char>
@@ -2554,14 +2554,14 @@ pub const fn intl::unicode::category::GeneralCategory::is_punctuation(self) -> b
 pub const fn intl::unicode::category::GeneralCategory::is_separator(self) -> bool
 pub const fn intl::unicode::category::GeneralCategory::is_symbol(self) -> bool
 impl core::clone::Clone for intl::unicode::category::GeneralCategory
-pub fn intl::unicode::category::GeneralCategory::clone(&self) -> intl::unicode::category::GeneralCategory
+pub fn intl::unicode::category::GeneralCategory::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::category::GeneralCategory
 impl core::cmp::Ord for intl::unicode::category::GeneralCategory
-pub fn intl::unicode::category::GeneralCategory::cmp(&self, &intl::unicode::category::GeneralCategory) -> core::cmp::Ordering
+pub fn intl::unicode::category::GeneralCategory::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::category::GeneralCategory
-pub fn intl::unicode::category::GeneralCategory::eq(&self, &intl::unicode::category::GeneralCategory) -> bool
+pub fn intl::unicode::category::GeneralCategory::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::category::GeneralCategory
-pub fn intl::unicode::category::GeneralCategory::partial_cmp(&self, &intl::unicode::category::GeneralCategory) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::category::GeneralCategory::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::category::GeneralCategory
 pub fn intl::unicode::category::GeneralCategory::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::category::GeneralCategory
@@ -2606,14 +2606,14 @@ pub intl::unicode::category::Group::Punctuation
 pub intl::unicode::category::Group::Separator
 pub intl::unicode::category::Group::Symbol
 impl core::clone::Clone for intl::unicode::category::Group
-pub fn intl::unicode::category::Group::clone(&self) -> intl::unicode::category::Group
+pub fn intl::unicode::category::Group::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::category::Group
 impl core::cmp::Ord for intl::unicode::category::Group
-pub fn intl::unicode::category::Group::cmp(&self, &intl::unicode::category::Group) -> core::cmp::Ordering
+pub fn intl::unicode::category::Group::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::category::Group
-pub fn intl::unicode::category::Group::eq(&self, &intl::unicode::category::Group) -> bool
+pub fn intl::unicode::category::Group::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::category::Group
-pub fn intl::unicode::category::Group::partial_cmp(&self, &intl::unicode::category::Group) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::category::Group::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::category::Group
 pub fn intl::unicode::category::Group::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::category::Group
@@ -2654,10 +2654,10 @@ pub enum intl::unicode::collate::AlternateHandling
 pub intl::unicode::collate::AlternateHandling::NonIgnorable
 pub intl::unicode::collate::AlternateHandling::Shifted
 impl core::clone::Clone for intl::unicode::collate::AlternateHandling
-pub fn intl::unicode::collate::AlternateHandling::clone(&self) -> intl::unicode::collate::AlternateHandling
+pub fn intl::unicode::collate::AlternateHandling::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::collate::AlternateHandling
 impl core::cmp::PartialEq for intl::unicode::collate::AlternateHandling
-pub fn intl::unicode::collate::AlternateHandling::eq(&self, &intl::unicode::collate::AlternateHandling) -> bool
+pub fn intl::unicode::collate::AlternateHandling::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::collate::AlternateHandling
 pub fn intl::unicode::collate::AlternateHandling::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::collate::AlternateHandling
@@ -2697,14 +2697,14 @@ pub intl::unicode::collate::Strength::Quaternary
 pub intl::unicode::collate::Strength::Secondary
 pub intl::unicode::collate::Strength::Tertiary
 impl core::clone::Clone for intl::unicode::collate::Strength
-pub fn intl::unicode::collate::Strength::clone(&self) -> intl::unicode::collate::Strength
+pub fn intl::unicode::collate::Strength::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::collate::Strength
 impl core::cmp::Ord for intl::unicode::collate::Strength
-pub fn intl::unicode::collate::Strength::cmp(&self, &intl::unicode::collate::Strength) -> core::cmp::Ordering
+pub fn intl::unicode::collate::Strength::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::collate::Strength
-pub fn intl::unicode::collate::Strength::eq(&self, &intl::unicode::collate::Strength) -> bool
+pub fn intl::unicode::collate::Strength::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::collate::Strength
-pub fn intl::unicode::collate::Strength::partial_cmp(&self, &intl::unicode::collate::Strength) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::collate::Strength::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::collate::Strength
 pub fn intl::unicode::collate::Strength::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::collate::Strength
@@ -2747,7 +2747,7 @@ pub fn intl::unicode::collate::Collator::with_case_level(self, bool) -> Self
 pub fn intl::unicode::collate::Collator::with_numeric(self, bool) -> Self
 pub fn intl::unicode::collate::Collator::with_strength(self, intl::unicode::collate::Strength) -> Self
 impl core::clone::Clone for intl::unicode::collate::Collator
-pub fn intl::unicode::collate::Collator::clone(&self) -> intl::unicode::collate::Collator
+pub fn intl::unicode::collate::Collator::clone(&self) -> Self
 impl core::default::Default for intl::unicode::collate::Collator
 pub fn intl::unicode::collate::Collator::default() -> Self
 impl core::fmt::Debug for intl::unicode::collate::Collator
@@ -2834,10 +2834,10 @@ pub intl::unicode::idna::Error::InvalidLabel
 pub intl::unicode::idna::Error::LeadingMark
 pub intl::unicode::idna::Error::Punycode
 impl core::clone::Clone for intl::unicode::idna::Error
-pub fn intl::unicode::idna::Error::clone(&self) -> intl::unicode::idna::Error
+pub fn intl::unicode::idna::Error::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::idna::Error
 impl core::cmp::PartialEq for intl::unicode::idna::Error
-pub fn intl::unicode::idna::Error::eq(&self, &intl::unicode::idna::Error) -> bool
+pub fn intl::unicode::idna::Error::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::idna::Error
 pub fn intl::unicode::idna::Error::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::idna::Error
@@ -2883,10 +2883,10 @@ pub intl::unicode::normalize::IsNormalized::Maybe
 pub intl::unicode::normalize::IsNormalized::No
 pub intl::unicode::normalize::IsNormalized::Yes
 impl core::clone::Clone for intl::unicode::normalize::IsNormalized
-pub fn intl::unicode::normalize::IsNormalized::clone(&self) -> intl::unicode::normalize::IsNormalized
+pub fn intl::unicode::normalize::IsNormalized::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::normalize::IsNormalized
 impl core::cmp::PartialEq for intl::unicode::normalize::IsNormalized
-pub fn intl::unicode::normalize::IsNormalized::eq(&self, &intl::unicode::normalize::IsNormalized) -> bool
+pub fn intl::unicode::normalize::IsNormalized::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::normalize::IsNormalized
 pub fn intl::unicode::normalize::IsNormalized::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::normalize::IsNormalized
@@ -2922,7 +2922,7 @@ impl<T> core::convert::From<T> for intl::unicode::normalize::IsNormalized
 pub fn intl::unicode::normalize::IsNormalized::from(T) -> T
 pub struct intl::unicode::normalize::Decompositions<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::normalize::Decompositions<I>
-pub fn intl::unicode::normalize::Decompositions<I>::clone(&self) -> intl::unicode::normalize::Decompositions<I>
+pub fn intl::unicode::normalize::Decompositions<I>::clone(&self) -> Self
 impl<I: core::iter::traits::iterator::Iterator<Item = char>> core::iter::traits::iterator::Iterator for intl::unicode::normalize::Decompositions<I>
 pub type intl::unicode::normalize::Decompositions<I>::Item = char
 pub fn intl::unicode::normalize::Decompositions<I>::next(&mut self) -> core::option::Option<char>
@@ -2961,7 +2961,7 @@ impl<T> core::convert::From<T> for intl::unicode::normalize::Decompositions<I>
 pub fn intl::unicode::normalize::Decompositions<I>::from(T) -> T
 pub struct intl::unicode::normalize::Recompositions<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::normalize::Recompositions<I>
-pub fn intl::unicode::normalize::Recompositions<I>::clone(&self) -> intl::unicode::normalize::Recompositions<I>
+pub fn intl::unicode::normalize::Recompositions<I>::clone(&self) -> Self
 impl<I: core::iter::traits::iterator::Iterator<Item = char>> core::iter::traits::iterator::Iterator for intl::unicode::normalize::Recompositions<I>
 pub type intl::unicode::normalize::Recompositions<I>::Item = char
 pub fn intl::unicode::normalize::Recompositions<I>::next(&mut self) -> core::option::Option<char>
@@ -3019,14 +3019,14 @@ pub intl::unicode::numeric::NumericType::Decimal
 pub intl::unicode::numeric::NumericType::Digit
 pub intl::unicode::numeric::NumericType::Numeric
 impl core::clone::Clone for intl::unicode::numeric::NumericType
-pub fn intl::unicode::numeric::NumericType::clone(&self) -> intl::unicode::numeric::NumericType
+pub fn intl::unicode::numeric::NumericType::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::numeric::NumericType
 impl core::cmp::Ord for intl::unicode::numeric::NumericType
-pub fn intl::unicode::numeric::NumericType::cmp(&self, &intl::unicode::numeric::NumericType) -> core::cmp::Ordering
+pub fn intl::unicode::numeric::NumericType::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::numeric::NumericType
-pub fn intl::unicode::numeric::NumericType::eq(&self, &intl::unicode::numeric::NumericType) -> bool
+pub fn intl::unicode::numeric::NumericType::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::numeric::NumericType
-pub fn intl::unicode::numeric::NumericType::partial_cmp(&self, &intl::unicode::numeric::NumericType) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::numeric::NumericType::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::numeric::NumericType
 pub fn intl::unicode::numeric::NumericType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::numeric::NumericType
@@ -3070,10 +3070,10 @@ pub fn intl::unicode::numeric::NumericValue::as_f64(self) -> f64
 pub const fn intl::unicode::numeric::NumericValue::is_integer(self) -> bool
 pub const fn intl::unicode::numeric::NumericValue::to_i64(self) -> core::option::Option<i64>
 impl core::clone::Clone for intl::unicode::numeric::NumericValue
-pub fn intl::unicode::numeric::NumericValue::clone(&self) -> intl::unicode::numeric::NumericValue
+pub fn intl::unicode::numeric::NumericValue::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::numeric::NumericValue
 impl core::cmp::PartialEq for intl::unicode::numeric::NumericValue
-pub fn intl::unicode::numeric::NumericValue::eq(&self, &intl::unicode::numeric::NumericValue) -> bool
+pub fn intl::unicode::numeric::NumericValue::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::numeric::NumericValue
 pub fn intl::unicode::numeric::NumericValue::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::numeric::NumericValue
@@ -3292,14 +3292,14 @@ pub intl::unicode::script::Script::ZanabazarSquare
 impl intl::unicode::Script
 pub const fn intl::unicode::Script::long_name(self) -> &'static str
 impl core::clone::Clone for intl::unicode::Script
-pub fn intl::unicode::Script::clone(&self) -> intl::unicode::Script
+pub fn intl::unicode::Script::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::Script
 impl core::cmp::Ord for intl::unicode::Script
-pub fn intl::unicode::Script::cmp(&self, &intl::unicode::Script) -> core::cmp::Ordering
+pub fn intl::unicode::Script::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::Script
-pub fn intl::unicode::Script::eq(&self, &intl::unicode::Script) -> bool
+pub fn intl::unicode::Script::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::Script
-pub fn intl::unicode::Script::partial_cmp(&self, &intl::unicode::Script) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::Script::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::Script
 pub fn intl::unicode::Script::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::Script
@@ -3343,10 +3343,10 @@ pub const fn intl::unicode::script::ScriptExtensions::as_slice(&self) -> &[intl:
 pub fn intl::unicode::script::ScriptExtensions::contains(&self, intl::unicode::Script) -> bool
 pub fn intl::unicode::script::ScriptExtensions::iter(&self) -> core::iter::adapters::copied::Copied<core::slice::iter::Iter<'_, intl::unicode::Script>>
 impl core::clone::Clone for intl::unicode::script::ScriptExtensions
-pub fn intl::unicode::script::ScriptExtensions::clone(&self) -> intl::unicode::script::ScriptExtensions
+pub fn intl::unicode::script::ScriptExtensions::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::script::ScriptExtensions
 impl core::cmp::PartialEq for intl::unicode::script::ScriptExtensions
-pub fn intl::unicode::script::ScriptExtensions::eq(&self, &intl::unicode::script::ScriptExtensions) -> bool
+pub fn intl::unicode::script::ScriptExtensions::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::script::ScriptExtensions
 pub fn intl::unicode::script::ScriptExtensions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::script::ScriptExtensions
@@ -3387,7 +3387,7 @@ pub const fn intl::unicode::script::script_u32(u32) -> intl::unicode::Script
 pub mod intl::unicode::segment
 pub struct intl::unicode::segment::Graphemes<'a>
 impl<'a> core::clone::Clone for intl::unicode::segment::Graphemes<'a>
-pub fn intl::unicode::segment::Graphemes<'a>::clone(&self) -> intl::unicode::segment::Graphemes<'a>
+pub fn intl::unicode::segment::Graphemes<'a>::clone(&self) -> Self
 impl<'a> core::iter::traits::iterator::Iterator for intl::unicode::segment::Graphemes<'a>
 pub type intl::unicode::segment::Graphemes<'a>::Item = &'a str
 pub fn intl::unicode::segment::Graphemes<'a>::next(&mut self) -> core::option::Option<&'a str>
@@ -3428,10 +3428,10 @@ pub struct intl::unicode::segment::LineBreak<'a>
 pub intl::unicode::segment::LineBreak::mandatory: bool
 pub intl::unicode::segment::LineBreak::text: &'a str
 impl<'a> core::clone::Clone for intl::unicode::segment::LineBreak<'a>
-pub fn intl::unicode::segment::LineBreak<'a>::clone(&self) -> intl::unicode::segment::LineBreak<'a>
+pub fn intl::unicode::segment::LineBreak<'a>::clone(&self) -> Self
 impl<'a> core::cmp::Eq for intl::unicode::segment::LineBreak<'a>
 impl<'a> core::cmp::PartialEq for intl::unicode::segment::LineBreak<'a>
-pub fn intl::unicode::segment::LineBreak<'a>::eq(&self, &intl::unicode::segment::LineBreak<'a>) -> bool
+pub fn intl::unicode::segment::LineBreak<'a>::eq(&self, &Self) -> bool
 impl<'a> core::fmt::Debug for intl::unicode::segment::LineBreak<'a>
 pub fn intl::unicode::segment::LineBreak<'a>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<'a> core::marker::Copy for intl::unicode::segment::LineBreak<'a>
@@ -3467,7 +3467,7 @@ impl<T> core::convert::From<T> for intl::unicode::segment::LineBreak<'a>
 pub fn intl::unicode::segment::LineBreak<'a>::from(T) -> T
 pub struct intl::unicode::segment::LineBreaks<'a>
 impl<'a> core::clone::Clone for intl::unicode::segment::LineBreaks<'a>
-pub fn intl::unicode::segment::LineBreaks<'a>::clone(&self) -> intl::unicode::segment::LineBreaks<'a>
+pub fn intl::unicode::segment::LineBreaks<'a>::clone(&self) -> Self
 impl<'a> core::iter::traits::iterator::Iterator for intl::unicode::segment::LineBreaks<'a>
 pub type intl::unicode::segment::LineBreaks<'a>::Item = intl::unicode::segment::LineBreak<'a>
 pub fn intl::unicode::segment::LineBreaks<'a>::next(&mut self) -> core::option::Option<intl::unicode::segment::LineBreak<'a>>
@@ -3506,7 +3506,7 @@ impl<T> core::convert::From<T> for intl::unicode::segment::LineBreaks<'a>
 pub fn intl::unicode::segment::LineBreaks<'a>::from(T) -> T
 pub struct intl::unicode::segment::Sentences<'a>
 impl<'a> core::clone::Clone for intl::unicode::segment::Sentences<'a>
-pub fn intl::unicode::segment::Sentences<'a>::clone(&self) -> intl::unicode::segment::Sentences<'a>
+pub fn intl::unicode::segment::Sentences<'a>::clone(&self) -> Self
 impl<'a> core::iter::traits::iterator::Iterator for intl::unicode::segment::Sentences<'a>
 pub type intl::unicode::segment::Sentences<'a>::Item = &'a str
 pub fn intl::unicode::segment::Sentences<'a>::next(&mut self) -> core::option::Option<&'a str>
@@ -3545,7 +3545,7 @@ impl<T> core::convert::From<T> for intl::unicode::segment::Sentences<'a>
 pub fn intl::unicode::segment::Sentences<'a>::from(T) -> T
 pub struct intl::unicode::segment::Words<'a>
 impl<'a> core::clone::Clone for intl::unicode::segment::Words<'a>
-pub fn intl::unicode::segment::Words<'a>::clone(&self) -> intl::unicode::segment::Words<'a>
+pub fn intl::unicode::segment::Words<'a>::clone(&self) -> Self
 impl<'a> core::iter::traits::iterator::Iterator for intl::unicode::segment::Words<'a>
 pub type intl::unicode::segment::Words<'a>::Item = &'a str
 pub fn intl::unicode::segment::Words<'a>::next(&mut self) -> core::option::Option<&'a str>
@@ -3602,14 +3602,14 @@ impl intl::unicode::width::EastAsianWidth
 pub const fn intl::unicode::width::EastAsianWidth::abbr(self) -> &'static str
 pub const fn intl::unicode::width::EastAsianWidth::is_wide(self) -> bool
 impl core::clone::Clone for intl::unicode::width::EastAsianWidth
-pub fn intl::unicode::width::EastAsianWidth::clone(&self) -> intl::unicode::width::EastAsianWidth
+pub fn intl::unicode::width::EastAsianWidth::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::width::EastAsianWidth
 impl core::cmp::Ord for intl::unicode::width::EastAsianWidth
-pub fn intl::unicode::width::EastAsianWidth::cmp(&self, &intl::unicode::width::EastAsianWidth) -> core::cmp::Ordering
+pub fn intl::unicode::width::EastAsianWidth::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::width::EastAsianWidth
-pub fn intl::unicode::width::EastAsianWidth::eq(&self, &intl::unicode::width::EastAsianWidth) -> bool
+pub fn intl::unicode::width::EastAsianWidth::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::width::EastAsianWidth
-pub fn intl::unicode::width::EastAsianWidth::partial_cmp(&self, &intl::unicode::width::EastAsianWidth) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::width::EastAsianWidth::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::width::EastAsianWidth
 pub fn intl::unicode::width::EastAsianWidth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::width::EastAsianWidth
@@ -3651,10 +3651,10 @@ pub enum intl::unicode::AlternateHandling
 pub intl::unicode::AlternateHandling::NonIgnorable
 pub intl::unicode::AlternateHandling::Shifted
 impl core::clone::Clone for intl::unicode::collate::AlternateHandling
-pub fn intl::unicode::collate::AlternateHandling::clone(&self) -> intl::unicode::collate::AlternateHandling
+pub fn intl::unicode::collate::AlternateHandling::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::collate::AlternateHandling
 impl core::cmp::PartialEq for intl::unicode::collate::AlternateHandling
-pub fn intl::unicode::collate::AlternateHandling::eq(&self, &intl::unicode::collate::AlternateHandling) -> bool
+pub fn intl::unicode::collate::AlternateHandling::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::collate::AlternateHandling
 pub fn intl::unicode::collate::AlternateHandling::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::collate::AlternateHandling
@@ -3715,10 +3715,10 @@ pub intl::unicode::BidiClass::WS
 impl intl::unicode::bidi::BidiClass
 pub const fn intl::unicode::bidi::BidiClass::is_rtl(self) -> bool
 impl core::clone::Clone for intl::unicode::bidi::BidiClass
-pub fn intl::unicode::bidi::BidiClass::clone(&self) -> intl::unicode::bidi::BidiClass
+pub fn intl::unicode::bidi::BidiClass::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::bidi::BidiClass
 impl core::cmp::PartialEq for intl::unicode::bidi::BidiClass
-pub fn intl::unicode::bidi::BidiClass::eq(&self, &intl::unicode::bidi::BidiClass) -> bool
+pub fn intl::unicode::bidi::BidiClass::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::bidi::BidiClass
 pub fn intl::unicode::bidi::BidiClass::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::bidi::BidiClass
@@ -3756,10 +3756,10 @@ pub enum intl::unicode::Direction
 pub intl::unicode::Direction::LeftToRight
 pub intl::unicode::Direction::RightToLeft
 impl core::clone::Clone for intl::unicode::bidi::Direction
-pub fn intl::unicode::bidi::Direction::clone(&self) -> intl::unicode::bidi::Direction
+pub fn intl::unicode::bidi::Direction::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::bidi::Direction
 impl core::cmp::PartialEq for intl::unicode::bidi::Direction
-pub fn intl::unicode::bidi::Direction::eq(&self, &intl::unicode::bidi::Direction) -> bool
+pub fn intl::unicode::bidi::Direction::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::bidi::Direction
 pub fn intl::unicode::bidi::Direction::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::bidi::Direction
@@ -3804,14 +3804,14 @@ impl intl::unicode::width::EastAsianWidth
 pub const fn intl::unicode::width::EastAsianWidth::abbr(self) -> &'static str
 pub const fn intl::unicode::width::EastAsianWidth::is_wide(self) -> bool
 impl core::clone::Clone for intl::unicode::width::EastAsianWidth
-pub fn intl::unicode::width::EastAsianWidth::clone(&self) -> intl::unicode::width::EastAsianWidth
+pub fn intl::unicode::width::EastAsianWidth::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::width::EastAsianWidth
 impl core::cmp::Ord for intl::unicode::width::EastAsianWidth
-pub fn intl::unicode::width::EastAsianWidth::cmp(&self, &intl::unicode::width::EastAsianWidth) -> core::cmp::Ordering
+pub fn intl::unicode::width::EastAsianWidth::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::width::EastAsianWidth
-pub fn intl::unicode::width::EastAsianWidth::eq(&self, &intl::unicode::width::EastAsianWidth) -> bool
+pub fn intl::unicode::width::EastAsianWidth::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::width::EastAsianWidth
-pub fn intl::unicode::width::EastAsianWidth::partial_cmp(&self, &intl::unicode::width::EastAsianWidth) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::width::EastAsianWidth::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::width::EastAsianWidth
 pub fn intl::unicode::width::EastAsianWidth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::width::EastAsianWidth
@@ -3891,14 +3891,14 @@ pub const fn intl::unicode::category::GeneralCategory::is_punctuation(self) -> b
 pub const fn intl::unicode::category::GeneralCategory::is_separator(self) -> bool
 pub const fn intl::unicode::category::GeneralCategory::is_symbol(self) -> bool
 impl core::clone::Clone for intl::unicode::category::GeneralCategory
-pub fn intl::unicode::category::GeneralCategory::clone(&self) -> intl::unicode::category::GeneralCategory
+pub fn intl::unicode::category::GeneralCategory::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::category::GeneralCategory
 impl core::cmp::Ord for intl::unicode::category::GeneralCategory
-pub fn intl::unicode::category::GeneralCategory::cmp(&self, &intl::unicode::category::GeneralCategory) -> core::cmp::Ordering
+pub fn intl::unicode::category::GeneralCategory::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::category::GeneralCategory
-pub fn intl::unicode::category::GeneralCategory::eq(&self, &intl::unicode::category::GeneralCategory) -> bool
+pub fn intl::unicode::category::GeneralCategory::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::category::GeneralCategory
-pub fn intl::unicode::category::GeneralCategory::partial_cmp(&self, &intl::unicode::category::GeneralCategory) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::category::GeneralCategory::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::category::GeneralCategory
 pub fn intl::unicode::category::GeneralCategory::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::category::GeneralCategory
@@ -3943,14 +3943,14 @@ pub intl::unicode::Group::Punctuation
 pub intl::unicode::Group::Separator
 pub intl::unicode::Group::Symbol
 impl core::clone::Clone for intl::unicode::category::Group
-pub fn intl::unicode::category::Group::clone(&self) -> intl::unicode::category::Group
+pub fn intl::unicode::category::Group::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::category::Group
 impl core::cmp::Ord for intl::unicode::category::Group
-pub fn intl::unicode::category::Group::cmp(&self, &intl::unicode::category::Group) -> core::cmp::Ordering
+pub fn intl::unicode::category::Group::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::category::Group
-pub fn intl::unicode::category::Group::eq(&self, &intl::unicode::category::Group) -> bool
+pub fn intl::unicode::category::Group::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::category::Group
-pub fn intl::unicode::category::Group::partial_cmp(&self, &intl::unicode::category::Group) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::category::Group::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::category::Group
 pub fn intl::unicode::category::Group::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::category::Group
@@ -4004,10 +4004,10 @@ pub intl::unicode::IndicPositionalCategory::TopAndLeftAndRight
 pub intl::unicode::IndicPositionalCategory::TopAndRight
 pub intl::unicode::IndicPositionalCategory::VisualOrderLeft
 impl core::clone::Clone for intl::unicode::IndicPositionalCategory
-pub fn intl::unicode::IndicPositionalCategory::clone(&self) -> intl::unicode::IndicPositionalCategory
+pub fn intl::unicode::IndicPositionalCategory::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::IndicPositionalCategory
 impl core::cmp::PartialEq for intl::unicode::IndicPositionalCategory
-pub fn intl::unicode::IndicPositionalCategory::eq(&self, &intl::unicode::IndicPositionalCategory) -> bool
+pub fn intl::unicode::IndicPositionalCategory::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::IndicPositionalCategory
 pub fn intl::unicode::IndicPositionalCategory::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::IndicPositionalCategory
@@ -4080,10 +4080,10 @@ pub intl::unicode::IndicSyllabicCategory::Vowel
 pub intl::unicode::IndicSyllabicCategory::VowelDependent
 pub intl::unicode::IndicSyllabicCategory::VowelIndependent
 impl core::clone::Clone for intl::unicode::IndicSyllabicCategory
-pub fn intl::unicode::IndicSyllabicCategory::clone(&self) -> intl::unicode::IndicSyllabicCategory
+pub fn intl::unicode::IndicSyllabicCategory::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::IndicSyllabicCategory
 impl core::cmp::PartialEq for intl::unicode::IndicSyllabicCategory
-pub fn intl::unicode::IndicSyllabicCategory::eq(&self, &intl::unicode::IndicSyllabicCategory) -> bool
+pub fn intl::unicode::IndicSyllabicCategory::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::IndicSyllabicCategory
 pub fn intl::unicode::IndicSyllabicCategory::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::IndicSyllabicCategory
@@ -4122,10 +4122,10 @@ pub intl::unicode::IsNormalized::Maybe
 pub intl::unicode::IsNormalized::No
 pub intl::unicode::IsNormalized::Yes
 impl core::clone::Clone for intl::unicode::normalize::IsNormalized
-pub fn intl::unicode::normalize::IsNormalized::clone(&self) -> intl::unicode::normalize::IsNormalized
+pub fn intl::unicode::normalize::IsNormalized::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::normalize::IsNormalized
 impl core::cmp::PartialEq for intl::unicode::normalize::IsNormalized
-pub fn intl::unicode::normalize::IsNormalized::eq(&self, &intl::unicode::normalize::IsNormalized) -> bool
+pub fn intl::unicode::normalize::IsNormalized::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::normalize::IsNormalized
 pub fn intl::unicode::normalize::IsNormalized::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::normalize::IsNormalized
@@ -4267,10 +4267,10 @@ pub intl::unicode::JoiningGroup::YudhHe
 pub intl::unicode::JoiningGroup::Zain
 pub intl::unicode::JoiningGroup::Zhain
 impl core::clone::Clone for intl::unicode::JoiningGroup
-pub fn intl::unicode::JoiningGroup::clone(&self) -> intl::unicode::JoiningGroup
+pub fn intl::unicode::JoiningGroup::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::JoiningGroup
 impl core::cmp::PartialEq for intl::unicode::JoiningGroup
-pub fn intl::unicode::JoiningGroup::eq(&self, &intl::unicode::JoiningGroup) -> bool
+pub fn intl::unicode::JoiningGroup::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::JoiningGroup
 pub fn intl::unicode::JoiningGroup::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::JoiningGroup
@@ -4312,10 +4312,10 @@ pub intl::unicode::JoiningType::NonJoining
 pub intl::unicode::JoiningType::RightJoining
 pub intl::unicode::JoiningType::Transparent
 impl core::clone::Clone for intl::unicode::JoiningType
-pub fn intl::unicode::JoiningType::clone(&self) -> intl::unicode::JoiningType
+pub fn intl::unicode::JoiningType::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::JoiningType
 impl core::cmp::PartialEq for intl::unicode::JoiningType
-pub fn intl::unicode::JoiningType::eq(&self, &intl::unicode::JoiningType) -> bool
+pub fn intl::unicode::JoiningType::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::JoiningType
 pub fn intl::unicode::JoiningType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::JoiningType
@@ -4354,14 +4354,14 @@ pub intl::unicode::NumericType::Decimal
 pub intl::unicode::NumericType::Digit
 pub intl::unicode::NumericType::Numeric
 impl core::clone::Clone for intl::unicode::numeric::NumericType
-pub fn intl::unicode::numeric::NumericType::clone(&self) -> intl::unicode::numeric::NumericType
+pub fn intl::unicode::numeric::NumericType::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::numeric::NumericType
 impl core::cmp::Ord for intl::unicode::numeric::NumericType
-pub fn intl::unicode::numeric::NumericType::cmp(&self, &intl::unicode::numeric::NumericType) -> core::cmp::Ordering
+pub fn intl::unicode::numeric::NumericType::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::numeric::NumericType
-pub fn intl::unicode::numeric::NumericType::eq(&self, &intl::unicode::numeric::NumericType) -> bool
+pub fn intl::unicode::numeric::NumericType::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::numeric::NumericType
-pub fn intl::unicode::numeric::NumericType::partial_cmp(&self, &intl::unicode::numeric::NumericType) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::numeric::NumericType::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::numeric::NumericType
 pub fn intl::unicode::numeric::NumericType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::numeric::NumericType
@@ -4576,14 +4576,14 @@ pub intl::unicode::Script::ZanabazarSquare
 impl intl::unicode::Script
 pub const fn intl::unicode::Script::long_name(self) -> &'static str
 impl core::clone::Clone for intl::unicode::Script
-pub fn intl::unicode::Script::clone(&self) -> intl::unicode::Script
+pub fn intl::unicode::Script::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::Script
 impl core::cmp::Ord for intl::unicode::Script
-pub fn intl::unicode::Script::cmp(&self, &intl::unicode::Script) -> core::cmp::Ordering
+pub fn intl::unicode::Script::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::Script
-pub fn intl::unicode::Script::eq(&self, &intl::unicode::Script) -> bool
+pub fn intl::unicode::Script::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::Script
-pub fn intl::unicode::Script::partial_cmp(&self, &intl::unicode::Script) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::Script::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::Script
 pub fn intl::unicode::Script::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::Script
@@ -4627,10 +4627,10 @@ pub const fn intl::unicode::script::ScriptExtensions::as_slice(&self) -> &[intl:
 pub fn intl::unicode::script::ScriptExtensions::contains(&self, intl::unicode::Script) -> bool
 pub fn intl::unicode::script::ScriptExtensions::iter(&self) -> core::iter::adapters::copied::Copied<core::slice::iter::Iter<'_, intl::unicode::Script>>
 impl core::clone::Clone for intl::unicode::script::ScriptExtensions
-pub fn intl::unicode::script::ScriptExtensions::clone(&self) -> intl::unicode::script::ScriptExtensions
+pub fn intl::unicode::script::ScriptExtensions::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::script::ScriptExtensions
 impl core::cmp::PartialEq for intl::unicode::script::ScriptExtensions
-pub fn intl::unicode::script::ScriptExtensions::eq(&self, &intl::unicode::script::ScriptExtensions) -> bool
+pub fn intl::unicode::script::ScriptExtensions::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::script::ScriptExtensions
 pub fn intl::unicode::script::ScriptExtensions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::script::ScriptExtensions
@@ -4670,14 +4670,14 @@ pub intl::unicode::Strength::Quaternary
 pub intl::unicode::Strength::Secondary
 pub intl::unicode::Strength::Tertiary
 impl core::clone::Clone for intl::unicode::collate::Strength
-pub fn intl::unicode::collate::Strength::clone(&self) -> intl::unicode::collate::Strength
+pub fn intl::unicode::collate::Strength::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::collate::Strength
 impl core::cmp::Ord for intl::unicode::collate::Strength
-pub fn intl::unicode::collate::Strength::cmp(&self, &intl::unicode::collate::Strength) -> core::cmp::Ordering
+pub fn intl::unicode::collate::Strength::cmp(&self, &Self) -> core::cmp::Ordering
 impl core::cmp::PartialEq for intl::unicode::collate::Strength
-pub fn intl::unicode::collate::Strength::eq(&self, &intl::unicode::collate::Strength) -> bool
+pub fn intl::unicode::collate::Strength::eq(&self, &Self) -> bool
 impl core::cmp::PartialOrd for intl::unicode::collate::Strength
-pub fn intl::unicode::collate::Strength::partial_cmp(&self, &intl::unicode::collate::Strength) -> core::option::Option<core::cmp::Ordering>
+pub fn intl::unicode::collate::Strength::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
 impl core::fmt::Debug for intl::unicode::collate::Strength
 pub fn intl::unicode::collate::Strength::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unicode::collate::Strength
@@ -4713,7 +4713,7 @@ impl<T> core::convert::From<T> for intl::unicode::collate::Strength
 pub fn intl::unicode::collate::Strength::from(T) -> T
 pub struct intl::unicode::CaseMapIter
 impl core::clone::Clone for intl::unicode::case::CaseMapIter
-pub fn intl::unicode::case::CaseMapIter::clone(&self) -> intl::unicode::case::CaseMapIter
+pub fn intl::unicode::case::CaseMapIter::clone(&self) -> Self
 impl core::fmt::Debug for intl::unicode::case::CaseMapIter
 pub fn intl::unicode::case::CaseMapIter::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::iter::traits::exact_size::ExactSizeIterator for intl::unicode::case::CaseMapIter
@@ -4756,7 +4756,7 @@ impl<T> core::convert::From<T> for intl::unicode::case::CaseMapIter
 pub fn intl::unicode::case::CaseMapIter::from(T) -> T
 pub struct intl::unicode::CaseMapping<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::case::CaseMapping<I>
-pub fn intl::unicode::case::CaseMapping<I>::clone(&self) -> intl::unicode::case::CaseMapping<I>
+pub fn intl::unicode::case::CaseMapping<I>::clone(&self) -> Self
 impl<I: core::iter::traits::iterator::Iterator<Item = char>> core::iter::traits::iterator::Iterator for intl::unicode::case::CaseMapping<I>
 pub type intl::unicode::case::CaseMapping<I>::Item = char
 pub fn intl::unicode::case::CaseMapping<I>::next(&mut self) -> core::option::Option<char>
@@ -4802,7 +4802,7 @@ pub fn intl::unicode::collate::Collator::with_case_level(self, bool) -> Self
 pub fn intl::unicode::collate::Collator::with_numeric(self, bool) -> Self
 pub fn intl::unicode::collate::Collator::with_strength(self, intl::unicode::collate::Strength) -> Self
 impl core::clone::Clone for intl::unicode::collate::Collator
-pub fn intl::unicode::collate::Collator::clone(&self) -> intl::unicode::collate::Collator
+pub fn intl::unicode::collate::Collator::clone(&self) -> Self
 impl core::default::Default for intl::unicode::collate::Collator
 pub fn intl::unicode::collate::Collator::default() -> Self
 impl core::fmt::Debug for intl::unicode::collate::Collator
@@ -4839,7 +4839,7 @@ impl<T> core::convert::From<T> for intl::unicode::collate::Collator
 pub fn intl::unicode::collate::Collator::from(T) -> T
 pub struct intl::unicode::Decompositions<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::normalize::Decompositions<I>
-pub fn intl::unicode::normalize::Decompositions<I>::clone(&self) -> intl::unicode::normalize::Decompositions<I>
+pub fn intl::unicode::normalize::Decompositions<I>::clone(&self) -> Self
 impl<I: core::iter::traits::iterator::Iterator<Item = char>> core::iter::traits::iterator::Iterator for intl::unicode::normalize::Decompositions<I>
 pub type intl::unicode::normalize::Decompositions<I>::Item = char
 pub fn intl::unicode::normalize::Decompositions<I>::next(&mut self) -> core::option::Option<char>
@@ -4878,7 +4878,7 @@ impl<T> core::convert::From<T> for intl::unicode::normalize::Decompositions<I>
 pub fn intl::unicode::normalize::Decompositions<I>::from(T) -> T
 pub struct intl::unicode::Graphemes<'a>
 impl<'a> core::clone::Clone for intl::unicode::segment::Graphemes<'a>
-pub fn intl::unicode::segment::Graphemes<'a>::clone(&self) -> intl::unicode::segment::Graphemes<'a>
+pub fn intl::unicode::segment::Graphemes<'a>::clone(&self) -> Self
 impl<'a> core::iter::traits::iterator::Iterator for intl::unicode::segment::Graphemes<'a>
 pub type intl::unicode::segment::Graphemes<'a>::Item = &'a str
 pub fn intl::unicode::segment::Graphemes<'a>::next(&mut self) -> core::option::Option<&'a str>
@@ -4919,10 +4919,10 @@ pub struct intl::unicode::LineBreak<'a>
 pub intl::unicode::LineBreak::mandatory: bool
 pub intl::unicode::LineBreak::text: &'a str
 impl<'a> core::clone::Clone for intl::unicode::segment::LineBreak<'a>
-pub fn intl::unicode::segment::LineBreak<'a>::clone(&self) -> intl::unicode::segment::LineBreak<'a>
+pub fn intl::unicode::segment::LineBreak<'a>::clone(&self) -> Self
 impl<'a> core::cmp::Eq for intl::unicode::segment::LineBreak<'a>
 impl<'a> core::cmp::PartialEq for intl::unicode::segment::LineBreak<'a>
-pub fn intl::unicode::segment::LineBreak<'a>::eq(&self, &intl::unicode::segment::LineBreak<'a>) -> bool
+pub fn intl::unicode::segment::LineBreak<'a>::eq(&self, &Self) -> bool
 impl<'a> core::fmt::Debug for intl::unicode::segment::LineBreak<'a>
 pub fn intl::unicode::segment::LineBreak<'a>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<'a> core::marker::Copy for intl::unicode::segment::LineBreak<'a>
@@ -4958,7 +4958,7 @@ impl<T> core::convert::From<T> for intl::unicode::segment::LineBreak<'a>
 pub fn intl::unicode::segment::LineBreak<'a>::from(T) -> T
 pub struct intl::unicode::LineBreaks<'a>
 impl<'a> core::clone::Clone for intl::unicode::segment::LineBreaks<'a>
-pub fn intl::unicode::segment::LineBreaks<'a>::clone(&self) -> intl::unicode::segment::LineBreaks<'a>
+pub fn intl::unicode::segment::LineBreaks<'a>::clone(&self) -> Self
 impl<'a> core::iter::traits::iterator::Iterator for intl::unicode::segment::LineBreaks<'a>
 pub type intl::unicode::segment::LineBreaks<'a>::Item = intl::unicode::segment::LineBreak<'a>
 pub fn intl::unicode::segment::LineBreaks<'a>::next(&mut self) -> core::option::Option<intl::unicode::segment::LineBreak<'a>>
@@ -5003,10 +5003,10 @@ pub fn intl::unicode::numeric::NumericValue::as_f64(self) -> f64
 pub const fn intl::unicode::numeric::NumericValue::is_integer(self) -> bool
 pub const fn intl::unicode::numeric::NumericValue::to_i64(self) -> core::option::Option<i64>
 impl core::clone::Clone for intl::unicode::numeric::NumericValue
-pub fn intl::unicode::numeric::NumericValue::clone(&self) -> intl::unicode::numeric::NumericValue
+pub fn intl::unicode::numeric::NumericValue::clone(&self) -> Self
 impl core::cmp::Eq for intl::unicode::numeric::NumericValue
 impl core::cmp::PartialEq for intl::unicode::numeric::NumericValue
-pub fn intl::unicode::numeric::NumericValue::eq(&self, &intl::unicode::numeric::NumericValue) -> bool
+pub fn intl::unicode::numeric::NumericValue::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unicode::numeric::NumericValue
 pub fn intl::unicode::numeric::NumericValue::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for intl::unicode::numeric::NumericValue
@@ -5044,7 +5044,7 @@ impl<T> core::convert::From<T> for intl::unicode::numeric::NumericValue
 pub fn intl::unicode::numeric::NumericValue::from(T) -> T
 pub struct intl::unicode::Recompositions<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::normalize::Recompositions<I>
-pub fn intl::unicode::normalize::Recompositions<I>::clone(&self) -> intl::unicode::normalize::Recompositions<I>
+pub fn intl::unicode::normalize::Recompositions<I>::clone(&self) -> Self
 impl<I: core::iter::traits::iterator::Iterator<Item = char>> core::iter::traits::iterator::Iterator for intl::unicode::normalize::Recompositions<I>
 pub type intl::unicode::normalize::Recompositions<I>::Item = char
 pub fn intl::unicode::normalize::Recompositions<I>::next(&mut self) -> core::option::Option<char>
@@ -5083,7 +5083,7 @@ impl<T> core::convert::From<T> for intl::unicode::normalize::Recompositions<I>
 pub fn intl::unicode::normalize::Recompositions<I>::from(T) -> T
 pub struct intl::unicode::Sentences<'a>
 impl<'a> core::clone::Clone for intl::unicode::segment::Sentences<'a>
-pub fn intl::unicode::segment::Sentences<'a>::clone(&self) -> intl::unicode::segment::Sentences<'a>
+pub fn intl::unicode::segment::Sentences<'a>::clone(&self) -> Self
 impl<'a> core::iter::traits::iterator::Iterator for intl::unicode::segment::Sentences<'a>
 pub type intl::unicode::segment::Sentences<'a>::Item = &'a str
 pub fn intl::unicode::segment::Sentences<'a>::next(&mut self) -> core::option::Option<&'a str>
@@ -5152,7 +5152,7 @@ impl<T> core::convert::From<T> for intl::unicode::collate::Tailoring
 pub fn intl::unicode::collate::Tailoring::from(T) -> T
 pub struct intl::unicode::Words<'a>
 impl<'a> core::clone::Clone for intl::unicode::segment::Words<'a>
-pub fn intl::unicode::segment::Words<'a>::clone(&self) -> intl::unicode::segment::Words<'a>
+pub fn intl::unicode::segment::Words<'a>::clone(&self) -> Self
 impl<'a> core::iter::traits::iterator::Iterator for intl::unicode::segment::Words<'a>
 pub type intl::unicode::segment::Words<'a>::Item = &'a str
 pub fn intl::unicode::segment::Words<'a>::next(&mut self) -> core::option::Option<&'a str>
@@ -5363,10 +5363,10 @@ impl intl::unit::Unit
 pub const fn intl::unit::Unit::ecma_id(self) -> &'static str
 pub fn intl::unit::Unit::from_ecma_id(&str) -> core::option::Option<Self>
 impl core::clone::Clone for intl::unit::Unit
-pub fn intl::unit::Unit::clone(&self) -> intl::unit::Unit
+pub fn intl::unit::Unit::clone(&self) -> Self
 impl core::cmp::Eq for intl::unit::Unit
 impl core::cmp::PartialEq for intl::unit::Unit
-pub fn intl::unit::Unit::eq(&self, &intl::unit::Unit) -> bool
+pub fn intl::unit::Unit::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unit::Unit
 pub fn intl::unit::Unit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unit::Unit
@@ -5405,10 +5405,10 @@ pub intl::unit::UnitWidth::Long
 pub intl::unit::UnitWidth::Narrow
 pub intl::unit::UnitWidth::Short
 impl core::clone::Clone for intl::unit::UnitWidth
-pub fn intl::unit::UnitWidth::clone(&self) -> intl::unit::UnitWidth
+pub fn intl::unit::UnitWidth::clone(&self) -> Self
 impl core::cmp::Eq for intl::unit::UnitWidth
 impl core::cmp::PartialEq for intl::unit::UnitWidth
-pub fn intl::unit::UnitWidth::eq(&self, &intl::unit::UnitWidth) -> bool
+pub fn intl::unit::UnitWidth::eq(&self, &Self) -> bool
 impl core::fmt::Debug for intl::unit::UnitWidth
 pub fn intl::unit::UnitWidth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for intl::unit::UnitWidth
