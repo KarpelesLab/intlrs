@@ -52,7 +52,7 @@ mod iana {
 
     /// A loaded IANA time zone (e.g. `"America/New_York"`) with its full history
     /// of UTC-offset/DST transitions.
-    pub struct IanaZone(timezone_data::Zone<'static>);
+    pub struct IanaZone(timezone_data::Zone);
 
     /// Load an IANA zone by name. Returns `None` for an unknown name. Lookups are
     /// case-sensitive (`"America/New_York"`).

@@ -282,7 +282,7 @@ iana-tz = ["dep:timezone-data", "datetime"]
 
 [dependencies]
 # Optional: only pulled in by the `iana-tz` feature. no_std / no-alloc itself.
-timezone-data = { version = "0.1", optional = true }
+timezone-data = { version = "0.2", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", default-features = false }
