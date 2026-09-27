@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.4](https://github.com/KarpelesLab/intlrs/compare/v0.6.3...v0.6.4) - 2026-09-27
+
+### Other
+
+- regenerate public-api.txt on current nightly
+- *(readme)* bring the README up to date
+- *(deps)* bump timezone-data to 0.2
+
 ## [0.6.3](https://github.com/KarpelesLab/intlrs/compare/v0.6.2...v0.6.3) - 2026-09-08
 
 ### Added
