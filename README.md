@@ -149,7 +149,11 @@ Beyond the `unicode` module:
   everything but `gregory`/`iso8601`.
 - `intl::spellout` spells integers out in words via the CLDR RBNF rules
   (locale-driven) — `spell_cardinal("en", 1234)` → `"one thousand two hundred
-  thirty-four"`, `spell_cardinal("fr", 80)` → `"quatre-vingts"`, and ordinals via `spell_ordinal("en", 21)` → `"twenty-first"`. *(alloc)*
+  thirty-four"`, `spell_cardinal("fr", 80)` → `"quatre-vingts"`,
+  `spell_cardinal("ru", 2000)` → `"две тысячи"`, ordinals via
+  `spell_ordinal("en", 21)` → `"twenty-first"`, and gendered rule sets by name
+  via `spell_rule_set("ru", "spellout-cardinal-feminine", 1)` → `"одна"`
+  (en, de, fr, es, it, nl, pt, sv, ru, uk, pl, ja). *(alloc)*
 - `intl::timezone` parses a POSIX `TZ` string (`"PST8PDT,M3.2.0,M11.1.0/2"`)
   and computes the UTC offset / DST state for any date. With the **`iana-tz`**
   feature it also loads the full **IANA tz database** (via the embedded
@@ -276,7 +280,7 @@ plural rules (~20 KB) that a `number`-only build used to leave out.
 | `list`            | `Intl.ListFormat`, all 9 `type` × `style`         | 15 KB |
 | `relative`        | `Intl.RelativeTimeFormat`, 8 units × 3 styles (→ number) | 243 KB |
 | `message`         | ICU MessageFormat subset (→ number)               | — |
-| `spellout`        | RBNF spell-out                                     | 25 KB |
+| `spellout`        | RBNF spell-out                                     | 78 KB |
 | `transliterate`   | script transliteration (→ normalization)          | — |
 | `locale`          | BCP-47 + likely-subtags                           | 139 KB |
 | `iana-tz`         | full IANA tz database for named zones (→ datetime) | dep |
