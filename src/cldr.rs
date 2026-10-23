@@ -1030,24 +1030,47 @@ pub(crate) fn currency_pattern(
     Some(latn)
 }
 
-/// The currency unit pattern (number + code/name, e.g. `"{0} {1}"`) for `lang`.
+/// The currency unit pattern (number + code/name, e.g. `"{0} {1}"`) for `lang`
+/// in plural category `plural` (a `PluralCategory` discriminant). Only the
+/// categories that differ from `other` are stored; the rest read as `other`.
 #[cfg(feature = "currency")]
-pub(crate) fn currency_unit_pattern(lang: &str) -> Option<&'static str> {
+pub(crate) fn currency_unit_pattern(lang: &str, plural: usize) -> Option<&'static str> {
     let mut c = find(CURRENCY, lang)?;
     c.skip_currency_patterns();
-    Some(c.str())
+    let mut unit = c.str();
+    let n = c.u8();
+    for _ in 0..n {
+        let cat = c.u8() as usize;
+        let p = c.str();
+        if cat == plural {
+            unit = p;
+        }
+    }
+    Some(unit)
+}
+
+/// Move a cursor at a currency record's payload to its name table count.
+#[cfg(feature = "currency")]
+fn skip_to_names(c: &mut Cursor) {
+    c.skip_currency_patterns();
+    let _ = c.str(); // unit pattern
+    let n = c.u8();
+    for _ in 0..n {
+        let _ = c.u8();
+        let _ = c.str();
+    }
 }
 
 /// Currency display forms `(symbol, narrow symbol, display name)` for `code` in
-/// `lang` (exact lowercased key), if present.
+/// `lang` (exact lowercased key), if present. The display name is CLDR's
+/// `displayName-count-other`; see [`currency_plural_name`] for the others.
 #[cfg(feature = "currency")]
 pub(crate) fn currency_forms(
     lang: &str,
     code: &str,
 ) -> Option<(&'static str, &'static str, &'static str)> {
     let mut c = find(CURRENCY, lang)?;
-    c.skip_currency_patterns();
-    let _ = c.str(); // unit pattern
+    skip_to_names(&mut c);
     let n = c.u16();
     for _ in 0..n {
         let cd = c.str();
@@ -1061,12 +1084,92 @@ pub(crate) fn currency_forms(
     None
 }
 
+/// `code`'s display name in `lang` (exact lowercased key) for plural category
+/// `plural` (a `PluralCategory` discriminant), as three pieces to concatenate:
+/// CLDR's `displayName-count-<plural>` is stored as the slice it shares with
+/// the `other` name at each end plus the middle that differs. `None` when
+/// `lang` has no record for `code`; a category with no form of its own is the
+/// `other` name (`("", other, "")`).
+#[cfg(feature = "currency")]
+pub(crate) fn currency_plural_name(
+    lang: &str,
+    code: &str,
+    plural: usize,
+) -> Option<[&'static str; 3]> {
+    let mut c = find(CURRENCY, lang)?;
+    skip_to_names(&mut c);
+    let n = c.u16();
+    let mut found = None;
+    for i in 0..n {
+        let cd = c.str();
+        let _ = c.str();
+        let _ = c.str();
+        let name = c.str();
+        if found.is_none() && cd == code {
+            found = Some((i, name));
+        }
+    }
+    let (idx, other) = found?;
+    let plain = Some(["", other, ""]);
+    if plural >= 5 {
+        return plain;
+    }
+    let entries = c.u16();
+    for _ in 0..entries {
+        let at = c.u16();
+        let mask = c.u8();
+        for cat in 0..5 {
+            if mask & (1 << cat) == 0 {
+                continue;
+            }
+            let pre = c.u8() as usize;
+            let suf = c.u8() as usize;
+            let mid = c.str();
+            if at == idx && cat == plural {
+                let (Some(head), Some(tail)) = (
+                    other.get(..pre),
+                    other.len().checked_sub(suf).and_then(|s| other.get(s..)),
+                ) else {
+                    return plain;
+                };
+                return Some([head, mid, tail]);
+            }
+        }
+        if at >= idx {
+            break;
+        }
+    }
+    plain
+}
+
 /// Default fraction digits for a currency code (2 if unknown).
 #[cfg(feature = "currency")]
 pub(crate) fn currency_digits(code: &str) -> u8 {
     match find(CURRENCY_DIGITS, code) {
         Some(mut c) => c.u8(),
         None => 2,
+    }
+}
+
+/// `(fraction digits, rounding increment)` for a currency code in standard
+/// (`cash == false`) or cash usage, from CLDR `currencyData/fractions`. The
+/// increment is in units of the last fraction digit, `0` meaning none: `CHF`
+/// cash is `(2, 5)`, rounding to 0.05; `TWD` cash is `(0, 0)`.
+#[cfg(feature = "currency")]
+pub(crate) fn currency_precision(code: &str, cash: bool) -> (u8, u8) {
+    let Some(mut c) = find(CURRENCY_DIGITS, code) else {
+        return (2, 0);
+    };
+    let len = rd_u16(c.b, c.o - 2); // the record's payload length
+    let digits = c.u8();
+    if len < 4 {
+        return (digits, 0);
+    }
+    let rounding = c.u8();
+    if cash {
+        (c.u8(), c.u8())
+    } else {
+        (digits, rounding)
     }
 }
 

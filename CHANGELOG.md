@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - *(normalize)* `raw_decomposition(c, NormalizationForm)`: the single-step (non-recursive) UnicodeData decomposition mapping, like ICU `getRawDecomposition` (#38)
+- *(number)* `currencyDisplay: name` picks CLDR's plural currency names and unit patterns by the displayed amount (`fr` "1,00 euro", "2,00 euros") (#39)
+- *(number)* `CurrencyUsage::Cash` option for CLDR `cashDigits` / `cashRounding` (`TWD` cash has no decimals, `CHF` cash rounds to 0.05) (#39)
+
+### Fixed
+
+- *(number)* a unit or currency-name range is worded for the plural category of its ends as displayed, not of the raw values
 
 ## [0.6.4](https://github.com/KarpelesLab/intlrs/compare/v0.6.3...v0.6.4) - 2026-09-27
 

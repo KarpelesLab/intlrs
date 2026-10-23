@@ -1154,6 +1154,49 @@ impl<T> core::clone::CloneToUninit for intl::number::CurrencyDisplay where T: co
 pub unsafe fn intl::number::CurrencyDisplay::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::number::CurrencyDisplay
 pub fn intl::number::CurrencyDisplay::from(T) -> T
+pub enum intl::number::CurrencyUsage
+pub intl::number::CurrencyUsage::Cash
+pub intl::number::CurrencyUsage::Standard
+impl core::clone::Clone for intl::number::CurrencyUsage
+pub fn intl::number::CurrencyUsage::clone(&self) -> Self
+impl core::cmp::Eq for intl::number::CurrencyUsage
+impl core::cmp::PartialEq for intl::number::CurrencyUsage
+pub fn intl::number::CurrencyUsage::eq(&self, &Self) -> bool
+impl core::default::Default for intl::number::CurrencyUsage
+pub fn intl::number::CurrencyUsage::default() -> Self
+impl core::fmt::Debug for intl::number::CurrencyUsage
+pub fn intl::number::CurrencyUsage::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for intl::number::CurrencyUsage
+impl core::marker::StructuralPartialEq for intl::number::CurrencyUsage
+impl core::marker::Freeze for intl::number::CurrencyUsage
+impl core::marker::Send for intl::number::CurrencyUsage
+impl core::marker::Sync for intl::number::CurrencyUsage
+impl core::marker::Unpin for intl::number::CurrencyUsage
+impl core::marker::UnsafeUnpin for intl::number::CurrencyUsage
+impl core::panic::unwind_safe::RefUnwindSafe for intl::number::CurrencyUsage
+impl core::panic::unwind_safe::UnwindSafe for intl::number::CurrencyUsage
+impl<T, U> core::convert::Into<U> for intl::number::CurrencyUsage where U: core::convert::From<T>
+pub fn intl::number::CurrencyUsage::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::number::CurrencyUsage where U: core::convert::Into<T>
+pub type intl::number::CurrencyUsage::Error = never
+pub fn intl::number::CurrencyUsage::try_from(U) -> core::result::Result<T, never>
+impl<T, U> core::convert::TryInto<U> for intl::number::CurrencyUsage where U: core::convert::TryFrom<T>
+pub type intl::number::CurrencyUsage::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::number::CurrencyUsage::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::number::CurrencyUsage where T: core::clone::Clone
+pub type intl::number::CurrencyUsage::Owned = T
+pub fn intl::number::CurrencyUsage::clone_into(&self, &mut T)
+pub fn intl::number::CurrencyUsage::to_owned(&self) -> T
+impl<T> core::any::Any for intl::number::CurrencyUsage where T: 'static + ?core::marker::Sized
+pub fn intl::number::CurrencyUsage::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::number::CurrencyUsage where T: ?core::marker::Sized
+pub fn intl::number::CurrencyUsage::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::number::CurrencyUsage where T: ?core::marker::Sized
+pub fn intl::number::CurrencyUsage::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::number::CurrencyUsage where T: core::clone::Clone
+pub unsafe fn intl::number::CurrencyUsage::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::number::CurrencyUsage
+pub fn intl::number::CurrencyUsage::from(T) -> T
 pub enum intl::number::Notation
 pub intl::number::Notation::Compact
 pub intl::number::Notation::Engineering
@@ -1535,6 +1578,7 @@ pub fn intl::number::UseGrouping::from(T) -> T
 pub intl::number::NumberFormatOptions::compact_display: intl::number::CompactDisplay
 pub intl::number::NumberFormatOptions::currency: core::option::Option<&'static str>
 pub intl::number::NumberFormatOptions::currency_display: intl::number::CurrencyDisplay
+pub intl::number::NumberFormatOptions::currency_usage: intl::number::CurrencyUsage
 pub intl::number::NumberFormatOptions::maximum_fraction_digits: core::option::Option<u8>
 pub intl::number::NumberFormatOptions::maximum_significant_digits: core::option::Option<u8>
 pub intl::number::NumberFormatOptions::minimum_fraction_digits: core::option::Option<u8>

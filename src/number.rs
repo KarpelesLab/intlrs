@@ -159,7 +159,8 @@ pub enum CompactDisplay {
 
 /// How a currency is shown (ECMA-402 `currencyDisplay`). `Symbol` and
 /// `NarrowSymbol` use the localized symbol; `Code` uses the ISO code; `Name`
-/// falls back to the code (no display-name data yet).
+/// uses the localized display name in the plural form the formatted amount
+/// selects (ICU's `UNUM_CURRENCY_PLURAL`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CurrencyDisplay {
     /// The localized currency symbol (e.g. `$`).
@@ -169,8 +170,27 @@ pub enum CurrencyDisplay {
     NarrowSymbol,
     /// The ISO 4217 code (e.g. `USD`).
     Code,
-    /// The currency display name; falls back to the code.
+    /// The currency display name, agreeing in number with the formatted amount
+    /// (`fr` "1,00 euro" but "2,00 euros"); falls back to the code.
     Name,
+}
+
+/// Which of a currency's CLDR precisions applies (ICU's `UCurrencyUsage`; not
+/// an ECMA-402 option).
+///
+/// CLDR `currencyData/fractions` gives some currencies a coarser precision for
+/// cash than for accounts: `TWD` has 2 fraction digits but no cash ones, and
+/// `CHF` cash rounds to 0.05 (`cashRounding="5"`), so 1.23 is "CHF 1.25".
+/// Only the defaults change: explicit fraction or significant digits, and
+/// compact notation, keep their own precision (without the cash increment).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CurrencyUsage {
+    /// The currency's standard digits and rounding (ICU `UCURR_USAGE_STANDARD`).
+    #[default]
+    Standard,
+    /// The currency's `cashDigits` and `cashRounding` increment (ICU
+    /// `UCURR_USAGE_CASH`, PHP `NumberFormatter::CASH_CURRENCY`).
+    Cash,
 }
 
 /// How a unit is shown (ECMA-402 `unitDisplay`).
@@ -280,6 +300,9 @@ pub struct NumberFormatOptions {
     pub currency: Option<&'static str>,
     /// How the currency is displayed.
     pub currency_display: CurrencyDisplay,
+    /// Whether the currency's standard or cash precision applies (an ICU
+    /// option, not an ECMA-402 one; default [`CurrencyUsage::Standard`]).
+    pub currency_usage: CurrencyUsage,
     /// CLDR unit identifier (required when `style` is [`NumberStyle::Unit`]).
     pub unit: Option<&'static str>,
     /// How the unit is displayed.
@@ -765,10 +788,12 @@ fn body_plural(
 }
 
 /// Whether anything will read a body's plural category. Only ICU's `modOuter`
-/// does — a unit phrase, or a compact percent's unit — and the compact pattern
-/// lookup, so the ordinary decimal/currency path skips evaluating the rules.
+/// does — a unit phrase, a currency display name, or a compact percent's unit
+/// — and the compact pattern lookup, so the ordinary decimal/currency path
+/// skips evaluating the rules.
 fn wants_plural(opts: &NumberFormatOptions) -> bool {
     opts.style == NumberStyle::Unit
+        || (opts.style == NumberStyle::Currency && opts.currency_display == CurrencyDisplay::Name)
         || (opts.style == NumberStyle::Percent && opts.notation == Notation::Compact)
 }
 
@@ -1339,6 +1364,11 @@ struct Precision {
     min_sig: Option<usize>,
     max_sig: Option<usize>,
     more_precision: bool,
+    /// A rounding increment in units of the last fraction digit (`5` with
+    /// `max_frac` 2 rounds to 0.05), `0`/`1` meaning none. Only a currency's
+    /// CLDR `rounding` / `cashRounding` sets it, and only for fraction-digit
+    /// rounding.
+    increment: u32,
 }
 
 /// ECMA-402 `SetNumberFormatDigitOptions`: the single place that decides a
@@ -1371,6 +1401,7 @@ fn digit_options(opts: &NumberFormatOptions, min_default: usize, max_default: us
             min_sig: Some(min_sig),
             max_sig: Some(max_sig),
             more_precision: false,
+            increment: 0,
         }
     } else if has_fd || opts.notation != Notation::Compact {
         let (min_frac, max_frac) = fraction_digits(opts, min_default, max_default);
@@ -1380,6 +1411,7 @@ fn digit_options(opts: &NumberFormatOptions, min_default: usize, max_default: us
             min_sig: None,
             max_sig: None,
             more_precision: false,
+            increment: 0,
         }
     } else {
         // Step 15.d.iii: compact's implicit `morePrecision` over 0 fraction and
@@ -1390,6 +1422,7 @@ fn digit_options(opts: &NumberFormatOptions, min_default: usize, max_default: us
             min_sig: Some(1),
             max_sig: Some(2),
             more_precision: true,
+            increment: 0,
         }
     }
 }
@@ -1407,6 +1440,94 @@ fn magnitude_exp(int_digits: &str, frac_digits: &str) -> i32 {
     }
 }
 
+/// Round a non-negative finite `abs` to the nearest multiple of `increment` ×
+/// 10^-`max_frac` per `mode` (ECMA-402 `roundingIncrement` semantics, which
+/// ICU applies for a currency's CLDR `cashRounding`: `CHF` cash rounds 1.23 to
+/// 1.25), returning `(integer_digits, fraction_digits)` like [`round_digits`].
+///
+/// Works on the value's shortest round-trip decimal rather than its binary
+/// expansion, so 1.225 is the exact midpoint between 1.20 and 1.25 (as in
+/// ICU's `DecimalQuantity`), and divides that decimal by the increment exactly:
+/// the quotient's fractional digits are the discarded part [`should_round_up`]
+/// inspects, its integer digits the multiple kept.
+fn round_increment(
+    abs: f64,
+    min_int: usize,
+    min_frac: usize,
+    max_frac: usize,
+    increment: u32,
+    mode: RoundingMode,
+    negative: bool,
+) -> (String, String) {
+    // `Display` for f64 never uses an exponent.
+    let s = alloc::format!("{abs}");
+    let (ip, fp) = s.split_once('.').unwrap_or((s.as_str(), ""));
+    let digit = |b: u8| u32::from(b - b'0');
+    // The value × 10^max_frac: integer digits, then the rest as a fraction.
+    let mut scaled: Vec<u32> = ip.bytes().map(digit).collect();
+    scaled.extend((0..max_frac).map(|i| fp.as_bytes().get(i).map_or(0, |&b| digit(b))));
+    let rest: Vec<u32> = fp.bytes().skip(max_frac).map(digit).collect();
+
+    // Long division by the increment: the integer quotient, then enough of the
+    // quotient's fraction to round on, with a sticky 1 for anything left over.
+    let mut digits = Vec::with_capacity(scaled.len() + rest.len() + 4);
+    let mut r = 0u32;
+    for &d in &scaled {
+        let cur = r * 10 + d;
+        digits.push((cur / increment) as u8);
+        r = cur % increment;
+    }
+    let cut = digits.len();
+    for i in 0..rest.len() + 4 {
+        let cur = r * 10 + rest.get(i).copied().unwrap_or(0);
+        digits.push((cur / increment) as u8);
+        r = cur % increment;
+    }
+    if r != 0 {
+        digits.push(1);
+    }
+
+    // The kept multiple, as a little-endian digit vector so it can be bumped
+    // and multiplied in place.
+    let mut q: Vec<u32> = digits[..cut].iter().rev().map(|&d| u32::from(d)).collect();
+    if should_round_up(&digits, cut, mode, negative) {
+        let mut carry = 1;
+        for d in q.iter_mut() {
+            let v = *d + carry;
+            *d = v % 10;
+            carry = v / 10;
+        }
+        if carry > 0 {
+            q.push(carry);
+        }
+    }
+    // × increment, back to units of 10^-max_frac.
+    let mut carry = 0;
+    for d in q.iter_mut() {
+        let v = *d * increment + carry;
+        *d = v % 10;
+        carry = v / 10;
+    }
+    while carry > 0 {
+        q.push(carry % 10);
+        carry /= 10;
+    }
+    while q.len() <= max_frac {
+        q.push(0);
+    }
+    let all: String = q.iter().rev().map(|&d| (b'0' + d as u8) as char).collect();
+    let (int_part, frac_part) = all.split_at(all.len() - max_frac);
+    let mut int_digits = String::from(int_part.trim_start_matches('0'));
+    let mut frac_digits = String::from(frac_part);
+    while frac_digits.len() > min_frac && frac_digits.ends_with('0') {
+        frac_digits.pop();
+    }
+    while int_digits.len() < min_int.max(1) {
+        int_digits.insert(0, '0');
+    }
+    (int_digits, frac_digits)
+}
+
 /// Round `abs` to a digit string per `p`: [`round_digits`] plus ECMA-402
 /// `FormatNumericToString` step 7's `morePrecision` tie-break, which rounds the
 /// value both ways and keeps whichever lands on the smaller — more precise —
@@ -1419,6 +1540,17 @@ fn round_to(
     mode: RoundingMode,
     negative: bool,
 ) -> (String, String) {
+    if p.increment > 1 && p.max_sig.is_none() && !p.more_precision {
+        return round_increment(
+            abs,
+            min_int,
+            p.min_frac,
+            p.max_frac,
+            p.increment,
+            mode,
+            negative,
+        );
+    }
     if !p.more_precision {
         return round_digits(
             abs, min_int, p.min_frac, p.max_frac, p.min_sig, p.max_sig, mode, negative,
@@ -1432,21 +1564,6 @@ fn round_to(
         round_digits(
             abs, min_int, p.min_frac, p.max_frac, None, None, mode, negative,
         )
-    }
-}
-
-/// The plural category of `value` in `lang`, as a [`crate::plural::PluralCategory`]
-/// discriminant: what a unit phrase's wording agrees with. Without the unit
-/// tables there is no such wording, and nothing reads the result.
-fn plural_of(lang: &str, value: f64) -> usize {
-    #[cfg(feature = "units")]
-    {
-        crate::unit::category(lang, value)
-    }
-    #[cfg(not(feature = "units"))]
-    {
-        let _ = (lang, value);
-        crate::plural::PluralCategory::Other as usize
     }
 }
 
@@ -1732,7 +1849,7 @@ fn outer_wrap(
     }
     #[cfg(feature = "currency")]
     if opts.style == NumberStyle::Currency && opts.currency_display == CurrencyDisplay::Name {
-        return currency_unit_wrap(lang, opts, parts);
+        return currency_unit_wrap(lang, opts, plural, parts);
     }
     if opts.style == NumberStyle::Percent && opts.notation == Notation::Compact {
         return percent_unit_wrap(lang, plural, parts);
@@ -1790,9 +1907,11 @@ fn percent_unit_wrap(
 
 /// Render a currency amount with `currencyDisplay: name`: the numeric `core`
 /// spliced into the locale's currency unit pattern (`"{0} {1}"`) with the display
-/// name tagged `Currency`. (The base display name is used; plural name forms are
-/// not applied.) Returns the wrapped parts and how many of them are the wrapper
-/// itself.
+/// name tagged `Currency`, both in the plural category `plural` of the number as
+/// displayed — ICU's `LongNameHandler` for currencies, which is why `fr` reads
+/// "1,00 euro" (French `one` is `i = 0,1`) while `en` reads "1.00 US dollars"
+/// (the visible fraction digits make it `other`). Returns the wrapped parts and
+/// how many of them are the wrapper itself.
 ///
 /// `code` does *not* come through here — ECMA-402 renders it through the ¤
 /// pattern like a symbol.
@@ -1800,24 +1919,27 @@ fn percent_unit_wrap(
 fn currency_unit_wrap(
     lang: &str,
     opts: &NumberFormatOptions,
+    plural: usize,
     core: Vec<NumberPart>,
 ) -> (Vec<NumberPart>, (usize, usize)) {
     let code = opts.currency.unwrap_or("XXX");
     let norm = normalize(lang);
     let norm = String::from(split_nu(&norm).0);
-    let mut forms: Option<(&str, &str, &str)> = None;
+    let mut name: Option<[&str; 3]> = None;
     let mut unit = "{0} {1}";
     let mut end = norm.len();
     let mut got_unit = false;
     loop {
-        if forms.is_none() {
-            forms = crate::cldr::currency_forms(&norm[..end], code);
+        // The plural forms come from the record that has the currency at all,
+        // so a locale's names are never mixed with an ancestor's.
+        if name.is_none() {
+            name = crate::cldr::currency_plural_name(&norm[..end], code, plural);
         }
-        if !got_unit && let Some(u) = crate::cldr::currency_unit_pattern(&norm[..end]) {
+        if !got_unit && let Some(u) = crate::cldr::currency_unit_pattern(&norm[..end], plural) {
             unit = u;
             got_unit = true;
         }
-        if forms.is_some() && got_unit {
+        if name.is_some() && got_unit {
             break;
         }
         match norm[..end].rfind('-') {
@@ -1825,8 +1947,10 @@ fn currency_unit_wrap(
             None => break,
         }
     }
-    forms = forms.or_else(|| crate::cldr::currency_forms("en", code));
-    let (_, _, text) = forms.unwrap_or((code, code, code));
+    let name = name
+        .or_else(|| crate::cldr::currency_plural_name("en", code, plural))
+        .unwrap_or(["", code, ""]);
+    let text: String = name.concat();
 
     // Splice into the two-placeholder unit pattern ({0} number, {1} currency).
     let mut parts = Vec::new();
@@ -1844,7 +1968,7 @@ fn currency_unit_wrap(
                 parts.extend(core.iter().cloned());
                 rest = &rest[i + 3..];
             } else if rest[i..].starts_with("{1}") {
-                parts.push(NumberPart::new(NumberPartType::Currency, text));
+                parts.push(NumberPart::new(NumberPartType::Currency, &text));
                 rest = &rest[i + 3..];
             } else {
                 parts.push(NumberPart::new(NumberPartType::Literal, "{"));
@@ -1873,6 +1997,9 @@ struct Style {
     neg: Option<(&'static str, &'static str)>,
     scaled: f64,
     currency: String,
+    /// The currency's CLDR rounding increment for the requested usage, in
+    /// units of its last fraction digit (`0` for none; see [`Precision`]).
+    increment: u8,
 }
 
 impl Style {
@@ -1883,6 +2010,7 @@ impl Style {
             neg: None,
             scaled,
             currency: String::new(),
+            increment: 0,
         }
     }
 }
@@ -1967,7 +2095,8 @@ fn resolve_style(
                 CurrencyDisplay::Code => String::from(code),
                 CurrencyDisplay::Name => String::from(name),
             };
-            let digits = crate::cldr::currency_digits(code);
+            let (digits, increment) =
+                crate::cldr::currency_precision(code, opts.currency_usage == CurrencyUsage::Cash);
             pat.min_frac = digits;
             pat.max_frac = digits;
             Style {
@@ -1975,6 +2104,7 @@ fn resolve_style(
                 neg,
                 scaled: value,
                 currency: shown,
+                increment,
             }
         }
     }
@@ -2302,6 +2432,7 @@ fn format_number(lang: &str, value: f64, r: &Resolved, opts: &NumberFormatOption
         mut neg,
         scaled,
         currency,
+        increment,
     } = resolve_style(lang, value, s, &r.system, opts);
     // `currencyDisplay: name` keeps the currency pattern's digits and grouping
     // but drops its ¤ affixes: the display name is applied outside, through the
@@ -2325,7 +2456,18 @@ fn format_number(lang: &str, value: f64, r: &Resolved, opts: &NumberFormatOption
         pattern.suffix = "";
     }
     let body = if scaled.is_finite() {
-        let p = digit_options(opts, pattern.min_frac as usize, pattern.max_frac as usize);
+        let mut p = digit_options(opts, pattern.min_frac as usize, pattern.max_frac as usize);
+        // A currency's CLDR rounding increment (`CHF` cash: 0.05) belongs to
+        // its default precision, as ICU's `Precision::currency(usage)` does:
+        // explicit digit options replace it, and the compact and exponent
+        // notations bring their own.
+        let explicit = opts.minimum_fraction_digits.is_some()
+            || opts.maximum_fraction_digits.is_some()
+            || opts.minimum_significant_digits.is_some()
+            || opts.maximum_significant_digits.is_some();
+        if !explicit && opts.notation == Notation::Standard {
+            p.increment = u32::from(increment);
+        }
         match opts.notation {
             Notation::Standard => standard_body(lang, scaled, &pattern, &p, opts, r),
             Notation::Scientific => exponent_body(lang, scaled, &p, opts, r, 1),
@@ -2477,13 +2619,15 @@ fn split_range_pattern(pattern: &str) -> (&str, &str, &str, bool) {
 /// The plural category a range's shared unit wording agrees with: CLDR's
 /// `pluralRanges` combination of the two ends' categories (`en` `one` + `other`
 /// is `other`, so 1–2 kilometres reads "1–2 kilometers"). CLDR keys the table by
-/// language alone.
+/// language alone. The ends' categories are those of the numbers as
+/// *displayed*, as ICU's `resolveModifierPlurals` takes them from the rounded
+/// quantities: `fr` "1,00–2,00 euros" is `one` + `other`.
 #[cfg(feature = "number-range")]
-fn range_plural(lang: &str, start: f64, end: f64) -> usize {
+fn range_plural(lang: &str, start: usize, end: usize) -> usize {
     let norm = normalize(lang);
     let (base, _) = split_nu(&norm);
     let language = base.split('-').next().unwrap_or(base);
-    crate::cldr::plural_range(language, plural_of(lang, start), plural_of(lang, end))
+    crate::cldr::plural_range(language, start, end)
 }
 
 /// Format the range `start`–`end` in `lang` per `opts`, returning the tagged
@@ -2563,7 +2707,7 @@ pub fn format_range_to_parts(
         approx_literal(pre, true, &mut out);
         out.extend(tag(&sf.parts, NumberRangeSource::Shared));
         approx_literal(post, false, &mut out);
-        return wrap_range(lang, opts, plural_of(lang, start), out);
+        return wrap_range(lang, opts, sf.plural, out);
     }
 
     // ICU `NumberRangeFormatterImpl::formatRange` at collapse level AUTO.
@@ -2605,7 +2749,7 @@ pub fn format_range_to_parts(
         out.extend(tag(&second.parts, second_src));
     }
     literal(post, &mut out);
-    wrap_range(lang, opts, range_plural(lang, start, end), out)
+    wrap_range(lang, opts, range_plural(lang, sf.plural, ef.plural), out)
 }
 
 /// Wrap a formatted range in the outer modifier both ends share — the unit

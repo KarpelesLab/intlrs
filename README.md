@@ -267,7 +267,7 @@ plural rules (~20 KB) that a `number`-only build used to leave out.
 | `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~108 KB |
 | `number-numsys`   | + non-`latn` numbering-system symbols (→ number)  | ~8 KB |
 | `number-range`    | + `formatRange`/`formatRangeToParts` (→ number)   | ~20 KB |
-| `currency`        | currency formatting (→ number)                    | **~0.9 MB** |
+| `currency`        | currency formatting (→ number)                    | **~1.1 MB** |
 | `units`           | measurement units, long + short (→ number)        | ~905 KB |
 | `units-narrow`    | + the narrow unit width (→ units)                 | ~315 KB |
 | `datetime`        | date/time/skeleton + POSIX-TZ/GMT (→ number)      | 219 KB |

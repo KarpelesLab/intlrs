@@ -3778,15 +3778,33 @@ fn emit_relative(cldr_dir: &Path, datefields_dir: &Path) {
     );
 }
 
+/// The plural category keys in `PluralCategory` discriminant order, `other`
+/// (index 5) excluded: it is the base the other forms are stored against.
+const PLURAL_COUNT_KEYS: [&str; 5] = ["zero", "one", "two", "few", "many"];
+
 /// Write `cldr/currency.bin` (per-locale pattern + symbols) and
 /// `cldr/currency_digits.bin` (per-currency fraction digits).
 /// Write `cldr/currency.bin` and `cldr/currency_digits.bin` from raw CLDR:
-/// per-locale `currencies.json` (symbol / narrow symbol / display name), the
+/// per-locale `currencies.json` (symbol / narrow symbol / display names), the
 /// currency pattern from `numbers.json`, and per-currency fraction digits from
 /// the supplemental `currencyData.json`.
 ///
-/// `currency.bin` payload: currency `Pattern`, then `[u16 count]` and, per
-/// currency, `(code, symbol, narrow-symbol, display-name)`.
+/// `currency.bin` payload: the currency `Pattern`s, the `other` unit pattern,
+/// `[u8 n]` × `(u8 plural category, unit pattern)` for the categories whose
+/// unit pattern differs from it, then `[u16 count]` and, per currency, `(code,
+/// symbol, narrow-symbol, display-name)` — the display name being CLDR's
+/// `displayName-count-other`. Last comes the plural-name table: `[u16 count]`
+/// entries of `(u16 index into the name table, u8 category mask)` followed, per
+/// set bit (ascending, `zero`..`many`), by `(u8 prefix bytes, u8 suffix bytes,
+/// middle)`: the `displayName-count-<category>` is the `other` name's first
+/// `prefix` bytes + `middle` + its last `suffix` bytes. Only categories whose
+/// name differs from `other`'s are stored; a missing one reads as `other`, as
+/// in ICU. (CLDR's count-less `displayName` is not stored: a formatted amount
+/// always selects a count.)
+///
+/// `currency_digits.bin` payload per currency: `[digits]`, or `[digits,
+/// rounding, cashDigits, cashRounding]` when any of the last three is not the
+/// default (rounding 0, cash values equal to the standard ones).
 fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, currency_data: &Path) {
     // ---- currency_digits.bin from supplemental fractions ----
     let cd_text = fs::read_to_string(currency_data).expect("read currencyData.json");
@@ -3801,12 +3819,22 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
         if code == "DEFAULT" {
             continue;
         }
-        let digits: u8 = info
-            .get("_digits")
-            .and_then(Json::as_str)
-            .and_then(|d| d.parse().ok())
-            .unwrap_or(2);
-        digit_records.push((code.clone(), vec![digits]));
+        let field = |k: &str| -> Option<u8> { info.get(k).and_then(Json::as_str)?.parse().ok() };
+        let digits = field("_digits").unwrap_or(2);
+        let rounding = field("_rounding").unwrap_or(0);
+        // UTS #35: `cashDigits` / `cashRounding` default to `digits` /
+        // `rounding`. Most currencies have neither, so their record is the
+        // one `digits` byte; the 16 that do carry all four.
+        let cash_digits = field("_cashDigits").unwrap_or(digits);
+        let cash_rounding = field("_cashRounding").unwrap_or(rounding);
+        if rounding == 0 && cash_digits == digits && cash_rounding == 0 {
+            digit_records.push((code.clone(), vec![digits]));
+        } else {
+            digit_records.push((
+                code.clone(),
+                vec![digits, rounding, cash_digits, cash_rounding],
+            ));
+        }
     }
     write_blob(cldr_dir, "currency_digits", &digit_records);
 
@@ -3835,10 +3863,11 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
         .collect();
     pattern_only.sort();
 
-    // `(pattern, non-latn patterns, unit pattern)` per emitted locale key, so a
-    // pattern-only record that merely repeats what the runtime's truncating
-    // fallback would reach can be pruned (`en-GB`'s pattern is `en`'s).
-    type CurPats = (String, Vec<(String, String)>, String);
+    // `(pattern, non-latn patterns, unit pattern, per-count unit patterns)` per
+    // emitted locale key, so a pattern-only record that merely repeats what the
+    // runtime's truncating fallback would reach can be pruned (`en-GB`'s
+    // pattern is `en`'s).
+    type CurPats = (String, Vec<(String, String)>, String, Vec<(u8, String)>);
     let mut patterns: BTreeMap<String, CurPats> = BTreeMap::new();
     let mut records = Vec::new();
     for (locale, has_names) in files
@@ -3867,6 +3896,19 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
             .and_then(|f| f.get("unitPattern-count-other"))
             .and_then(Json::as_str)
             .unwrap_or("{0} {1}");
+        // The plural categories whose unit pattern differs from `other`'s:
+        // `ro` adds "de" for `other` alone, and `sw` puts the name first for
+        // everything but `one`.
+        let unit_counts: Vec<(u8, String)> = PLURAL_COUNT_KEYS
+            .iter()
+            .enumerate()
+            .filter_map(|(i, k)| {
+                let v = cur_fmt?
+                    .get(&format!("unitPattern-count-{k}"))
+                    .and_then(Json::as_str)?;
+                (v != unit_pat).then(|| (i as u8, String::from(v)))
+            })
+            .collect();
         // `currencyFormats` is per numbering system like the decimal ones, and
         // the blocks genuinely differ: `ar`'s `arab` pattern has no negative
         // subpattern where its `latn` one does, and `fa`'s `arabext` drops the
@@ -3897,6 +3939,11 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
             enc_pattern(&mut p, &parse_number_pattern(np, ""));
         }
         enc_str(&mut p, unit_pat);
+        p.push(unit_counts.len() as u8);
+        for (cat, up) in &unit_counts {
+            p.push(*cat);
+            enc_str(&mut p, up);
+        }
         let key = locale.to_ascii_lowercase();
         if !has_names {
             // Pattern-only region record: drop it when the nearest vendored
@@ -3911,21 +3958,24 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
                     break Some(v);
                 }
             };
-            if inherited.is_some_and(|(ip, ins, iu)| ip == pat && *ins == ns_pats && iu == unit_pat)
-            {
+            if inherited.is_some_and(|(ip, ins, iu, iuc)| {
+                ip == pat && *ins == ns_pats && iu == unit_pat && *iuc == unit_counts
+            }) {
                 continue;
             }
+            // An empty name table and an empty plural-name table.
+            p.extend_from_slice(&0u16.to_le_bytes());
             p.extend_from_slice(&0u16.to_le_bytes());
             patterns.insert(
                 key.clone(),
-                (pat.to_string(), ns_pats, unit_pat.to_string()),
+                (pat.to_string(), ns_pats, unit_pat.to_string(), unit_counts),
             );
             records.push((key, p));
             continue;
         }
         patterns.insert(
             key.clone(),
-            (pat.to_string(), ns_pats, unit_pat.to_string()),
+            (pat.to_string(), ns_pats, unit_pat.to_string(), unit_counts),
         );
 
         let cur_text = fs::read_to_string(currencies_dir.join(alloc_format(&locale)))
@@ -3943,15 +3993,19 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
             .expect("currencies");
         let entries = currencies.entries();
         p.extend_from_slice(&(entries.len() as u16).to_le_bytes());
-        for (code, info) in entries {
+        // The plural display names that differ from `other`'s, written as a
+        // second table after the name table (see the function doc).
+        let mut plural_names = Vec::new();
+        let mut plural_count = 0u16;
+        for (idx, (code, info)) in entries.iter().enumerate() {
             let sym = info.get("symbol").and_then(Json::as_str).unwrap_or(code);
             let narrow = info
                 .get("symbol-alt-narrow")
                 .and_then(Json::as_str)
                 .unwrap_or(sym);
-            // Prefer the plural "other" display name ("US dollars") over the
-            // base ("US Dollar"); ECMA uses the plural-selected form and "other"
-            // matches the common (non-1) case.
+            // The plural "other" display name ("US dollars") is the base the
+            // other counts are stored against; the count-less `displayName`
+            // ("US Dollar") is only its fallback.
             let name = info
                 .get("displayName-count-other")
                 .or_else(|| info.get("displayName"))
@@ -3961,7 +4015,47 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
             enc_str(&mut p, sym);
             enc_str(&mut p, narrow);
             enc_str(&mut p, name);
+
+            let variants: Vec<(usize, &str)> = PLURAL_COUNT_KEYS
+                .iter()
+                .enumerate()
+                .filter_map(|(i, k)| {
+                    let v = info
+                        .get(&format!("displayName-count-{k}"))
+                        .and_then(Json::as_str)?;
+                    (v != name).then_some((i, v))
+                })
+                .collect();
+            if variants.is_empty() {
+                continue;
+            }
+            plural_count += 1;
+            plural_names.extend_from_slice(&(idx as u16).to_le_bytes());
+            plural_names.push(variants.iter().fold(0u8, |m, (i, _)| m | 1 << i));
+            for (_, v) in variants {
+                // What a form shares with the `other` name at either end is
+                // stored as byte counts — `one`'s "российский рубль" against
+                // "российского рубля" keeps only "ий рубль" — which halves the
+                // table (~395 KB of raw forms to ~175 KB). Counted in chars so
+                // a cut never splits a UTF-8 sequence.
+                let vc: Vec<char> = v.chars().collect();
+                let nc: Vec<char> = name.chars().collect();
+                let pre = vc.iter().zip(&nc).take_while(|(a, b)| a == b).count();
+                let suf = vc[pre..]
+                    .iter()
+                    .rev()
+                    .zip(nc[pre..].iter().rev())
+                    .take_while(|(a, b)| a == b)
+                    .count();
+                let bytes = |cs: &[char]| cs.iter().map(|c| c.len_utf8()).sum::<usize>();
+                let (pre_b, suf_b) = (bytes(&vc[..pre]), bytes(&vc[vc.len() - suf..]));
+                plural_names.push(u8::try_from(pre_b).expect("name prefix"));
+                plural_names.push(u8::try_from(suf_b).expect("name suffix"));
+                enc_str(&mut plural_names, &v[pre_b..v.len() - suf_b]);
+            }
         }
+        p.extend_from_slice(&plural_count.to_le_bytes());
+        p.extend_from_slice(&plural_names);
         records.push((key, p));
     }
     // The pattern-only records are appended after the base set; the blob is

@@ -1152,6 +1152,118 @@ fn currency_display_code_uses_the_currency_pattern() {
     assert_eq!(format("en", 3.0, &name), "3.00 US dollars");
 }
 
+/// `currencyDisplay: name` (ICU's `CURRENCY_PLURAL`) picks CLDR's
+/// `displayName-count-*` *and* `unitPattern-count-*` by the plural category of
+/// the number as displayed (issue #39). Expected strings are node 26 / ICU 78.
+/// French and Hindi `one` is `i = 0,1`, so 0 and 1 (and 1.5) are singular even
+/// with visible decimals, where English "1.00" is `other` (v = 2) — but "1"
+/// with no fraction digits is `one`.
+#[cfg(feature = "currency")]
+#[test]
+fn currency_name_plural_forms() {
+    use intl::number::{CurrencyDisplay, NumberStyle, format};
+    let name = |code: &'static str, max_frac: Option<u8>| {
+        nf(|o| {
+            o.style = NumberStyle::Currency;
+            o.currency = Some(code);
+            o.currency_display = CurrencyDisplay::Name;
+            o.maximum_fraction_digits = max_frac;
+        })
+    };
+    let eur = name("EUR", None);
+    assert_eq!(format("fr", 0.0, &eur), "0,00 euro");
+    assert_eq!(format("fr", 1.0, &eur), "1,00 euro");
+    assert_eq!(format("fr", 1.5, &eur), "1,50 euro");
+    assert_eq!(format("fr", 2.0, &eur), "2,00 euros");
+    assert_eq!(format("fr", 1e6, &eur), "1\u{202f}000\u{202f}000,00 euros");
+    let inr = name("INR", None);
+    assert_eq!(format("hi", 0.0, &inr), "0.00 भारतीय रुपया");
+    assert_eq!(format("hi", 1.0, &inr), "1.00 भारतीय रुपया");
+    assert_eq!(format("hi", 2.0, &inr), "2.00 भारतीय रुपए");
+    assert_eq!(format("en", 1.0, &name("USD", None)), "1.00 US dollars");
+    assert_eq!(format("en", 1.0, &name("USD", Some(0))), "1 US dollar");
+    // `few` / `many`, stored as the part that differs from `other`'s name.
+    let rub = name("RUB", Some(0));
+    assert_eq!(format("ru", 1.0, &rub), "1 российский рубль");
+    assert_eq!(format("ru", 2.0, &rub), "2 российских рубля");
+    assert_eq!(format("ru", 5.0, &rub), "5 российских рублей");
+    assert_eq!(format("ar", 2.0, &name("EGP", None)), "2.00 جنيهان مصريان");
+    // The unit pattern is per category too: `ro` adds "de" for `other` only,
+    // and `sw` puts the name first for everything but `one`.
+    let jpy = name("JPY", None);
+    assert_eq!(format("ro", 1.0, &jpy), "1 yen japonez");
+    assert_eq!(format("ro", 2.0, &jpy), "2 yeni japonezi");
+    assert_eq!(format("ro", 100.0, &jpy), "100 de yeni japonezi");
+    assert_eq!(format("sw", 1.0, &jpy), "1 yen ya Japani");
+    assert_eq!(format("sw", 2.0, &jpy), "yen za Japani 2");
+}
+
+/// A range's shared currency name agrees with the CLDR plural range of the two
+/// *displayed* ends, as ICU's `resolveModifierPlurals` does.
+#[cfg(all(feature = "currency", feature = "number-range"))]
+#[test]
+fn currency_name_range_plural() {
+    use intl::number::{CurrencyDisplay, NumberStyle, format_range};
+    let eur = nf(|o| {
+        o.style = NumberStyle::Currency;
+        o.currency = Some("EUR");
+        o.currency_display = CurrencyDisplay::Name;
+    });
+    assert_eq!(format_range("fr", 0.0, 1.0, &eur), "0,00–1,00 euro");
+    assert_eq!(format_range("fr", 1.0, 2.0, &eur), "1,00–2,00 euros");
+}
+
+/// `CurrencyUsage::Cash` applies CLDR's `cashDigits` / `cashRounding` (ICU
+/// `UCURR_USAGE_CASH`, PHP `NumberFormatter::CASH_CURRENCY`, issue #39). ECMA-402
+/// has no such option, so these follow ICU's documented behaviour rather than
+/// node: `TWD` has 2 digits but 0 cash digits; `CHF` / `CAD` cash round to
+/// 0.05, `DKK` to 0.50, `HUF` (0 digits) to 5.
+#[cfg(feature = "currency")]
+#[test]
+fn currency_cash_usage() {
+    use intl::number::{CurrencyUsage, NumberStyle, RoundingMode, format};
+    let cur = |code: &'static str, usage: CurrencyUsage| {
+        nf(|o| {
+            o.style = NumberStyle::Currency;
+            o.currency = Some(code);
+            o.currency_usage = usage;
+        })
+    };
+    let cash = |code| cur(code, CurrencyUsage::Cash);
+    assert_eq!(
+        format("en", 1234.56, &cur("TWD", CurrencyUsage::Standard)),
+        "NT$1,234.56"
+    );
+    assert_eq!(format("en", 1234.56, &cash("TWD")), "NT$1,235");
+    assert_eq!(format("en", 1.23, &cash("CHF")), "CHF\u{a0}1.25");
+    assert_eq!(format("en", 1.22, &cash("CHF")), "CHF\u{a0}1.20");
+    assert_eq!(format("en", 1.275, &cash("CHF")), "CHF\u{a0}1.30");
+    assert_eq!(
+        format("en", 1.23, &cur("CHF", CurrencyUsage::Standard)),
+        "CHF\u{a0}1.23"
+    );
+    assert_eq!(format("en", 1.03, &cash("CAD")), "CA$1.05");
+    assert_eq!(format("da", 1.3, &cash("DKK")), "1,50\u{a0}kr.");
+    assert_eq!(format("da", 1.2, &cash("DKK")), "1,00\u{a0}kr.");
+    assert_eq!(format("en", 1234.0, &cash("HUF")), "HUF\u{a0}1,235");
+    assert_eq!(format("en", 9.99, &cash("CHF")), "CHF\u{a0}10.00");
+    assert_eq!(format("en", -1.23, &cash("CHF")), "-CHF\u{a0}1.25");
+    // Currencies without cash data are unaffected.
+    assert_eq!(format("en", 1.23, &cash("USD")), "$1.23");
+    // The increment honours the rounding mode: 1.225 is a midpoint.
+    let mut half_even = cash("CHF");
+    half_even.rounding_mode = RoundingMode::HalfEven;
+    assert_eq!(format("en", 1.225, &half_even), "CHF\u{a0}1.20");
+    assert_eq!(format("en", 1.225, &cash("CHF")), "CHF\u{a0}1.25");
+    let mut floor = cash("CHF");
+    floor.rounding_mode = RoundingMode::Floor;
+    assert_eq!(format("en", 1.24, &floor), "CHF\u{a0}1.20");
+    // Explicit digits replace the cash precision, increment included.
+    let mut explicit = cash("CHF");
+    explicit.maximum_fraction_digits = Some(2);
+    assert_eq!(format("en", 1.23, &explicit), "CHF\u{a0}1.23");
+}
+
 /// The numbering system defaults to the locale's CLDR `defaultNumberingSystem`,
 /// as ECMA-402 does — `Intl.NumberFormat('ar-EG').format(1234.5)` is
 /// "١٬٢٣٤٫٥". Thirty of the vendored locales have a non-`latn` default: the
