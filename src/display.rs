@@ -38,25 +38,13 @@ fn norm_into<'a>(buf: &'a mut [u8; 40], tag: &str) -> &'a str {
     core::str::from_utf8(&buf[..len]).unwrap_or("")
 }
 
-/// Resolve through the display-locale fallback chain (full tag, then shorter
-/// prefixes, then English).
+/// Resolve through the display locale's CLDR inheritance chain, then English.
 fn lookup(
     display_locale: &str,
     code: &str,
     f: fn(&str, &str) -> Option<&'static str>,
 ) -> Option<&'static str> {
-    let mut buf = [0u8; 40];
-    let norm = norm_into(&mut buf, display_locale);
-    let mut end = norm.len();
-    loop {
-        if let Some(name) = f(&norm[..end], code) {
-            return Some(name);
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return f("en", code),
-        }
-    }
+    crate::cldr::fallback(display_locale, |k| f(k, code)).or_else(|| f("en", code))
 }
 
 /// The display name of language `code` (a BCP-47 primary language subtag, e.g.

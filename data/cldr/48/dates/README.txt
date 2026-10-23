@@ -8,3 +8,6 @@ committed unmodified, for the CLDR "modern" coverage base languages. `codegen`
 (emit_dates) reads them to produce src/cldr/calendar.bin and
 src/cldr/skeletons.bin. Do not hand-edit; to refresh, re-download from the same
 upstream path at the pinned CLDR version.
+
+The CLDR hub and non-default-script sublocales (`en-001`, `pt-PT`, `zh-Hant`,
+…) are vendored on top of the base languages; see ../README-sublocales.txt.

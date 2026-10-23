@@ -170,29 +170,10 @@ fn patterns(lang: &str, opts: &ListFormatOptions) -> ListPatterns {
     // ECMA-402's two axes are one key into the CLDR table: three types × three
     // widths, type-major (see `cldr::generated::lists`).
     let kind = opts.list_type as usize * 3 + opts.width as usize;
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    loop {
-        if let Some(loc) = list_locale(&norm[..end]) {
-            return list_patterns(loc, kind);
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => {
-                let en = list_locale("en").expect("root list patterns present");
-                return list_patterns(en, kind);
-            }
-        }
-    }
+    let loc = crate::cldr::fallback(lang, list_locale)
+        .or_else(|| list_locale("en"))
+        .expect("root list patterns present");
+    list_patterns(loc, kind)
 }
 
 /// Join `items` into a single string using the list conventions of `lang`.

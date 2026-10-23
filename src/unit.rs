@@ -271,26 +271,7 @@ const fn width_index(width: UnitWidth) -> usize {
 /// lookups — numerator, denominator, `per` pattern — and they must all come from
 /// the same locale, so the locale is pinned here rather than per lookup.
 fn resolve_locale(lang: &str) -> u16 {
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    loop {
-        if let Some(i) = data::locale_index(&norm[..end]) {
-            return i;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return data::EN,
-        }
-    }
+    crate::cldr::fallback(lang, data::locale_index).unwrap_or(data::EN)
 }
 
 #[inline]

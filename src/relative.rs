@@ -187,29 +187,10 @@ pub struct RelativeTimePart {
 fn field(lang: &str, unit: RelativeUnit, opts: &RelativeTimeFormatOptions) -> RelUnit {
     use crate::cldr::{relative_locale, relative_unit};
     let (u, w) = (unit as usize, opts.width as usize);
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    loop {
-        if let Some(loc) = relative_locale(&norm[..end]) {
-            return relative_unit(loc, u, w);
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => {
-                let en = relative_locale("en").expect("root relative fields present");
-                return relative_unit(en, u, w);
-            }
-        }
-    }
+    let loc = crate::cldr::fallback(lang, relative_locale)
+        .or_else(|| relative_locale("en"))
+        .expect("root relative fields present");
+    relative_unit(loc, u, w)
 }
 
 /// The `numeric: "auto"` literal for `value`, if the locale has one.

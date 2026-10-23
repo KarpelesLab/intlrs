@@ -35,6 +35,113 @@
 /// seven units × one width used to cost.
 pub(crate) mod generated;
 
+// ---- Locale inheritance (UTS #35 §4.1.3 "Parent Locales"). ----
+
+/// Longest locale id (`lang-Script-REGION-variant…`, extensions stripped) the
+/// walk keeps; longer tags lose their trailing subtags.
+const TAG_CAP: usize = 48;
+
+/// Call `f` on each locale of `tag`'s CLDR inheritance chain, nearest first,
+/// and return its first `Some`.
+///
+/// The chain is CLDR's, not plain subtag truncation:
+///
+/// * a `lang-REGION` tag first gets the script likelySubtags gives it when that
+///   is not the language's own, so `zh-TW` is walked as `zh-Hant-TW`;
+/// * a locale's explicit `parentLocales` entry outranks truncation: `en-GB` →
+///   `en-001` → `en`, `pt-AO` → `pt-PT` → `pt`, `es-MX` → `es-419` → `es`;
+/// * a `lang-Script` whose script is not the language's likely one has root as
+///   its parent (`zh-Hant`, `sr-Latn`), so Traditional Chinese never inherits
+///   Simplified strings.
+///
+/// The walk stops at root. When it reaches root without having tried the bare
+/// language (`zh-Hant` → root), the bare language is tried last: a section
+/// that vendors no `zh-Hant` data then still answers in Chinese, as it did
+/// before CLDR's parents were followed, rather than in the caller's English.
+///
+/// `tag` may use `_` or `-` and any case; extension and private-use sequences
+/// (`-u-…`, `-x-…`) are ignored. The keys `f` sees are lowercase.
+pub(crate) fn fallback<T>(tag: &str, mut f: impl FnMut(&str) -> Option<T>) -> Option<T> {
+    let mut buf = [0u8; TAG_CAP];
+    let mut len = 0;
+    for (i, sub) in tag.split(['-', '_']).enumerate() {
+        // A singleton opens an extension or private-use sequence.
+        if sub.is_empty() || !sub.is_ascii() || (i > 0 && sub.len() == 1) {
+            break;
+        }
+        let need = sub.len() + usize::from(i > 0);
+        if len + need > TAG_CAP {
+            break;
+        }
+        if i > 0 {
+            buf[len] = b'-';
+            len += 1;
+        }
+        buf[len..len + sub.len()].copy_from_slice(sub.as_bytes());
+        buf[len..len + sub.len()].make_ascii_lowercase();
+        len += sub.len();
+    }
+    let norm = core::str::from_utf8(&buf[..len]).unwrap_or("");
+    if norm.is_empty() {
+        return None;
+    }
+    let lang = norm.split('-').next().unwrap_or(norm);
+
+    // `zh-tw` -> `zh-hant-tw`.
+    let mut ins = [0u8; TAG_CAP + 5];
+    let mut cur = norm;
+    if let Some(region) = norm[lang.len()..]
+        .strip_prefix('-')
+        .map(|r| r.split('-').next().unwrap_or(r))
+        && is_region(region)
+        && let Some(script) =
+            generated::parents::region_script(&norm[..lang.len() + 1 + region.len()])
+    {
+        let parts = [lang, "-", script, &norm[lang.len()..]];
+        let mut n = 0;
+        for p in parts {
+            ins[n..n + p.len()].copy_from_slice(p.as_bytes());
+            n += p.len();
+        }
+        cur = core::str::from_utf8(&ins[..n]).unwrap_or(norm);
+    }
+
+    let mut tried_lang = false;
+    loop {
+        if let Some(v) = f(cur) {
+            return Some(v);
+        }
+        tried_lang |= cur == lang;
+        match parent_locale(cur) {
+            Some(p) => cur = p,
+            None => break,
+        }
+    }
+    if tried_lang { None } else { f(lang) }
+}
+
+/// The CLDR parent of a lowercase locale key, or `None` at root.
+fn parent_locale(loc: &str) -> Option<&str> {
+    if let Some(p) = generated::parents::parent(loc) {
+        return (!p.is_empty()).then_some(p);
+    }
+    let (lang, rest) = loc.split_once('-')?;
+    // `nonlikelyScript`: `sr-latn`'s parent is root, not `sr`.
+    if rest.len() == 4
+        && rest.bytes().all(|b| b.is_ascii_alphabetic())
+        && generated::parents::default_script(lang).is_some_and(|d| d != rest)
+    {
+        return None;
+    }
+    loc.rfind('-').map(|i| &loc[..i])
+}
+
+/// A BCP 47 region subtag: two letters or three digits.
+fn is_region(s: &str) -> bool {
+    (s.len() == 2 && s.bytes().all(|b| b.is_ascii_alphabetic()))
+        || (s.len() == 3 && s.bytes().all(|b| b.is_ascii_digit()))
+}
+
 // ---- Shared formatter record types (plain data, borrowing from the blobs). ----
 
 /// A resolved CLDR number pattern (affixes + grouping / fraction-digit counts).

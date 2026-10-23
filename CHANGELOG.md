@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - *(number)* a unit or currency-name range is worded for the plural category of its ends as displayed, not of the raw values
+- *(locale)* follow CLDR's locale inheritance (`parentLocales`, likely-script insertion, `nonlikelyScript`) in every formatter instead of truncating subtags, and vendor the CLDR hub and script sublocales: `en-GB` lists read "1, 2 and 3", `pt-PT` has its own dates, day periods and zone names, `zh-TW`/`zh-HK` reach Traditional Chinese data, and regional currency symbols (`en-AU` AUD "$") are honoured (#36, #37)
 - *(spellout)* drop the leading-apostrophe escape from output, format `=#,##0=` past the spelled range, apply ICU's roll-back rule, and use French's public ordinal rule set
 
 ## [0.6.4](https://github.com/KarpelesLab/intlrs/compare/v0.6.3...v0.6.4) - 2026-09-27

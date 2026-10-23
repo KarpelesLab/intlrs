@@ -19,16 +19,18 @@ can derive it:
   en-IN    Indian digit grouping (`#,##,##0.###`) and crore/lakh compact forms.
   zh-Hant  Traditional Chinese compact forms (億 rather than 亿).
 
-`zh-Hant` has no region files upstream; `emit_numbers` derives `zh-TW`, `zh-HK`
-and `zh-MO` from it using CLDR's own likelySubtags, since the runtime lookup does
-no script inference.
+`zh-TW`, `zh-HK` and `zh-MO` reach `zh-Hant` (and `zh-Hant-HK`) through the
+runtime's CLDR locale chain, which inserts the likely script — see
+../README-sublocales.txt.
 
 On top of that, every `lang-REGION` file of a base language whose `numbers`
 block differs from the base language's in anything the codegen consumes is
 vendored — 116 files in CLDR 48. Region locales that are byte-for-byte the base
 language's in those fields (179 of them: `en-US`, `de-DE`, `fr-FR`, `ja-JP`, …)
-are not, since the runtime's truncating fallback (`fr-FR` -> `fr`) reaches the
-same data. The fields compared are:
+are not, since the runtime's locale chain (`fr-FR` -> `fr`) reaches the same
+data. Region files that the chain now reaches through a CLDR hub with identical
+data (`pt-CV` -> `pt-PT`, `es-PR` -> `es-419`) were dropped again; see
+../README-sublocales.txt. The fields compared are:
 
   symbols-numberSystem-*         separators, signs, percent, NaN/infinity
   decimalFormats-numberSystem-*  standard + compact (short/long) patterns
@@ -52,13 +54,8 @@ lost their `'` grouping, `es-MX` its `.` decimal point, `en-ZA` its `,` one.
 are identical share one table index, and a differing numbering system pair is
 emitted as a per-locale override. `emit_currency` reads the region files too,
 for their currency *pattern* (`pt-PT` puts the symbol after the amount);
-currency *names* stay per base language (`currencies-raw` is base-only), so a
-region locale's symbol for a given currency is its base language's — CLDR's
-`es-MX` spells `EUR` as "EUR" where `es` uses "€", and that difference is
-not carried.
-
-`lang-Script-REGION` files (`zh-Hant-HK`, `sr-Latn-BA`, …) are not vendored;
-`zh-HK`/`zh-MO`/`zh-TW` derive from `zh-Hant` as described above.
+currency *names* come from currencies-raw/, which vendors the regional
+sublocales too (as deltas; see ../README-sublocales.txt).
 
 root.xml is the LDML source rather than cldr-json because cldr-json's `und`
 (`cldr-numbers-full/main/und/numbers.json`) carries only the `latn` block. Root's

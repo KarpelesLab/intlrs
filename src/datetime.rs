@@ -583,26 +583,9 @@ fn render(pattern: &str, dt: &DateTime, s: &CalendarSpec) -> String {
 }
 
 fn spec(lang: &str) -> CalendarSpec {
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    loop {
-        if let Some(s) = calendar_spec(&norm[..end]) {
-            return s;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return calendar_spec("en").expect("root calendar present"),
-        }
-    }
+    crate::cldr::fallback(lang, calendar_spec)
+        .or_else(|| calendar_spec("en"))
+        .expect("root calendar present")
 }
 
 /// Format the date part of `dt` in `lang` at the given `style`.
@@ -638,26 +621,9 @@ pub fn format_time(lang: &str, dt: &DateTime, style: DateStyle) -> String {
 #[must_use]
 pub fn format_skeleton(lang: &str, dt: &DateTime, skeleton: &str) -> String {
     let s = spec(lang);
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    let pattern = loop {
-        if let Some(p) = crate::cldr::skeleton_pattern(&norm[..end], skeleton) {
-            break p;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break crate::cldr::skeleton_pattern("en", skeleton).unwrap_or(s.date[2]),
-        }
-    };
+    let pattern = crate::cldr::fallback(lang, |k| crate::cldr::skeleton_pattern(k, skeleton))
+        .or_else(|| crate::cldr::skeleton_pattern("en", skeleton))
+        .unwrap_or(s.date[2]);
     render(pattern, dt, &s)
 }
 
@@ -748,17 +714,8 @@ fn render_alt(
 /// calendar was left out of this build".
 #[cfg(feature = "_calendars")]
 fn alt_spec(lang: &str, cal: &str) -> Option<crate::cldr::AltCalSpec> {
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    loop {
-        if let Some(s) = crate::cldr::alt_cal_spec(cal, &norm[..end]) {
-            return Some(s);
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return crate::cldr::alt_cal_spec(cal, "en"),
-        }
-    }
+    crate::cldr::fallback(lang, |k| crate::cldr::alt_cal_spec(cal, k))
+        .or_else(|| crate::cldr::alt_cal_spec(cal, "en"))
 }
 
 /// Format an Islamic (Hijri) date in `lang`, e.g.
@@ -934,17 +891,8 @@ pub fn format_chinese_date(
 /// enabled. See [`alt_spec`].
 #[cfg(feature = "_calendars")]
 fn chinese_alt_spec(lang: &str, cal: &str) -> Option<crate::cldr::ChineseCalSpec> {
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    loop {
-        if let Some(s) = crate::cldr::chinese_spec(cal, &norm[..end]) {
-            return Some(s);
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return crate::cldr::chinese_spec(cal, "en"),
-        }
-    }
+    crate::cldr::fallback(lang, |k| crate::cldr::chinese_spec(cal, k))
+        .or_else(|| crate::cldr::chinese_spec(cal, "en"))
 }
 
 /// Format a Persian (Solar Hijri) date in `lang`, e.g.
@@ -1052,17 +1000,9 @@ fn japanese_hist_eras(lang: &str, index: usize) -> [&'static str; 3] {
     }
     #[cfg(feature = "cal-japanese-hist")]
     {
-        let norm = normalize_lang(lang);
-        let mut end = norm.len();
-        loop {
-            if let Some(e) = crate::cldr::japanese_hist_eras(&norm[..end], index) {
-                return e;
-            }
-            match norm[..end].rfind('-') {
-                Some(i) => end = i,
-                None => return crate::cldr::japanese_hist_eras("en", index).unwrap_or([""; 3]),
-            }
-        }
+        crate::cldr::fallback(lang, |k| crate::cldr::japanese_hist_eras(k, index))
+            .or_else(|| crate::cldr::japanese_hist_eras("en", index))
+            .unwrap_or([""; 3])
     }
 }
 
@@ -1204,17 +1144,8 @@ fn japanese_alt_spec(lang: &str) -> Option<crate::cldr::JapaneseCalSpec> {
     }
     #[cfg(feature = "cal-japanese")]
     {
-        let norm = normalize_lang(lang);
-        let mut end = norm.len();
-        loop {
-            if let Some(s) = crate::cldr::japanese_spec(&norm[..end]) {
-                return Some(s);
-            }
-            match norm[..end].rfind('-') {
-                Some(i) => end = i,
-                None => return crate::cldr::japanese_spec("en"),
-            }
-        }
+        crate::cldr::fallback(lang, crate::cldr::japanese_spec)
+            .or_else(|| crate::cldr::japanese_spec("en"))
     }
 }
 
@@ -1717,17 +1648,7 @@ const TZF_REGION: u16 = 3;
 /// The `tz_names` table index for `lang`, walking the CLDR fallback chain
 /// (`pt-BR` → `pt`) and ending at `en`.
 fn tz_locale(lang: &str) -> u16 {
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    loop {
-        if let Some(i) = tz_names::locale_index(&norm[..end]) {
-            return i;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return tz_names::EN,
-        }
-    }
+    crate::cldr::fallback(lang, tz_names::locale_index).unwrap_or(tz_names::EN)
 }
 
 /// Fill a `hourFormat` subpattern (`"+HH:mm"`, `"+H.mm"`, …) with an offset.
@@ -2242,29 +2163,19 @@ fn synthesize_time_pattern(skeleton: &str, s: &CalendarSpec) -> String {
 
 /// Resolve a skeleton to a locale pattern through the fallback chain.
 fn resolve_one(lang: &str, s: &CalendarSpec, skeleton: &str) -> String {
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    loop {
-        if let Some(p) = crate::cldr::skeleton_pattern(&norm[..end], skeleton) {
-            return String::from(p);
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => {
-                if let Some(p) = crate::cldr::skeleton_pattern("en", skeleton) {
-                    return String::from(p);
-                }
-                // Nothing tabulated anywhere. A pure-time skeleton is
-                // synthesized from its own fields; a date skeleton keeps the
-                // locale's medium date pattern, whose field *order* a naive
-                // synthesis would get wrong (`d.M.y` vs `y/M/d` vs `M/d/y`).
-                return if skeleton.chars().all(is_time_field) {
-                    synthesize_time_pattern(skeleton, s)
-                } else {
-                    String::from(s.date[2])
-                };
-            }
-        }
+    if let Some(p) = crate::cldr::fallback(lang, |k| crate::cldr::skeleton_pattern(k, skeleton))
+        .or_else(|| crate::cldr::skeleton_pattern("en", skeleton))
+    {
+        return String::from(p);
+    }
+    // Nothing tabulated anywhere. A pure-time skeleton is synthesized from its
+    // own fields; a date skeleton keeps the locale's medium date pattern, whose
+    // field *order* a naive synthesis would get wrong (`d.M.y` vs `y/M/d` vs
+    // `M/d/y`).
+    if skeleton.chars().all(is_time_field) {
+        synthesize_time_pattern(skeleton, s)
+    } else {
+        String::from(s.date[2])
     }
 }
 
@@ -3134,20 +3045,9 @@ pub fn format_options(
 #[must_use]
 pub fn format_skeleton_to_parts(lang: &str, dt: &DateTime, skeleton: &str) -> Vec<DateTimePart> {
     let s = spec(lang);
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    let pattern = loop {
-        if let Some(p) = crate::cldr::skeleton_pattern(&norm[..end], skeleton) {
-            break String::from(p);
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => {
-                break crate::cldr::skeleton_pattern("en", skeleton)
-                    .map_or_else(|| String::from(s.date[2]), String::from);
-            }
-        }
-    };
+    let pattern = crate::cldr::fallback(lang, |k| crate::cldr::skeleton_pattern(k, skeleton))
+        .or_else(|| crate::cldr::skeleton_pattern("en", skeleton))
+        .map_or_else(|| String::from(s.date[2]), String::from);
     render_parts(&pattern, dt, &s)
 }
 
@@ -3424,37 +3324,19 @@ fn greatest_diff_field(a: &DateTime, b: &DateTime, skeleton: &str, frac: bool) -
 
 /// Resolve a per-skeleton interval pattern through the locale fallback chain.
 fn resolve_interval_pattern(lang: &str, skeleton: &str, field: u8) -> Option<String> {
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    loop {
-        if let Some(p) = crate::cldr::interval_pattern(&norm[..end], skeleton, field) {
-            return Some(String::from(p));
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return crate::cldr::interval_pattern("en", skeleton, field).map(String::from),
-        }
-    }
+    crate::cldr::fallback(lang, |k| crate::cldr::interval_pattern(k, skeleton, field))
+        .or_else(|| crate::cldr::interval_pattern("en", skeleton, field))
+        .map(String::from)
 }
 
 /// Resolve the `intervalFormatFallback` string through the locale fallback chain.
 fn resolve_interval_fallback(lang: &str) -> String {
-    let norm = normalize_lang(lang);
-    let mut end = norm.len();
-    loop {
-        if let Some(p) = crate::cldr::interval_fallback(&norm[..end]) {
-            return String::from(p);
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => {
-                return crate::cldr::interval_fallback("en").map_or_else(
-                    || String::from("{0}\u{2009}\u{2013}\u{2009}{1}"),
-                    String::from,
-                );
-            }
-        }
-    }
+    crate::cldr::fallback(lang, crate::cldr::interval_fallback)
+        .or_else(|| crate::cldr::interval_fallback("en"))
+        .map_or_else(
+            || String::from("{0}\u{2009}\u{2013}\u{2009}{1}"),
+            String::from,
+        )
 }
 
 /// Give each literal part the common source of its nearest non-literal neighbors

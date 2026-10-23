@@ -112,24 +112,16 @@ fn locale_index(lang: &str) -> Option<u16> {
         "es-419" => 30,
         "es-ar" => 31,
         "es-bo" => 31,
-        "es-br" => 30,
-        "es-bz" => 30,
         "es-cl" => 31,
         "es-co" => 31,
         "es-cr" => 32,
-        "es-cu" => 30,
         "es-do" => 30,
         "es-ec" => 31,
         "es-gq" => 29,
         "es-gt" => 30,
-        "es-hn" => 30,
         "es-mx" => 30,
-        "es-ni" => 30,
-        "es-pa" => 30,
         "es-pe" => 30,
-        "es-pr" => 30,
         "es-py" => 31,
-        "es-sv" => 30,
         "es-us" => 30,
         "es-uy" => 31,
         "es-ve" => 31,
@@ -155,6 +147,7 @@ fn locale_index(lang: &str) -> Option<u16> {
         "ha" => 44,
         "he" => 45,
         "hi" => 46,
+        "hi-latn" => 26,
         "hr" => 47,
         "hsb" => 17,
         "ht" => 18,
@@ -169,99 +162,76 @@ fn locale_index(lang: &str) -> Option<u16> {
         "jv" => 54,
         "ka" => 55,
         "kk" => 56,
-        "km" => 57,
-        "kn" => 58,
-        "ko" => 59,
-        "kok" => 60,
-        "ky" => 61,
-        "lo" => 62,
-        "lt" => 63,
-        "lv" => 64,
-        "mk" => 65,
-        "ml" => 66,
+        "kk-arab" => 57,
+        "km" => 58,
+        "kn" => 59,
+        "ko" => 60,
+        "kok" => 61,
+        "ky" => 62,
+        "lo" => 63,
+        "lt" => 64,
+        "lv" => 65,
+        "mk" => 66,
+        "ml" => 67,
         "mn" => 1,
-        "mr" => 67,
-        "ms" => 68,
+        "mr" => 68,
+        "ms" => 69,
         "ms-bn" => 23,
         "ms-id" => 23,
-        "my" => 69,
-        "nb" => 70,
-        "ne" => 71,
+        "my" => 70,
+        "nb" => 71,
+        "ne" => 72,
         "nl" => 31,
-        "nn" => 70,
-        "no" => 72,
-        "or" => 73,
-        "pa" => 74,
+        "nn" => 71,
+        "no" => 73,
+        "or" => 74,
+        "pa" => 75,
         "pcm" => 1,
         "pl" => 48,
-        "ps" => 75,
+        "ps" => 76,
         "pt" => 23,
-        "pt-ao" => 76,
-        "pt-ch" => 77,
-        "pt-cv" => 77,
-        "pt-gq" => 77,
-        "pt-gw" => 77,
-        "pt-lu" => 77,
-        "pt-mo" => 77,
-        "pt-mz" => 77,
-        "pt-pt" => 77,
-        "pt-st" => 77,
-        "pt-tl" => 77,
-        "qu" => 78,
+        "pt-ao" => 77,
+        "pt-pt" => 78,
+        "qu" => 79,
         "qu-bo" => 21,
         "rm" => 25,
-        "ro" => 79,
-        "ru" => 80,
-        "ru-ua" => 81,
-        "sd" => 82,
+        "ro" => 80,
+        "ru" => 81,
+        "ru-ua" => 82,
+        "sd" => 83,
         "shn" => 1,
         "si" => 1,
-        "sk" => 83,
-        "sl" => 84,
-        "so" => 85,
-        "sq" => 86,
+        "sk" => 84,
+        "sl" => 85,
+        "so" => 86,
+        "sq" => 87,
         "sr" => 23,
-        "sv" => 87,
-        "sv-fi" => 63,
+        "sr-latn" => 23,
+        "sv" => 88,
+        "sv-fi" => 64,
         "sw" => 1,
         "sw-cd" => 23,
         "sw-ke" => 1,
-        "ta" => 88,
-        "ta-my" => 89,
-        "ta-sg" => 89,
-        "te" => 90,
-        "th" => 91,
+        "ta" => 89,
+        "ta-my" => 90,
+        "ta-sg" => 90,
+        "te" => 91,
+        "th" => 92,
         "ti" => 1,
-        "tk" => 92,
-        "tr" => 93,
-        "uk" => 94,
-        "und-hk" => 100,
-        "und-mo" => 100,
-        "und-tw" => 100,
-        "ur" => 95,
-        "ur-in" => 96,
-        "uz" => 97,
+        "tk" => 93,
+        "tr" => 94,
+        "uk" => 95,
+        "ur" => 96,
+        "ur-in" => 97,
+        "uz" => 98,
         "vi" => 31,
         "yo" => 1,
         "yo-bj" => 1,
-        "yue" => 98,
-        "zh" => 99,
-        "zh-au" => 100,
-        "zh-bn" => 100,
-        "zh-gb" => 100,
-        "zh-gf" => 100,
-        "zh-hant" => 100,
-        "zh-hk" => 100,
-        "zh-id" => 100,
-        "zh-mo" => 100,
-        "zh-pa" => 100,
-        "zh-pf" => 100,
-        "zh-ph" => 100,
-        "zh-sr" => 100,
-        "zh-th" => 100,
-        "zh-tw" => 100,
-        "zh-us" => 100,
-        "zh-vn" => 100,
+        "yue" => 99,
+        "yue-hans" => 100,
+        "zh" => 101,
+        "zh-hant" => 102,
+        "zh-hant-hk" => 99,
         "zu" => 1,
         _ => return None,
     })
@@ -1946,7 +1916,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             minus: "-",
             plus: "+",
             percent: "%",
-            nan: "NaN",
+            nan: "سان\u{a0}ەمەس",
             infinity: "∞",
             exponential: "E",
             min_grouping: 1,
@@ -2044,7 +2014,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 3,
                 primary_group: 3,
-                secondary_group: 2,
+                secondary_group: 3,
             },
             pct: Pattern {
                 prefix: "",
@@ -2057,6 +2027,35 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             },
         },
         61 => NumberSpec {
+            decimal: ".",
+            group: ",",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            nan: "NaN",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 2,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        },
+        62 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "-",
@@ -2085,7 +2084,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        62 => NumberSpec {
+        63 => NumberSpec {
             decimal: ",",
             group: ".",
             minus: "-",
@@ -2114,7 +2113,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        63 => NumberSpec {
+        64 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "−",
@@ -2143,7 +2142,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        64 => NumberSpec {
+        65 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "-",
@@ -2172,7 +2171,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        65 => NumberSpec {
+        66 => NumberSpec {
             decimal: ",",
             group: ".",
             minus: "-",
@@ -2194,35 +2193,6 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             pct: Pattern {
                 prefix: "",
                 suffix: "\u{a0}%",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 0,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-        },
-        66 => NumberSpec {
-            decimal: ".",
-            group: ",",
-            minus: "-",
-            plus: "+",
-            percent: "%",
-            nan: "NaN",
-            infinity: "∞",
-            exponential: "E",
-            min_grouping: 1,
-            dec: Pattern {
-                prefix: "",
-                suffix: "",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 3,
-                primary_group: 3,
-                secondary_group: 2,
-            },
-            pct: Pattern {
-                prefix: "",
-                suffix: "%",
                 min_int: 1,
                 min_frac: 0,
                 max_frac: 0,
@@ -2276,7 +2246,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 3,
                 primary_group: 3,
-                secondary_group: 3,
+                secondary_group: 2,
             },
             pct: Pattern {
                 prefix: "",
@@ -2289,6 +2259,35 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             },
         },
         69 => NumberSpec {
+            decimal: ".",
+            group: ",",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            nan: "NaN",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        },
+        70 => NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -2317,7 +2316,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        70 => NumberSpec {
+        71 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "−",
@@ -2339,35 +2338,6 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             pct: Pattern {
                 prefix: "",
                 suffix: "\u{a0}%",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 0,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-        },
-        71 => NumberSpec {
-            decimal: ".",
-            group: ",",
-            minus: "-",
-            plus: "+",
-            percent: "%",
-            nan: "NaN",
-            infinity: "∞",
-            exponential: "E",
-            min_grouping: 1,
-            dec: Pattern {
-                prefix: "",
-                suffix: "",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 3,
-                primary_group: 3,
-                secondary_group: 2,
-            },
-            pct: Pattern {
-                prefix: "",
-                suffix: "%",
                 min_int: 1,
                 min_frac: 0,
                 max_frac: 0,
@@ -2376,35 +2346,6 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             },
         },
         72 => NumberSpec {
-            decimal: ",",
-            group: "\u{a0}",
-            minus: "−",
-            plus: "+",
-            percent: "%",
-            nan: "NaN",
-            infinity: "∞",
-            exponential: "E",
-            min_grouping: 1,
-            dec: Pattern {
-                prefix: "",
-                suffix: "",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 3,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-            pct: Pattern {
-                prefix: "",
-                suffix: "\u{a0}%",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 0,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-        },
-        73 => NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -2426,6 +2367,35 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             pct: Pattern {
                 prefix: "",
                 suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        },
+        73 => NumberSpec {
+            decimal: ",",
+            group: "\u{a0}",
+            minus: "−",
+            plus: "+",
+            percent: "%",
+            nan: "NaN",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "\u{a0}%",
                 min_int: 1,
                 min_frac: 0,
                 max_frac: 0,
@@ -2459,14 +2429,14 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 0,
                 primary_group: 3,
-                secondary_group: 2,
+                secondary_group: 3,
             },
         },
         75 => NumberSpec {
-            decimal: ",",
-            group: ".",
-            minus: "\u{200e}−",
-            plus: "\u{200e}+",
+            decimal: ".",
+            group: ",",
+            minus: "-",
+            plus: "+",
             percent: "%",
             nan: "NaN",
             infinity: "∞",
@@ -2479,7 +2449,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 3,
                 primary_group: 3,
-                secondary_group: 3,
+                secondary_group: 2,
             },
             pct: Pattern {
                 prefix: "",
@@ -2488,14 +2458,14 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 0,
                 primary_group: 3,
-                secondary_group: 3,
+                secondary_group: 2,
             },
         },
         76 => NumberSpec {
             decimal: ",",
-            group: "\u{a0}",
-            minus: "-",
-            plus: "+",
+            group: ".",
+            minus: "\u{200e}−",
+            plus: "\u{200e}+",
             percent: "%",
             nan: "NaN",
             infinity: "∞",
@@ -2529,7 +2499,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             nan: "NaN",
             infinity: "∞",
             exponential: "E",
-            min_grouping: 2,
+            min_grouping: 1,
             dec: Pattern {
                 prefix: "",
                 suffix: "",
@@ -2550,6 +2520,35 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             },
         },
         78 => NumberSpec {
+            decimal: ",",
+            group: "\u{a0}",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            nan: "NaN",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 2,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        },
+        79 => NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -2578,42 +2577,13 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        79 => NumberSpec {
+        80 => NumberSpec {
             decimal: ",",
             group: ".",
             minus: "-",
             plus: "+",
             percent: "%",
             nan: "NaN",
-            infinity: "∞",
-            exponential: "E",
-            min_grouping: 1,
-            dec: Pattern {
-                prefix: "",
-                suffix: "",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 3,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-            pct: Pattern {
-                prefix: "",
-                suffix: "\u{a0}%",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 0,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-        },
-        80 => NumberSpec {
-            decimal: ",",
-            group: "\u{a0}",
-            minus: "-",
-            plus: "+",
-            percent: "%",
-            nan: "не\u{a0}число",
             infinity: "∞",
             exponential: "E",
             min_grouping: 1,
@@ -2645,7 +2615,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             nan: "не\u{a0}число",
             infinity: "∞",
             exponential: "E",
-            min_grouping: 2,
+            min_grouping: 1,
             dec: Pattern {
                 prefix: "",
                 suffix: "",
@@ -2666,6 +2636,35 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             },
         },
         82 => NumberSpec {
+            decimal: ",",
+            group: "\u{a0}",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            nan: "не\u{a0}число",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 2,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "\u{a0}%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        },
+        83 => NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -2694,7 +2693,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        83 => NumberSpec {
+        84 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "-",
@@ -2723,7 +2722,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        84 => NumberSpec {
+        85 => NumberSpec {
             decimal: ",",
             group: ".",
             minus: "−",
@@ -2752,7 +2751,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        85 => NumberSpec {
+        86 => NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -2781,7 +2780,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        86 => NumberSpec {
+        87 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "-",
@@ -2810,7 +2809,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        87 => NumberSpec {
+        88 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "−",
@@ -2839,35 +2838,6 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        88 => NumberSpec {
-            decimal: ".",
-            group: ",",
-            minus: "-",
-            plus: "+",
-            percent: "%",
-            nan: "NaN",
-            infinity: "∞",
-            exponential: "E",
-            min_grouping: 1,
-            dec: Pattern {
-                prefix: "",
-                suffix: "",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 3,
-                primary_group: 3,
-                secondary_group: 2,
-            },
-            pct: Pattern {
-                prefix: "",
-                suffix: "%",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 0,
-                primary_group: 3,
-                secondary_group: 2,
-            },
-        },
         89 => NumberSpec {
             decimal: ".",
             group: ",",
@@ -2885,7 +2855,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 3,
                 primary_group: 3,
-                secondary_group: 3,
+                secondary_group: 2,
             },
             pct: Pattern {
                 prefix: "",
@@ -2894,7 +2864,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 0,
                 primary_group: 3,
-                secondary_group: 3,
+                secondary_group: 2,
             },
         },
         90 => NumberSpec {
@@ -2914,7 +2884,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 3,
                 primary_group: 3,
-                secondary_group: 2,
+                secondary_group: 3,
             },
             pct: Pattern {
                 prefix: "",
@@ -2943,7 +2913,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 3,
                 primary_group: 3,
-                secondary_group: 3,
+                secondary_group: 2,
             },
             pct: Pattern {
                 prefix: "",
@@ -2956,6 +2926,35 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             },
         },
         92 => NumberSpec {
+            decimal: ".",
+            group: ",",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            nan: "NaN",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        },
+        93 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "-",
@@ -2984,7 +2983,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        93 => NumberSpec {
+        94 => NumberSpec {
             decimal: ",",
             group: ".",
             minus: "-",
@@ -3013,7 +3012,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        94 => NumberSpec {
+        95 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "-",
@@ -3022,35 +3021,6 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             nan: "NaN",
             infinity: "∞",
             exponential: "Е",
-            min_grouping: 1,
-            dec: Pattern {
-                prefix: "",
-                suffix: "",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 3,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-            pct: Pattern {
-                prefix: "",
-                suffix: "%",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 0,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-        },
-        95 => NumberSpec {
-            decimal: ".",
-            group: ",",
-            minus: "\u{200e}-",
-            plus: "\u{200e}+",
-            percent: "%",
-            nan: "NaN",
-            infinity: "∞",
-            exponential: "E",
             min_grouping: 1,
             dec: Pattern {
                 prefix: "",
@@ -3101,6 +3071,35 @@ const fn latn(i: u16) -> Option<NumberSpec> {
             },
         },
         97 => NumberSpec {
+            decimal: ".",
+            group: ",",
+            minus: "\u{200e}-",
+            plus: "\u{200e}+",
+            percent: "%",
+            nan: "NaN",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        },
+        98 => NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "-",
@@ -3129,7 +3128,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        98 => NumberSpec {
+        99 => NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -3158,7 +3157,36 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        99 => NumberSpec {
+        100 => NumberSpec {
+            decimal: ".",
+            group: ",",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            nan: "非数值",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        },
+        101 => NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -3187,7 +3215,7 @@ const fn latn(i: u16) -> Option<NumberSpec> {
                 secondary_group: 3,
             },
         },
-        100 => NumberSpec {
+        102 => NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -3947,7 +3975,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (57, "khmr") => Some(NumberSpec {
+        (58, "khmr") => Some(NumberSpec {
             decimal: ",",
             group: ".",
             minus: "-",
@@ -3977,7 +4005,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (58, "knda") => Some(NumberSpec {
+        (59, "knda") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4007,7 +4035,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (59, "arab") => Some(NumberSpec {
+        (60, "arab") => Some(NumberSpec {
             decimal: "٫",
             group: "٬",
             minus: "\u{200f}-",
@@ -4037,7 +4065,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (60, "deva") => Some(NumberSpec {
+        (61, "deva") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4067,7 +4095,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (62, "laoo") => Some(NumberSpec {
+        (63, "laoo") => Some(NumberSpec {
             decimal: ",",
             group: ".",
             minus: "-",
@@ -4097,7 +4125,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (66, "mlym") => Some(NumberSpec {
+        (67, "mlym") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4127,7 +4155,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (67, "deva") => Some(NumberSpec {
+        (68, "deva") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4157,7 +4185,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (68, "arabext") => Some(NumberSpec {
+        (69, "arabext") => Some(NumberSpec {
             decimal: ".",
             group: "٬",
             minus: "\u{200e}-\u{200e}",
@@ -4187,7 +4215,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (69, "mymr") => Some(NumberSpec {
+        (70, "mymr") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4217,7 +4245,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (71, "deva") => Some(NumberSpec {
+        (72, "deva") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4247,7 +4275,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (72, "arab") => Some(NumberSpec {
+        (73, "arab") => Some(NumberSpec {
             decimal: "٫",
             group: "\u{a0}",
             minus: "\u{61c}−",
@@ -4277,7 +4305,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (72, "arabext") => Some(NumberSpec {
+        (73, "arabext") => Some(NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "\u{200e}−\u{200e}",
@@ -4307,7 +4335,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (73, "orya") => Some(NumberSpec {
+        (74, "orya") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4337,7 +4365,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (74, "arab") => Some(NumberSpec {
+        (75, "arab") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4367,7 +4395,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (74, "arabext") => Some(NumberSpec {
+        (75, "arabext") => Some(NumberSpec {
             decimal: "٫",
             group: ",",
             minus: "-",
@@ -4397,7 +4425,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (74, "guru") => Some(NumberSpec {
+        (75, "guru") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4427,7 +4455,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (75, "arabext") => Some(NumberSpec {
+        (76, "arabext") => Some(NumberSpec {
             decimal: "٫",
             group: "٬",
             minus: "\u{200e}-\u{200e}",
@@ -4457,7 +4485,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (82, "arab") => Some(NumberSpec {
+        (83, "arab") => Some(NumberSpec {
             decimal: ".",
             group: "٬",
             minus: "\u{61c}-",
@@ -4487,7 +4515,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (82, "arabext") => Some(NumberSpec {
+        (83, "arabext") => Some(NumberSpec {
             decimal: ".",
             group: "،",
             minus: "\u{200e}-\u{200e}",
@@ -4517,7 +4545,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (87, "arab") => Some(NumberSpec {
+        (88, "arab") => Some(NumberSpec {
             decimal: "٫",
             group: "\u{a0}",
             minus: "\u{61c}−",
@@ -4547,7 +4575,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (87, "arabext") => Some(NumberSpec {
+        (88, "arabext") => Some(NumberSpec {
             decimal: ",",
             group: "\u{a0}",
             minus: "\u{200e}−\u{200e}",
@@ -4577,36 +4605,6 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (88, "tamldec") => Some(NumberSpec {
-            decimal: ".",
-            group: ",",
-            minus: "-",
-            plus: "+",
-            percent: "%",
-            nan: "NaN",
-            infinity: "∞",
-            exponential: "E",
-            min_grouping: 1,
-            dec: Pattern {
-                prefix: "",
-                suffix: "",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 3,
-                primary_group: 3,
-                secondary_group: 2,
-            },
-            pct: Pattern {
-                prefix: "",
-                suffix: "%",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 0,
-                primary_group: 3,
-                secondary_group: 2,
-            },
-        }),
-        #[cfg(feature = "number-numsys")]
         (89, "tamldec") => Some(NumberSpec {
             decimal: ".",
             group: ",",
@@ -4624,7 +4622,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 3,
                 primary_group: 3,
-                secondary_group: 3,
+                secondary_group: 2,
             },
             pct: Pattern {
                 prefix: "",
@@ -4633,11 +4631,11 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
                 min_frac: 0,
                 max_frac: 0,
                 primary_group: 3,
-                secondary_group: 3,
+                secondary_group: 2,
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (90, "telu") => Some(NumberSpec {
+        (90, "tamldec") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4667,7 +4665,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (91, "thai") => Some(NumberSpec {
+        (91, "telu") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4697,7 +4695,37 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (92, "arabext") => Some(NumberSpec {
+        (92, "thai") => Some(NumberSpec {
+            decimal: ".",
+            group: ",",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            nan: "NaN",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        }),
+        #[cfg(feature = "number-numsys")]
+        (93, "arabext") => Some(NumberSpec {
             decimal: "٫",
             group: "٬",
             minus: "\u{200e}-\u{200e}",
@@ -4727,7 +4755,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (95, "arab") => Some(NumberSpec {
+        (96, "arab") => Some(NumberSpec {
             decimal: "،",
             group: ",",
             minus: "\u{61c}-",
@@ -4749,36 +4777,6 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             pct: Pattern {
                 prefix: "",
                 suffix: "٪\u{61c}",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 0,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-        }),
-        #[cfg(feature = "number-numsys")]
-        (95, "arabext") => Some(NumberSpec {
-            decimal: "٫",
-            group: "٬",
-            minus: "\u{200e}-\u{200e}",
-            plus: "\u{200e}+\u{200e}",
-            percent: "%",
-            nan: "NaN",
-            infinity: "∞",
-            exponential: "×۱۰^",
-            min_grouping: 1,
-            dec: Pattern {
-                prefix: "",
-                suffix: "",
-                min_int: 1,
-                min_frac: 0,
-                max_frac: 3,
-                primary_group: 3,
-                secondary_group: 3,
-            },
-            pct: Pattern {
-                prefix: "",
-                suffix: "%",
                 min_int: 1,
                 min_frac: 0,
                 max_frac: 0,
@@ -4820,6 +4818,36 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
         (97, "arabext") => Some(NumberSpec {
             decimal: "٫",
             group: "٬",
+            minus: "\u{200e}-\u{200e}",
+            plus: "\u{200e}+\u{200e}",
+            percent: "%",
+            nan: "NaN",
+            infinity: "∞",
+            exponential: "×۱۰^",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        }),
+        #[cfg(feature = "number-numsys")]
+        (98, "arabext") => Some(NumberSpec {
+            decimal: "٫",
+            group: "٬",
             minus: "-",
             plus: "+",
             percent: "٪",
@@ -4847,7 +4875,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (98, "hanidec") => Some(NumberSpec {
+        (99, "hanidec") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4877,7 +4905,37 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (99, "hanidec") => Some(NumberSpec {
+        (100, "hanidec") => Some(NumberSpec {
+            decimal: ".",
+            group: ",",
+            minus: "-",
+            plus: "+",
+            percent: "%",
+            nan: "非数值",
+            infinity: "∞",
+            exponential: "E",
+            min_grouping: 1,
+            dec: Pattern {
+                prefix: "",
+                suffix: "",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 3,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+            pct: Pattern {
+                prefix: "",
+                suffix: "%",
+                min_int: 1,
+                min_frac: 0,
+                max_frac: 0,
+                primary_group: 3,
+                secondary_group: 3,
+            },
+        }),
+        #[cfg(feature = "number-numsys")]
+        (101, "hanidec") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -4907,7 +4965,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (100, "arab") => Some(NumberSpec {
+        (102, "arab") => Some(NumberSpec {
             decimal: "٫",
             group: "٬",
             minus: "-",
@@ -4937,7 +4995,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (100, "arabext") => Some(NumberSpec {
+        (102, "arabext") => Some(NumberSpec {
             decimal: "٫",
             group: "٬",
             minus: "\u{200e}-\u{200e}",
@@ -4967,7 +5025,7 @@ fn other(i: u16, ns: &str) -> Option<NumberSpec> {
             },
         }),
         #[cfg(feature = "number-numsys")]
-        (100, "hanidec") => Some(NumberSpec {
+        (102, "hanidec") => Some(NumberSpec {
             decimal: ".",
             group: ",",
             minus: "-",
@@ -5099,29 +5157,31 @@ fn root_pct(i: u16, ns: &str) -> Option<Pattern> {
         | (60, "arabext")
         | (61, "arabext")
         | (62, "arabext")
-        | (64, "arabext")
-        | (66, "arabext")
+        | (63, "arabext")
+        | (65, "arabext")
         | (67, "arabext")
         | (68, "arabext")
         | (69, "arabext")
-        | (71, "arabext")
-        | (73, "arabext")
-        | (75, "arabext")
+        | (70, "arabext")
+        | (72, "arabext")
+        | (74, "arabext")
         | (76, "arabext")
         | (77, "arabext")
-        | (82, "arabext")
-        | (85, "arabext")
+        | (78, "arabext")
+        | (83, "arabext")
         | (86, "arabext")
-        | (89, "arabext")
+        | (87, "arabext")
         | (90, "arabext")
         | (91, "arabext")
-        | (94, "arabext")
+        | (92, "arabext")
         | (95, "arabext")
         | (96, "arabext")
         | (97, "arabext")
         | (98, "arabext")
         | (99, "arabext")
-        | (100, "arabext") => Pattern {
+        | (100, "arabext")
+        | (101, "arabext")
+        | (102, "arabext") => Pattern {
             prefix: "",
             suffix: "٪",
             min_int: 1,
@@ -5136,8 +5196,8 @@ fn root_pct(i: u16, ns: &str) -> Option<Pattern> {
         | (26, "arabext")
         | (43, "arabext")
         | (46, "arabext")
-        | (74, "arabext")
-        | (88, "arabext") => Pattern {
+        | (75, "arabext")
+        | (89, "arabext") => Pattern {
             prefix: "",
             suffix: "٪",
             min_int: 1,
@@ -5160,18 +5220,18 @@ fn root_pct(i: u16, ns: &str) -> Option<Pattern> {
         | (38, "arabext")
         | (39, "arabext")
         | (47, "arabext")
-        | (63, "arabext")
-        | (65, "arabext")
-        | (70, "arabext")
-        | (72, "arabext")
-        | (78, "arabext")
+        | (64, "arabext")
+        | (66, "arabext")
+        | (71, "arabext")
+        | (73, "arabext")
         | (79, "arabext")
         | (80, "arabext")
         | (81, "arabext")
-        | (83, "arabext")
+        | (82, "arabext")
         | (84, "arabext")
-        | (87, "arabext")
-        | (92, "arabext") => Pattern {
+        | (85, "arabext")
+        | (88, "arabext")
+        | (93, "arabext") => Pattern {
             prefix: "",
             suffix: "\u{a0}٪",
             min_int: 1,
@@ -5191,7 +5251,7 @@ fn root_pct(i: u16, ns: &str) -> Option<Pattern> {
             secondary_group: 3,
         },
         #[cfg(feature = "number-numsys")]
-        (93, "arabext") => Pattern {
+        (94, "arabext") => Pattern {
             prefix: "٪",
             suffix: "",
             min_int: 1,
@@ -5268,50 +5328,52 @@ pub(crate) fn numbering_systems(lang: &str) -> Option<(&'static str, &'static st
         54 => ("latn", "java"),
         55 => ("latn", "latn"),
         56 => ("latn", "latn"),
-        57 => ("latn", "khmr"),
-        58 => ("latn", "knda"),
-        59 => ("latn", "latn"),
-        60 => ("latn", "deva"),
-        61 => ("latn", "latn"),
-        62 => ("latn", "laoo"),
-        63 => ("latn", "latn"),
+        57 => ("latn", "latn"),
+        58 => ("latn", "khmr"),
+        59 => ("latn", "knda"),
+        60 => ("latn", "latn"),
+        61 => ("latn", "deva"),
+        62 => ("latn", "latn"),
+        63 => ("latn", "laoo"),
         64 => ("latn", "latn"),
         65 => ("latn", "latn"),
-        66 => ("latn", "mlym"),
-        67 => ("deva", "deva"),
-        68 => ("latn", "latn"),
-        69 => ("mymr", "mymr"),
-        70 => ("latn", "latn"),
-        71 => ("deva", "deva"),
-        72 => ("latn", "latn"),
-        73 => ("latn", "orya"),
-        74 => ("latn", "guru"),
-        75 => ("arabext", "arabext"),
-        76 => ("latn", "latn"),
+        66 => ("latn", "latn"),
+        67 => ("latn", "mlym"),
+        68 => ("deva", "deva"),
+        69 => ("latn", "latn"),
+        70 => ("mymr", "mymr"),
+        71 => ("latn", "latn"),
+        72 => ("deva", "deva"),
+        73 => ("latn", "latn"),
+        74 => ("latn", "orya"),
+        75 => ("latn", "guru"),
+        76 => ("arabext", "arabext"),
         77 => ("latn", "latn"),
         78 => ("latn", "latn"),
         79 => ("latn", "latn"),
         80 => ("latn", "latn"),
         81 => ("latn", "latn"),
-        82 => ("arab", "arab"),
-        83 => ("latn", "latn"),
+        82 => ("latn", "latn"),
+        83 => ("arab", "arab"),
         84 => ("latn", "latn"),
         85 => ("latn", "latn"),
         86 => ("latn", "latn"),
         87 => ("latn", "latn"),
-        88 => ("latn", "tamldec"),
+        88 => ("latn", "latn"),
         89 => ("latn", "tamldec"),
-        90 => ("latn", "telu"),
-        91 => ("latn", "thai"),
-        92 => ("latn", "latn"),
+        90 => ("latn", "tamldec"),
+        91 => ("latn", "telu"),
+        92 => ("latn", "thai"),
         93 => ("latn", "latn"),
         94 => ("latn", "latn"),
-        95 => ("latn", "arabext"),
-        96 => ("arabext", "arabext"),
-        97 => ("latn", "latn"),
-        98 => ("latn", "hanidec"),
+        95 => ("latn", "latn"),
+        96 => ("latn", "arabext"),
+        97 => ("arabext", "arabext"),
+        98 => ("latn", "latn"),
         99 => ("latn", "hanidec"),
         100 => ("latn", "hanidec"),
+        101 => ("latn", "hanidec"),
+        102 => ("latn", "hanidec"),
         _ => return None,
     })
 }
@@ -5392,48 +5454,50 @@ pub(crate) fn misc_patterns(lang: &str) -> Option<(&'static str, &'static str)> 
         56 => ("~{0}", "{0}–{1}"),
         57 => ("~{0}", "{0}–{1}"),
         58 => ("~{0}", "{0}–{1}"),
-        59 => ("~{0}", "{0}~{1}"),
-        60 => ("~{0}", "{0}–{1}"),
+        59 => ("~{0}", "{0}–{1}"),
+        60 => ("~{0}", "{0}~{1}"),
         61 => ("~{0}", "{0}–{1}"),
         62 => ("~{0}", "{0}–{1}"),
         63 => ("~{0}", "{0}–{1}"),
         64 => ("~{0}", "{0}–{1}"),
-        65 => ("~{0}", "{0} – {1}"),
-        66 => ("~{0}", "{0}-{1}"),
-        67 => ("~{0}", "{0}–{1}"),
+        65 => ("~{0}", "{0}–{1}"),
+        66 => ("~{0}", "{0} – {1}"),
+        67 => ("~{0}", "{0}-{1}"),
         68 => ("~{0}", "{0}–{1}"),
-        69 => ("~{0}", "{0} - {1}"),
-        70 => ("ca. {0}", "{0}–{1}"),
-        71 => ("~{0}", "{0}–{1}"),
-        72 => ("ca. {0}", "{0}–{1}"),
-        73 => ("~{0}", "{0}–{1}"),
+        69 => ("~{0}", "{0}–{1}"),
+        70 => ("~{0}", "{0} - {1}"),
+        71 => ("ca. {0}", "{0}–{1}"),
+        72 => ("~{0}", "{0}–{1}"),
+        73 => ("ca. {0}", "{0}–{1}"),
         74 => ("~{0}", "{0}–{1}"),
         75 => ("~{0}", "{0}–{1}"),
-        76 => ("~{0}", "{0} - {1}"),
+        76 => ("~{0}", "{0}–{1}"),
         77 => ("~{0}", "{0} - {1}"),
-        78 => ("~{0}", "{0}–{1}"),
-        79 => ("~{0}", "{0} - {1}"),
-        80 => ("≈{0}", "{0}–{1}"),
+        78 => ("~{0}", "{0} - {1}"),
+        79 => ("~{0}", "{0}–{1}"),
+        80 => ("~{0}", "{0} - {1}"),
         81 => ("≈{0}", "{0}–{1}"),
-        82 => ("~{0}", "{0}–{1}"),
-        83 => ("~{0}", "{0} – {1}"),
-        84 => ("~ {0}", "{0}–{1}"),
-        85 => ("~{0}", "{0}–{1}"),
-        86 => ("≈{0}", "{0}-{1}"),
-        87 => ("~{0}", "{0}–{1}"),
+        82 => ("≈{0}", "{0}–{1}"),
+        83 => ("~{0}", "{0}–{1}"),
+        84 => ("~{0}", "{0} – {1}"),
+        85 => ("~ {0}", "{0}–{1}"),
+        86 => ("~{0}", "{0}–{1}"),
+        87 => ("≈{0}", "{0}-{1}"),
         88 => ("~{0}", "{0}–{1}"),
         89 => ("~{0}", "{0}–{1}"),
         90 => ("~{0}", "{0}–{1}"),
-        91 => ("~{0}", "{0}-{1}"),
-        92 => ("~{0}", "{0}–{1}"),
+        91 => ("~{0}", "{0}–{1}"),
+        92 => ("~{0}", "{0}-{1}"),
         93 => ("~{0}", "{0}–{1}"),
         94 => ("~{0}", "{0}–{1}"),
         95 => ("~{0}", "{0}–{1}"),
         96 => ("~{0}", "{0}–{1}"),
         97 => ("~{0}", "{0}–{1}"),
-        98 => ("~{0}", "{0}-{1}"),
+        98 => ("~{0}", "{0}–{1}"),
         99 => ("~{0}", "{0}-{1}"),
         100 => ("~{0}", "{0}-{1}"),
+        101 => ("~{0}", "{0}-{1}"),
+        102 => ("~{0}", "{0}-{1}"),
         _ => return None,
     })
 }
@@ -5748,7 +5812,6 @@ pub(crate) fn percent_unit(lang: &str, plural: usize) -> Option<&'static str> {
         "hi" => 0,
         "hr" => 2,
         "hsb" => 2,
-        "ht" => 2,
         "hu" => 0,
         "hy" => 0,
         "id" => 0,
@@ -5773,10 +5836,8 @@ pub(crate) fn percent_unit(lang: &str, plural: usize) -> Option<&'static str> {
         "mr" => 0,
         "ms" => 0,
         "my" => 0,
-        "nb" => 2,
         "ne" => 0,
         "nl" => 0,
-        "nn" => 2,
         "no" => 2,
         "or" => 0,
         "pa" => 0,

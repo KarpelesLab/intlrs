@@ -78,28 +78,15 @@ struct Rbnf {
     sets: Vec<RuleSet>,
 }
 
-/// Resolve `lang` (with `pt-BR` → `pt` fallback) to its RBNF rule sets.
+/// Resolve `lang` through the CLDR locale chain (`pt-BR` → `pt`) to its RBNF
+/// rule sets.
 fn resolve(lang: &str) -> Option<Rbnf> {
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    let bytes = loop {
-        if let Some(b) = crate::cldr::rbnf_payload(&norm[..end]) {
-            break b;
-        }
-        end = norm[..end].rfind('-')?;
-    };
+    let (key, bytes) = crate::cldr::fallback(lang, |k| {
+        crate::cldr::rbnf_payload(k).map(|b| (k.to_string(), b))
+    })?;
     let (start, sets) = parse_payload(bytes);
     Some(Rbnf {
-        lang: norm[..end].to_string(),
+        lang: key,
         start,
         sets,
     })

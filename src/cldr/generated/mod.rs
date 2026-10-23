@@ -14,6 +14,8 @@ pub(crate) mod collations;
 pub(crate) mod lists;
 #[cfg(feature = "number")]
 pub(crate) mod numbers;
+#[cfg(feature = "_cldr")]
+pub(crate) mod parents;
 #[cfg(feature = "relative")]
 pub(crate) mod relative;
 #[cfg(feature = "datetime")]

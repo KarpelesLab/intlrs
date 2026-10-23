@@ -393,26 +393,17 @@ fn resolve(lang: &str, system: Option<&str>) -> Resolved {
     let norm = normalize(lang);
     let (base, tag_nu) = split_nu(&norm);
 
-    // Walk the fallback chain once; the first locale with data answers the
-    // `native` alias, the locale default and the symbol lookup alike, matching
-    // ICU's bundle inheritance.
-    let mut end = base.len();
-    let key = loop {
-        if numbering_systems(&base[..end]).is_some() {
-            break &base[..end];
-        }
-        match base[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break "en",
-        }
-    };
+    // Every vendored numbers locale carries both its systems and its specs, so
+    // the two walks stop at the same locale, matching ICU's bundle inheritance.
+    let systems =
+        crate::cldr::fallback(base, numbering_systems).or_else(|| numbering_systems("en"));
     let system = match system.or(tag_nu) {
-        Some("native") => numbering_systems(key).map_or("latn", |(_, native)| native),
+        Some("native") => systems.map_or("latn", |(_, native)| native),
         Some(other) => other,
-        None => numbering_systems(key).map_or("latn", |(default, _)| default),
+        None => systems.map_or("latn", |(default, _)| default),
     };
     Resolved {
-        spec: number_spec(key, system)
+        spec: crate::cldr::fallback(base, |k| number_spec(k, system))
             .or_else(|| number_spec("en", system))
             .expect("root spec present"),
         digits: (system != "latn")
@@ -486,16 +477,7 @@ pub fn native_numbering_system(lang: &str) -> &'static str {
 fn resolve_systems(lang: &str) -> (&'static str, &'static str) {
     let norm = normalize(lang);
     let (base, _) = split_nu(&norm);
-    let mut end = base.len();
-    loop {
-        if let Some(pair) = crate::cldr::numbering_systems(&base[..end]) {
-            return pair;
-        }
-        match base[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return ("latn", "latn"),
-        }
-    }
+    crate::cldr::fallback(base, crate::cldr::numbering_systems).unwrap_or(("latn", "latn"))
 }
 
 /// Format `value` as a decimal number in the conventions of `lang`.
@@ -618,26 +600,9 @@ pub fn format_scientific(lang: &str, value: f64, sig_after: usize) -> String {
 pub fn format_ordinal(lang: &str, n: i64) -> String {
     use crate::plural::{PluralOperands, ordinal_category};
     let cat = ordinal_category(lang, &PluralOperands::from_int(n)) as usize;
-    let norm: String = lang
-        .chars()
-        .map(|c| {
-            if c == '_' {
-                '-'
-            } else {
-                c.to_ascii_lowercase()
-            }
-        })
-        .collect();
-    let mut end = norm.len();
-    let suffix = loop {
-        if let Some(s) = crate::cldr::ordinal_suffix(&norm[..end], cat) {
-            break s;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break crate::cldr::ordinal_suffix("en", cat).unwrap_or(""),
-        }
-    };
+    let suffix = crate::cldr::fallback(lang, |k| crate::cldr::ordinal_suffix(k, cat))
+        .or_else(|| crate::cldr::ordinal_suffix("en", cat))
+        .unwrap_or("");
     let mut out = format_decimal(lang, n as f64);
     out.push_str(suffix);
     out
@@ -838,16 +803,9 @@ fn plural_of_digits(lang: &str, int_d: &str, frac_d: &str, exponent: usize) -> u
 fn compact_table(lang: &str) -> crate::cldr::CompactPatterns {
     let norm = normalize(lang);
     let (base, _) = split_nu(&norm);
-    let mut end = base.len();
-    loop {
-        if let Some(t) = crate::cldr::compact_patterns(&base[..end]) {
-            return t;
-        }
-        match base[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return crate::cldr::compact_patterns("en").expect("root compact present"),
-        }
-    }
+    crate::cldr::fallback(base, crate::cldr::compact_patterns)
+        .or_else(|| crate::cldr::compact_patterns("en"))
+        .expect("root compact present")
 }
 
 /// Inner parser for [`parse_decimal`], split out so the separator-progress guard
@@ -922,25 +880,18 @@ pub fn format_currency(lang: &str, value: f64, code: &str) -> String {
     let norm = String::from(split_nu(&norm).0);
     let (mut pat, mut neg) = cur::currency_pattern("en", &r.system).expect("root currency pattern");
     let mut symbol = code;
-    let mut end = norm.len();
     let (mut got_pat, mut got_sym) = (false, false);
-    loop {
-        if !got_pat && let Some((p, n)) = cur::currency_pattern(&norm[..end], &r.system) {
+    crate::cldr::fallback(&norm, |k| {
+        if !got_pat && let Some((p, n)) = cur::currency_pattern(k, &r.system) {
             (pat, neg) = (p, n);
             got_pat = true;
         }
-        if !got_sym && let Some((sym, _, _)) = cur::currency_forms(&norm[..end], code) {
+        if !got_sym && let Some((sym, _, _)) = cur::currency_forms(k, code) {
             symbol = sym;
             got_sym = true;
         }
-        if got_pat && got_sym {
-            break;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break,
-        }
-    }
+        (got_pat && got_sym).then_some(())
+    });
     // Root fallback (English) for anything the locale chain didn't supply.
     if !got_sym && let Some((sym, _, _)) = cur::currency_forms("en", code) {
         symbol = sym;
@@ -1885,16 +1836,9 @@ fn percent_unit_wrap(
 ) -> (Vec<NumberPart>, (usize, usize)) {
     let norm = normalize(lang);
     let (base, _) = split_nu(&norm);
-    let mut end = base.len();
-    let pattern = loop {
-        if let Some(p) = crate::cldr::percent_unit(&base[..end], plural) {
-            break p;
-        }
-        match base[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break crate::cldr::percent_unit("en", plural).unwrap_or("{0}%"),
-        }
-    };
+    let pattern = crate::cldr::fallback(base, |k| crate::cldr::percent_unit(k, plural))
+        .or_else(|| crate::cldr::percent_unit("en", plural))
+        .unwrap_or("{0}%");
     let (pre, post) = pattern.split_once("{0}").unwrap_or(("", pattern));
     let head = unit_affix(pre, true);
     let tail = unit_affix(post, false);
@@ -1927,26 +1871,19 @@ fn currency_unit_wrap(
     let norm = String::from(split_nu(&norm).0);
     let mut name: Option<[&str; 3]> = None;
     let mut unit = "{0} {1}";
-    let mut end = norm.len();
     let mut got_unit = false;
-    loop {
+    crate::cldr::fallback(&norm, |k| {
         // The plural forms come from the record that has the currency at all,
         // so a locale's names are never mixed with an ancestor's.
         if name.is_none() {
-            name = crate::cldr::currency_plural_name(&norm[..end], code, plural);
+            name = crate::cldr::currency_plural_name(k, code, plural);
         }
-        if !got_unit && let Some(u) = crate::cldr::currency_unit_pattern(&norm[..end], plural) {
+        if !got_unit && let Some(u) = crate::cldr::currency_unit_pattern(k, plural) {
             unit = u;
             got_unit = true;
         }
-        if name.is_some() && got_unit {
-            break;
-        }
-        match norm[..end].rfind('-') {
-            Some(i) => end = i,
-            None => break,
-        }
-    }
+        (name.is_some() && got_unit).then_some(())
+    });
     let name = name
         .or_else(|| crate::cldr::currency_plural_name("en", code, plural))
         .unwrap_or(["", code, ""]);
@@ -2063,28 +2000,19 @@ fn resolve_style(
                 crate::cldr::currency_pattern("en", system).expect("root currency pattern");
             // (symbol, narrow symbol, display name) for the requested currency.
             let mut forms: Option<(&str, &str, &str)> = None;
-            let mut end = norm.len();
             let mut got_pat = false;
-            loop {
+            crate::cldr::fallback(&norm, |k| {
                 // The negative subpattern belongs to the pattern, so it comes
                 // from the same record rather than being walked separately.
-                if !got_pat
-                    && let Some((p, n)) = crate::cldr::currency_pattern(&norm[..end], system)
-                {
+                if !got_pat && let Some((p, n)) = crate::cldr::currency_pattern(k, system) {
                     (pat, neg) = (p, n);
                     got_pat = true;
                 }
                 if forms.is_none() {
-                    forms = crate::cldr::currency_forms(&norm[..end], code);
+                    forms = crate::cldr::currency_forms(k, code);
                 }
-                if got_pat && forms.is_some() {
-                    break;
-                }
-                match norm[..end].rfind('-') {
-                    Some(i) => end = i,
-                    None => break,
-                }
-            }
+                (got_pat && forms.is_some()).then_some(())
+            });
             if forms.is_none() {
                 forms = crate::cldr::currency_forms("en", code);
             }
@@ -2557,16 +2485,9 @@ pub struct NumberRangePart {
 fn misc_patterns(lang: &str) -> (&'static str, &'static str) {
     let norm = normalize(lang);
     let (base, _) = split_nu(&norm);
-    let mut end = base.len();
-    loop {
-        if let Some(p) = crate::cldr::misc_patterns(&base[..end]) {
-            return p;
-        }
-        match base[..end].rfind('-') {
-            Some(i) => end = i,
-            None => return crate::cldr::misc_patterns("en").expect("root misc patterns"),
-        }
-    }
+    crate::cldr::fallback(base, crate::cldr::misc_patterns)
+        .or_else(|| crate::cldr::misc_patterns("en"))
+        .expect("root misc patterns")
 }
 
 /// Split the literal text around a `miscPatterns` placeholder into an

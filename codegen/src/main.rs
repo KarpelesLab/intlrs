@@ -306,11 +306,15 @@ fn main() {
     // ---- CLDR locale formatter tables -> committed binary blobs (no_std). ----
     let cldr_dir = root.join("src/cldr");
     let cldr = root.join("data/cldr/48");
+    assert!(
+        CHAIN.set(Chain::load(&cldr)).is_ok(),
+        "CLDR chain loaded once"
+    );
+    chain().emit(&cldr_dir, &vendored_languages(&cldr));
     emit_numbers(
         &cldr_dir,
         &cldr.join("numbers-raw"),
         &cldr.join("units-raw"),
-        &cldr.join("likely.json"),
         &cldr.join("pluralRanges.json"),
         &cldr.join("numbersSymbolOverrides.json"),
     );
@@ -323,11 +327,7 @@ fn main() {
         &cldr.join("currencyData.json"),
     );
     emit_display(&cldr_dir, &cldr.join("localenames-raw"));
-    emit_units(
-        &cldr_dir,
-        &cldr.join("units-raw"),
-        &cldr.join("likely.json"),
-    );
+    emit_units(&cldr_dir, &cldr.join("units-raw"));
     emit_dates(
         &cldr_dir,
         &cldr.join("dates"),
@@ -2201,6 +2201,7 @@ fn emit_idna(out_dir: &Path, modules: &mut Vec<String>, idna: &Path) {
 
 // ---- Minimal JSON parser (CLDR data), std-only to keep codegen dependency-free. ----
 
+#[derive(Debug)]
 enum Json {
     Obj(Vec<(String, Json)>),
     Arr(Vec<Json>),
@@ -2432,37 +2433,10 @@ const COMPACT_MAGNITUDES: [&str; 12] = [
     "100000000000000",
 ];
 
-/// Write `cldr/numbers.bin` and `cldr/compact.bin` from the raw, verbatim
-/// Unicode CLDR `cldr-numbers-full` `numbers.json` files vendored under
-/// `data/cldr/48/numbers-raw/<locale>.json`.
-///
-/// `numbers.bin` payload: decimal/group/minus/plus/percent symbols, then the
-/// parsed decimal and percent `Pattern`s (latn numbering system).
-/// `compact.bin` payload: 12 short then 12 long compact patterns (the
-/// `count-other` form for each magnitude 10³…10¹⁴).
-/// Duplicate every `lang-Script` record under the `lang-REGION` tags that CLDR's
-/// likelySubtags maximizes onto that same script. The runtime locale lookup
-/// truncates a tag at each `-` and does no script inference, so `zh-TW` would
-/// otherwise fall past the Traditional data vendored as `zh-Hant` all the way to
-/// `zh`, which is Simplified. The aliases are exact payload copies — a few dozen
-/// bytes each — and never shadow a locale that has data of its own.
-fn script_region_aliases(records: &[(String, Vec<u8>)], likely: &Json) -> Vec<(String, Vec<u8>)> {
-    let keys: Vec<String> = records.iter().map(|(k, _)| k.clone()).collect();
-    script_region_alias_keys(&keys, likely)
-        .into_iter()
-        .map(|(alias, src)| {
-            let payload = records
-                .iter()
-                .find(|(k, _)| *k == src)
-                .map(|(_, p)| p.clone())
-                .expect("alias source record");
-            (alias, payload)
-        })
-        .collect()
-}
-
-/// The `(alias, source)` key pairs behind [`script_region_aliases`], for tables
-/// that store one record per locale *index* rather than per payload copy.
+/// `(alias, source)` pairs: each `lang-REGION` tag CLDR's likelySubtags maximizes
+/// onto a vendored `lang-Script[-REGION]` key (`zh-tw` → `zh-hant`). The locale
+/// formatters get this from the runtime's [`Chain`] walk; the collation tables,
+/// which resolve locales their own way, still alias explicitly.
 fn script_region_alias_keys(keys: &[String], likely: &Json) -> Vec<(String, String)> {
     let is_region = |s: &str| {
         (s.len() == 2 && s.chars().all(|c| c.is_ascii_alphabetic()))
@@ -2682,11 +2656,18 @@ fn parse_plural_ranges(path: &Path) -> Vec<(String, [u8; 36])> {
     out
 }
 
+/// Write `cldr/numbers.bin` and `cldr/compact.bin` from the raw, verbatim
+/// Unicode CLDR `cldr-numbers-full` `numbers.json` files vendored under
+/// `data/cldr/48/numbers-raw/<locale>.json`.
+///
+/// `numbers.bin` payload: decimal/group/minus/plus/percent symbols, then the
+/// parsed decimal and percent `Pattern`s (latn numbering system).
+/// `compact.bin` payload: 12 short then 12 long compact patterns (the
+/// `count-other` form for each magnitude 10³…10¹⁴).
 fn emit_numbers(
     cldr_dir: &Path,
     numbers_dir: &Path,
     units_dir: &Path,
-    likely_path: &Path,
     plural_ranges_path: &Path,
     overrides_path: &Path,
 ) {
@@ -2868,9 +2849,6 @@ fn emit_numbers(
         locales.push(locale.to_ascii_lowercase());
     }
 
-    let likely_text = fs::read_to_string(likely_path).expect("read likely.json");
-    let likely = json_parse(&likely_text);
-    compact_records.extend(script_region_aliases(&compact_records, &likely));
     compact_records = prune_inherited(&compact_records);
     write_blob(cldr_dir, "compact", &compact_records);
 
@@ -2888,50 +2866,28 @@ fn emit_numbers(
         }
     }
 
-    // `lang-REGION` tags that maximize onto a vendored `lang-Script` record share
-    // that record's table index rather than duplicating its arms.
-    let aliases: Vec<(String, usize)> = script_region_alias_keys(&locales, &likely)
-        .into_iter()
-        .map(|(alias, src)| {
-            let i = locales
-                .iter()
-                .position(|l| *l == src)
-                .expect("alias source");
-            (alias, index_of[i])
-        })
-        .collect();
-
     write_numbers_rs(
         cldr_dir,
         &locales,
         &records,
         &index_of,
         &reps,
-        &aliases,
         &root,
         &parse_plural_ranges(plural_ranges_path),
         &parse_percent_units(units_dir),
     );
 }
 
-/// Drop blob records that repeat, byte for byte, the record the runtime's own
-/// truncating fallback would reach without them (`ar-EG`'s compact patterns are
-/// `ar`'s). Keys with no vendored ancestor are always kept — the runtime would
+/// Drop blob records that repeat, byte for byte, the record the runtime's CLDR
+/// locale chain would reach without them (`ar-EG`'s compact patterns are
+/// `ar`'s, `pt-AO`'s calendar is `pt-PT`'s). Keys with no vendored ancestor are always kept — the runtime would
 /// otherwise drop all the way to `en`.
 fn prune_inherited(records: &[(String, Vec<u8>)]) -> Vec<(String, Vec<u8>)> {
-    let inherited = |key: &str| -> Option<&Vec<u8>> {
-        let mut end = key.len();
-        while let Some(i) = key[..end].rfind('-') {
-            end = i;
-            if let Some((_, p)) = records.iter().find(|(k, _)| k == &key[..end]) {
-                return Some(p);
-            }
-        }
-        None
-    };
+    let chain = chain();
+    let by_key: BTreeMap<String, &Vec<u8>> = records.iter().map(|(k, p)| (k.clone(), p)).collect();
     records
         .iter()
-        .filter(|(k, p)| inherited(k) != Some(p))
+        .filter(|(k, p)| chain.nearest(k, &by_key).map(|(_, a)| *a) != Some(p))
         .cloned()
         .collect()
 }
@@ -3002,7 +2958,6 @@ fn write_numbers_rs(
     records: &[NumbersRecord],
     index_of: &[usize],
     reps: &[usize],
-    aliases: &[(String, usize)],
     root: &[RootNs],
     plural_ranges: &[(String, [u8; 36])],
     percent_units: &[(String, [Option<String>; 6])],
@@ -3033,7 +2988,6 @@ fn write_numbers_rs(
         .iter()
         .enumerate()
         .map(|(i, l)| (l.as_str(), index_of[i]))
-        .chain(aliases.iter().map(|(a, i)| (a.as_str(), *i)))
         .collect();
     keys.sort();
     for (key, i) in keys {
@@ -3354,7 +3308,7 @@ fn write_percent_unit(out: &mut String, table: &[(String, [Option<String>; 6])])
 /// `units-raw`, as `[Option<String>; 6]` indexed by `PluralCategory`
 /// discriminant: the `other` form (index 5) plus the categories a locale words
 /// differently. Locales whose set repeats their nearest vendored ancestor's are
-/// dropped — the runtime's truncating fallback reaches it anyway.
+/// dropped — the runtime's locale chain reaches it anyway.
 fn parse_percent_units(units_dir: &Path) -> Vec<(String, [Option<String>; 6])> {
     const CATS: [&str; 6] = ["zero", "one", "two", "few", "many", "other"];
     let mut out: Vec<(String, [Option<String>; 6])> = Vec::new();
@@ -3386,22 +3340,12 @@ fn parse_percent_units(units_dir: &Path) -> Vec<(String, [Option<String>; 6])> {
         }
         forms[5] = Some(other);
         let key = locale.to_ascii_lowercase();
-        // Drop a record the truncating fallback would reach unchanged.
-        let mut end = key.len();
-        let inherited = loop {
-            match key[..end].rfind('-') {
-                Some(i) => end = i,
-                None => break None,
-            }
-            if let Some((_, f)) = out.iter().find(|(k, _)| *k == key[..end]) {
-                break Some(f);
-            }
-        };
-        if inherited == Some(&forms) {
-            continue;
-        }
         out.push((key, forms));
     }
+    // Drop a record the runtime's locale chain would reach unchanged.
+    let all: BTreeMap<String, [Option<String>; 6]> = out.iter().cloned().collect();
+    let chain = chain();
+    out.retain(|(k, f)| chain.nearest(k, &all).map(|(_, a)| a) != Some(f));
     out
 }
 
@@ -3806,6 +3750,7 @@ const PLURAL_COUNT_KEYS: [&str; 5] = ["zero", "one", "two", "few", "many"];
 /// rounding, cashDigits, cashRounding]` when any of the last three is not the
 /// default (rounding 0, cash values equal to the standard ones).
 fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, currency_data: &Path) {
+    let chain = chain();
     // ---- currency_digits.bin from supplemental fractions ----
     let cd_text = fs::read_to_string(currency_data).expect("read currencyData.json");
     let cd = json_parse(&cd_text);
@@ -3853,10 +3798,9 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
 
     // The `lang-REGION` files vendored under `numbers-raw` for their number
     // formatting carry the region's *currency pattern* too (`pt-PT` puts the
-    // symbol after the amount where `pt` puts it before), but no currency names
-    // of their own — those live in `currencies.json`, which is vendored per base
-    // language only. Such a locale gets a pattern-only record (an empty name
-    // table), and the runtime's fallback walk picks the names up from the base.
+    // symbol after the amount where `pt` puts it before). One with no
+    // `currencies.json` of its own gets a pattern-only record (an empty name
+    // table), and the runtime's locale chain picks the names up from an ancestor.
     let mut pattern_only: Vec<String> = locale_files(numbers_dir)
         .into_iter()
         .filter(|l| l != "root" && !files.contains(l))
@@ -3865,8 +3809,40 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
 
     // `(pattern, non-latn patterns, unit pattern, per-count unit patterns)` per
     // emitted locale key, so a pattern-only record that merely repeats what the
-    // runtime's truncating fallback would reach can be pruned (`en-GB`'s
-    // pattern is `en`'s).
+    // runtime's locale chain would reach can be pruned (`en-GB`'s pattern is
+    // `en`'s).
+    let numbers_files: BTreeMap<String, String> = locale_files(numbers_dir)
+        .into_iter()
+        .map(|l| (l.to_ascii_lowercase(), l))
+        .collect();
+    // Every vendored locale's currency entries, so a sublocale can store only
+    // the currencies its nearest ancestor words differently: `en-AU` says "$"
+    // for AUD and inherits the other 300 from `en-001`/`en`, and the runtime
+    // looks a currency up one locale at a time down the chain.
+    let all_entries: BTreeMap<String, BTreeMap<String, String>> = files
+        .iter()
+        .map(|l| {
+            let text = fs::read_to_string(currencies_dir.join(alloc_format(l)))
+                .unwrap_or_else(|_| panic!("read currencies {l}"));
+            let json = json_parse(&text);
+            let (_, loc) = json
+                .get("main")
+                .expect("main")
+                .entries()
+                .first()
+                .expect("locale");
+            let cur = loc
+                .get("numbers")
+                .and_then(|n| n.get("currencies"))
+                .expect("currencies");
+            let entries = cur
+                .entries()
+                .iter()
+                .map(|(code, info)| (code.clone(), format!("{info:?}")))
+                .collect();
+            (l.to_ascii_lowercase(), entries)
+        })
+        .collect();
     type CurPats = (String, Vec<(String, String)>, String, Vec<(u8, String)>);
     let mut patterns: BTreeMap<String, CurPats> = BTreeMap::new();
     let mut records = Vec::new();
@@ -3875,8 +3851,18 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
         .map(|l| (l.clone(), true))
         .chain(pattern_only.iter().map(|l| (l.clone(), false)))
     {
-        let num_text = fs::read_to_string(numbers_dir.join(alloc_format(&locale)))
-            .unwrap_or_else(|_| panic!("read numbers {locale}"));
+        // A sublocale vendored for its currency names alone (`en-001`) formats
+        // with its nearest ancestor's numbers file, as the runtime would.
+        let num_locale = if numbers_files.contains_key(&locale.to_ascii_lowercase()) {
+            locale.clone()
+        } else {
+            chain
+                .nearest(&locale.to_ascii_lowercase(), &numbers_files)
+                .map(|(_, l)| l.clone())
+                .unwrap_or_else(|| panic!("no numbers file for {locale}"))
+        };
+        let num_text = fs::read_to_string(numbers_dir.join(alloc_format(&num_locale)))
+            .unwrap_or_else(|_| panic!("read numbers {num_locale}"));
         let num_json = json_parse(&num_text);
         let (_, num_loc) = num_json
             .get("main")
@@ -3948,16 +3934,7 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
         if !has_names {
             // Pattern-only region record: drop it when the nearest vendored
             // ancestor already formats this way.
-            let mut end = key.len();
-            let inherited = loop {
-                match key[..end].rfind('-') {
-                    Some(i) => end = i,
-                    None => break None,
-                }
-                if let Some(v) = patterns.get(&key[..end]) {
-                    break Some(v);
-                }
-            };
+            let inherited = chain.nearest(&key, &patterns).map(|(_, v)| v);
             if inherited.is_some_and(|(ip, ins, iu, iuc)| {
                 ip == pat && *ins == ns_pats && iu == unit_pat && *iuc == unit_counts
             }) {
@@ -3991,7 +3968,14 @@ fn emit_currency(cldr_dir: &Path, currencies_dir: &Path, numbers_dir: &Path, cur
             .get("numbers")
             .and_then(|n| n.get("currencies"))
             .expect("currencies");
-        let entries = currencies.entries();
+        let inherited = chain.nearest(&key, &all_entries).map(|(_, e)| e);
+        let entries: Vec<&(String, Json)> = currencies
+            .entries()
+            .iter()
+            .filter(|(code, info)| {
+                inherited.is_none_or(|e| e.get(code) != Some(&format!("{info:?}")))
+            })
+            .collect();
         p.extend_from_slice(&(entries.len() as u16).to_le_bytes());
         // The plural display names that differ from `other`'s, written as a
         // second table after the name table (see the function doc).
@@ -4300,8 +4284,8 @@ fn emit_dates(cldr_dir: &Path, dates_dir: &Path, day_periods_path: &Path) {
         skel_records.push((locale.to_ascii_lowercase(), sk));
     }
 
-    write_blob(cldr_dir, "calendar", &cal_records);
-    write_blob(cldr_dir, "skeletons", &skel_records);
+    write_blob(cldr_dir, "calendar", &prune_inherited(&cal_records));
+    write_blob(cldr_dir, "skeletons", &prune_inherited(&skel_records));
 }
 
 /// Write `cldr/intervals.bin`: per-locale CLDR `intervalFormats`. Payload is
@@ -4374,7 +4358,7 @@ fn emit_intervals(cldr_dir: &Path, dates_dir: &Path) {
         records.push((locale.to_ascii_lowercase(), p));
     }
 
-    write_blob(cldr_dir, "intervals", &records);
+    write_blob(cldr_dir, "intervals", &prune_inherited(&records));
 }
 
 /// The ECMA-402 sanctioned measurement units — `(unit identifier, CLDR key)` —
@@ -4446,7 +4430,8 @@ const UNIT_WIDTHS: [(&str, &str, Option<&str>); 3] = [
 /// `unit * 8 + slot`, where slot 0..=5 is the plural category and slot 6 is the
 /// unit's `perUnitPattern`; the locale's `per` `compoundUnitPattern` sits at the
 /// pseudo-unit index `UNITS.len()`, slot 0.
-fn emit_units(cldr_dir: &Path, units_dir: &Path, likely_path: &Path) {
+fn emit_units(cldr_dir: &Path, units_dir: &Path) {
+    let chain = chain();
     let counts = [
         "unitPattern-count-zero",
         "unitPattern-count-one",
@@ -4500,6 +4485,31 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path, likely_path: &Path) {
         table.push(widths);
     }
 
+    // A sublocale keeps only the slots that differ from its nearest vendored
+    // CLDR ancestor's (`en-GB` restates most of `en`); `pattern` walks up for
+    // the rest.
+    let index_of: BTreeMap<String, usize> = locales
+        .iter()
+        .enumerate()
+        .map(|(i, l)| (l.to_ascii_lowercase(), i))
+        .collect();
+    let parent_of: Vec<Option<usize>> = locales
+        .iter()
+        .map(|l| {
+            l.contains('-')
+                .then(|| chain.nearest(&l.to_ascii_lowercase(), &index_of))
+                .flatten()
+                .map(|(_, &i)| i)
+        })
+        .collect();
+    let full = table.clone();
+    for (li, widths) in table.iter_mut().enumerate() {
+        let Some(pi) = parent_of[li] else { continue };
+        for (wi, slots) in widths.iter_mut().enumerate() {
+            slots.retain(|s| !full[pi][wi].contains(s));
+        }
+    }
+
     let en = locales
         .iter()
         .position(|l| l == "en")
@@ -4534,26 +4544,40 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path, likely_path: &Path) {
     for (i, locale) in locales.iter().enumerate() {
         let _ = write!(out, "        \"{}\" => {i},\n", locale.to_ascii_lowercase());
     }
-    // A `lang-REGION` tag that maximizes onto a vendored `lang-Script[-REGION]`
-    // bundle shares its index. The runtime trims `-` subtags and does no script
-    // inference, so `zh-TW` would otherwise reach Simplified `zh`.
-    let likely_text = fs::read_to_string(likely_path).expect("read likely.json");
-    let likely = json_parse(&likely_text);
-    for (alias, src) in script_region_alias_keys(&locales, &likely) {
-        let i = locales
-            .iter()
-            .position(|l| *l == src)
-            .expect("alias source");
-        let _ = write!(out, "        \"{alias}\" => {i},\n");
-    }
     let _ = write!(out, "        _ => return None,\n    }})\n}}\n\n");
 
     let _ = write!(
         out,
-        "/// The pattern for `(locale, width, key)`, or `None` when CLDR has no such\n\
-         /// string. `width` is 0 (long), 1 (short) or 2 (narrow).\n\
-         #[inline]\n\
+        "/// The table index of `loc`'s nearest vendored CLDR ancestor, whose\n\
+         /// patterns a sublocale inherits for every key it does not store itself.\n\
+         pub(crate) const fn parent(loc: u16) -> Option<u16> {{\n    \
+         Some(match loc {{\n"
+    );
+    for (li, p) in parent_of.iter().enumerate() {
+        if let Some(p) = p {
+            let _ = write!(out, "        {li} => {p},\n");
+        }
+    }
+    let _ = write!(
+        out,
+        "        _ => return None,\n    }})\n}}\n\n\
+         /// The pattern for `(locale, width, key)`, or `None` when CLDR has no such\n\
+         /// string. `width` is 0 (long), 1 (short) or 2 (narrow). A sublocale stores\n\
+         /// only what differs from its ancestor, so a miss walks up [`parent`].\n\
          pub(crate) const fn pattern(loc: u16, width: usize, key: u16) -> Option<&'static str> {{\n    \
+         let mut loc = loc;\n    \
+         loop {{\n        \
+         if let Some(s) = pattern_in(loc, width, key) {{\n            \
+         return Some(s);\n        \
+         }}\n        \
+         loc = match parent(loc) {{\n            \
+         Some(p) => p,\n            \
+         None => return None,\n        \
+         }};\n    \
+         }}\n\
+         }}\n\n\
+         #[inline]\n\
+         const fn pattern_in(loc: u16, width: usize, key: u16) -> Option<&'static str> {{\n    \
          match width {{\n"
     );
     for (wi, (name, _, feature)) in UNIT_WIDTHS.iter().enumerate() {
@@ -4600,10 +4624,11 @@ fn emit_units(cldr_dir: &Path, units_dir: &Path, likely_path: &Path) {
 /// The modules under `src/cldr/generated/`, with the cargo feature each is
 /// gated on, so a disabled formatter drops its table — and the megabytes of
 /// string data in it — from the build entirely.
-const CLDR_GENERATED: [(&str, &str); 6] = [
+const CLDR_GENERATED: [(&str, &str); 7] = [
     ("collations", "collation"),
     ("lists", "list"),
     ("numbers", "number"),
+    ("parents", "_cldr"),
     ("relative", "relative"),
     ("tz_names", "datetime"),
     ("units", "units"),
@@ -4803,6 +4828,7 @@ fn emit_tz_names(
     bcp47_tz: &Path,
     primary_zones: &Path,
 ) {
+    let chain = chain();
     // ---- supplemental: zone -> metazone history ----
     let mzjson = json_parse(&fs::read_to_string(metazones).expect("read metaZones.json"));
     let info = mzjson
@@ -4943,6 +4969,57 @@ fn emit_tz_names(
             }
         }
         locdata.push(LocTz { fmt, zones, mzs });
+    }
+
+    // A sublocale keeps only the names that differ from its nearest vendored
+    // CLDR ancestor's; `name` walks `parent` for the rest. `en-GB` repeats
+    // nearly all of `en`'s 4 000 names, and storing them again would be pure
+    // index weight.
+    let index_of: BTreeMap<String, usize> = locales
+        .iter()
+        .enumerate()
+        .map(|(i, l)| (l.to_ascii_lowercase(), i))
+        .collect();
+    let parent_of: Vec<Option<usize>> = locales
+        .iter()
+        .map(|l| {
+            l.contains('-')
+                .then(|| chain.nearest(&l.to_ascii_lowercase(), &index_of))
+                .flatten()
+                .map(|(_, &i)| i)
+        })
+        .collect();
+    type Names = (
+        BTreeMap<String, [Option<String>; 7]>,
+        BTreeMap<String, [Option<String>; 6]>,
+    );
+    let full: Vec<Names> = locdata
+        .iter()
+        .map(|l| (l.zones.clone(), l.mzs.clone()))
+        .collect();
+    for (li, l) in locdata.iter_mut().enumerate() {
+        let Some(pi) = parent_of[li] else { continue };
+        let (pz, pm) = &full[pi];
+        l.zones.retain(|z, slots| {
+            if let Some(ps) = pz.get(z) {
+                for (s, p) in slots.iter_mut().zip(ps) {
+                    if s == p {
+                        *s = None;
+                    }
+                }
+            }
+            slots.iter().any(Option::is_some)
+        });
+        l.mzs.retain(|m, slots| {
+            if let Some(ps) = pm.get(m) {
+                for (s, p) in slots.iter_mut().zip(ps) {
+                    if s == p {
+                        *s = None;
+                    }
+                }
+            }
+            slots.iter().any(Option::is_some)
+        });
     }
 
     // ---- index spaces ----
@@ -5197,8 +5274,32 @@ fn emit_tz_names(
 
     let _ = write!(
         out,
-        "/// A zone-level or metazone name string; see the key spaces above.\n\
+        "/// The table index of `loc`'s nearest vendored CLDR ancestor, whose names\n\
+         /// a sublocale inherits for every key it does not store itself.\n\
+         pub(crate) const fn parent(loc: u16) -> Option<u16> {{\n    \
+         Some(match loc {{\n"
+    );
+    for (li, p) in parent_of.iter().enumerate() {
+        if let Some(p) = p {
+            let _ = write!(out, "        {li} => {p},\n");
+        }
+    }
+    let _ = write!(
+        out,
+        "        _ => return None,\n    }})\n}}\n\n\
+         /// A zone-level or metazone name string; see the key spaces above. A\n\
+         /// sublocale stores only what differs from its ancestor, so a miss walks\n\
+         /// up [`parent`].\n\
          pub(crate) fn name(area: u8, loc: u16, key: u16) -> Option<&'static str> {{\n    \
+         let mut loc = loc;\n    \
+         loop {{\n        \
+         if let Some(s) = name_in(area, loc, key) {{\n            \
+         return Some(s);\n        \
+         }}\n        \
+         loc = parent(loc)?;\n    \
+         }}\n\
+         }}\n\n\
+         fn name_in(area: u8, loc: u16, key: u16) -> Option<&'static str> {{\n    \
          match area {{\n"
     );
     for ai in 0..TZ_AREAS.len() {
@@ -5684,7 +5785,8 @@ fn write_cal_blob(cldr_dir: &Path, name: &str, records: &mut [(String, Vec<u8>)]
         .map(|(k, p)| k.len() + p.len() + 3)
         .sum::<usize>()
         + 2;
-    write_blob(cldr_dir, &alloc_concat("cal_", name), records);
+    let records = prune_inherited(records);
+    write_blob(cldr_dir, &alloc_concat("cal_", name), &records);
     println!(
         "codegen: wrote cal_{name}.bin ({} locales, {} KB)",
         records.len(),
@@ -7413,24 +7515,32 @@ fn xml_attr<'a>(attrs: &'a str, name: &str) -> Option<&'a str> {
 
 /// Write `cldr/display_languages.bin` and `cldr/display_territories.bin`: for
 /// each display locale, a nested `[u16 count]` table of `code -> name`.
+/// Write `display_languages.bin` / `display_territories.bin`, one code → name
+/// table per locale.
+///
+/// A sublocale (`en-GB`, `zh-Hant-HK`) stores only the names that differ from
+/// its nearest vendored CLDR ancestor's: the runtime looks a name up by walking
+/// the locale chain one code at a time, so the ancestor answers the rest. A
+/// whole `zh-Hant` table would cost 10 KB where its delta from `zh` is the
+/// script-converted names alone — and `zh-Hant-HK`'s from `zh-Hant` a handful.
 fn emit_display(cldr_dir: &Path, localenames_dir: &Path) {
-    let mut locales: Vec<String> = fs::read_dir(localenames_dir)
-        .expect("read localenames-raw dir")
-        .filter_map(|e| e.ok())
-        .filter_map(|e| {
-            e.file_name()
-                .to_string_lossy()
-                .strip_suffix("-languages.json")
-                .map(String::from)
-        })
-        .collect();
-    locales.sort();
-
+    let chain = chain();
     for (section, suffix, blob) in [
         ("languages", "-languages.json", "display_languages"),
         ("territories", "-territories.json", "display_territories"),
     ] {
-        let mut records = Vec::new();
+        let mut locales: Vec<String> = fs::read_dir(localenames_dir)
+            .expect("read localenames-raw dir")
+            .filter_map(|e| e.ok())
+            .filter_map(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .strip_suffix(suffix)
+                    .map(String::from)
+            })
+            .collect();
+        locales.sort();
+        let mut tables: BTreeMap<String, Vec<(String, String)>> = BTreeMap::new();
         for locale in &locales {
             let path = localenames_dir.join(alloc_concat(locale, suffix));
             let text =
@@ -7447,11 +7557,28 @@ fn emit_display(cldr_dir: &Path, localenames_dir: &Path) {
                 .and_then(|d| d.get(section))
                 .expect("section");
             // Skip `-alt-` variant keys; the runtime looks up the bare code.
-            let kept: Vec<(&str, &str)> = table
+            let kept: Vec<(String, String)> = table
                 .entries()
                 .iter()
                 .filter(|(code, _)| !code.contains("-alt-"))
-                .filter_map(|(code, name)| name.as_str().map(|n| (code.as_str(), n)))
+                .filter_map(|(code, name)| name.as_str().map(|n| (code.clone(), n.to_string())))
+                .collect();
+            tables.insert(locale.to_ascii_lowercase(), kept);
+        }
+        let mut records = Vec::new();
+        for (key, kept) in &tables {
+            let parent: Option<BTreeMap<&str, &str>> = key
+                .contains('-')
+                .then(|| chain.nearest(key, &tables))
+                .flatten()
+                .map(|(_, t)| t.iter().map(|(c, n)| (c.as_str(), n.as_str())).collect());
+            let kept: Vec<&(String, String)> = kept
+                .iter()
+                .filter(|(c, n)| {
+                    parent
+                        .as_ref()
+                        .is_none_or(|p| p.get(c.as_str()) != Some(&n.as_str()))
+                })
                 .collect();
             let mut payload = Vec::new();
             payload.extend_from_slice(&(kept.len() as u16).to_le_bytes());
@@ -7459,7 +7586,7 @@ fn emit_display(cldr_dir: &Path, localenames_dir: &Path) {
                 enc_str(&mut payload, code);
                 enc_str(&mut payload, name);
             }
-            records.push((locale.to_ascii_lowercase(), payload));
+            records.push((key.clone(), payload));
         }
         write_blob(cldr_dir, blob, &records);
     }
@@ -8018,4 +8145,234 @@ fn emit_arms(
         }
         i = j;
     }
+}
+
+// ---- CLDR locale inheritance (UTS #35 §4.1.3 "Parent Locales") ----
+
+/// CLDR's locale inheritance, as the runtime walks it (`crate::cldr::fallback`).
+///
+/// A locale's parent is its explicit `parentLocales` entry (`en-GB` → `en-001`,
+/// `pt-AO` → `pt-PT`, `zh-Hant` → root), else root for a `lang-Script` whose
+/// script is not the language's likely one (the `nonlikelyScript` rule, so
+/// `sr-Latn` does not inherit Cyrillic `sr`), else the tag with its last subtag
+/// removed. Before walking, a `lang-REGION` tag gets the script likelySubtags
+/// gives it when that differs from the language's own (`zh-TW` → `zh-Hant-TW`).
+///
+/// Codegen uses the same rules to pick the record a vendored sublocale is
+/// compared against and to find a sublocale's companion file in another
+/// section, so the data and the runtime agree on what inherits from what. All
+/// keys are lowercase.
+static CHAIN: std::sync::OnceLock<Chain> = std::sync::OnceLock::new();
+
+/// The CLDR inheritance rules, loaded once at the top of the CLDR section of
+/// `main`.
+fn chain() -> &'static Chain {
+    CHAIN.get().expect("CLDR chain loaded")
+}
+
+struct Chain {
+    /// Explicit `parentLocales` entries; `""` is root.
+    parents: BTreeMap<String, String>,
+    /// `lang` → its likely script (`zh` → `hans`).
+    default_script: BTreeMap<String, String>,
+    /// `lang-region` → the script likelySubtags gives it, where that is not the
+    /// language's default (`zh-tw` → `hant`).
+    region_script: BTreeMap<String, String>,
+}
+
+impl Chain {
+    fn load(cldr: &Path) -> Chain {
+        let text =
+            fs::read_to_string(cldr.join("parentLocales.json")).expect("read parentLocales.json");
+        let json = json_parse(&text);
+        let table = json
+            .get("supplemental")
+            .and_then(|s| s.get("parentLocales"))
+            .and_then(|p| p.get("parentLocale"))
+            .expect("parentLocale table");
+        let mut parents = BTreeMap::new();
+        for (k, v) in table.entries() {
+            let v = v.as_str().expect("parent").to_ascii_lowercase();
+            let v = if v == "root" || v == "und" {
+                String::new()
+            } else {
+                v
+            };
+            parents.insert(k.to_ascii_lowercase(), v);
+        }
+        let likely_text = fs::read_to_string(cldr.join("likely.json")).expect("read likely.json");
+        let likely = json_parse(&likely_text);
+        let map = likely.get("map").expect("likely map");
+        let mut default_script = BTreeMap::new();
+        for (k, v) in map.entries() {
+            if k.contains('-') {
+                continue;
+            }
+            let max = v.as_str().unwrap_or("").to_ascii_lowercase();
+            if let Some(script) = max.split('-').nth(1) {
+                default_script.insert(k.to_ascii_lowercase(), script.to_string());
+            }
+        }
+        let mut region_script = BTreeMap::new();
+        for (k, v) in map.entries() {
+            let k = k.to_ascii_lowercase();
+            let Some((lang, region)) = k.split_once('-') else {
+                continue;
+            };
+            if !is_region_subtag(region) {
+                continue;
+            }
+            let max = v.as_str().unwrap_or("").to_ascii_lowercase();
+            let mut parts = max.split('-');
+            let (Some(l), Some(script)) = (parts.next(), parts.next()) else {
+                continue;
+            };
+            if l == lang && default_script.get(lang).is_some_and(|d| d != script) {
+                region_script.insert(k.clone(), script.to_string());
+            }
+        }
+        Chain {
+            parents,
+            default_script,
+            region_script,
+        }
+    }
+
+    /// `tag` with the script likelySubtags implies inserted (`zh-tw` →
+    /// `zh-hant-tw`), or unchanged.
+    fn canonical(&self, tag: &str) -> String {
+        let tag = tag.to_ascii_lowercase();
+        let mut parts: Vec<&str> = tag.split('-').collect();
+        if parts.len() >= 2 && is_region_subtag(parts[1]) {
+            let key = format!("{}-{}", parts[0], parts[1]);
+            if let Some(s) = self.region_script.get(&key) {
+                parts.insert(1, s);
+                return parts.join("-");
+            }
+        }
+        tag
+    }
+
+    /// The parent of `loc` (lowercase), or `None` for root.
+    fn parent(&self, loc: &str) -> Option<String> {
+        if let Some(p) = self.parents.get(loc) {
+            return (!p.is_empty()).then(|| p.clone());
+        }
+        let parts: Vec<&str> = loc.split('-').collect();
+        if parts.len() == 2
+            && parts[1].len() == 4
+            && self
+                .default_script
+                .get(parts[0])
+                .is_some_and(|d| d != parts[1])
+        {
+            return None;
+        }
+        loc.rfind('-').map(|i| loc[..i].to_string())
+    }
+
+    /// The locales `loc` inherits from, nearest first, root excluded. When the
+    /// chain reaches root without passing the bare language (`zh-hant` → root),
+    /// the bare language is appended: the runtime tries it as a last resort, so
+    /// a section that vendors no `zh-Hant` still answers in Chinese.
+    fn ancestors(&self, loc: &str) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut cur = self.canonical(loc);
+        while let Some(p) = self.parent(&cur) {
+            out.push(p.clone());
+            cur = p;
+        }
+        let lang = loc.split('-').next().unwrap_or(loc).to_ascii_lowercase();
+        if lang != loc.to_ascii_lowercase() && !out.contains(&lang) {
+            out.push(lang);
+        }
+        out
+    }
+
+    /// The nearest ancestor of `loc` among `have` (lowercase keys mapped to
+    /// whatever the caller stores), if any.
+    fn nearest<'a, T>(
+        &self,
+        loc: &str,
+        have: &'a BTreeMap<String, T>,
+    ) -> Option<(&'a String, &'a T)> {
+        self.ancestors(loc)
+            .iter()
+            .find_map(|a| have.get_key_value(a))
+    }
+
+    /// Emit `cldr/generated/parents.rs`, restricted to the languages `langs`
+    /// (the ones any section vendors data for).
+    fn emit(&self, cldr_dir: &Path, langs: &BTreeSet<String>) {
+        let lang_of = |k: &str| k.split('-').next().unwrap_or("").to_string();
+        let mut out = String::new();
+        write_header(&mut out);
+        out.push_str(
+            "//! CLDR locale inheritance — see `crate::cldr::fallback`.\n\n\
+             /// The explicit CLDR `parentLocales` parent of a lowercase locale key;\n\
+             /// `Some(\"\")` is root.\n\
+             pub(crate) fn parent(tag: &str) -> Option<&'static str> {\n    Some(match tag {\n",
+        );
+        for (k, v) in &self.parents {
+            if langs.contains(&lang_of(k)) {
+                let _ = writeln!(out, "        {k:?} => {v:?},");
+            }
+        }
+        out.push_str("        _ => return None,\n    })\n}\n\n");
+        out.push_str(
+            "/// A language's likely script (lowercase), for the `nonlikelyScript` rule.\n\
+             pub(crate) fn default_script(lang: &str) -> Option<&'static str> {\n    Some(match lang {\n",
+        );
+        for (k, v) in &self.default_script {
+            if langs.contains(k) {
+                let _ = writeln!(out, "        {k:?} => {v:?},");
+            }
+        }
+        out.push_str("        _ => return None,\n    })\n}\n\n");
+        out.push_str(
+            "/// The script likelySubtags gives a `lang-region` key where it is not the\n\
+             /// language's default (`zh-tw` → `hant`).\n\
+             pub(crate) fn region_script(lang_region: &str) -> Option<&'static str> {\n    Some(match lang_region {\n",
+        );
+        for (k, v) in &self.region_script {
+            if langs.contains(&lang_of(k)) {
+                let _ = writeln!(out, "        {k:?} => {v:?},");
+            }
+        }
+        out.push_str("        _ => return None,\n    })\n}\n");
+        write_cldr_generated(cldr_dir, "parents", &out);
+    }
+}
+
+/// The language subtags any CLDR locale section vendors data for — the scope
+/// of the generated inheritance tables.
+fn vendored_languages(cldr: &Path) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for dir in [
+        "numbers-raw",
+        "units-raw",
+        "lists-raw",
+        "datefields-raw",
+        "currencies-raw",
+        "localenames-raw",
+        "timezonenames-raw",
+        "dates",
+    ] {
+        for e in fs::read_dir(cldr.join(dir))
+            .expect("read CLDR section dir")
+            .flatten()
+        {
+            let name = e.file_name().to_string_lossy().to_ascii_lowercase();
+            let lang = name.split(['-', '.']).next().unwrap_or("").to_string();
+            if !lang.is_empty() && lang != "readme" && lang != "root" {
+                out.insert(lang);
+            }
+        }
+    }
+    out
+}
+
+fn is_region_subtag(s: &str) -> bool {
+    (s.len() == 2 && s.bytes().all(|c| c.is_ascii_alphabetic()))
+        || (s.len() == 3 && s.bytes().all(|c| c.is_ascii_digit()))
 }

@@ -271,12 +271,12 @@ plural rules (~20 KB) that a `number`-only build used to leave out.
 | `number`          | decimal/percent/scientific/compact/ordinal + `NumberFormat` | ~108 KB |
 | `number-numsys`   | + non-`latn` numbering-system symbols (→ number)  | ~8 KB |
 | `number-range`    | + `formatRange`/`formatRangeToParts` (→ number)   | ~20 KB |
-| `currency`        | currency formatting (→ number)                    | **~1.1 MB** |
+| `currency`        | currency formatting (→ number)                    | **~1.2 MB** |
 | `units`           | measurement units, long + short (→ number)        | ~905 KB |
 | `units-narrow`    | + the narrow unit width (→ units)                 | ~315 KB |
 | `datetime`        | date/time/skeleton + POSIX-TZ/GMT (→ number)      | 219 KB |
 | `calendars-extra` | non-Gregorian calendar names, all 11 (→ datetime)  | 705 KB |
-| `displaynames`    | `Intl.DisplayNames` (languages/regions)           | **~1.6 MB** |
+| `displaynames`    | `Intl.DisplayNames` (languages/regions)           | **~1.8 MB** |
 | `list`            | `Intl.ListFormat`, all 9 `type` × `style`         | 15 KB |
 | `relative`        | `Intl.RelativeTimeFormat`, 8 units × 3 styles (→ number) | 243 KB |
 | `message`         | ICU MessageFormat subset (→ number)               | — |

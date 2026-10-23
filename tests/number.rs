@@ -1305,10 +1305,9 @@ fn default_numbering_system_follows_the_locale() {
     );
 }
 
-/// Region and script tags that carry their own CLDR number data. The tables are
-/// keyed by the vendored locale, and the lookup truncates a tag at each `-` with
-/// no script inference — so `zh-Hant` needs its own record, and `zh-TW` needs an
-/// alias onto it or it would fall through to Simplified `zh`.
+/// Region and script tags that carry their own CLDR number data. The lookup
+/// walks CLDR's locale chain: `zh-TW` is walked as `zh-Hant-TW`, `zh-Hant`'s
+/// parent is root rather than Simplified `zh`, and `zh-MO`'s is `zh-Hant-HK`.
 #[test]
 fn script_and_region_locales() {
     use intl::number::format_compact as k;
@@ -1328,8 +1327,9 @@ fn script_and_region_locales() {
     assert_eq!(k("zh", 123456789.0), "1.2亿");
     // Region tags CLDR maximizes onto Hant reach the Traditional data...
     assert_eq!(k("zh-TW", 123456789.0), "1.2億");
-    assert_eq!(k("zh-HK", 123456789.0), "1.2億");
-    assert_eq!(k("zh-MO", 123456789.0), "1.2億");
+    // `zh-Hant-HK` compacts with Western magnitudes, and `zh-MO` inherits it.
+    assert_eq!(k("zh-HK", 123456789.0), "123M");
+    assert_eq!(k("zh-MO", 123456789.0), "123M");
     // ...and the ones it maximizes onto Hans keep falling back to `zh`.
     assert_eq!(k("zh-CN", 123456789.0), "1.2亿");
     assert_eq!(k("zh-SG", 123456789.0), "1.2亿");
