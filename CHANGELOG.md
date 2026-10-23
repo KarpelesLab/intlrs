@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5](https://github.com/KarpelesLab/intlrs/compare/v0.6.4...v0.6.5) - 2026-10-23
+
+### Added
+
+- *(spellout)* spell out ru, uk, pl and ja; named rule sets
+- *(number)* plural currency names and CLDR cash precision
+- *(normalize)* add raw (single-step) decomposition lookup
+
+### Fixed
+
+- *(locale)* follow CLDR locale inheritance and vendor hub sublocales
+
 ### Added
 
 - *(normalize)* `raw_decomposition(c, NormalizationForm)`: the single-step (non-recursive) UnicodeData decomposition mapping, like ICU `getRawDecomposition` (#38)
