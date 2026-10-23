@@ -466,6 +466,114 @@ pub fn nfkc<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
     Recompositions::new(Decompositions::new(iter, true))
 }
 
+/// A Unicode normalization form (UAX #15).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NormalizationForm {
+    /// Canonical composition.
+    Nfc,
+    /// Canonical decomposition.
+    Nfd,
+    /// Compatibility composition.
+    Nfkc,
+    /// Compatibility decomposition.
+    Nfkd,
+}
+
+impl NormalizationForm {
+    /// `true` for the compatibility forms (NFKC, NFKD).
+    #[inline]
+    pub const fn is_compatibility(self) -> bool {
+        matches!(self, NormalizationForm::Nfkc | NormalizationForm::Nfkd)
+    }
+}
+
+/// The raw (single-step) decomposition mapping of a character, as returned by
+/// [`raw_decomposition`]. Dereferences to `[char]`; at most 18 characters long
+/// (U+FDFA).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RawDecomposition(RawRepr);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum RawRepr {
+    Table(&'static [char]),
+    // Algorithmic Hangul syllable mapping (L + V, or LV + T).
+    Hangul([char; 2]),
+}
+
+impl RawDecomposition {
+    /// The mapping as a slice of characters.
+    #[inline]
+    pub fn as_slice(&self) -> &[char] {
+        match &self.0 {
+            RawRepr::Table(s) => s,
+            RawRepr::Hangul(p) => p,
+        }
+    }
+}
+
+impl core::ops::Deref for RawDecomposition {
+    type Target = [char];
+    #[inline]
+    fn deref(&self) -> &[char] {
+        self.as_slice()
+    }
+}
+
+impl AsRef<[char]> for RawDecomposition {
+    #[inline]
+    fn as_ref(&self) -> &[char] {
+        self.as_slice()
+    }
+}
+
+/// The raw decomposition mapping of `c` for `form`: the single-step mapping
+/// from UnicodeData.txt field 5, *not* recursively decomposed (the analog of
+/// ICU `Normalizer2::getRawDecomposition`).
+///
+/// For [`Nfc`](NormalizationForm::Nfc) / [`Nfd`](NormalizationForm::Nfd) only
+/// canonical mappings count; for [`Nfkc`](NormalizationForm::Nfkc) /
+/// [`Nfkd`](NormalizationForm::Nfkd) both canonical and compatibility mappings
+/// count. Returns `None` if `c` has no mapping of that kind. Hangul syllables
+/// map algorithmically to two characters, as in ICU: LV → L + V and
+/// LVT → LV + T.
+///
+/// ```
+/// use intl::unicode::{raw_decomposition, NormalizationForm};
+///
+/// // U+212B ANGSTROM SIGN -> U+00C5 (one step, not A + U+030A).
+/// let d = raw_decomposition('\u{212B}', NormalizationForm::Nfd).unwrap();
+/// assert_eq!(&*d, &['\u{00C5}']);
+/// // U+FFDA HALFWIDTH HANGUL LETTER EU -> <narrow> U+3161 (compatibility only).
+/// let d = raw_decomposition('\u{FFDA}', NormalizationForm::Nfkc).unwrap();
+/// assert_eq!(&*d, &['\u{3161}']);
+/// assert!(raw_decomposition('\u{FFDA}', NormalizationForm::Nfc).is_none());
+/// ```
+pub fn raw_decomposition(c: char, form: NormalizationForm) -> Option<RawDecomposition> {
+    let u = c as u32;
+    if (S_BASE..S_BASE + S_COUNT).contains(&u) {
+        let si = u - S_BASE;
+        let t = si % T_COUNT;
+        let pair = if t != 0 {
+            [char::from_u32(u - t)?, char::from_u32(T_BASE + t)?]
+        } else {
+            [
+                char::from_u32(L_BASE + si / N_COUNT)?,
+                char::from_u32(V_BASE + (si % N_COUNT) / T_COUNT)?,
+            ]
+        };
+        return Some(RawDecomposition(RawRepr::Hangul(pair)));
+    }
+    // Raw mappings are only stored where they differ from the full
+    // decomposition; otherwise the full one is the raw one.
+    let full = if form.is_compatibility() {
+        tables::decompose_compatible(u)?
+    } else {
+        tables::decompose_canonical(u)?
+    };
+    let seq = tables::decompose_raw_override(u).unwrap_or(full);
+    Some(RawDecomposition(RawRepr::Table(seq)))
+}
+
 /// Result of a normalization quick check (UAX #15, §9).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IsNormalized {

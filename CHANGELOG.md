@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- *(normalize)* `raw_decomposition(c, NormalizationForm)`: the single-step (non-recursive) UnicodeData decomposition mapping, like ICU `getRawDecomposition` (#38)
+
 ## [0.6.4](https://github.com/KarpelesLab/intlrs/compare/v0.6.3...v0.6.4) - 2026-09-27
 
 ### Other

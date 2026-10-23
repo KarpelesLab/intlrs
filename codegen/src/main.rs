@@ -1615,6 +1615,44 @@ fn emit_char_seq_lookup(
     );
 }
 
+/// Emit `decompose_raw_override`: the few hundred raw decomposition mappings
+/// that differ from the full ones, as a sorted `(cp, offset, len)` index into a
+/// shared character pool (binary-searched). Far smaller than a per-page match
+/// table for such a sparse set.
+fn emit_raw_decomp_overrides(out: &mut String, seqs: &[Vec<u32>]) {
+    let mut pool: Vec<u32> = Vec::new();
+    let mut index = String::new();
+    for (cp, seq) in seqs.iter().enumerate() {
+        if seq.is_empty() {
+            continue;
+        }
+        let off = match pool.windows(seq.len()).position(|w| w == &seq[..]) {
+            Some(i) => i,
+            None => {
+                pool.extend_from_slice(seq);
+                pool.len() - seq.len()
+            }
+        };
+        assert!(off <= u16::MAX as usize && seq.len() <= u16::MAX as usize);
+        let _ = writeln!(index, "    (0x{cp:x}, {off}, {}),", seq.len());
+    }
+    let elems: Vec<String> = pool.iter().map(|&c| format!("'\\u{{{c:x}}}'")).collect();
+    let _ = write!(
+        out,
+        "/// Raw (single-step) decompositions differing from the full ones:\n\
+         /// sorted `(code point, offset into DR_POOL, length)`.\n\
+         const DR_INDEX: &[(u32, u16, u16)] = &[\n{index}];\n\n\
+         const DR_POOL: &[char] = &[{}];\n\n\
+         /// The raw decomposition of `cp` where it differs from the full one.\n\
+         pub(crate) fn decompose_raw_override(cp: u32) -> Option<&'static [char]> {{\n\
+         \x20   let i = DR_INDEX.binary_search_by_key(&cp, |e| e.0).ok()?;\n\
+         \x20   let (_, off, len) = DR_INDEX[i];\n\
+         \x20   Some(&DR_POOL[off as usize..off as usize + len as usize])\n\
+         }}\n\n",
+        elems.join(", ")
+    );
+}
+
 /// Emit `generated/normalization.rs`: CCC, canonical/compatibility
 /// decomposition, and canonical composition tables.
 fn emit_normalization(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
@@ -1660,6 +1698,22 @@ fn emit_normalization(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
         }
     }
 
+    // Raw (single-step, UnicodeData field 5) mappings, stored only where they
+    // differ from the full decomposition they would otherwise be derived from:
+    // a canonical raw mapping must equal both the full canonical and the full
+    // compatibility decomposition to be omitted (it is answered for NFC/NFD and
+    // NFKC/NFKD queries alike); a compatibility one, the full compatibility
+    // decomposition.
+    let mut raw_seqs = vec![vec![]; n];
+    for cp in 0..n {
+        if let Some((canonical, seq)) = &raw[cp] {
+            let differs = (*canonical && *seq != canon_seqs[cp]) || *seq != compat_seqs[cp];
+            if differs {
+                raw_seqs[cp] = seq.clone();
+            }
+        }
+    }
+
     // Canonical composition pairs: primary composites are canonical length-2
     // decompositions that are not Full_Composition_Exclusion.
     let excluded = parse_binary_prop(
@@ -1693,6 +1747,7 @@ fn emit_normalization(out_dir: &Path, modules: &mut Vec<String>, ucd: &Path) {
     // Decompositions.
     emit_char_seq_lookup(&mut out, "decompose_canonical", "dc", "DC", &canon_seqs);
     emit_char_seq_lookup(&mut out, "decompose_compatible", "dk", "DK", &compat_seqs);
+    emit_raw_decomp_overrides(&mut out, &raw_seqs);
 
     // Composition: per-starter (second, composed) pairs.
     let mut comp_codes = vec![0u32; n];

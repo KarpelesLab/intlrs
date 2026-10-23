@@ -72,3 +72,45 @@ fn normalization_test_txt_conformance() {
     assert!(checked > 10_000, "expected many test lines, got {checked}");
     eprintln!("normalization conformance: {checked} lines passed");
 }
+
+/// `raw_decomposition` reproduces UnicodeData.txt field 5 for every code point
+/// (canonical mappings under all forms, compatibility ones under NFKC/NFKD
+/// only), and is `None` for code points without a mapping.
+#[test]
+fn raw_decomposition_matches_unicode_data() {
+    use intl::unicode::NormalizationForm::{Nfc, Nfd, Nfkc, Nfkd};
+    use intl::unicode::raw_decomposition;
+
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("data/ucd/17.0.0/UnicodeData.txt");
+    let text = fs::read_to_string(&path).expect("read UnicodeData.txt");
+    let mut mapped = std::collections::HashMap::new();
+    for line in text.lines() {
+        let f: Vec<&str> = line.split(';').collect();
+        if f.len() < 6 || f[5].is_empty() {
+            continue;
+        }
+        let cp = u32::from_str_radix(f[0], 16).unwrap();
+        let canonical = !f[5].starts_with('<');
+        let seq: Vec<char> = f[5]
+            .split_whitespace()
+            .filter(|t| !t.starts_with('<'))
+            .map(|t| char::from_u32(u32::from_str_radix(t, 16).unwrap()).unwrap())
+            .collect();
+        mapped.insert(cp, (canonical, seq));
+    }
+    for c in (0..=0x10FFFFu32).filter_map(char::from_u32) {
+        if (0xAC00..0xAC00 + 11172).contains(&(c as u32)) {
+            continue; // algorithmic Hangul, covered in tests/normalize.rs
+        }
+        let get = |f| raw_decomposition(c, f).map(|d| d.to_vec());
+        let (canon, compat) = match mapped.get(&(c as u32)) {
+            Some((true, seq)) => (Some(seq.clone()), Some(seq.clone())),
+            Some((false, seq)) => (None, Some(seq.clone())),
+            None => (None, None),
+        };
+        assert_eq!(get(Nfc), canon, "NFC raw of U+{:04X}", c as u32);
+        assert_eq!(get(Nfd), canon, "NFD raw of U+{:04X}", c as u32);
+        assert_eq!(get(Nfkc), compat, "NFKC raw of U+{:04X}", c as u32);
+        assert_eq!(get(Nfkd), compat, "NFKD raw of U+{:04X}", c as u32);
+    }
+}

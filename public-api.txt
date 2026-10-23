@@ -2920,6 +2920,53 @@ impl<T> core::clone::CloneToUninit for intl::unicode::normalize::IsNormalized wh
 pub unsafe fn intl::unicode::normalize::IsNormalized::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::unicode::normalize::IsNormalized
 pub fn intl::unicode::normalize::IsNormalized::from(T) -> T
+pub enum intl::unicode::normalize::NormalizationForm
+pub intl::unicode::normalize::NormalizationForm::Nfc
+pub intl::unicode::normalize::NormalizationForm::Nfd
+pub intl::unicode::normalize::NormalizationForm::Nfkc
+pub intl::unicode::normalize::NormalizationForm::Nfkd
+impl intl::unicode::normalize::NormalizationForm
+pub const fn intl::unicode::normalize::NormalizationForm::is_compatibility(self) -> bool
+impl core::clone::Clone for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::clone(&self) -> Self
+impl core::cmp::Eq for intl::unicode::normalize::NormalizationForm
+impl core::cmp::PartialEq for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::eq(&self, &Self) -> bool
+impl core::fmt::Debug for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for intl::unicode::normalize::NormalizationForm
+impl core::marker::StructuralPartialEq for intl::unicode::normalize::NormalizationForm
+impl core::marker::Freeze for intl::unicode::normalize::NormalizationForm
+impl core::marker::Send for intl::unicode::normalize::NormalizationForm
+impl core::marker::Sync for intl::unicode::normalize::NormalizationForm
+impl core::marker::Unpin for intl::unicode::normalize::NormalizationForm
+impl core::marker::UnsafeUnpin for intl::unicode::normalize::NormalizationForm
+impl core::panic::unwind_safe::RefUnwindSafe for intl::unicode::normalize::NormalizationForm
+impl core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::NormalizationForm
+impl<T, U> core::convert::Into<U> for intl::unicode::normalize::NormalizationForm where U: core::convert::From<T>
+pub fn intl::unicode::normalize::NormalizationForm::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::NormalizationForm where U: core::convert::Into<T>
+pub type intl::unicode::normalize::NormalizationForm::Error = never
+pub fn intl::unicode::normalize::NormalizationForm::try_from(U) -> core::result::Result<T, never>
+impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::NormalizationForm where U: core::convert::TryFrom<T>
+pub type intl::unicode::normalize::NormalizationForm::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::unicode::normalize::NormalizationForm::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::unicode::normalize::NormalizationForm where T: core::clone::Clone
+pub type intl::unicode::normalize::NormalizationForm::Owned = T
+pub fn intl::unicode::normalize::NormalizationForm::clone_into(&self, &mut T)
+pub fn intl::unicode::normalize::NormalizationForm::to_owned(&self) -> T
+impl<T> core::any::Any for intl::unicode::normalize::NormalizationForm where T: 'static + ?core::marker::Sized
+pub fn intl::unicode::normalize::NormalizationForm::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::unicode::normalize::NormalizationForm where T: ?core::marker::Sized
+pub fn intl::unicode::normalize::NormalizationForm::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::unicode::normalize::NormalizationForm where T: ?core::marker::Sized
+pub fn intl::unicode::normalize::NormalizationForm::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::unicode::normalize::NormalizationForm where T: core::clone::Clone
+pub unsafe fn intl::unicode::normalize::NormalizationForm::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::from(T) -> T
 pub struct intl::unicode::normalize::Decompositions<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::normalize::Decompositions<I>
 pub fn intl::unicode::normalize::Decompositions<I>::clone(&self) -> Self
@@ -2959,6 +3006,56 @@ impl<T> core::clone::CloneToUninit for intl::unicode::normalize::Decompositions<
 pub unsafe fn intl::unicode::normalize::Decompositions<I>::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::unicode::normalize::Decompositions<I>
 pub fn intl::unicode::normalize::Decompositions<I>::from(T) -> T
+pub struct intl::unicode::normalize::RawDecomposition(_)
+impl intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::as_slice(&self) -> &[char]
+impl core::clone::Clone for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::clone(&self) -> Self
+impl core::cmp::Eq for intl::unicode::normalize::RawDecomposition
+impl core::cmp::PartialEq for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::eq(&self, &Self) -> bool
+impl core::convert::AsRef<[char]> for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::as_ref(&self) -> &[char]
+impl core::fmt::Debug for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for intl::unicode::normalize::RawDecomposition
+impl core::marker::StructuralPartialEq for intl::unicode::normalize::RawDecomposition
+impl core::ops::deref::Deref for intl::unicode::normalize::RawDecomposition
+pub type intl::unicode::normalize::RawDecomposition::Target = [char]
+pub fn intl::unicode::normalize::RawDecomposition::deref(&self) -> &[char]
+impl core::marker::Freeze for intl::unicode::normalize::RawDecomposition
+impl core::marker::Send for intl::unicode::normalize::RawDecomposition
+impl core::marker::Sync for intl::unicode::normalize::RawDecomposition
+impl core::marker::Unpin for intl::unicode::normalize::RawDecomposition
+impl core::marker::UnsafeUnpin for intl::unicode::normalize::RawDecomposition
+impl core::panic::unwind_safe::RefUnwindSafe for intl::unicode::normalize::RawDecomposition
+impl core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::RawDecomposition
+impl<P, T> core::ops::deref::Receiver for intl::unicode::normalize::RawDecomposition where P: core::ops::deref::Deref<Target = T> + ?core::marker::Sized, T: ?core::marker::Sized
+pub type intl::unicode::normalize::RawDecomposition::Target = T
+impl<T, U> core::convert::Into<U> for intl::unicode::normalize::RawDecomposition where U: core::convert::From<T>
+pub fn intl::unicode::normalize::RawDecomposition::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::RawDecomposition where U: core::convert::Into<T>
+pub type intl::unicode::normalize::RawDecomposition::Error = never
+pub fn intl::unicode::normalize::RawDecomposition::try_from(U) -> core::result::Result<T, never>
+impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::RawDecomposition where U: core::convert::TryFrom<T>
+pub type intl::unicode::normalize::RawDecomposition::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::unicode::normalize::RawDecomposition::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::unicode::normalize::RawDecomposition where T: core::clone::Clone
+pub type intl::unicode::normalize::RawDecomposition::Owned = T
+pub fn intl::unicode::normalize::RawDecomposition::clone_into(&self, &mut T)
+pub fn intl::unicode::normalize::RawDecomposition::to_owned(&self) -> T
+impl<T> core::any::Any for intl::unicode::normalize::RawDecomposition where T: 'static + ?core::marker::Sized
+pub fn intl::unicode::normalize::RawDecomposition::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::unicode::normalize::RawDecomposition where T: ?core::marker::Sized
+pub fn intl::unicode::normalize::RawDecomposition::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::unicode::normalize::RawDecomposition where T: ?core::marker::Sized
+pub fn intl::unicode::normalize::RawDecomposition::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::unicode::normalize::RawDecomposition where T: core::clone::Clone
+pub unsafe fn intl::unicode::normalize::RawDecomposition::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::from(T) -> T
 pub struct intl::unicode::normalize::Recompositions<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::normalize::Recompositions<I>
 pub fn intl::unicode::normalize::Recompositions<I>::clone(&self) -> Self
@@ -3013,6 +3110,7 @@ pub fn intl::unicode::normalize::quick_check_nfc<I: core::iter::traits::iterator
 pub fn intl::unicode::normalize::quick_check_nfd<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::IsNormalized
 pub fn intl::unicode::normalize::quick_check_nfkc<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::IsNormalized
 pub fn intl::unicode::normalize::quick_check_nfkd<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::IsNormalized
+pub fn intl::unicode::normalize::raw_decomposition(char, intl::unicode::normalize::NormalizationForm) -> core::option::Option<intl::unicode::normalize::RawDecomposition>
 pub mod intl::unicode::numeric
 #[repr(u8)] pub enum intl::unicode::numeric::NumericType
 pub intl::unicode::numeric::NumericType::Decimal
@@ -4349,6 +4447,53 @@ impl<T> core::clone::CloneToUninit for intl::unicode::JoiningType where T: core:
 pub unsafe fn intl::unicode::JoiningType::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::unicode::JoiningType
 pub fn intl::unicode::JoiningType::from(T) -> T
+pub enum intl::unicode::NormalizationForm
+pub intl::unicode::NormalizationForm::Nfc
+pub intl::unicode::NormalizationForm::Nfd
+pub intl::unicode::NormalizationForm::Nfkc
+pub intl::unicode::NormalizationForm::Nfkd
+impl intl::unicode::normalize::NormalizationForm
+pub const fn intl::unicode::normalize::NormalizationForm::is_compatibility(self) -> bool
+impl core::clone::Clone for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::clone(&self) -> Self
+impl core::cmp::Eq for intl::unicode::normalize::NormalizationForm
+impl core::cmp::PartialEq for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::eq(&self, &Self) -> bool
+impl core::fmt::Debug for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for intl::unicode::normalize::NormalizationForm
+impl core::marker::StructuralPartialEq for intl::unicode::normalize::NormalizationForm
+impl core::marker::Freeze for intl::unicode::normalize::NormalizationForm
+impl core::marker::Send for intl::unicode::normalize::NormalizationForm
+impl core::marker::Sync for intl::unicode::normalize::NormalizationForm
+impl core::marker::Unpin for intl::unicode::normalize::NormalizationForm
+impl core::marker::UnsafeUnpin for intl::unicode::normalize::NormalizationForm
+impl core::panic::unwind_safe::RefUnwindSafe for intl::unicode::normalize::NormalizationForm
+impl core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::NormalizationForm
+impl<T, U> core::convert::Into<U> for intl::unicode::normalize::NormalizationForm where U: core::convert::From<T>
+pub fn intl::unicode::normalize::NormalizationForm::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::NormalizationForm where U: core::convert::Into<T>
+pub type intl::unicode::normalize::NormalizationForm::Error = never
+pub fn intl::unicode::normalize::NormalizationForm::try_from(U) -> core::result::Result<T, never>
+impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::NormalizationForm where U: core::convert::TryFrom<T>
+pub type intl::unicode::normalize::NormalizationForm::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::unicode::normalize::NormalizationForm::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::unicode::normalize::NormalizationForm where T: core::clone::Clone
+pub type intl::unicode::normalize::NormalizationForm::Owned = T
+pub fn intl::unicode::normalize::NormalizationForm::clone_into(&self, &mut T)
+pub fn intl::unicode::normalize::NormalizationForm::to_owned(&self) -> T
+impl<T> core::any::Any for intl::unicode::normalize::NormalizationForm where T: 'static + ?core::marker::Sized
+pub fn intl::unicode::normalize::NormalizationForm::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::unicode::normalize::NormalizationForm where T: ?core::marker::Sized
+pub fn intl::unicode::normalize::NormalizationForm::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::unicode::normalize::NormalizationForm where T: ?core::marker::Sized
+pub fn intl::unicode::normalize::NormalizationForm::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::unicode::normalize::NormalizationForm where T: core::clone::Clone
+pub unsafe fn intl::unicode::normalize::NormalizationForm::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::unicode::normalize::NormalizationForm
+pub fn intl::unicode::normalize::NormalizationForm::from(T) -> T
 #[repr(u8)] pub enum intl::unicode::NumericType
 pub intl::unicode::NumericType::Decimal
 pub intl::unicode::NumericType::Digit
@@ -5042,6 +5187,56 @@ impl<T> core::clone::CloneToUninit for intl::unicode::numeric::NumericValue wher
 pub unsafe fn intl::unicode::numeric::NumericValue::clone_to_uninit(&self, *mut u8)
 impl<T> core::convert::From<T> for intl::unicode::numeric::NumericValue
 pub fn intl::unicode::numeric::NumericValue::from(T) -> T
+pub struct intl::unicode::RawDecomposition(_)
+impl intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::as_slice(&self) -> &[char]
+impl core::clone::Clone for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::clone(&self) -> Self
+impl core::cmp::Eq for intl::unicode::normalize::RawDecomposition
+impl core::cmp::PartialEq for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::eq(&self, &Self) -> bool
+impl core::convert::AsRef<[char]> for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::as_ref(&self) -> &[char]
+impl core::fmt::Debug for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for intl::unicode::normalize::RawDecomposition
+impl core::marker::StructuralPartialEq for intl::unicode::normalize::RawDecomposition
+impl core::ops::deref::Deref for intl::unicode::normalize::RawDecomposition
+pub type intl::unicode::normalize::RawDecomposition::Target = [char]
+pub fn intl::unicode::normalize::RawDecomposition::deref(&self) -> &[char]
+impl core::marker::Freeze for intl::unicode::normalize::RawDecomposition
+impl core::marker::Send for intl::unicode::normalize::RawDecomposition
+impl core::marker::Sync for intl::unicode::normalize::RawDecomposition
+impl core::marker::Unpin for intl::unicode::normalize::RawDecomposition
+impl core::marker::UnsafeUnpin for intl::unicode::normalize::RawDecomposition
+impl core::panic::unwind_safe::RefUnwindSafe for intl::unicode::normalize::RawDecomposition
+impl core::panic::unwind_safe::UnwindSafe for intl::unicode::normalize::RawDecomposition
+impl<P, T> core::ops::deref::Receiver for intl::unicode::normalize::RawDecomposition where P: core::ops::deref::Deref<Target = T> + ?core::marker::Sized, T: ?core::marker::Sized
+pub type intl::unicode::normalize::RawDecomposition::Target = T
+impl<T, U> core::convert::Into<U> for intl::unicode::normalize::RawDecomposition where U: core::convert::From<T>
+pub fn intl::unicode::normalize::RawDecomposition::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for intl::unicode::normalize::RawDecomposition where U: core::convert::Into<T>
+pub type intl::unicode::normalize::RawDecomposition::Error = never
+pub fn intl::unicode::normalize::RawDecomposition::try_from(U) -> core::result::Result<T, never>
+impl<T, U> core::convert::TryInto<U> for intl::unicode::normalize::RawDecomposition where U: core::convert::TryFrom<T>
+pub type intl::unicode::normalize::RawDecomposition::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn intl::unicode::normalize::RawDecomposition::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for intl::unicode::normalize::RawDecomposition where T: core::clone::Clone
+pub type intl::unicode::normalize::RawDecomposition::Owned = T
+pub fn intl::unicode::normalize::RawDecomposition::clone_into(&self, &mut T)
+pub fn intl::unicode::normalize::RawDecomposition::to_owned(&self) -> T
+impl<T> core::any::Any for intl::unicode::normalize::RawDecomposition where T: 'static + ?core::marker::Sized
+pub fn intl::unicode::normalize::RawDecomposition::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for intl::unicode::normalize::RawDecomposition where T: ?core::marker::Sized
+pub fn intl::unicode::normalize::RawDecomposition::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for intl::unicode::normalize::RawDecomposition where T: ?core::marker::Sized
+pub fn intl::unicode::normalize::RawDecomposition::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for intl::unicode::normalize::RawDecomposition where T: core::clone::Clone
+pub unsafe fn intl::unicode::normalize::RawDecomposition::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for intl::unicode::normalize::RawDecomposition
+pub fn intl::unicode::normalize::RawDecomposition::from(T) -> T
 pub struct intl::unicode::Recompositions<I>
 impl<I: core::clone::Clone> core::clone::Clone for intl::unicode::normalize::Recompositions<I>
 pub fn intl::unicode::normalize::Recompositions<I>::clone(&self) -> Self
@@ -5297,6 +5492,7 @@ pub fn intl::unicode::quick_check_nfc<I: core::iter::traits::iterator::Iterator<
 pub fn intl::unicode::quick_check_nfd<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::IsNormalized
 pub fn intl::unicode::quick_check_nfkc<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::IsNormalized
 pub fn intl::unicode::quick_check_nfkd<I: core::iter::traits::iterator::Iterator<Item = char>>(I) -> intl::unicode::normalize::IsNormalized
+pub fn intl::unicode::raw_decomposition(char, intl::unicode::normalize::NormalizationForm) -> core::option::Option<intl::unicode::normalize::RawDecomposition>
 pub const fn intl::unicode::script(char) -> intl::unicode::Script
 pub const fn intl::unicode::script_extensions(char) -> intl::unicode::script::ScriptExtensions
 pub const fn intl::unicode::script_extensions_u32(u32) -> intl::unicode::script::ScriptExtensions

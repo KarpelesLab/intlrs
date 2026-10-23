@@ -88,9 +88,10 @@ pub use names::name;
 pub use names::{char_name, hangul_syllable_name};
 #[cfg(feature = "normalization")]
 pub use normalize::{
-    Decompositions, IsNormalized, Recompositions, canonical_combining_class,
-    canonical_combining_class_u32, is_nfc, is_nfd, is_nfkc, is_nfkd, nfc, nfd, nfkc, nfkd,
-    quick_check_nfc, quick_check_nfd, quick_check_nfkc, quick_check_nfkd,
+    Decompositions, IsNormalized, NormalizationForm, RawDecomposition, Recompositions,
+    canonical_combining_class, canonical_combining_class_u32, is_nfc, is_nfd, is_nfkc, is_nfkd,
+    nfc, nfd, nfkc, nfkd, quick_check_nfc, quick_check_nfd, quick_check_nfkc, quick_check_nfkd,
+    raw_decomposition,
 };
 pub use numeric::{NumericType, NumericValue, numeric_type, numeric_value, numeric_value_u32};
 pub use predicates::{
